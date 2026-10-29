@@ -16,6 +16,19 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-018 — Animação de abertura do app (MVP)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Média (MVP)
+- **Objetivo:** uma animação simples de abertura que cubra o tempo de carregar e reabrir os terminais, para a pessoa entrar já com tudo aberto, sem ver terminais vazios abrindo um a um.
+- **Feito até agora:** tela de abertura (`#splash`) com a logo pulsando, mostrada desde o primeiro quadro e removida com fade quando `restoreOnOpen()` termina (mínimo ~900 ms, máximo 8 s). Sem abas para restaurar, some logo após o mínimo.
+- **Decisões:** só anima `opacity`/`transform`; respeita "reduzir movimento" (sem pulso, só fade); o tempo máximo evita travar a entrada se uma aba demorar.
+- **Arquivos tocados:** `src/renderer/index.html`, `src/renderer/styles.css`, `src/renderer/app.js`, `docs/DECISOES.md`, `docs/DESIGN.md`.
+- **Como validar:** abrir 3 abas, fechar o app e reabrir: a logo aparece, some em fade e os terminais já estão abertos. Com nenhum terminal aberto, a abertura é rápida (~1 s).
+- **Pendências:** nenhuma.
+- **Validada em:** 2026-10-29 (o usuário testou e aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-004 — Notificações reais
 
 - **Responsável:** DEV1
@@ -188,14 +201,6 @@ _Nenhuma no momento._
 - **Status:** BACKLOG
 - **Prioridade:** Baixa (pós-MVP)
 - **Objetivo:** hoje a leitura é somente leitura; evoluir para editar e ativar/desativar por escopo, com aviso de "reinicie para aplicar".
-
-### TASK-018 — Animação de abertura do app (MVP)
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Média (MVP)
-- **Objetivo:** uma animação simples de abertura que cubra o tempo de carregar e iniciar os terminais, para a pessoa entrar no app já com os terminais abertos, sem ver terminais vazios nem o aviso de restauração.
-- **Notas:** pensada junto com a restauração automática dos terminais ao reabrir (a decidir; hoje o app pergunta antes de restaurar, ver `docs/DECISOES.md`). A animação some quando os terminais estiverem prontos, com tempo máximo para não travar a entrada. Respeitar "reduzir movimento" e animar só `transform`/`opacity` (ver `docs/DESIGN.md`).
 
 ## Concluídas
 

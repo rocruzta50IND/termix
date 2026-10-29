@@ -25,6 +25,9 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - **Ícone "Terminais" na barra lateral:** janelas em cascata (diferente da logo). Os demais ícones são de traço fino (1,7 px).
 - Avatares dos projetos na barra recolhida: letra inicial em quadrado de cor.
 
+## Abertura
+- Tela de abertura (`#splash`): fundo escuro do app, logo `>_` com brilho pulsando devagar e o nome "Termix"; sai em fade (0,45 s). Só `opacity`/`transform`; com "reduzir movimento" não pulsa.
+
 ## Desempenho (regras para não regredir)
 - Sem `backdrop-filter` nos painéis grandes (o fundo atrás é suave); WebGL só na aba visível; saída dos terminais agrupada em lotes de ~8 ms; ajuste de linhas do terminal agrupado e pausado durante animações; sombra pesada desligada durante animações.
 

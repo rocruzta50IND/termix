@@ -1006,7 +1006,12 @@ async function applyBg() {
   renderAll();
   layout();
   (await api.allMetrics()).forEach(onMetric);
-  restoreOnOpen();
+  const t0 = Date.now();
+  await Promise.race([restoreOnOpen(), new Promise((ok) => setTimeout(ok, 8000))]); // teto: não trava a entrada se uma aba demorar
+  await new Promise((ok) => setTimeout(ok, Math.max(0, 900 - (Date.now() - t0)))); // mínimo, para a animação não piscar
+  const sp = $('#splash');
+  sp.classList.add('out');
+  setTimeout(() => sp.remove(), 500);
 })();
 
 // ao abrir: reabre sozinho as abas que estavam abertas quando o app foi fechado, uma de cada vez (a ativa do projeto atual primeiro) para não pesar

@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-018 — Animação de abertura** (DEV1)
+
+- Tela de abertura com a logo pulsando cobre o carregamento e some em fade quando os terminais terminam de reabrir (mínimo ~0,9 s, teto de 8 s; respeita "reduzir movimento"). Documentada em `docs/DECISOES.md` e `docs/DESIGN.md`. VALIDADA EM DEV1: o usuário testou e aprovou.
+
 **TASK-004 — Notificações reais** (DEV1)
 
 - Avisos de "terminou", "precisa de você" e erro vão para o painel (com botão "Abrir"), ganham selo colorido na aba e destaque no projeto, e com o app sem foco viram notificação do Windows (clique abre a aba) e piscam o ícone na barra de tarefas. VALIDADA EM DEV1: o usuário testou e aprovou.
@@ -23,8 +27,6 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 **TASK-019 — Restaurar sozinho os terminais abertos ao reabrir** (DEV1)
 
 - Ao abrir, as abas que estavam abertas voltam sozinhas, uma de cada vez (a ativa primeiro), retomando a conversa. O aviso "N sessões estavam ativas" foi removido. Decisão atualizada em `docs/DECISOES.md`. VALIDADA EM DEV1: o usuário testou e aprovou.
-
-**TASK-018 — Animação de abertura** (DEV1): registrada no backlog (MVP).
 
 **TASK-017 — Continuidade entre sessões** (DEV1)
 

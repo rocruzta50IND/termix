@@ -50,6 +50,14 @@ body.maxed .shadow{filter:none}
 #edge path{fill:none;stroke:rgba(255,255,255,.22);stroke-width:1}
 .sp{flex:1}
 
+/* abertura: cobre o app enquanto os terminais reabrem; só opacity/transform */
+#splash{position:absolute;inset:0;z-index:50;border-radius:var(--R,22px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(160deg,#080b11,#04060a 60%,#06090e);transition:opacity .45s ease}
+#splash.out{opacity:0;pointer-events:none}
+#splash img{height:54px;filter:drop-shadow(0 2px 14px rgba(59,130,246,.55));animation:splashPulse 1.6s ease-in-out infinite}
+#splash span{font-weight:650;letter-spacing:.6px;font-size:18px;color:var(--text2)}
+@keyframes splashPulse{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1.04)}}
+@media (prefers-reduced-motion:reduce){#splash img{animation:none}}
+
 /* ---------- barra superior: elemento solto, com espaço para os botões da janela à direita ---------- */
 #topbar{position:absolute;left:0;right:0;top:0;height:var(--head,46px);display:flex;align-items:center;gap:14px;padding:0 0 0 20px;-webkit-app-region:drag}
 #topbar button,#topbar .lims{-webkit-app-region:no-drag}
