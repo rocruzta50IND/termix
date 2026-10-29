@@ -470,25 +470,24 @@ async function loadSessInfo(p) {
 function noTermHTML(p) {
   loadSessInfo(p);
   const info = (UI.sessInfo && UI.sessInfo[p.id]) || {};
-  const closedTabs = p.tabs.filter((t) => !t.open && !t.archived);
-  const loaded = UI.sessInfo && UI.sessInfo[p.id];
-  // só entram na lista as abas que têm conversa gravada; as que nunca receberam mensagem viram um resumo à parte
-  const rows = closedTabs.filter((t) => !loaded || info[t.sessionId]).map((t) => {
+  // todas as abas fechadas do projeto, da mais recente para a mais antiga (conversas com histórico primeiro pela data real)
+  const rows = p.tabs.filter((t) => !t.open && !t.archived).map((t) => {
     const i = info[t.sessionId];
-    return { t, ms: i ? i.mtime : t.closedAt || 0, sub: i ? i.last || i.title || '' : '' };
+    return { t, has: !!i, ms: i ? i.mtime : t.closedAt || 0, sub: i ? i.last || i.title || '' : '' };
   }).sort((a, b) => b.ms - a.ms);
-  const emptyN = loaded ? closedTabs.length - rows.length : 0;
-  const when = (r) => (r.ms ? agoText(r.ms) : 'sem mensagens ainda');
-  const line = (r, big) => `<div class="cl-row ${big ? 'cl-top' : ''}"><i class="cdot" style="background:${r.t.color}"></i>
-    <div class="cl-txt"><b>${esc(r.t.name)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</div>
-    <span class="cl-when">${when(r)}</span>
-    <button class="btn ${big ? 'pri' : 'sm'}" data-reopen2="${r.t.id}">${big ? 'Continuar' : 'Reabrir'}</button>
-    <button class="btn icon" data-archive2="${r.t.id}" title="Arquivar esta aba" aria-label="Arquivar">${ic('x', 14)}</button></div>`;
-  const list = rows.length
-    ? `<div class="cl-wrap"><div class="cl-h">Continuar de onde parou</div>${line(rows[0], true)}${rows.length > 1 ? `<div class="cl-h">Outros terminais fechados neste projeto</div>${rows.slice(1).map((r) => line(r, false)).join('')}` : ''}</div>`
+  // a lista tem que caber na tela sem rolagem: o número de linhas depende da altura disponível
+  const H = ($('#page') && $('#page').clientHeight) || 600;
+  const max = Math.max(2, Math.min(8, Math.floor((H - 330) / 56)));
+  const shown = rows.slice(0, 1 + max), rest = rows.length - shown.length;
+  const when = (r) => (r.has && r.ms ? agoText(r.ms) : r.ms ? `fechada ${agoText(r.ms)}` : 'sem mensagens');
+  const row = (r, top) => `<button class="cl-row ${top ? 'cl-top' : ''}" data-reopen2="${r.t.id}" title="Reabrir e retomar a conversa">
+    <i class="cdot" style="background:${r.t.color}"></i>
+    <span class="cl-txt"><b>${esc(r.t.name)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</span>
+    <span class="cl-when">${when(r)}</span>${top ? '<span class="cl-go">Continuar</span>' : ''}</button>`;
+  const list = shown.length
+    ? `<div class="cl-wrap"><div class="cl-h">Mais recente</div>${row(shown[0], true)}${shown.length > 1 ? `<div class="cl-h">Abertos antes neste projeto</div>${shown.slice(1).map((r) => row(r, false)).join('')}` : ''}${rest > 0 ? `<button class="cl-more" data-closedlist>e mais ${rest}…</button>` : ''}</div>`
     : '<p>Abra um terminal do Claude Code neste projeto.</p>';
-  const emptyLine = emptyN ? `<div class="cl-empty">${emptyN} ${emptyN > 1 ? 'abas fechadas nunca receberam' : 'aba fechada nunca recebeu'} mensagem <button class="btn sm" data-archive-empty="1">Arquivar ${emptyN > 1 ? 'vazias' : 'vazia'}</button></div>` : '';
-  return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}${emptyLine}<div class="row2"><button class="btn ${rows.length ? '' : 'pri'}" data-newtab="claude|n">+ Claude Code</button><button class="btn" data-impsess>Importar conversas da pasta…</button></div></div>`;
+  return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}<div class="row2"><button class="btn pri" data-newtab="claude|n">+ Terminal</button></div></div>`;
 }
 
 function renderPage() {
@@ -821,12 +820,6 @@ document.addEventListener('click', async (e) => {
     renderAll(); return;
   }
   if ((el = q('[data-reopen2]'))) { const p = curProject(); const t = p.tabs.find((x) => x.id === el.dataset.reopen2); if (t) { t.open = true; p.activeTab = t.id; save(); renderAll(); restartTab(p, t); } return; }
-  if ((el = q('[data-archive-empty]'))) {
-    const p = curProject(); const info = (UI.sessInfo && UI.sessInfo[p.id]) || {};
-    p.tabs.forEach((t) => { if (!t.open && !t.archived && !info[t.sessionId]) t.archived = true; });
-    save(); renderAll(); return;
-  }
-  if ((el = q('[data-archive2]'))) { const p = curProject(); const t = p.tabs.find((x) => x.id === el.dataset.archive2); if (t) { t.archived = true; save(); renderAll(); } return; }
   if ((el = q('[data-restart]'))) { UI.menu = null; renderMenu(); const f = findTab(el.dataset.restart); if (f) restartTab(f.p, f.tab); return; }
   if ((el = q('[data-newconv]'))) { const f = findTab(el.dataset.newconv); if (f) newConversation(f.p, f.tab); return; }
   if (q('[data-togact]')) { UI.actOpen = !UI.actOpen; UI.pop = false; renderTop(); renderPop(); tween('armW', armTarget()); return; }

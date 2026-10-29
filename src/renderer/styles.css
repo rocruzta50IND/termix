@@ -294,3 +294,9 @@ input[type=range]{accent-color:var(--accent);width:200px}
 .cl-txt small{color:var(--text3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cl-when{color:var(--text2);font-size:12px;white-space:nowrap}
 .cl-empty{display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--text3)}
+
+/* lista de terminais fechados: cada linha é um botão que reabre a conversa */
+button.cl-row{width:100%;text-align:left;cursor:pointer;color:inherit;font:inherit}
+.cl-go{padding:5px 14px;border-radius:99px;background:linear-gradient(135deg,#4f8dff,#2563eb);color:#fff;font-weight:600;font-size:12.5px;box-shadow:0 4px 16px rgba(59,130,246,.4)}
+.cl-more{align-self:flex-start;margin:2px 4px 0;color:var(--text3);font-size:12.5px;padding:4px 8px;border-radius:8px}
+.cl-more:hover{color:var(--text);background:var(--glass)}
