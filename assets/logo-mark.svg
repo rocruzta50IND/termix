@@ -1,27 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- marca do cabeçalho: mesma linguagem do ícone do app (fundo escuro, borda azul luminosa, prompt claro) -->
+  <!-- marca do cabeçalho: só o prompt, sem caixa, com brilho (o ícone do app e da barra de tarefas mantém o quadrado) -->
   <defs>
-    <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#22336a"/>
-      <stop offset="1" stop-color="#060914"/>
-    </linearGradient>
-    <radialGradient id="gl" gradientUnits="userSpaceOnUse" cx="14" cy="60" r="44">
-      <stop offset="0" stop-color="#3b6cff" stop-opacity=".5"/>
-      <stop offset="1" stop-color="#3b6cff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="r" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="62" y2="62">
-      <stop offset="0" stop-color="#a8d0ff"/>
-      <stop offset=".5" stop-color="#4b7bff"/>
-      <stop offset="1" stop-color="#22d3ee"/>
-    </linearGradient>
-    <linearGradient id="p" gradientUnits="userSpaceOnUse" x1="16" y1="18" x2="50" y2="48">
+    <linearGradient id="p" gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="58" y2="52">
       <stop offset="0" stop-color="#ffffff"/>
       <stop offset="1" stop-color="#7dd3fc"/>
     </linearGradient>
+    <filter id="b" filterUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><feGaussianBlur stdDeviation="2.6"/></filter>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#t)"/>
-  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#gl)"/>
-  <rect x="2.75" y="2.75" width="58.5" height="58.5" rx="16.25" fill="none" stroke="url(#r)" stroke-width="2"/>
-  <path d="M18 19l15 12-15 12" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M37 45h11" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round"/>
+  <g filter="url(#b)" opacity=".85">
+    <path d="M10 15l22 17-22 17" fill="none" stroke="#38bdf8" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M37 51h19" fill="none" stroke="#38bdf8" stroke-width="8.5" stroke-linecap="round"/>
+  </g>
+  <path d="M10 15l22 17-22 17" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37 51h19" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round"/>
 </svg>
