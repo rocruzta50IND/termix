@@ -16,6 +16,19 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-012 — Acompanhar a mudança do ID da sessão (/clear) para o Retomar não perder a conversa
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Média
+- **Objetivo:** confirmar como `/clear` e compactação mudam o ID da conversa e garantir que o "Retomar" do Termix use sempre o ID atual.
+- **Feito até agora:** verificado nos históricos reais (`~/.claude/projects`): `/clear` cria uma conversa nova (arquivo `.jsonl` novo, ID novo, hook `SessionStart:clear`); a compactação (`SessionStart:compact`) e o resume mantêm o ID. Antes da correção, a aba guardava o ID original e o Retomar voltava para a conversa de antes do `/clear`. Correção feita: o hook grava o `session_id` e o app atualiza o ID da aba quando ele muda.
+- **Decisões:** o hook grava `session_id` em todo evento (não só no `SessionStart`), para cobrir o caso de um evento ser sobrescrito antes da leitura; o app atualiza `tab.sessionId` e marca a aba como iniciada.
+- **Arquivos tocados:** `src/hook-wrapper.js`, `src/renderer/app.js`, `docs/TASKS.md`.
+- **Como validar:** `npm start`; abrir uma aba, enviar uma mensagem, dar `/clear`, enviar outra; fechar o app e reabrir: a aba deve retomar a conversa posterior ao `/clear`.
+- **Pendências:** nenhuma.
+- **Validada em:** 2026-10-29 (o usuário testou: a aba voltou na conversa posterior ao `/clear`). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-018 — Animação de abertura do app (MVP)
 
 - **Responsável:** DEV1
@@ -187,13 +200,6 @@ _Nenhuma no momento._
 - **Status:** BACKLOG
 - **Prioridade:** Média
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
-
-### TASK-012 — Verificar se o /clear muda o ID da sessão
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Média
-- **Objetivo:** confirmar o comportamento do ID da conversa após `/clear` e compactação, porque o "Retomar" do Termix depende do ID exato.
 
 ### TASK-013 — Gerenciar plugins, skills e MCPs pelo app
 

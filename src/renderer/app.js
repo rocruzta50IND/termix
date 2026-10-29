@@ -303,6 +303,8 @@ api.onHook(({ tabId, data }) => {
   const { p, tab } = f; const r = RT[tabId];
   if (data.t < r.spawnAt) return; // evento de uma execução anterior desta aba
   r.hooks = true;
+  // /clear cria uma conversa nova com outro ID; o Retomar precisa do ID atual (compactação e resume mantêm o ID)
+  if (data.session_id && data.session_id !== tab.sessionId) { tab.sessionId = data.session_id; tab.started = true; save(); }
   switch (data.event) {
     case 'UserPromptSubmit': case 'PostToolUse': setSt(tab, 'work'); break;
     case 'SessionStart': setSt(tab, 'wait'); break;

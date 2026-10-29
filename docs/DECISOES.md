@@ -27,7 +27,7 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Vários agentes na **mesma pasta**: sem proteção no MVP; só há o indicador "trabalhando / aguardando".
 
 ## Reiniciar e retomar
-- Reiniciar **retoma a conversa exata pelo ID**: `--session-id` na criação e `--resume <id>` depois.
+- Reiniciar **retoma a conversa exata pelo ID**: `--session-id` na criação e `--resume <id>` depois. O `/clear` dentro do terminal cria uma conversa nova com outro ID (compactação e resume mantêm o ID); o app acompanha o ID pelos hooks e atualiza a aba, para o Retomar voltar na conversa atual.
 - A retomada só é confirmada com **evidência** (processo vivo por cerca de 4 s).
 - Se falhar, a aba **continua** e o app oferece "Tentar de novo" ou "Nova conversa". **Nunca cria uma conversa nova em silêncio.**
 - Se o agente está trabalhando: "Aguardar finalizar e reiniciar" ou "Interromper e reiniciar".

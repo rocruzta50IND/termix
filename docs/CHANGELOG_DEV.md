@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-012 — ID da sessão após o /clear** (DEV1)
+
+- Verificado nos históricos do Claude Code: `/clear` cria conversa nova com outro ID; compactação e resume mantêm o ID. O hook agora grava o `session_id` e o app atualiza o ID da aba quando ele muda, então o Retomar volta na conversa posterior ao `/clear`. VALIDADA EM DEV1: o usuário testou e aprovou.
+
 **TASK-018 — Animação de abertura** (DEV1)
 
 - Tela de abertura com a logo pulsando cobre o carregamento e some em fade quando os terminais terminam de reabrir (mínimo ~0,9 s, teto de 8 s; respeita "reduzir movimento"). Documentada em `docs/DECISOES.md` e `docs/DESIGN.md`. VALIDADA EM DEV1: o usuário testou e aprovou.
