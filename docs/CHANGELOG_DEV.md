@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-014 — Novo ícone do Termix** (DEV1)
 
-- Marca simplificada no cabeçalho, ícone detalhado e versão de traço grosso para 16/32 px; `.ico` regenerado para a barra de tarefas.
+- Marca simplificada no cabeçalho, ícone detalhado em tema escuro (borda azul luminosa, abas coloridas, `>_` com brilho) e versão de traço grosso para 16/32 px; `.ico` regenerado para a barra de tarefas.
 - Em andamento, aguardando o usuário conferir na barra de tarefas.
 
 **TASK-002 — Corrigir retomada de aba que nunca recebeu mensagem** (DEV1)

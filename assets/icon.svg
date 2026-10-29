@@ -1,46 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7db6ff"/>
-      <stop offset=".5" stop-color="#3563e6"/>
-      <stop offset="1" stop-color="#16248a"/>
+      <stop offset="0" stop-color="#1d2c5c"/>
+      <stop offset=".5" stop-color="#0c1329"/>
+      <stop offset="1" stop-color="#04060e"/>
     </linearGradient>
-    <radialGradient id="hi" cx=".28" cy=".16" r=".7">
-      <stop offset="0" stop-color="#fff" stop-opacity=".5"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="64" cy="236" r="170">
+      <stop offset="0" stop-color="#3b6cff" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#3b6cff" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="glow2" gradientUnits="userSpaceOnUse" cx="226" cy="20" r="120">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="10" y1="10" x2="246" y2="246">
+      <stop offset="0" stop-color="#9cc8ff" stop-opacity=".95"/>
+      <stop offset=".45" stop-color="#4b7bff" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity=".55"/>
+    </linearGradient>
     <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".34"/>
+      <stop offset="0" stop-color="#fff" stop-opacity=".16"/>
       <stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="prompt" gradientUnits="userSpaceOnUse" x1="70" y1="100" x2="200" y2="200">
+    <linearGradient id="prompt" gradientUnits="userSpaceOnUse" x1="70" y1="104" x2="202" y2="204">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#c4e2ff"/>
+      <stop offset="1" stop-color="#7dd3fc"/>
     </linearGradient>
-    <filter id="blur" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256"><feGaussianBlur stdDeviation="9"/></filter>
-    <filter id="shadow" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0a1250" flood-opacity=".55"/></filter>
+    <filter id="blur" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256"><feGaussianBlur stdDeviation="10"/></filter>
   </defs>
 
   <rect x="10" y="10" width="236" height="236" rx="60" fill="url(#tile)"/>
-  <rect x="10" y="10" width="236" height="236" rx="60" fill="url(#hi)"/>
+  <rect x="10" y="10" width="236" height="236" rx="60" fill="url(#glow)"/>
+  <rect x="10" y="10" width="236" height="236" rx="60" fill="url(#glow2)"/>
 
-  <!-- barra de abas: três abas com as cores do app -->
-  <circle cx="56" cy="52" r="7" fill="#22d3ee"/>
-  <circle cx="80" cy="52" r="7" fill="#a78bfa"/>
-  <circle cx="104" cy="52" r="7" fill="#4ade80"/>
-  <path d="M34 78H222" stroke="#fff" stroke-opacity=".26" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- tela do terminal -->
+  <rect x="34" y="34" width="188" height="188" rx="38" fill="#070c1c" fill-opacity=".55" stroke="#8fb4ff" stroke-opacity=".14" stroke-width="1.5"/>
 
-  <!-- prompt: brilho por trás e traço por cima -->
-  <g filter="url(#blur)" opacity=".75">
-    <path d="M76 112l54 40-54 40" fill="none" stroke="#bfe3ff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M146 196h52" fill="none" stroke="#bfe3ff" stroke-width="24" stroke-linecap="round"/>
+  <!-- abas -->
+  <rect x="54" y="48" width="38" height="11" rx="5.5" fill="#60a5fa"/>
+  <rect x="98" y="48" width="38" height="11" rx="5.5" fill="#22d3ee" fill-opacity=".6"/>
+  <rect x="142" y="48" width="38" height="11" rx="5.5" fill="#a78bfa" fill-opacity=".6"/>
+  <path d="M54 72H202" stroke="#60a5fa" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- prompt com brilho -->
+  <g filter="url(#blur)" opacity=".8">
+    <path d="M78 112l52 38-52 38" fill="none" stroke="#38bdf8" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M146 192h50" fill="none" stroke="#38bdf8" stroke-width="22" stroke-linecap="round"/>
   </g>
-  <g filter="url(#shadow)">
-    <path d="M76 112l54 40-54 40" fill="none" stroke="url(#prompt)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M146 196h52" fill="none" stroke="url(#prompt)" stroke-width="22" stroke-linecap="round"/>
-  </g>
+  <path d="M78 112l52 38-52 38" fill="none" stroke="url(#prompt)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M146 192h50" fill="none" stroke="url(#prompt)" stroke-width="20" stroke-linecap="round"/>
 
-  <path d="M10 76a60 60 0 0 1 60-66h116a60 60 0 0 1 60 66v10C196 118 60 118 10 86z" fill="url(#gloss)"/>
-  <rect x="10.75" y="10.75" width="234.5" height="234.5" rx="59.25" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="1.5"/>
-  <rect x="14" y="14" width="228" height="228" rx="56" fill="none" stroke="#0a1250" stroke-opacity=".25" stroke-width="2"/>
+  <path d="M10 76a60 60 0 0 1 60-66h116a60 60 0 0 1 60 66v8C196 112 60 112 10 84z" fill="url(#gloss)"/>
+  <rect x="11" y="11" width="234" height="234" rx="59" fill="none" stroke="url(#rim)" stroke-width="2.5"/>
 </svg>

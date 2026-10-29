@@ -1,21 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- marca do cabeçalho: mesma linguagem do ícone do app (fundo escuro, borda azul luminosa, prompt claro) -->
   <defs>
     <linearGradient id="t" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#5b9dff"/>
-      <stop offset="1" stop-color="#1d3fae"/>
+      <stop offset="0" stop-color="#22336a"/>
+      <stop offset="1" stop-color="#060914"/>
     </linearGradient>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".38"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    <radialGradient id="gl" gradientUnits="userSpaceOnUse" cx="14" cy="60" r="44">
+      <stop offset="0" stop-color="#3b6cff" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#3b6cff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="r" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="62" y2="62">
+      <stop offset="0" stop-color="#a8d0ff"/>
+      <stop offset=".5" stop-color="#4b7bff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
     </linearGradient>
-    <linearGradient id="p" gradientUnits="userSpaceOnUse" x1="17" y1="20" x2="50" y2="48">
+    <linearGradient id="p" gradientUnits="userSpaceOnUse" x1="16" y1="18" x2="50" y2="48">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#bfe3ff"/>
+      <stop offset="1" stop-color="#7dd3fc"/>
     </linearGradient>
   </defs>
   <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#t)"/>
-  <path d="M2 24A17 17 0 0 1 19 2h26a17 17 0 0 1 17 17v6C44 36 20 36 2 26z" fill="url(#g)"/>
-  <rect x="2.5" y="2.5" width="59" height="59" rx="16.5" fill="none" stroke="#fff" stroke-opacity=".35"/>
-  <path d="M19 22l15 11-15 11" fill="none" stroke="url(#p)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M38 46h10" fill="none" stroke="url(#p)" stroke-width="7" stroke-linecap="round"/>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#gl)"/>
+  <rect x="2.75" y="2.75" width="58.5" height="58.5" rx="16.25" fill="none" stroke="url(#r)" stroke-width="2"/>
+  <path d="M18 19l15 12-15 12" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M37 45h11" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round"/>
 </svg>
