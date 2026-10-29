@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-005 — Controles da janela e menus das abas** (DEV1)
+
+- Testados por cliques reais, sem defeitos e sem mudança de código: minimizar, maximizar/restaurar, arrastar o cabeçalho, fechar (com a confirmação de sessões ativas) e, no menu da aba, duplicar, exportar texto, fechar à direita e fechar outras. VALIDADA EM DEV1: o usuário aprovou.
+
 **TASK-012 — ID da sessão após o /clear** (DEV1)
 
 - Verificado nos históricos do Claude Code: `/clear` cria conversa nova com outro ID; compactação e resume mantêm o ID. O hook agora grava o `session_id` e o app atualiza o ID da aba quando ele muda, então o Retomar volta na conversa posterior ao `/clear`. VALIDADA EM DEV1: o usuário testou e aprovou.

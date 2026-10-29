@@ -16,6 +16,19 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-005 — Validar controles da janela e menus das abas
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Média (MVP)
+- **Objetivo:** testar com cliques minimizar/maximizar/fechar, arrastar o header, e as ações duplicar, exportar texto e "fechar outras/à direita" do menu de botão direito.
+- **Feito até agora:** testado por cliques reais (CDP + automação do Windows), sem encontrar defeito. Controles da janela: minimizar (janela iconificada e restaurada), maximizar e restaurar (ícone e dica alternam, tamanho muda), arrastar pelo espaço vazio do cabeçalho (a janela acompanhou o mouse) e fechar (com sessões ativas abre a confirmação: "Cancelar" mantém o app aberto, "Encerrar tudo e sair" fecha). Menu de botão direito da aba: Duplicar (cria "Aba B (2)" logo depois da original), Exportar texto (diálogo de salvar abre e grava o arquivo com o conteúdo do terminal), Fechar guias à direita e Fechar outras guias (fecham as abas certas; ficam desabilitados quando não há o que fechar).
+- **Decisões:** teste visual via CDP (`--remote-debugging-port`) numa instância isolada (`--user-data-dir` próprio, estado semeado), para não mexer nas abas reais do usuário; nenhuma alteração de código foi necessária.
+- **Arquivos tocados:** `docs/TASKS.md`, `docs/CHANGELOG_DEV.md` (nenhum arquivo de código).
+- **Como validar:** `npm start`; clicar em minimizar/maximizar/restaurar/fechar, arrastar o cabeçalho, e no menu de botão direito de uma aba testar duplicar, exportar texto, fechar outras e fechar à direita.
+- **Pendências:** nenhuma.
+- **Validada em:** 2026-10-29 (o usuário aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-012 — Acompanhar a mudança do ID da sessão (/clear) para o Retomar não perder a conversa
 
 - **Responsável:** DEV1
@@ -150,13 +163,6 @@ _Nenhuma no momento._
 _Nenhuma no momento._
 
 ## Backlog
-
-### TASK-005 — Validar controles da janela e menus das abas
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Média (MVP)
-- **Objetivo:** testar com cliques minimizar/maximizar/fechar, arrastar o header, e as ações duplicar, exportar texto e "fechar outras/à direita" do menu de botão direito.
 
 ### TASK-006 — Personalização de cores e temas
 
