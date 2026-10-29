@@ -8,6 +8,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-015 — Botão de reiniciar discreto e barras de rolagem finas
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Média
+- **Objetivo:** o botão Reiniciar/Retomar vira só um ícone sutil (com dica ao passar o mouse); as barras de rolagem de todo o app ficam finas, transparentes e recuadas das bordas arredondadas, sem passar da moldura.
+- **Feito até agora:** botão `.btn.icon` (gira enquanto reinicia); barras do navegador estilizadas (trilho recuado 18 px, thumb de 4 px de borda) e barra do xterm colorida pelo tema (`scrollbarSlider*`) e estreita por CSS.
+- **Decisões:** o texto do botão passa para o `title` e `aria-label`; o menu de botão direito da aba continua com "Reiniciar com a conversa atual".
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/styles.css`.
+- **Como validar:** abrir uma página longa (Configurações com janela pequena) e um terminal com histórico e ver se a barra fica dentro das bordas.
+- **Pendências:** aguardando o usuário conferir.
+- **Próximo passo:** ajustes de espessura/cor da barra se o usuário pedir.
+
 ### TASK-014 — Novo ícone do Termix (cabeçalho, janela e barra de tarefas)
 
 - **Responsável:** DEV1

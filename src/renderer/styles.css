@@ -268,3 +268,17 @@ input[type=range]{accent-color:var(--accent);width:200px}
 /* aba sendo arrastada */
 #tabsRow .tab{transition:transform .16s ease,background .15s}
 #tabsRow .tab.dragging{transition:none;z-index:6;cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.5);filter:brightness(1.12)}
+
+/* botão de reiniciar: só o ícone, discreto */
+.btn.icon{width:30px;height:30px;padding:0;border-radius:50%;background:transparent;border-color:transparent;color:var(--text3)}
+.btn.icon:hover{background:var(--glass2);border-color:var(--border);color:var(--text)}
+.btn.icon.spin svg{animation:spin .8s linear infinite}
+
+/* barras de rolagem: finas, transparentes e recuadas das bordas arredondadas */
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:transparent;margin:18px 0}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:99px;border:4px solid transparent;background-clip:padding-box;min-height:36px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.3);background-clip:padding-box}
+::-webkit-scrollbar-corner{background:transparent}
+.xterm .xterm-scrollable-element > .scrollbar.vertical{margin:6px 0}
+.xterm .xterm-scrollable-element > .scrollbar.vertical > .slider{width:6px!important;left:4px!important;border-radius:99px}

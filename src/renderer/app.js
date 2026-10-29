@@ -94,7 +94,7 @@ const pending = () => UI.events.filter((e) => !e.done).length;
 
 /* ---------- terminais ---------- */
 function termTheme() {
-  return { background: 'rgba(0,0,0,0)', foreground: '#dcd9ee', cursor: '#8B7BFF', selectionBackground: 'rgba(139,123,255,.35)' };
+  return { background: 'rgba(0,0,0,0)', foreground: '#dcd9ee', cursor: '#8B7BFF', selectionBackground: 'rgba(139,123,255,.35)', scrollbarSliderBackground: 'rgba(255,255,255,.14)', scrollbarSliderHoverBackground: 'rgba(255,255,255,.28)', scrollbarSliderActiveBackground: 'rgba(255,255,255,.38)' };
 }
 
 function ensureRT(tab) {
@@ -400,7 +400,7 @@ function renderTabs() {
       ${closed ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
       <span class="state"><i class="dot ${sc}"></i>${sl}</span>
       ${st === 'fail' ? `<button class="btn sm" data-newconv="${cur.id}">Nova conversa</button>` : ''}
-      <button class="btn sm" data-restart="${cur.id}" ${st === 'restart' ? 'disabled' : ''}>${ic('refresh', 13)} ${st === 'end' ? 'Retomar' : st === 'fail' ? 'Tentar de novo' : 'Reiniciar'}</button>
+      <button class="btn icon ${st === 'restart' ? 'spin' : ''}" data-restart="${cur.id}" ${st === 'restart' ? 'disabled' : ''} title="${st === 'end' ? 'Retomar a conversa' : st === 'fail' ? 'Tentar de novo' : 'Reiniciar com a conversa atual'}" aria-label="Reiniciar">${ic('refresh', 15)}</button>
     </div>`;
 }
 

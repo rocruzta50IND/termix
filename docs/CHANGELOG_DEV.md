@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-015 — Botão de reiniciar discreto e barras de rolagem finas** (DEV1)
+
+- Reiniciar/Retomar virou só um ícone; barras de rolagem finas e recuadas das bordas, inclusive a do terminal. Aguarda conferência do usuário.
+
 **TASK-014 — Novo ícone do Termix** (DEV1)
 
 - Marca simplificada no cabeçalho, ícone detalhado em tema escuro (borda azul luminosa, abas coloridas, `>_` com brilho) e versão de traço grosso para 16/32 px; `.ico` regenerado para a barra de tarefas.
