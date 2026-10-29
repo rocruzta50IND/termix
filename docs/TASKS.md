@@ -8,6 +8,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-016 — Tela "nenhum terminal aberto" com as abas fechadas do projeto
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Média
+- **Objetivo:** quando um projeto não tem terminal aberto (por exemplo, depois de fechar o app e encerrar as sessões), a tela lista as abas fechadas do projeto, a mais recente em destaque com "há X s/min/h", para continuar de onde parou.
+- **Feito até agora:** `noTermHTML` em `app.js`: card "Continuar de onde parou" (mais recente) e lista "Outros terminais fechados"; tempo vem da data do histórico da conversa (`sessions:scan`), com `closedAt` como reserva; abas que nunca receberam mensagem viram um resumo com "Arquivar vazias"; botões Continuar/Reabrir/Arquivar e "Importar conversas da pasta…"; tempo relativo atualizado a cada 15 s; corrigido o centro da tela vazia que cortava listas longas.
+- **Decisões:** abas sem histórico não entram na lista (são ruído); arquivar é ação explícita e nada é apagado.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/styles.css`.
+- **Como validar:** fechar todas as abas de um projeto com conversas e ver a tela; clicar em Continuar deve reabrir e retomar a conversa.
+- **Pendências:** aguardando o usuário testar com projetos reais; não testei arquivar nem "Importar conversas" a partir dessa tela.
+- **Próximo passo:** ajustes de texto e visual que o usuário pedir.
+
 ### TASK-015 — Botão de reiniciar discreto e barras de rolagem finas
 
 - **Responsável:** DEV1

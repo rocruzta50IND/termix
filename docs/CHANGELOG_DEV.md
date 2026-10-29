@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-016 — Tela "nenhum terminal aberto" com as abas fechadas** (DEV1)
+
+- Mostra a conversa mais recente em destaque ("há X"), as outras abas fechadas do projeto e um resumo das abas vazias. Aguarda teste do usuário.
+
 **TASK-015 — Botão de reiniciar discreto e barras de rolagem finas** (DEV1)
 
 - Reiniciar/Retomar virou só um ícone; barras de rolagem finas e recuadas das bordas, inclusive a do terminal. Aguarda conferência do usuário.

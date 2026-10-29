@@ -208,7 +208,7 @@ body.maxed .shadow{filter:none}
 .ev p{color:var(--text2);margin:4px 0 0;font-size:13px;user-select:text}
 .ev .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .ev.done{opacity:.5}
-.empty{padding:40px 28px;text-align:center;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:14px;justify-content:center;height:100%}
+.empty{padding:40px 28px;text-align:center;color:var(--text3);display:flex;flex-direction:column;align-items:center;gap:14px;justify-content:safe center;min-height:100%}
 .empty h2{color:var(--text);font-size:20px}
 .empty .row2{display:flex;gap:10px}
 
@@ -282,3 +282,15 @@ input[type=range]{accent-color:var(--accent);width:200px}
 ::-webkit-scrollbar-corner{background:transparent}
 .xterm .xterm-scrollable-element > .scrollbar.vertical{margin:6px 0}
 .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider{width:6px!important;left:4px!important;border-radius:99px}
+
+/* tela "nenhum terminal aberto": abas fechadas do projeto */
+.cl-wrap{width:min(620px,100%);display:flex;flex-direction:column;gap:8px;text-align:left}
+.cl-h{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin:10px 4px 0}
+.cl-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--border)}
+.cl-row:hover{background:rgba(255,255,255,.07)}
+.cl-row.cl-top{padding:14px 16px;background:linear-gradient(135deg,rgba(91,157,255,.14),rgba(255,255,255,.04));border-color:rgba(91,157,255,.4)}
+.cl-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cl-txt b{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-txt small{color:var(--text3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-when{color:var(--text2);font-size:12px;white-space:nowrap}
+.cl-empty{display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--text3)}

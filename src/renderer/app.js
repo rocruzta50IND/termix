@@ -457,11 +457,45 @@ function confHTML() {
     <div class="card">${arch.length ? arch.map((p) => `<div class="lrow"><span class="nm">${esc(p.name)}<br><span class="meta">${esc(p.path)}</span></span><button class="btn sm" data-unarchive="${p.id}">Restaurar</button></div>`).join('') : '<span class="meta">Nenhum projeto arquivado.</span>'}</div></div>`;
 }
 
+// quando cada conversa foi usada pela última vez: vem da data do histórico em disco; sem histórico, de quando a aba foi fechada
+async function loadSessInfo(p) {
+  UI.sessInfoAt = UI.sessInfoAt || {};
+  if (Date.now() - (UI.sessInfoAt[p.id] || 0) < 10000) return;
+  UI.sessInfoAt[p.id] = Date.now();
+  const list = await api.scanSessions(p.path);
+  UI.sessInfo = UI.sessInfo || {};
+  UI.sessInfo[p.id] = Object.fromEntries(list.map((s) => [s.id, s]));
+  if (mode() === 'noterm' && curProject() && curProject().id === p.id) renderPage();
+}
+function noTermHTML(p) {
+  loadSessInfo(p);
+  const info = (UI.sessInfo && UI.sessInfo[p.id]) || {};
+  const closedTabs = p.tabs.filter((t) => !t.open && !t.archived);
+  const loaded = UI.sessInfo && UI.sessInfo[p.id];
+  // só entram na lista as abas que têm conversa gravada; as que nunca receberam mensagem viram um resumo à parte
+  const rows = closedTabs.filter((t) => !loaded || info[t.sessionId]).map((t) => {
+    const i = info[t.sessionId];
+    return { t, ms: i ? i.mtime : t.closedAt || 0, sub: i ? i.last || i.title || '' : '' };
+  }).sort((a, b) => b.ms - a.ms);
+  const emptyN = loaded ? closedTabs.length - rows.length : 0;
+  const when = (r) => (r.ms ? agoText(r.ms) : 'sem mensagens ainda');
+  const line = (r, big) => `<div class="cl-row ${big ? 'cl-top' : ''}"><i class="cdot" style="background:${r.t.color}"></i>
+    <div class="cl-txt"><b>${esc(r.t.name)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ''}</div>
+    <span class="cl-when">${when(r)}</span>
+    <button class="btn ${big ? 'pri' : 'sm'}" data-reopen2="${r.t.id}">${big ? 'Continuar' : 'Reabrir'}</button>
+    <button class="btn icon" data-archive2="${r.t.id}" title="Arquivar esta aba" aria-label="Arquivar">${ic('x', 14)}</button></div>`;
+  const list = rows.length
+    ? `<div class="cl-wrap"><div class="cl-h">Continuar de onde parou</div>${line(rows[0], true)}${rows.length > 1 ? `<div class="cl-h">Outros terminais fechados neste projeto</div>${rows.slice(1).map((r) => line(r, false)).join('')}` : ''}</div>`
+    : '<p>Abra um terminal do Claude Code neste projeto.</p>';
+  const emptyLine = emptyN ? `<div class="cl-empty">${emptyN} ${emptyN > 1 ? 'abas fechadas nunca receberam' : 'aba fechada nunca recebeu'} mensagem <button class="btn sm" data-archive-empty="1">Arquivar ${emptyN > 1 ? 'vazias' : 'vazia'}</button></div>` : '';
+  return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}${emptyLine}<div class="row2"><button class="btn ${rows.length ? '' : 'pri'}" data-newtab="claude|n">+ Claude Code</button><button class="btn" data-impsess>Importar conversas da pasta…</button></div></div>`;
+}
+
 function renderPage() {
   const m = mode();
   let html = '';
   if (m === 'empty') html = emptyHTML();
-  else if (m === 'noterm') html = `<div class="empty"><h2>Nenhum terminal aberto</h2><p>Abra um terminal do Claude Code neste projeto.</p><div class="row2"><button class="btn pri" data-newtab="claude|n">+ Claude Code</button></div></div>`;
+  else if (m === 'noterm') html = noTermHTML(curProject());
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML }[UI.cur.page]();
   else if (m === 'page') html = resPageHTML(UI.cur.page);
   $('#page').innerHTML = html;
@@ -559,8 +593,10 @@ async function importFlow() {
 }
 
 function agoText(ms) {
-  const m = Math.max(0, Math.round((Date.now() - ms) / 60000));
-  if (m < 1) return 'agora';
+  const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  if (s < 5) return 'agora';
+  if (s < 60) return `há ${s} s`;
+  const m = Math.round(s / 60);
   if (m < 60) return `há ${m} min`;
   const h = Math.round(m / 60);
   if (h < 48) return `há ${h} h`;
@@ -640,7 +676,8 @@ async function closeTab(p, tab) {
     if (c.value !== 'ok') return;
   }
   await stopProc(tab);
-  tab.open = false; tab.live = false;
+  tab.open = false; tab.live = false; tab.closedAt = Date.now();
+  if (UI.sessInfoAt) UI.sessInfoAt[p.id] = 0; // a data da conversa pode ter mudado
   if (RT[tab.id]) { RT[tab.id].term.dispose(); RT[tab.id].el.remove(); delete RT[tab.id]; }
   if (p.activeTab === tab.id) p.activeTab = (openTabs(p)[0] || {}).id || null;
   save(); sendSummary(); renderAll();
@@ -783,6 +820,13 @@ document.addEventListener('click', async (e) => {
     if (pg === 'Integrações') UI.env = null;
     renderAll(); return;
   }
+  if ((el = q('[data-reopen2]'))) { const p = curProject(); const t = p.tabs.find((x) => x.id === el.dataset.reopen2); if (t) { t.open = true; p.activeTab = t.id; save(); renderAll(); restartTab(p, t); } return; }
+  if ((el = q('[data-archive-empty]'))) {
+    const p = curProject(); const info = (UI.sessInfo && UI.sessInfo[p.id]) || {};
+    p.tabs.forEach((t) => { if (!t.open && !t.archived && !info[t.sessionId]) t.archived = true; });
+    save(); renderAll(); return;
+  }
+  if ((el = q('[data-archive2]'))) { const p = curProject(); const t = p.tabs.find((x) => x.id === el.dataset.archive2); if (t) { t.archived = true; save(); renderAll(); } return; }
   if ((el = q('[data-restart]'))) { UI.menu = null; renderMenu(); const f = findTab(el.dataset.restart); if (f) restartTab(f.p, f.tab); return; }
   if ((el = q('[data-newconv]'))) { const f = findTab(el.dataset.newconv); if (f) newConversation(f.p, f.tab); return; }
   if (q('[data-togact]')) { UI.actOpen = !UI.actOpen; UI.pop = false; renderTop(); renderPop(); tween('armW', armTarget()); return; }
@@ -979,3 +1023,5 @@ function endTabDrag() {
 }
 document.addEventListener('pointerup', endTabDrag);
 document.addEventListener('pointercancel', endTabDrag);
+
+setInterval(() => { if (mode() === 'noterm') renderPage(); }, 15000);
