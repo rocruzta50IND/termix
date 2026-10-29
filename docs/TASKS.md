@@ -8,24 +8,26 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-002 — Corrigir retomada de aba que nunca recebeu mensagem
-
-- **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
-- **Prioridade:** Alta
-- **Objetivo:** a primeira aba mostrava "No conversation found with session ID …" ao reabrir o app, porque o Claude Code só grava o histórico depois da primeira mensagem e o app tentava `--resume` num ID sem histórico.
-- **Feito até agora:** o app confere se o histórico da conversa existe (`session:exists`) antes de usar `--resume`; se não existir, abre a mesma conversa com `--session-id`.
-- **Decisões:** não criar conversa nova com outro ID; reaproveitar o ID da aba, que ainda está vazio.
-- **Arquivos tocados:** `src/main.js`, `src/preload.js`, `src/renderer/app.js`.
-- **Como validar:** criar uma aba, fechar o app sem enviar nada, reabrir e restaurar a sessão: não deve aparecer o erro.
-- **Pendências:** aguardando o teste do usuário.
-- **Próximo passo:** o usuário testa; se ok, marcar VALIDADA EM DEV1.
+_Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
 _Nenhuma no momento._
 
 ## Validadas em DEV1
+
+### TASK-002 — Corrigir retomada de aba que nunca recebeu mensagem
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Alta
+- **Objetivo:** a primeira aba mostrava "No conversation found with session ID …" ao reabrir o app, porque o Claude Code só grava o histórico depois da primeira mensagem e o app tentava `--resume` num ID sem histórico.
+- **Feito até agora:** o app confere se o histórico da conversa existe (`session:exists`) antes de usar `--resume`; se não existir, abre a mesma conversa com `--session-id`.
+- **Decisões:** não criar conversa nova com outro ID; reaproveitar o ID da aba, que ainda está vazio.
+- **Arquivos tocados:** `src/main.js`, `src/preload.js`, `src/renderer/app.js`.
+- **Como validar:** criar uma aba, fechar o app sem enviar nada, reabrir e restaurar a sessão: não deve aparecer o erro.
+- **Pendências:** nenhuma.
+- **Validada em:** 2026-10-29 (o usuário testou e aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-003 — Detecção confiável de "trabalhando / aguardando" com hooks do Claude Code
 

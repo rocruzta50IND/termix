@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-002 — Retomada de aba que nunca recebeu mensagem** (DEV1)
+
+- VALIDADA EM DEV1: o usuário testou e aprovou (sem o erro "No conversation found" ao reabrir uma aba vazia).
+
 **TASK-003 — Estado das abas pelos hooks do Claude Code** (DEV1)
 
 - Trabalhando/aguardando agora vem dos hooks (SessionStart, UserPromptSubmit, PostToolUse, Notification, Stop), com a heurística de 2,5 s só como reserva. VALIDADA EM DEV1: o usuário testou e aprovou.
