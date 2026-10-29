@@ -108,7 +108,7 @@ function ensureRT(tab) {
   const el = document.createElement('div');
   el.className = 'tview';
   $('#termHost').appendChild(el);
-  const r = (RT[tab.id] = { term, fit, el, opened: false, alive: false, st: 'end', lastData: 0, lastInput: 0, spawnAt: 0, evidence: false, killing: false, waiter: null });
+  const r = (RT[tab.id] = { term, fit, el, opened: false, alive: false, st: 'end', hooks: false, lastData: 0, lastInput: 0, spawnAt: 0, evidence: false, killing: false, waiter: null });
   term.onData((d) => { r.lastInput = Date.now(); api.write(tab.id, d); });
   term.onResize(({ cols, rows }) => api.resize(tab.id, cols, rows));
   return r;
@@ -165,7 +165,7 @@ async function launch(p, tab, mode) {
   const r = ensureRT(tab);
   // aba criada mas nunca usada: não há histórico para retomar (o Claude diria "No conversation found"); abre a mesma conversa vazia
   if (mode === 'resume' && !(await api.sessionExists(p.path, tab.sessionId))) mode = 'new';
-  r.alive = true; r.killing = false; r.evidence = false; r.spawnAt = Date.now(); r.lastData = 0;
+  r.alive = true; r.killing = false; r.evidence = false; r.hooks = false; r.spawnAt = Date.now(); r.lastData = 0;
   setSt(tab, mode === 'resume' ? 'restart' : 'work');
   const args = mode === 'resume' ? ['--resume', tab.sessionId] : ['--session-id', tab.sessionId, '--name', tab.name];
   if (tab.perm === 'd') args.push('--dangerously-skip-permissions');
@@ -235,7 +235,7 @@ api.onData(({ tabId, data }) => {
   r.term.write(data);
   const now = Date.now();
   r.lastData = now;
-  if (r.st === 'wait' && now - r.lastInput > 500) setSt(f.tab, 'work');
+  if (!r.hooks && r.st === 'wait' && now - r.lastInput > 500) setSt(f.tab, 'work');
 });
 
 api.onExit(({ tabId, code }) => {
@@ -273,14 +273,37 @@ function onMetric({ tabId, data }) {
 api.onMetrics(onMetric);
 setInterval(() => { renderTop(); }, 30000); // atualiza "renova em" e "atualizado há"
 
-// heurística: sem saída por 2,5 s = aguardando você (a validar contra o comportamento real da ferramenta)
+// estado da aba pelos hooks do Claude Code (exato). Sem hooks (node ausente ou hooks bloqueados), vale a heurística abaixo.
+const tabVisible = (p, tab) => UI.cur.p === p.id && UI.cur.page === 'Terminais' && curTab(p) && curTab(p).id === tab.id;
+api.onHook(({ tabId, data }) => {
+  const f = findTab(tabId);
+  if (!f || !RT[tabId] || !RT[tabId].alive) return;
+  const { p, tab } = f; const r = RT[tabId];
+  if (data.t < r.spawnAt) return; // evento de uma execução anterior desta aba
+  r.hooks = true;
+  switch (data.event) {
+    case 'UserPromptSubmit': case 'PostToolUse': setSt(tab, 'work'); break;
+    case 'SessionStart': setSt(tab, 'wait'); break;
+    case 'Stop':
+      setSt(tab, 'wait');
+      if (!tabVisible(p, tab)) addEvent({ c: tab.color, who: tab.name, msg: 'Terminou · aguarda você' });
+      break;
+    case 'Notification':
+      setSt(tab, 'wait');
+      if (!tabVisible(p, tab)) addEvent({ c: tab.color, who: tab.name, msg: data.message || 'Precisa da sua atenção' });
+      break;
+  }
+});
+
+// heurística de reserva: sem saída por 2,5 s = aguardando você. Com hooks, só cobre o caso de interrupção
+// (Esc não dispara o Stop): 20 s de silêncio total.
 setInterval(() => {
   for (const { p, tab } of aliveTabs()) {
     const r = RT[tab.id];
-    if (r.st === 'work' && Date.now() - r.lastData > 2500 && Date.now() - r.spawnAt > 2500) {
+    const quiet = r.hooks ? 20000 : 2500;
+    if (r.st === 'work' && Date.now() - r.lastData > quiet && Date.now() - r.spawnAt > 2500) {
       setSt(tab, 'wait');
-      const visible = UI.cur.p === p.id && UI.cur.page === 'Terminais' && curTab(p) && curTab(p).id === tab.id;
-      if (!visible) addEvent({ c: tab.color, who: tab.name, msg: 'Terminou · aguarda você' });
+      if (!tabVisible(p, tab)) addEvent({ c: tab.color, who: tab.name, msg: 'Terminou · aguarda você' });
     }
   }
 }, 700);

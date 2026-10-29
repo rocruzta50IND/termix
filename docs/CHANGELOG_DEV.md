@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-003 — Estado das abas pelos hooks do Claude Code** (DEV1)
+
+- Trabalhando/aguardando agora vem dos hooks (SessionStart, UserPromptSubmit, PostToolUse, Notification, Stop), com a heurística de 2,5 s só como reserva. Aguarda teste do usuário.
+
 **TASK-019 — Restaurar sozinho os terminais abertos ao reabrir** (DEV1)
 
 - Ao abrir, as abas que estavam abertas voltam sozinhas, uma de cada vez (a ativa primeiro), retomando a conversa. O aviso "N sessões estavam ativas" foi removido. Decisão atualizada em `docs/DECISOES.md`. VALIDADA EM DEV1: o usuário testou e aprovou.

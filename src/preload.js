@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('termix', {
   kill: (tabId) => ipcRenderer.send('pty:kill', { tabId }),
   onData: (fn) => ipcRenderer.on('pty:data', (_e, m) => fn(m)),
   onExit: (fn) => ipcRenderer.on('pty:exit', (_e, m) => fn(m)),
+  onHook: (fn) => ipcRenderer.on('hook:event', (_e, m) => fn(m)),
   onMetrics: (fn) => ipcRenderer.on('metrics:update', (_e, m) => fn(m)),
   allMetrics: () => ipcRenderer.invoke('metrics:all'),
 

@@ -52,6 +52,7 @@ function findInPath(names) {
 }
 
 const METRICS_DIR = () => path.join(app.getPath('userData'), 'metrics');
+const HOOK = () => path.join(__dirname, 'hook-wrapper.js').replace(/\\/g, '/');
 const WRAPPER = () => path.join(__dirname, 'statusline-wrapper.js').replace(/\\/g, '/');
 
 function slug(name) {
@@ -171,7 +172,11 @@ ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
     const extra = [];
     if (findInPath(['node.exe', 'node.cmd'])) {
       const cmd = `node "${WRAPPER()}"`;
-      extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd } }));
+      // hooks: o Claude Code avisa quando começa a trabalhar, termina ou pede atenção (somam-se aos hooks do usuário)
+      const hook = { hooks: [{ type: 'command', command: `node "${HOOK()}"` }] };
+      const hooks = {};
+      for (const ev of ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Notification', 'Stop']) hooks[ev] = [hook];
+      extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd }, hooks }));
     }
     const finalArgs = [...args, ...extra];
     const fullArgs = isCmd ? ['/c', claude, ...finalArgs] : finalArgs;
@@ -359,6 +364,22 @@ function pollMetrics() {
   }
 }
 
+// eventos dos hooks: leitura rápida (300 ms) para o estado da aba reagir quase na hora
+const hookSeen = new Map();
+function pollHooks() {
+  if (!win || win.isDestroyed()) return;
+  let files = [];
+  try { files = fs.readdirSync(METRICS_DIR()).filter((f) => f.startsWith('hook-') && f.endsWith('.json')); } catch { return; }
+  for (const f of files) {
+    const full = path.join(METRICS_DIR(), f);
+    let st; try { st = fs.statSync(full); } catch { continue; }
+    if (hookSeen.get(f) === st.mtimeMs) continue;
+    hookSeen.set(f, st.mtimeMs);
+    const data = readJson(full);
+    if (data && Date.now() - data.t < 60000) win.webContents.send('hook:event', { tabId: f.slice(5, -5), data });
+  }
+}
+
 // instantâneo das métricas já gravadas: a interface pede ao iniciar, para não perder o que chegou antes de estar pronta
 ipcMain.handle('metrics:all', () => {
   let files = [];
@@ -368,6 +389,6 @@ ipcMain.handle('metrics:all', () => {
 
 /* ---------- ciclo de vida ---------- */
 app.setAppUserModelId('com.termix.app');
-app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); });
+app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); });
 app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
 ipcMain.on('app:relaunch', () => { wantRelaunch = true; if (win && !win.isDestroyed()) win.close(); });

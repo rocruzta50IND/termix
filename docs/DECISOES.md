@@ -51,7 +51,7 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Gerenciá-los pelo app é uma ideia que o usuário quer, **pós-MVP** (TASK-013).
 
 ## Estado "trabalhando / aguardando"
-- Hoje é uma **estimativa**: sem saída por 2,5 s = aguardando. Vai ser trocada por hooks do Claude Code (TASK-003). Enquanto isso, o pulso da aba e os avisos podem errar.
+- Vem dos **hooks do Claude Code** (TASK-003): prompt enviado = trabalhando; terminou ou pediu atenção = aguardando. Sem hooks, vale a estimativa antiga (sem saída por 2,5 s); com hooks, 20 s de silêncio cobrem a interrupção com Esc.
 
 ## Dados e ambiente
 - Dados salvos em `%APPDATA%\Termix` (`state.json`, gravado de forma atômica, e `metrics\`). O app se chamava Vitra: na primeira abertura os dados da pasta antiga são copiados.
