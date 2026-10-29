@@ -23,21 +23,22 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+_Nenhuma no momento._
+
+## Validadas em DEV1
+
 ### TASK-003 — Detecção confiável de "trabalhando / aguardando" com hooks do Claude Code
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Status:** VALIDADA EM DEV1
 - **Prioridade:** Alta
 - **Objetivo:** trocar a estimativa por tempo sem saída (2,5 s) pelos hooks do Claude Code, injetados por sessão como a status line. É a base do pulso da aba e das notificações.
 - **Feito até agora:** `src/hook-wrapper.js` grava o último evento em `metrics/hook-<aba>.json`; `pty:spawn` injeta os hooks `SessionStart`, `UserPromptSubmit`, `PostToolUse`, `Notification` e `Stop` via `--settings` (somam-se aos hooks do usuário); o main lê a cada 300 ms e envia `hook:event`; `app.js` muda o estado: prompt enviado/ferramenta rodou = trabalhando; iniciou/terminou/pediu atenção = aguardando, com evento no painel quando a aba não está visível.
 - **Decisões:** a heurística antiga continua como reserva (sem hooks, 2,5 s); com hooks ativos vira só proteção contra interrupção com Esc (que não dispara o Stop): 20 s de silêncio total. `PostToolUse` volta a aba para "trabalhando" depois que uma permissão é aprovada.
 - **Arquivos tocados:** `src/hook-wrapper.js`, `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `package.json`.
 - **Como validar:** `npm start`; em uma aba, enviar um prompt: o ponto vira "Trabalhando" na hora e volta a "Aguardando você" quando a resposta termina (sem esperar 2,5 s). Pedir algo que exija permissão: deve ficar "Aguardando você"; aprovar: volta a "Trabalhando". Com outra aba em foco, o aviso "Terminou" aparece no painel. Apertar Esc no meio de uma resposta: volta a "Aguardando" em até ~20 s.
-- **Pendências:** teste do usuário no app real (só a sintaxe e o gravador de eventos foram testados aqui).
-- **Próximo passo:** o usuário testa; se ok, VALIDADA EM DEV1 e seguir para a TASK-004.
-
-
-## Validadas em DEV1
+- **Pendências:** nenhuma.
+- **Validada em:** 2026-10-29 (o usuário testou no app e aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-019 — Restaurar sozinho os terminais que estavam abertos ao reabrir o app
 

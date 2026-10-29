@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-003 — Estado das abas pelos hooks do Claude Code** (DEV1)
 
-- Trabalhando/aguardando agora vem dos hooks (SessionStart, UserPromptSubmit, PostToolUse, Notification, Stop), com a heurística de 2,5 s só como reserva. Aguarda teste do usuário.
+- Trabalhando/aguardando agora vem dos hooks (SessionStart, UserPromptSubmit, PostToolUse, Notification, Stop), com a heurística de 2,5 s só como reserva. VALIDADA EM DEV1: o usuário testou e aprovou.
 
 **TASK-019 — Restaurar sozinho os terminais abertos ao reabrir** (DEV1)
 
