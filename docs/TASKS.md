@@ -155,7 +155,7 @@ _Nenhuma no momento._
 
 - **Responsável:** A definir
 - **Status:** BACKLOG
-- **Prioridade:** Média
+- **Prioridade:** Média (MVP)
 - **Objetivo:** testar com cliques minimizar/maximizar/fechar, arrastar o header, e as ações duplicar, exportar texto e "fechar outras/à direita" do menu de botão direito.
 
 ### TASK-006 — Personalização de cores e temas
@@ -191,7 +191,7 @@ _Nenhuma no momento._
 
 - **Responsável:** A definir
 - **Status:** BACKLOG
-- **Prioridade:** Média
+- **Prioridade:** Média (MVP)
 - **Objetivo:** gerar `.exe` com electron-builder, atalho no menu Iniciar e backup do `state.json` (a gravação já é atômica).
 
 ### TASK-011 — Consumo por sessão e alertas de limite
