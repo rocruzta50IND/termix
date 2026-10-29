@@ -6,6 +6,9 @@ contextBridge.exposeInMainWorld('termix', {
   summary: (s) => ipcRenderer.send('sessions:summary', s),
   setMaterial: (kind) => ipcRenderer.invoke('win:material', kind),
   winCtl: (kind) => ipcRenderer.send('win:ctl', kind),
+  notify: (n) => ipcRenderer.send('notify:show', n),
+  onNotifyClick: (fn) => ipcRenderer.on('notify:click', (_e, m) => fn(m)),
+  onFocus: (fn) => ipcRenderer.on('win:focus', () => fn()),
   isMaximized: () => ipcRenderer.invoke('win:isMax'),
   onWinState: (fn) => ipcRenderer.on('win:state', (_e, m) => fn(m)),
 

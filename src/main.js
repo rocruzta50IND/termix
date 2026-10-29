@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -103,6 +103,7 @@ function createWindow() {
   win.setMenuBarVisibility(false);
   win.once('ready-to-show', () => win.show());
   const sendMax = () => { if (!win.isDestroyed()) win.webContents.send('win:state', { maximized: win.isMaximized() }); };
+  win.on('focus', () => { win.flashFrame(false); win.webContents.send('win:focus'); });
   win.on('maximize', sendMax);
   win.on('unmaximize', sendMax);
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
@@ -148,6 +149,20 @@ ipcMain.on('win:ctl', (_e, kind) => {
   if (kind === 'min') win.minimize();
   else if (kind === 'max') { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
   else if (kind === 'close') win.close();
+});
+// aviso do Windows quando o app está em segundo plano; clicar nele traz a janela e abre a aba
+ipcMain.on('notify:show', (_e, { tabId, title, body }) => {
+  if (!win || win.isDestroyed() || win.isFocused()) return;
+  win.flashFrame(true);
+  if (!Notification.isSupported()) return;
+  const n = new Notification({ title: String(title).slice(0, 80), body: String(body).slice(0, 200), icon: path.join(__dirname, '..', 'assets', 'icon.png') });
+  n.on('click', () => {
+    if (win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.show(); win.focus();
+    win.webContents.send('notify:click', { tabId });
+  });
+  n.show();
 });
 ipcMain.handle('win:isMax', () => !!(win && !win.isDestroyed() && win.isMaximized()));
 

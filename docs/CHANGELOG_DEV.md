@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-004 — Notificações reais** (DEV1)
+
+- Avisos de "terminou", "precisa de você" e erro vão para o painel (com botão "Abrir"), ganham selo colorido na aba e destaque no projeto, e com o app sem foco viram notificação do Windows (clique abre a aba) e piscam o ícone na barra de tarefas. VALIDADA EM DEV1: o usuário testou e aprovou.
+
 **TASK-002 — Retomada de aba que nunca recebeu mensagem** (DEV1)
 
 - VALIDADA EM DEV1: o usuário testou e aprovou (sem o erro "No conversation found" ao reabrir uma aba vazia).

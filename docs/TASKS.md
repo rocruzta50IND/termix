@@ -16,6 +16,19 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-004 — Notificações reais
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Alta
+- **Objetivo:** painel lateral listando eventos (terminou, pediu permissão, erro), notificação do Windows e selo na aba quando a pessoa não está olhando para ela ou o app está em segundo plano.
+- **Feito até agora:** `notifyTab()` em `app.js` centraliza os avisos (hooks Stop/Notification, heurística de reserva e falha ao iniciar): vão para o painel com o botão "Abrir", marcam a aba com um selo (verde = terminou, amarelo = precisa de você, vermelho = erro), destacam o projeto na barra lateral e, com o app sem foco, disparam notificação do Windows (`notify:show` no `main.js`) e piscam o ícone na barra de tarefas. Clicar na notificação traz a janela e abre a aba. O selo some quando a aba fica à vista com o app em foco.
+- **Decisões:** aviso só quando a pessoa não está vendo a aba (aba oculta ou app sem foco); com o app em foco e a aba visível, nada é mostrado. Selo guarda o mais grave (erro > permissão > terminou).
+- **Arquivos tocados:** `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `src/renderer/styles.css`.
+- **Como validar:** `npm start`; abrir duas abas, pedir algo longo na segunda e ir para a primeira: ao terminar, selo verde na aba, evento no painel e destaque no projeto; clicar em "Abrir" vai até a aba e o selo some. Com o app minimizado (ou outra janela em foco), terminar uma resposta ou pedir uma permissão: aparece a notificação do Windows e o ícone pisca; clicar nela abre o Termix na aba certa.
+- **Pendências:** nenhuma.
+- **Validada em:** 2026-10-29 (o usuário testou e aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-002 — Corrigir retomada de aba que nunca recebeu mensagem
 
 - **Responsável:** DEV1
@@ -111,13 +124,6 @@ _Nenhuma no momento._
 _Nenhuma no momento._
 
 ## Backlog
-
-### TASK-004 — Notificações reais
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Alta
-- **Objetivo:** braço direito listando eventos (terminou, pediu permissão, erro), notificação do Windows e selo na aba quando o app está em segundo plano. Depende da TASK-003.
 
 ### TASK-005 — Validar controles da janela e menus das abas
 

@@ -249,11 +249,11 @@ api.onExit(({ tabId, code }) => {
   r.term.writeln(`\r\n\x1b[2m[Termix] Processo encerrado (código ${code}).\x1b[0m`);
   setSt(tab, failed ? 'fail' : 'end');
   if (failed) {
-    addEvent({
-      c: tab.color, who: tab.name,
-      msg: 'Falha ao iniciar ou retomar a conversa. A aba foi mantida; nenhuma conversa nova foi criada.',
-      acts: [['Tentar de novo', 'restart', tab.id], ['Nova conversa', 'newconv', tab.id]],
-    });
+    const p = f.p;
+    const msg = 'Falha ao iniciar ou retomar a conversa. A aba foi mantida; nenhuma conversa nova foi criada.';
+    const acts = [['Tentar de novo', 'restart', tab.id], ['Nova conversa', 'newconv', tab.id]];
+    if (document.hasFocus() && tabVisible(p, tab)) addEvent({ c: tab.color, who: tab.name, msg, kind: 'error', acts });
+    else notifyTab(p, tab, 'error', msg, acts);
   }
   sendSummary();
 });
@@ -275,6 +275,28 @@ setInterval(() => { renderTop(); }, 30000); // atualiza "renova em" e "atualizad
 
 // estado da aba pelos hooks do Claude Code (exato). Sem hooks (node ausente ou hooks bloqueados), vale a heurística abaixo.
 const tabVisible = (p, tab) => UI.cur.p === p.id && UI.cur.page === 'Terminais' && curTab(p) && curTab(p).id === tab.id;
+
+// aviso de uma aba: só quando a pessoa não está olhando para ela (aba oculta ou app em segundo plano).
+// Vai para o painel, ganha selo na aba e, com o app sem foco, vira notificação do Windows.
+const KIND_RANK = { done: 1, perm: 2, error: 3 };
+const KIND_TITLE = { done: 'Terminou', perm: 'Precisa de você', error: 'Erro' };
+function notifyTab(p, tab, kind, msg, acts = []) {
+  const focused = document.hasFocus();
+  if (focused && tabVisible(p, tab)) return;
+  addEvent({ c: tab.color, who: tab.name, msg, kind, acts: [['Abrir', 'open', tab.id], ...acts] });
+  const r = ensureRT(tab);
+  if (!r.unread || KIND_RANK[kind] >= KIND_RANK[r.unread]) r.unread = kind;
+  if (!focused) api.notify({ tabId: tab.id, title: `${tab.name} · ${KIND_TITLE[kind]}`, body: msg });
+  renderChrome();
+}
+function openTab(tabId) {
+  const f = findTab(tabId);
+  if (!f || !f.tab.open) return;
+  f.p.activeTab = f.tab.id; UI.cur = { p: f.p.id, page: 'Terminais' }; UI.last = f.p.id; UI.pop = false;
+  save(); renderAll();
+}
+api.onNotifyClick(({ tabId }) => openTab(tabId));
+api.onFocus(() => renderChrome()); // voltar ao app limpa o selo da aba que já está à vista
 api.onHook(({ tabId, data }) => {
   const f = findTab(tabId);
   if (!f || !RT[tabId] || !RT[tabId].alive) return;
@@ -286,11 +308,11 @@ api.onHook(({ tabId, data }) => {
     case 'SessionStart': setSt(tab, 'wait'); break;
     case 'Stop':
       setSt(tab, 'wait');
-      if (!tabVisible(p, tab)) addEvent({ c: tab.color, who: tab.name, msg: 'Terminou · aguarda você' });
+      notifyTab(p, tab, 'done', 'Terminou · aguarda você');
       break;
     case 'Notification':
       setSt(tab, 'wait');
-      if (!tabVisible(p, tab)) addEvent({ c: tab.color, who: tab.name, msg: data.message || 'Precisa da sua atenção' });
+      notifyTab(p, tab, 'perm', data.message || 'Precisa da sua atenção');
       break;
   }
 });
@@ -303,7 +325,7 @@ setInterval(() => {
     const quiet = r.hooks ? 20000 : 2500;
     if (r.st === 'work' && Date.now() - r.lastData > quiet && Date.now() - r.spawnAt > 2500) {
       setSt(tab, 'wait');
-      if (!tabVisible(p, tab)) addEvent({ c: tab.color, who: tab.name, msg: 'Terminou · aguarda você' });
+      notifyTab(p, tab, 'done', 'Terminou · aguarda você');
     }
   }
 }, 700);
@@ -382,7 +404,8 @@ function renderSide() {
       const n = openTabs(p).length;
       const work = openTabs(p).some((t) => stOf(t) === 'work');
       const wait = openTabs(p).some((t) => stOf(t) === 'wait');
-      const dotc = work ? 'var(--work)' : wait ? 'var(--ok)' : '';
+      const att = openTabs(p).some((t) => RT[t.id] && RT[t.id].unread);
+      const dotc = att ? 'var(--warn)' : work ? 'var(--work)' : wait ? 'var(--ok)' : '';
       const letter = esc(p.name.trim()[0] ? p.name.trim()[0].toUpperCase() : '?');
       return `<button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>`
         + (cp && cp.id === p.id ? SUBS.map(([n, i]) => `<button class="ci sub ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}" data-tip="${n}">${ic(i, 17)}</button>`).join('') : '');
@@ -394,7 +417,7 @@ function renderSide() {
   side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
     ${ps.map((p) => `<div class="proj ${p.open !== false ? 'open' : ''}">
       <div class="prow"><button class="ph" data-ph="${p.id}"><span class="chev">${ic('chevr', 12)}</span>${esc(p.name)}</button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
-      <div class="subs">${SUBS.map(([n, i]) => `<button class="item ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}"><span class="ico">${ic(i, 17)}</span>${n}${n === 'Terminais' && openTabs(p).length ? `<span class="cnt">${openTabs(p).length}</span>` : ''}</button>`).join('')}</div></div>`).join('')}
+      <div class="subs">${SUBS.map(([n, i]) => `<button class="item ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}"><span class="ico">${ic(i, 17)}</span>${n}${n === 'Terminais' && openTabs(p).length ? `<span class="cnt ${openTabs(p).some((t) => RT[t.id] && RT[t.id].unread) ? 'att' : ''}">${openTabs(p).length}</span>` : ''}</button>`).join('')}</div></div>`).join('')}
     <button class="newproj" data-newproj>+ Novo projeto</button>
     <span class="sp"></span>
     <div class="label">Geral</div>
@@ -407,9 +430,10 @@ function renderTabs() {
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
   const st = stOf(cur), [sc, sl] = STATES[st];
+  if (document.hasFocus() && RT[cur.id]) RT[cur.id].unread = null; // a aba à vista, com o app em foco, já foi vista
   $('#sess').style.setProperty('--tc', cur.color);
   $('#sess').classList.toggle('working', st === 'work');
-  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${t.perm === 'd' ? `<span class="pw" title="Dangerously: ignora as verificações de permissão">${ic('alert', 13)}</span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
+  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}${t.perm === 'd' ? `<span class="pw" title="Dangerously: ignora as verificações de permissão">${ic('alert', 13)}</span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
     + `<button class="plus" data-newtab="claude|n" title="Novo terminal (Claude Code)">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
     <span class="sp"></span>
     <div class="tctl">
@@ -844,6 +868,7 @@ document.addEventListener('click', async (e) => {
     const [i, k, id] = el.dataset.ev.split('|');
     UI.events[i].done = true; renderAct(); renderTop();
     const f = findTab(id);
+    if (f && k === 'open') openTab(id);
     if (f && k === 'restart') restartTab(f.p, f.tab);
     if (f && k === 'newconv') newConversation(f.p, f.tab);
     return;
