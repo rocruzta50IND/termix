@@ -124,10 +124,8 @@ body.maxed .shadow{filter:none}
 @keyframes linepulse{0%,100%{opacity:.15}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.sess.working::before{animation:none;opacity:.7}}
 #page:not(.hide){margin:8px}
-#banner:not(:empty){margin-bottom:8px}
 .stage{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0}
 .stage.panel{overflow:auto}
-#banner .bn{display:flex;align-items:center;gap:12px;padding:8px 14px;border-radius:14px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);color:#fde68a;font-size:13px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:99px;border:1px solid var(--border2);background:var(--glass);color:var(--text);white-space:nowrap}
 .btn:hover{background:var(--glass2)}
 .btn:disabled{opacity:.45;cursor:default}

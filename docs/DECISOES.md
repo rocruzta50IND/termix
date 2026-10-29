@@ -9,7 +9,8 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 
 ## Fechar o app e restaurar
 - Fechar o app **encerra todos os processos**, com confirmação que mostra quantas sessões estão ativas e quantas estão trabalhando.
-- Ao reabrir, o app **pergunta** se quer restaurar as sessões ("Restaurar sessões" / "Agora não"). **Nunca restaura sozinho.**
+- Ao reabrir, o app **restaura sozinho** os terminais que estavam abertos ao fechar (retoma a conversa pelo ID), sem aviso. Só volta o que estava aberto: abas fechadas pelo X antes continuam fechadas. Abre uma aba de cada vez, a ativa do projeto atual primeiro, para não pesar. (Antes perguntava; mudou na TASK-019.)
+- A animação de abertura que cobre esse carregamento está na TASK-018.
 
 ## Abas e conversas
 - O **X da aba só fecha a aba**. A conversa fica guardada e pode ser reaberta (menu "Sessões fechadas" e a tela "Nenhum terminal aberto").

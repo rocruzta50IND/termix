@@ -378,13 +378,6 @@ function renderSide() {
     ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${ic(i, 17)}</span>${n}</button>`).join('')}`;
 }
 
-function renderBanner() {
-  const cands = S.projects.flatMap((p) => p.tabs.filter((t) => t.live && t.open && !t.archived && !(RT[t.id] && RT[t.id].alive)).map((t) => ({ p, t })));
-  $('#banner').innerHTML = cands.length
-    ? `<div class="bn">${ic('refresh', 15)} ${cands.length} sessão(ões) estavam ativas quando o app foi fechado.<span class="sp"></span><button class="btn sm pri" data-restore>Restaurar sessões</button><button class="btn sm" data-dismiss>Agora não</button></div>`
-    : '';
-}
-
 function renderTabs() {
   const p = curProject();
   if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); return; }
@@ -452,7 +445,7 @@ function confHTML() {
       <div class="seg"><button class="${bgMode() === 'gradient' ? 'sel' : ''}" data-bg="gradient">Degradê</button><button class="${bgMode() === 'blur' ? 'sel' : ''}" data-bg="blur">Ofuscado</button></div></div>
     <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small>Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip">…</span></div>
     <div class="row"><div class="grow">Ao fechar o app<small>Encerra os processos, com confirmação. As conversas ficam guardadas.</small></div><span class="chip">Pergunta antes de sair</span></div>
-    <div class="row"><div class="grow">Ao reabrir<small>Oferece restaurar as sessões que estavam ativas</small></div><span class="chip">Pergunta antes de restaurar</span></div></div>
+    <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
     <h5 style="margin:22px 0 8px">Projetos arquivados</h5>
     <div class="card">${arch.length ? arch.map((p) => `<div class="lrow"><span class="nm">${esc(p.name)}<br><span class="meta">${esc(p.path)}</span></span><button class="btn sm" data-unarchive="${p.id}">Restaurar</button></div>`).join('') : '<span class="meta">Nenhum projeto arquivado.</span>'}</div></div>`;
 }
@@ -555,11 +548,11 @@ function renderMenu() {
     <button class="mi" data-projmenu><span class="t">Gerenciar projeto…</span></button></div>`;
 }
 
-function renderChrome() { renderSide(); renderTabs(); renderTop(); renderBanner(); if (UI.pop) renderPop(); }
+function renderChrome() { renderSide(); renderTabs(); renderTop(); if (UI.pop) renderPop(); }
 
 function renderAll() {
   const m = mode();
-  renderTop(); renderSide(); renderBanner(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu();
+  renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu();
   $('#tabsRow').classList.toggle('hide', m !== 'term');
   $('#sess').classList.toggle('hide', m !== 'term');
   $('#page').classList.toggle('hide', m === 'term');
@@ -839,11 +832,6 @@ document.addEventListener('click', async (e) => {
   if (q('[data-impsess]')) return importSessionsFlow(curProject());
   if (q('[data-recheck]')) { UI.env = null; renderPage(); return; }
   if ((el = q('[data-unarchive]'))) { proj(el.dataset.unarchive).archived = false; save(); renderAll(); return; }
-  if (q('[data-restore]')) {
-    for (const p of S.projects) for (const t of p.tabs) if (t.live && t.open && !t.archived && !(RT[t.id] && RT[t.id].alive)) launch(p, t, 'resume');
-    renderBanner(); return;
-  }
-  if (q('[data-dismiss]')) { S.projects.forEach((p) => p.tabs.forEach((t) => { if (!(RT[t.id] && RT[t.id].alive)) t.live = false; })); save(); renderBanner(); return; }
 });
 
 document.addEventListener('contextmenu', (e) => {
@@ -970,7 +958,20 @@ async function applyBg() {
   renderAll();
   layout();
   (await api.allMetrics()).forEach(onMetric);
+  restoreOnOpen();
 })();
+
+// ao abrir: reabre sozinho as abas que estavam abertas quando o app foi fechado, uma de cada vez (a ativa do projeto atual primeiro) para não pesar
+async function restoreOnOpen() {
+  const cur = curProject();
+  const rank = ({ p, t }) => (cur && p.id === cur.id ? (t.id === curTab(p)?.id ? 0 : 1) : 2);
+  const pend = S.projects.flatMap((p) => p.tabs.filter((t) => t.live && t.open && !t.archived).map((t) => ({ p, t }))).sort((a, b) => rank(a) - rank(b));
+  for (const { p, t } of pend) {
+    if (RT[t.id] && RT[t.id].alive) continue;
+    try { await launch(p, t, 'resume'); } catch { /* a aba mostra a própria falha */ }
+    await new Promise((ok) => setTimeout(ok, 400));
+  }
+}
 
 
 /* arrastar abas: pegue a aba e solte na nova posição; as outras abrem espaço na hora */

@@ -27,6 +27,19 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-019 — Restaurar sozinho os terminais que estavam abertos ao reabrir o app
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Alta
+- **Objetivo:** ao reabrir, as abas que estavam abertas quando o app foi fechado voltam sozinhas (conversa retomada pelo ID), sem o aviso "N sessões estavam ativas" e sem terminais vazios. As abas que o usuário fechou antes continuam fechadas.
+- **Feito até agora:** aviso amarelo removido; `restoreOnOpen()` em `app.js` reabre as abas `live` + `open` uma de cada vez (intervalo de 400 ms), a ativa do projeto atual primeiro.
+- **Decisões:** muda a decisão anterior "pergunta antes de restaurar" (`docs/DECISOES.md` atualizado); fila em vez de abrir tudo junto, para não pesar; falha numa aba mostra o estado de falha da própria aba, sem aviso global. A tela de "Continuar" proposta antes deixou de ser necessária. Animação de abertura fica na TASK-018.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/styles.css`, `src/renderer/index.html`, `docs/DECISOES.md`.
+- **Como validar:** abrir 3 abas (uma delas sem nenhuma mensagem), fechar o app, reabrir: as 3 voltam sozinhas, sem aviso; uma aba fechada pelo X antes do fechamento do app não volta.
+- **Pendências:** nenhuma.
+- **Validada em:** 2026-10-29 (o usuário testou e aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-017 — Continuidade entre sessões: comandos e documentos de decisões
 
 - **Responsável:** DEV1
@@ -161,6 +174,14 @@ _Nenhuma no momento._
 - **Status:** BACKLOG
 - **Prioridade:** Baixa (pós-MVP)
 - **Objetivo:** hoje a leitura é somente leitura; evoluir para editar e ativar/desativar por escopo, com aviso de "reinicie para aplicar".
+
+### TASK-018 — Animação de abertura do app (MVP)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Média (MVP)
+- **Objetivo:** uma animação simples de abertura que cubra o tempo de carregar e iniciar os terminais, para a pessoa entrar no app já com os terminais abertos, sem ver terminais vazios nem o aviso de restauração.
+- **Notas:** pensada junto com a restauração automática dos terminais ao reabrir (a decidir; hoje o app pergunta antes de restaurar, ver `docs/DECISOES.md`). A animação some quando os terminais estiverem prontos, com tempo máximo para não travar a entrada. Respeitar "reduzir movimento" e animar só `transform`/`opacity` (ver `docs/DESIGN.md`).
 
 ## Concluídas
 
