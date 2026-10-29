@@ -8,6 +8,8 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**Validação** (DEV1): o usuário aprovou o layout; TASK-014, TASK-015 e TASK-016 passam para VALIDADA EM DEV1 (promoção para a main só quando o usuário pedir). O backlog da TASK-003 à TASK-013 foi restaurado em docs/TASKS.md (a migração inicial não tinha sido gravada).
+
 **TASK-016 — Tela "nenhum terminal aberto" com as abas fechadas** (DEV1)
 
 - Mostra a conversa mais recente em destaque ("há X"), as outras abas fechadas do projeto e um resumo das abas vazias. Aguarda teste do usuário.
