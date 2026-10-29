@@ -61,8 +61,8 @@ body.maxed .shadow{filter:none}
 .tbtn{width:34px;height:34px;border-radius:11px;color:var(--text2);display:grid;place-items:center;position:relative}
 .tbtn:hover{background:var(--glass2);color:var(--text)}
 .tbtn.round{border:1px solid var(--border);background:var(--glass);border-radius:50%;width:30px;height:30px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.4px;font-size:15px}
-.logo{width:28px;height:28px;display:block;filter:drop-shadow(0 2px 8px rgba(59,130,246,.45))}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.4px;font-size:17px;line-height:1}
+.logo{height:21px;width:auto;display:block;transform:translateY(1px);filter:drop-shadow(0 1px 6px rgba(59,130,246,.45))}
 .lims{display:flex;align-items:center;gap:0;padding:0;border-radius:99px;cursor:pointer;border:1px solid var(--border);background:var(--glass);overflow:hidden}
 .lims:hover{background:var(--glass2)}
 .lim{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;white-space:nowrap;padding:5px 14px}

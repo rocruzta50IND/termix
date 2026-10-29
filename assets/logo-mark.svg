@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 3 72 60">
   <!-- marca do cabeçalho: só o prompt, sem caixa, com brilho (o ícone do app e da barra de tarefas mantém o quadrado) -->
   <defs>
     <linearGradient id="p" gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="58" y2="52">
       <stop offset="0" stop-color="#ffffff"/>
       <stop offset="1" stop-color="#7dd3fc"/>
     </linearGradient>
-    <filter id="b" filterUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><feGaussianBlur stdDeviation="2.6"/></filter>
+    <filter id="b" filterUnits="userSpaceOnUse" x="-10" y="-10" width="90" height="90"><feGaussianBlur stdDeviation="2.6"/></filter>
   </defs>
   <g filter="url(#b)" opacity=".85">
     <path d="M10 15l22 17-22 17" fill="none" stroke="#38bdf8" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
