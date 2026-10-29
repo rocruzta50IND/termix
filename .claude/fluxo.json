@@ -1,0 +1,7 @@
+{
+  "versao_fluxo": 1,
+  "projeto": "Termix",
+  "validacao": [
+    "npm run check"
+  ]
+}
