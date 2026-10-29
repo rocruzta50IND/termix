@@ -62,7 +62,7 @@ body.maxed .shadow{filter:none}
 .tbtn:hover{background:var(--glass2);color:var(--text)}
 .tbtn.round{border:1px solid var(--border);background:var(--glass);border-radius:50%;width:30px;height:30px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.4px;font-size:15px}
-.logo{width:26px;height:26px;display:block;filter:drop-shadow(0 3px 10px rgba(59,130,246,.55))}
+.logo{width:28px;height:28px;display:block;filter:drop-shadow(0 2px 8px rgba(59,130,246,.45))}
 .lims{display:flex;align-items:center;gap:0;padding:0;border-radius:99px;cursor:pointer;border:1px solid var(--border);background:var(--glass);overflow:hidden}
 .lims:hover{background:var(--glass2)}
 .lim{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;white-space:nowrap;padding:5px 14px}

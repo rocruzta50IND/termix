@@ -1,9 +1,12 @@
-// Gera assets/icon.png e assets/icon.ico a partir de assets/icon.svg. Uso: electron tools/make-icon.js
+// Gera assets/icon.png e assets/icon.ico. Uso: electron tools/make-icon.js
+// Tamanhos grandes (48+) vêm de assets/icon.svg (detalhado); os pequenos (16 e 32) vêm de assets/icon-small.svg (traço grosso, legível).
 const { app, BrowserWindow } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
 const SIZES = [16, 32, 48, 64, 128, 256];
+const SMALL_MAX = 32;
+app.on('window-all-closed', () => {}); // a janela de renderização é destruída entre os dois SVGs; o app só sai no fim
 
 function buildIco(pngs) {
   const header = Buffer.alloc(6);
@@ -20,16 +23,25 @@ function buildIco(pngs) {
   return Buffer.concat([header, ...entries, ...bodies]);
 }
 
-app.whenReady().then(async () => {
-  const svg = fs.readFileSync(path.join(__dirname, '..', 'assets', 'icon.svg'), 'utf8');
+async function render(file) {
+  const svg = fs.readFileSync(path.join(__dirname, '..', 'assets', file), 'utf8');
   const win = new BrowserWindow({ width: 256, height: 256, show: false, transparent: true, frame: false, useContentSize: true, webPreferences: { backgroundThrottling: false } });
   const html = `<style>html,body{margin:0;background:transparent;overflow:hidden}svg{width:256px;height:256px;display:block}</style>${svg}`;
   await win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
   await new Promise((r) => setTimeout(r, 400));
   const img = await win.webContents.capturePage({ x: 0, y: 0, width: 256, height: 256 });
-  const pngs = SIZES.map((size) => ({ size, data: img.resize({ width: size, height: size, quality: 'best' }).toPNG() }));
+  win.destroy();
+  return img;
+}
+
+app.whenReady().then(async () => {
+  try {
+  const big = await render('icon.svg'), small = await render('icon-small.svg');
+  const pngs = SIZES.map((size) => ({ size, data: (size <= SMALL_MAX ? small : big).resize({ width: size, height: size, quality: 'best' }).toPNG() }));
   fs.writeFileSync(path.join(__dirname, '..', 'assets', 'icon.png'), pngs[pngs.length - 1].data);
   fs.writeFileSync(path.join(__dirname, '..', 'assets', 'icon.ico'), buildIco(pngs));
-  console.log('ok', img.getSize());
+  if (process.env.ICON_PREVIEW_DIR) for (const p of pngs) fs.writeFileSync(path.join(process.env.ICON_PREVIEW_DIR, `icon-${p.size}.png`), p.data);
+  console.log('ok');
+  } catch (e) { console.error('ERRO', e && e.stack || e); }
   app.quit();
 });

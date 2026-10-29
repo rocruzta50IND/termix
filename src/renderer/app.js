@@ -334,7 +334,7 @@ function renderTop() {
   const maxIcon = UI.maxed
     ? '<rect x="7" y="9" width="10" height="10" rx="1.5"/><path d="M9.5 9V7a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 18.5 7v6A1.5 1.5 0 0 1 17 14.5h-2"/>'
     : '<rect x="5.5" y="5.5" width="13" height="13" rx="1.8"/>';
-  $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/icon.svg" alt="">Termix</div><span class="sp"></span>
+  $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix</div><span class="sp"></span>
     <div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>
     <span class="sp"></span>
     <button class="tbtn round ${UI.actOpen ? 'on' : ''}" data-togact title="Notificações">${ic('bell', 18)}${pending() ? `<span class="nb">${pending()}</span>` : ''}</button>
