@@ -1,0 +1,373 @@
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const { execFile } = require('child_process');
+const pty = require('@lydell/node-pty');
+
+const STATE_FILE = () => path.join(app.getPath('userData'), 'state.json');
+const DEFAULT_ROOT = () => path.join(app.getPath('documents'), 'Termix');
+// o app se chamava Vitra: na primeira abertura copia os dados salvos para a pasta nova (a antiga fica intacta)
+try {
+  const legacy = path.join(app.getPath('appData'), 'Vitra'), cur = app.getPath('userData');
+  if (!fs.existsSync(path.join(cur, 'state.json')) && fs.existsSync(path.join(legacy, 'state.json'))) fs.cpSync(legacy, cur, { recursive: true });
+} catch { /* sem migração: o app abre limpo */ }
+
+let win = null;
+let quitting = false;
+let summary = { active: 0, working: 0 };
+const procs = new Map(); // tabId -> pty
+
+/* ---------- utilidades ---------- */
+function findClaude() {
+  const exts = ['claude.exe', 'claude.cmd'];
+  for (const dir of (process.env.PATH || '').split(path.delimiter)) {
+    for (const f of exts) {
+      const full = path.join(dir, f);
+      if (dir && fs.existsSync(full)) return full;
+    }
+  }
+  return null;
+}
+
+// variáveis ligadas a OUTRA sessão do Claude Code (herdadas quando o app é aberto de dentro de uma)
+const SESSION_BOUND_ENV = [
+  'CLAUDECODE', 'CLAUDE_PID', 'CLAUDE_CODE_BRIDGE_SESSION_ID', 'CLAUDE_CODE_CHILD_SESSION', 'CLAUDE_CODE_ENTRYPOINT',
+  'CLAUDE_CODE_MESSAGING_SOCKET', 'CLAUDE_CODE_MESSAGING_TOKEN', 'CLAUDE_CODE_SESSION_ATTENDED', 'CLAUDE_CODE_SESSION_ID',
+];
+function cleanEnv() {
+  const env = { ...process.env };
+  for (const k of SESSION_BOUND_ENV) delete env[k];
+  return env;
+}
+
+function findInPath(names) {
+  for (const dir of (process.env.PATH || '').split(path.delimiter)) {
+    for (const f of names) {
+      const full = path.join(dir, f);
+      if (dir && fs.existsSync(full)) return full;
+    }
+  }
+  return null;
+}
+
+const METRICS_DIR = () => path.join(app.getPath('userData'), 'metrics');
+const WRAPPER = () => path.join(__dirname, 'statusline-wrapper.js').replace(/\\/g, '/');
+
+function slug(name) {
+  const s = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return s || 'projeto';
+}
+
+function readJson(file) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
+}
+
+function listDirs(dir) {
+  try {
+    return fs.readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+  } catch { return []; }
+}
+
+/* ---------- janela ---------- */
+// Modo da janela, definido na abertura: 'none' = transparente (degradê do app); 'acrylic' = vidro fosco do Windows por trás do degradê (modo "Ofuscado").
+// Trocar entre "transparente" e "material" exige reabrir, porque o tipo da janela muda.
+let winMode = 'none';
+let wantRelaunch = false;
+function createWindow() {
+  const st = readJson(STATE_FILE());
+  const bg = st && st.settings && st.settings.bg;
+  winMode = bg === 'blur' || bg === 'acrylic' || bg === 'mica' ? 'acrylic' : 'none'; // valores antigos (acrylic/mica) viram Ofuscado
+  const mat = winMode !== 'none';
+  win = new BrowserWindow({
+    width: 1280,
+    height: 760,
+    minWidth: 980,
+    minHeight: 620,
+    transparent: !mat, // sem material: janela realmente transparente, sem "placa" atrás do vidro
+    ...(mat ? { backgroundMaterial: winMode } : {}), // com material: o Windows desenha o fundo desfocado atrás do vidro
+    frame: false,
+    hasShadow: mat, // em transparente a sombra é desenhada pelo app; com material usa a do sistema
+    backgroundColor: '#00000000',
+    show: false, // só mostra quando a primeira tela estiver pronta (evita piscar e engasgar na abertura)
+    icon: path.join(__dirname, '..', 'assets', 'icon.ico'),
+    title: 'Termix',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  win.setMenuBarVisibility(false);
+  win.once('ready-to-show', () => win.show());
+  const sendMax = () => { if (!win.isDestroyed()) win.webContents.send('win:state', { maximized: win.isMaximized() }); };
+  win.on('maximize', sendMax);
+  win.on('unmaximize', sendMax);
+  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  win.on('close', (e) => {
+    if (quitting || summary.active === 0) { killAll(); return; }
+    e.preventDefault();
+    const w = summary.working ? ` (${summary.working} trabalhando agora)` : '';
+    dialog.showMessageBox(win, {
+      type: 'question',
+      buttons: ['Encerrar tudo e sair', 'Cancelar'],
+      defaultId: 1,
+      cancelId: 1,
+      title: 'Termix',
+      message: `Há ${summary.active} sessão(ões) ativa(s)${w}.`,
+      detail: 'Os processos serão encerrados. As conversas ficam guardadas e podem ser restauradas ao reabrir.',
+    }).then((r) => {
+      if (r.response === 0) { quitting = true; killAll(); win.close(); } else wantRelaunch = false;
+    });
+  });
+}
+
+function killAll() {
+  for (const p of procs.values()) { try { p.kill(); } catch { /* já encerrado */ } }
+  procs.clear();
+}
+
+/* ---------- IPC: estado ---------- */
+ipcMain.handle('state:load', () => readJson(STATE_FILE()));
+ipcMain.handle('state:save', (_e, state) => {
+  const file = STATE_FILE();
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = file + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
+  fs.renameSync(tmp, file);
+  return true;
+});
+ipcMain.on('sessions:summary', (_e, s) => { summary = s; });
+
+// botões da janela desenhados no cabeçalho
+ipcMain.on('win:ctl', (_e, kind) => {
+  if (!win || win.isDestroyed()) return;
+  if (kind === 'min') win.minimize();
+  else if (kind === 'max') { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
+  else if (kind === 'close') win.close();
+});
+ipcMain.handle('win:isMax', () => !!(win && !win.isDestroyed() && win.isMaximized()));
+
+// fundo da janela: 'none' (degradê) ou 'acrylic' (Ofuscado); trocar de um para o outro exige reabrir
+ipcMain.handle('win:material', (_e, kind) => {
+  if (!win || win.isDestroyed()) return { ok: false };
+  const want = kind === 'none' ? 'none' : 'acrylic';
+  return { ok: true, restart: want !== winMode };
+});
+
+/* ---------- IPC: terminais ---------- */
+ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
+  const claude = findClaude();
+  if (!claude) return { ok: false, error: 'Claude Code não foi encontrado no PATH.' };
+  if (!fs.existsSync(cwd)) return { ok: false, error: `A pasta do projeto não existe: ${cwd}` };
+  if (procs.has(tabId)) { try { procs.get(tabId).kill(); } catch { /* ignora */ } procs.delete(tabId); }
+  try {
+    const isCmd = claude.toLowerCase().endsWith('.cmd');
+    const file = isCmd ? 'cmd.exe' : claude;
+    // captura dos limites: a status line da sessão passa por um encaminhador que grava os dados
+    // e repassa tudo para a status line original do usuário (o visual não muda)
+    const extra = [];
+    if (findInPath(['node.exe', 'node.cmd'])) {
+      const cmd = `node "${WRAPPER()}"`;
+      extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd } }));
+    }
+    const finalArgs = [...args, ...extra];
+    const fullArgs = isCmd ? ['/c', claude, ...finalArgs] : finalArgs;
+    fs.mkdirSync(METRICS_DIR(), { recursive: true });
+    const p = pty.spawn(file, fullArgs, {
+      name: 'xterm-256color',
+      cols: cols || 120,
+      rows: rows || 30,
+      cwd,
+      env: { ...cleanEnv(), TERM: 'xterm-256color', COLORTERM: 'truecolor', TERMIX_METRICS_DIR: METRICS_DIR(), TERMIX_TAB_ID: tabId },
+    });
+    procs.set(tabId, p);
+    // junta a saída do terminal em lotes (~8 ms) para não inundar o IPC com milhares de mensagens pequenas
+    let buf = '', timer = null;
+    const flush = () => {
+      timer = null;
+      if (buf && !quitting && win && !win.isDestroyed()) win.webContents.send('pty:data', { tabId, data: buf });
+      buf = '';
+    };
+    p.onData((data) => {
+      buf += data;
+      if (buf.length > 65536) { clearTimeout(timer); flush(); } else if (!timer) timer = setTimeout(flush, 8);
+    });
+    p.onExit(({ exitCode, signal }) => {
+      if (timer) { clearTimeout(timer); flush(); }
+      if (procs.get(tabId) === p) procs.delete(tabId);
+      if (!quitting && win && !win.isDestroyed()) win.webContents.send('pty:exit', { tabId, code: exitCode, signal });
+    });
+    return { ok: true, pid: p.pid };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message || err) };
+  }
+});
+ipcMain.on('pty:write', (_e, { tabId, data }) => { const p = procs.get(tabId); if (p) p.write(data); });
+ipcMain.on('pty:resize', (_e, { tabId, cols, rows }) => {
+  const p = procs.get(tabId);
+  if (p && cols > 0 && rows > 0) { try { p.resize(cols, rows); } catch { /* ignora */ } }
+});
+ipcMain.on('pty:kill', (_e, { tabId }) => { const p = procs.get(tabId); if (p) { try { p.kill(); } catch { /* ignora */ } } });
+
+/* ---------- IPC: projetos ---------- */
+ipcMain.handle('project:create', (_e, name) => {
+  const root = DEFAULT_ROOT();
+  fs.mkdirSync(root, { recursive: true });
+  let dir = path.join(root, slug(name));
+  for (let i = 2; fs.existsSync(dir); i++) dir = path.join(root, `${slug(name)}-${i}`);
+  fs.mkdirSync(dir, { recursive: true });
+  return { path: dir };
+});
+ipcMain.handle('project:pick', async () => {
+  const r = await dialog.showOpenDialog(win, { title: 'Importar pasta de projeto', properties: ['openDirectory'] });
+  return r.canceled ? null : r.filePaths[0];
+});
+/* Conversas do Claude Code de uma pasta: ~/.claude/projects/<caminho com tudo que não é letra/dígito virando "-">/<id>.jsonl */
+function readSlice(fd, size, start, len) {
+  const n = Math.max(0, Math.min(len, size - start));
+  const buf = Buffer.alloc(n);
+  fs.readSync(fd, buf, 0, n, start);
+  return buf.toString('utf8');
+}
+function firstText(content) {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) { const t = content.find((c) => c && c.type === 'text'); return t ? t.text : ''; }
+  return '';
+}
+ipcMain.handle('sessions:scan', (_e, projectPath) => {
+  try {
+    const dir = path.join(os.homedir(), '.claude', 'projects', String(projectPath).replace(/[^a-zA-Z0-9]/g, '-'));
+    if (!fs.existsSync(dir)) return [];
+    const out = [];
+    for (const f of fs.readdirSync(dir)) {
+      if (!f.endsWith('.jsonl')) continue;
+      const id = f.slice(0, -6);
+      if (!/^[0-9a-f-]{36}$/i.test(id)) continue;
+      const full = path.join(dir, f);
+      try {
+        const st = fs.statSync(full);
+        const fd = fs.openSync(full, 'r');
+        let head, tail;
+        try { head = readSlice(fd, st.size, 0, 262144); tail = st.size > 262144 ? readSlice(fd, st.size, st.size - 131072, 131072) : ''; } finally { fs.closeSync(fd); }
+        let title = '', custom = '', first = '', last = '', users = 0;
+        const scan = (txt, isHead) => {
+          for (const line of txt.split('\n')) {
+            if (!line.startsWith('{')) continue;
+            let o; try { o = JSON.parse(line); } catch { continue; }
+            if (o.type === 'custom-title' && o.customTitle) custom = o.customTitle;
+            else if (o.type === 'ai-title' && o.aiTitle) title = o.aiTitle;
+            else if (o.type === 'last-prompt' && o.lastPrompt) last = String(o.lastPrompt);
+            else if (o.type === 'user' && !o.isMeta && o.message) {
+              const t = firstText(o.message.content).trim();
+              if (!t || t.startsWith('<')) continue;
+              users++;
+              if (isHead && !first) first = t;
+            }
+          }
+        };
+        scan(head, true); if (tail) scan(tail, false);
+        if (!users && !title && !custom) continue; // conversa vazia
+        out.push({ id, title: custom || title || first.slice(0, 80) || '(sem título)', first: first.slice(0, 160), last: last.slice(0, 160), mtime: st.mtimeMs, size: st.size });
+      } catch { /* arquivo ilegível: ignora */ }
+    }
+    return out.sort((a, b) => b.mtime - a.mtime);
+  } catch { return []; }
+});
+// a conversa só existe para o --resume se o Claude Code chegou a gravar o histórico dela (isto é, se algo foi enviado)
+ipcMain.handle('session:exists', (_e, { cwd, id }) => {
+  try {
+    const dir = path.join(os.homedir(), '.claude', 'projects', String(cwd).replace(/[^a-zA-Z0-9]/g, '-'));
+    return /^[0-9a-f-]{36}$/i.test(id) && fs.existsSync(path.join(dir, id + '.jsonl'));
+  } catch { return false; }
+});
+ipcMain.handle('project:open', (_e, p) => shell.openPath(p));
+ipcMain.handle('project:trash', async (_e, p) => {
+  try { await shell.trashItem(p); return { ok: true }; } catch (err) { return { ok: false, error: String(err.message || err) }; }
+});
+ipcMain.handle('project:exists', (_e, p) => fs.existsSync(p));
+ipcMain.handle('file:saveText', async (_e, { name, text }) => {
+  const r = await dialog.showSaveDialog(win, { title: 'Exportar texto do terminal', defaultPath: name, filters: [{ name: 'Texto', extensions: ['txt'] }] });
+  if (r.canceled || !r.filePath) return null;
+  fs.writeFileSync(r.filePath, text, 'utf8');
+  return r.filePath;
+});
+ipcMain.handle('app:info', () => ({ root: DEFAULT_ROOT(), winMode }));
+
+/* ---------- IPC: ambiente e recursos ---------- */
+ipcMain.handle('env:check', () => new Promise((resolve) => {
+  const claude = findClaude();
+  if (!claude) return resolve({ installed: false });
+  const isCmd = claude.toLowerCase().endsWith('.cmd');
+  const run = isCmd ? ['cmd.exe', ['/c', claude, '--version']] : [claude, ['--version']];
+  execFile(run[0], run[1], { timeout: 8000 }, (err, stdout) => {
+    resolve({ installed: true, path: claude, version: err ? null : String(stdout).trim() });
+  });
+}));
+
+ipcMain.handle('scan:resources', (_e, projectPath) => {
+  const home = os.homedir();
+  const out = { plugins: [], skills: [], mcps: [] };
+
+  const addPlugins = (file, scope) => {
+    const j = readJson(file);
+    const ep = j && j.enabledPlugins;
+    if (ep && typeof ep === 'object') {
+      for (const [name, on] of Object.entries(ep)) {
+        out.plugins.push({ name, scope, status: on ? 'Habilitado' : 'Desabilitado', kind: on ? 'ok' : 'warn' });
+      }
+    }
+  };
+  addPlugins(path.join(home, '.claude', 'settings.json'), 'Usuário');
+  if (projectPath) {
+    addPlugins(path.join(projectPath, '.claude', 'settings.json'), 'Projeto');
+    addPlugins(path.join(projectPath, '.claude', 'settings.local.json'), 'Local');
+  }
+
+  for (const n of listDirs(path.join(home, '.claude', 'skills'))) out.skills.push({ name: n, scope: 'Usuário', status: 'Detectada', kind: 'ok' });
+  if (projectPath) for (const n of listDirs(path.join(projectPath, '.claude', 'skills'))) out.skills.push({ name: n, scope: 'Projeto', status: 'Detectada', kind: 'ok' });
+
+  const cj = readJson(path.join(home, '.claude.json'));
+  if (cj && cj.mcpServers) for (const n of Object.keys(cj.mcpServers)) out.mcps.push({ name: n, scope: 'Usuário', status: 'Configurado · não testado', kind: 'warn' });
+  if (cj && cj.projects && projectPath) {
+    const key = Object.keys(cj.projects).find(k => path.resolve(k).toLowerCase() === path.resolve(projectPath).toLowerCase());
+    const ms = key && cj.projects[key].mcpServers;
+    if (ms) for (const n of Object.keys(ms)) out.mcps.push({ name: n, scope: 'Local', status: 'Configurado · não testado', kind: 'warn' });
+  }
+  if (projectPath) {
+    const mj = readJson(path.join(projectPath, '.mcp.json'));
+    if (mj && mj.mcpServers) for (const n of Object.keys(mj.mcpServers)) out.mcps.push({ name: n, scope: 'Projeto', status: 'Configurado · não testado', kind: 'warn' });
+  }
+  return out;
+});
+
+/* ---------- métricas vindas da status line ---------- */
+const seen = new Map(); // arquivo -> mtime
+function pollMetrics() {
+  if (!win || win.isDestroyed()) return;
+  let files = [];
+  try { files = fs.readdirSync(METRICS_DIR()).filter((f) => f.startsWith('tab-') && f.endsWith('.json')); } catch { return; }
+  for (const f of files) {
+    const full = path.join(METRICS_DIR(), f);
+    let st; try { st = fs.statSync(full); } catch { continue; }
+    if (seen.get(f) === st.mtimeMs) continue;
+    seen.set(f, st.mtimeMs);
+    const data = readJson(full);
+    if (data) win.webContents.send('metrics:update', { tabId: f.slice(4, -5), data });
+  }
+}
+
+// instantâneo das métricas já gravadas: a interface pede ao iniciar, para não perder o que chegou antes de estar pronta
+ipcMain.handle('metrics:all', () => {
+  let files = [];
+  try { files = fs.readdirSync(METRICS_DIR()).filter((f) => f.startsWith('tab-') && f.endsWith('.json')); } catch { return []; }
+  return files.map((f) => ({ tabId: f.slice(4, -5), data: readJson(path.join(METRICS_DIR(), f)) })).filter((x) => x.data);
+});
+
+/* ---------- ciclo de vida ---------- */
+app.setAppUserModelId('com.termix.app');
+app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); });
+app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
+ipcMain.on('app:relaunch', () => { wantRelaunch = true; if (win && !win.isDestroyed()) win.close(); });

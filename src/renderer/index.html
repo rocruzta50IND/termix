@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:">
+<title>Termix</title>
+<link rel="stylesheet" href="../../node_modules/@xterm/xterm/css/xterm.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="bg"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+
+<div id="frame">
+  <div class="shadow"><div id="glass"></div></div>
+  <svg id="edge"><path id="edgePath" d=""/></svg>
+
+  <header id="topbar"></header>
+  <aside class="side" id="side"></aside>
+  <aside id="arm"><div id="act"></div></aside>
+
+  <section class="col" id="col">
+    <div id="banner"></div>
+    <div class="stage" id="stage">
+      <div class="tabsbar" id="tabsRow"></div>
+      <div class="sess" id="sess"><div class="term" id="termHost"></div></div>
+      <div class="stage panel glass" id="page"></div>
+    </div>
+  </section>
+</div>
+
+<div class="pop glass" id="pop"></div>
+<div id="menuRoot"></div>
+<div id="modalRoot"></div>
+
+<script src="../../node_modules/@xterm/xterm/lib/xterm.js"></script>
+<script src="../../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+<script src="../../node_modules/@xterm/addon-webgl/lib/addon-webgl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

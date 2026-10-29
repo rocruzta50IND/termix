@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.*
+*.log
+# fluxo: papel local por máquina, nunca versionar
+CLAUDE.local.md
