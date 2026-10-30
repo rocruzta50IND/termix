@@ -215,7 +215,7 @@ function viewRect() {
 function sendDock(m, p) {
   const c = $('#col').getBoundingClientRect();
   const clr = m === 'web' ? null : clearDockState(p);
-  const W = 276 + (clr ? 92 : 0), H = 46;
+  const W = 276 + (clr ? 134 : 0), H = 46;
   const visible = !!p && (m === 'term' || m === 'noterm' || m === 'web') && (!overlayOpen() || (UI.menu && UI.menu.type === 'rail' && !UI.pop && !$('#modalRoot').firstChild)) && !$('#splash');
   const st = {
     visible, mode: m === 'web' ? 'web' : 'term',
@@ -305,7 +305,7 @@ api.onWebOpen(({ tabId, url }) => {
 });
 api.onWebToggle(toggleSurface);
 api.onWebFocusUrl(() => { if (mode() === 'web') { const i = $('#wurl'); if (i) i.focus(); } });
-api.onDockAction((m) => { if (m === 'clear') clearFlow(); else setSurface(m === 'web' ? 'web' : 'term'); });
+api.onDockAction((m) => { if (m === 'clear') clearFlow(); else if (m === 'restart') dockRestart(); else setSurface(m === 'web' ? 'web' : 'term'); });
 
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key === '`') { e.preventDefault(); e.stopPropagation(); toggleSurface(); }

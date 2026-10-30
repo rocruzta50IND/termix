@@ -8,6 +8,13 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
+**TASK-028 etapa 2 — custo da retomada medido** (DEV1)
+
+- Ao usar Clear com retomada, o app mede o contexto (em tokens) antes do `/clear`, a base da conversa nova e o fim da primeira resposta; mostra "A retomada custou ~X tokens" no painel de eventos e no tooltip do anel CTX.
+- Botão de reiniciar o chat movido do cabeçalho para o alternador de baixo, ao lado do Clear (só o ícone).
+- Estado: VALIDADA EM DEV1 (2026-10-30). Custo da retomada testado e aprovado; o botão de reiniciar no alternador foi aceito para fechar.
+- Decisão de escopo: TASK-013 (plugins, skills e MCPs) entra no MVP e é o foco seguinte; TASK-010 é a última do MVP e a promoção para a `main` espera o instalador testado (TASK-010 + TASK-020).
+
 **TASK-025 — botão Clear no alternador de baixo** (DEV1)
 
 - Botão "Clear" ao lado de Terminais: limpa o contexto do terminal ativo. Confirmação com "Só limpar" ou "Fechar a tarefa e limpar" (registra a tarefa, manda `/clear` e pede para retomar pelos arquivos do projeto).

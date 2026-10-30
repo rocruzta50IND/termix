@@ -32,7 +32,7 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Se falhar, a aba **continua** e o app oferece "Tentar de novo" ou "Nova conversa". **Nunca cria uma conversa nova em silêncio.**
 - Se o agente está trabalhando: "Aguardar finalizar e reiniciar" ou "Interromper e reiniciar".
 - Aba criada que **nunca recebeu mensagem** não tem histórico (o Claude Code só grava depois da primeira mensagem): o app abre a **mesma conversa vazia** com `--session-id`, em vez de dar "No conversation found".
-- A aba mostra "Retomar" quando está encerrada e o botão é só um ícone discreto (reiniciar).
+- A aba mostra "Retomar" quando está encerrada e o botão de reiniciar é só um ícone, no alternador de baixo, ao lado do Clear (saiu do cabeçalho; TASK-028).
 
 ## Permissões
 - Cada aba é **Normal** ou **Dangerously** (`--dangerously-skip-permissions`, sem isolamento do sistema).

@@ -16,6 +16,22 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-028 — Medir o custo da retomada e novos gatilhos do botão Clear (só no app)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (etapa 2; as candidatas seguem em aberto, sem data)
+- **Prioridade:** Média (continuação da TASK-027)
+- **Objetivo:** provar com números o ganho da retomada enxuta e deixar o botão Clear mais esperto, só com configuração dentro do app (o fluxo Rocruzta não será alterado).
+- **Etapa 2 — medir o custo:** guardar o CTX antes do `/clear`, logo depois da retomada e ao fim da primeira resposta; mostrar "a retomada custou X mil tokens" e a "base da sessão" (CTX antes do primeiro pedido: CLAUDE.md, plugins, skills).
+- **Candidatas:** aviso "pronto para limpar" quando o fechamento termina; pulso também com cache frio e contexto grande (limpar sai mais barato que reescrever); modo "tarefa pequena" (alerta 15 %) e "tarefa longa" (35 %) por aba ou projeto, trocável no botão; mostrar plugins/skills/MCPs ativos e o peso estimado (liga com a TASK-013); registro de consumo e ritmo (TASK-026).
+- **Feito até agora (etapa 2, 2026-10-30):** `src/renderer/app.js`: no Clear com retomada, o app guarda o contexto em tokens antes do `/clear` (soma do `current_usage`, mais exata que o `used_percentage`, que vem inteiro), a **base** da conversa nova (última leitura da status line depois do `SessionStart` e antes do pedido de retomada) e o contexto no fim da primeira resposta (2,5 s depois do `Stop`). Ao fim, um evento no painel diz "A retomada custou ~X tokens · base A → B · antes do /clear C", e o tooltip do anel CTX mostra a base e o custo da última retomada. Sem leitura da base (a status line pode não atualizar logo após o `/clear`), mostra só "contexto depois da retomada". "Só limpar" não mede.
+- **Ajuste pedido (2026-10-30):** o botão de reiniciar o chat saiu do cabeçalho e foi para o alternador de baixo, só o ícone, ao lado do Clear (`src/dock.js`, `src/dock.html`, `src/renderer/web.js`, `src/renderer/app.js`). Mesmo comportamento: reinicia com a conversa atual, vira "Retomar a conversa" com a sessão encerrada e "Tentar de novo" na falha; gira enquanto reinicia. Como o alternador não mostra dicas nativas, o ícone fica sem rótulo.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/web.js`, `src/dock.js`, `src/dock.html`, `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; num terminal do Claude Code, usar Clear > "Fechar a tarefa e limpar". Ao fim da primeira resposta da conversa nova deve aparecer o evento com o custo da retomada (painel de eventos) e o tooltip do CTX deve mostrar base e custo.
+- **Pendências:** as candidatas acima (aviso "pronto para limpar", pulso com cache frio, modos de tarefa pequena/longa, plugins ativos e peso) ficam para depois; o foco passou para a TASK-013.
+- **Próximo passo:** TASK-013 (plugins, skills e MCPs no app, agora MVP).
+- **Validada em:** 2026-10-30 (o usuário testou: o custo da retomada funciona; o botão de reiniciar no alternador foi aceito para fechar). Falta promover para a `main` só com a versão consolidada (instalador testado).
+
 ### TASK-025 — Botão Clear no alternador de baixo (MVP)
 
 - **Responsável:** DEV1
@@ -94,7 +110,7 @@ _Nenhuma no momento._
 - **Decisões:** NSIS por usuário, só x64; sem `asar`; instalador não assinado (SmartScreen avisa); o app não instala o Claude Code. Detalhes em `docs/DECISOES.md`. `electron` passou para `devDependencies` (exigência do builder).
 - **Arquivos tocados:** `package.json`, `package-lock.json`, `.gitignore`, `CLAUDE.md`, `src/main.js`, `src/hook-wrapper.js`, `src/statusline-wrapper.js`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
 - **Como validar:** `npm run dist`; instalar o `.exe` de `dist\` (de preferência num PC sem Node.js, com o Claude Code instalado e logado); abrir pelo atalho, criar um projeto e uma aba, enviar uma mensagem; conferir o selo/aviso ao terminar; abrir o atalho de novo (deve trazer a janela existente); desinstalar e conferir que os dados em `%APPDATA%\Termix` continuam.
-- **Pendências:** teste em Windows limpo (vira TASK-020); Windows 10 (o fundo "Ofuscado" depende do Windows 11). Não feito: assinatura do código e atualização automática.
+- **Pendências:** é a última tarefa do MVP; teste em Windows limpo (TASK-020, pré-requisito para promover à `main`); Windows 10 (o fundo "Ofuscado" depende do Windows 11). Não feito: assinatura do código e atualização automática.
 - **Validada em:** 2026-10-30. O usuário não tem como testar em outro PC agora e vai usar o app no dia a dia para dar feedback; aceitou o estado atual como MVP, com o teste em Windows limpo registrado na TASK-020. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-005 — Validar controles da janela e menus das abas
@@ -243,16 +259,6 @@ _Nenhuma no momento._
 
 ## Backlog
 
-### TASK-028 — Medir o custo da retomada e novos gatilhos do botão Clear (só no app)
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Média (continuação da TASK-027)
-- **Objetivo:** provar com números o ganho da retomada enxuta e deixar o botão Clear mais esperto, só com configuração dentro do app (o fluxo Rocruzta não será alterado).
-- **Etapa 2 — medir o custo:** guardar o CTX antes do `/clear`, logo depois da retomada e ao fim da primeira resposta; mostrar "a retomada custou X mil tokens" e a "base da sessão" (CTX antes do primeiro pedido: CLAUDE.md, plugins, skills).
-- **Candidatas:** aviso "pronto para limpar" quando o fechamento termina; pulso também com cache frio e contexto grande (limpar sai mais barato que reescrever); modo "tarefa pequena" (alerta 15 %) e "tarefa longa" (35 %) por aba ou projeto, trocável no botão; mostrar plugins/skills/MCPs ativos e o peso estimado (liga com a TASK-013); registro de consumo e ritmo (TASK-026).
-- **Próximo passo:** (ao retomar) começar pela medição do custo da retomada.
-
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 
 - **Responsável:** A definir
@@ -354,16 +360,17 @@ _Nenhuma no momento._
 
 - **Responsável:** A definir
 - **Status:** BACKLOG
-- **Prioridade:** Média
+- **Prioridade:** Média (pré-requisito da promoção para a `main`, junto da TASK-010)
 - **Objetivo:** garantir que o instalador funcione em um computador sem nada do ambiente de desenvolvimento. Ativar o Windows Sandbox (como administrador: `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All`, exige reiniciar) e testar: instalação pelo instalador com janelas, abertura do app, aviso na aba quando não há Claude Code, atalhos e desinstalação (que mantém os dados).
 - **Notas:** o Windows Sandbox não estava ativado em 2026-10-30 (virtualização presente). Fora do Sandbox já foi testado instalando em pasta temporária com PATH sem Node (TASK-010). Windows 10 não foi testado.
 
 ### TASK-013 — Gerenciar plugins, skills e MCPs pelo app
 
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Baixa (pós-MVP)
-- **Objetivo:** hoje a leitura é somente leitura; evoluir para editar e ativar/desativar por escopo, com aviso de "reinicie para aplicar".
+- **Responsável:** DEV1
+- **Status:** PRONTA
+- **Prioridade:** Alta (MVP) — foco da próxima etapa (decisão do usuário, 2026-10-30)
+- **Objetivo:** deixar "totalmente redondos" os controladores das telas **Plugins, MCPs e Skills**: hoje a leitura é somente leitura; evoluir para editar e ativar/desativar por escopo, com aviso de "reinicie para aplicar".
+- **Próximo passo:** (ao retomar) ler as três telas atuais, listar o que falta em cada uma e propor os critérios de aceite ao usuário antes de mexer.
 
 ## Concluídas
 

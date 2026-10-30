@@ -278,6 +278,8 @@ api.onExit(({ tabId, code }) => {
 // métricas da status line: limites da conta (5h e 7d) e contexto por sessão
 function onMetric({ tabId, data }) {
   MET[tabId] = data;
+  const c = RT[tabId] && RT[tabId].cost; // base da conversa nova: leitura mais recente antes do pedido de retomada
+  if (c && c.phase === 'cleared' && data.updated >= c.clearedAt && ctxTok(data) !== null) c.base = ctxTok(data);
   const rl = data.rate_limits;
   if (rl && (!UI.limits || data.updated >= UI.limits.updated)) {
     const w = (x) => (x && typeof x.used_percentage === 'number' ? { pct: x.used_percentage, resets: x.resets_at } : null);
@@ -323,10 +325,14 @@ api.onHook(({ tabId, data }) => {
   // /clear cria uma conversa nova com outro ID; o Retomar precisa do ID atual (compactação e resume mantêm o ID)
   if (data.session_id && data.session_id !== tab.sessionId) { tab.sessionId = data.session_id; tab.started = true; save(); }
   switch (data.event) {
-    case 'UserPromptSubmit': case 'PostToolUse': setSt(tab, 'work'); break;
+    case 'UserPromptSubmit': case 'PostToolUse':
+      setSt(tab, 'work');
+      if (data.event === 'UserPromptSubmit' && r.cost && r.cost.phase === 'cleared') r.cost.phase = 'resumed'; // o pedido de retomada entrou: a base fica congelada
+      break;
     case 'SessionStart':
       setSt(tab, 'wait');
       if (data.source === 'clear') { r.term.write('\x1b[2J\x1b[3J\x1b[H'); api.write(tab.id, '\x0c'); } // apaga a tela e o histórico visível e pede o redesenho (Ctrl+L)
+      if (data.source === 'clear' && r.cost && r.cost.phase === 'clearing') { r.cost.phase = 'cleared'; r.cost.clearedAt = Date.now(); }
       if (r.flow && r.flow.step === 'clearing' && data.source === 'clear') {
         const resume = r.flow.resume;
         r.flow = null;
@@ -336,6 +342,7 @@ api.onHook(({ tabId, data }) => {
       break;
     case 'Stop':
       setSt(tab, 'wait');
+      if (r.cost && r.cost.phase === 'resumed') { r.cost.phase = 'ending'; setTimeout(() => finishCost(tab), 2500); } // dá tempo da status line gravar o fim da resposta
       notifyTab(p, tab, 'done', 'Terminou · aguarda você');
       break;
     case 'Notification':
@@ -389,6 +396,19 @@ async function clearPrompts(p) {
 }
 const clearCfg = () => S.settings.clear || CLEAR_DEF;
 const typeTo = (tab, text) => { api.write(tab.id, text); setTimeout(() => api.write(tab.id, '\r'), 150); };
+// tokens no contexto agora (soma do uso atual; o used_percentage vem em inteiro e a 1M de janela cada 1 % são 10 mil tokens)
+const ctxTok = (m) => { const u = m && m.context_window && m.context_window.current_usage; return u ? (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0) : null; };
+// custo da retomada: antes do /clear → base da conversa nova (antes do pedido de retomada) → fim da primeira resposta
+function finishCost(tab) {
+  const r = RT[tab.id], c = r && r.cost;
+  if (!c || c.phase !== 'ending') return;
+  c.after = ctxTok(MET[tab.id]); c.phase = 'done';
+  if (c.after === null) return;
+  const parts = [c.base !== null ? `base ${fmtTok(c.base)} → ${fmtTok(c.after)}` : `contexto depois da retomada ${fmtTok(c.after)}`];
+  if (c.before !== null) parts.push(`antes do /clear ${fmtTok(c.before)}`);
+  addEvent({ c: tab.color, who: tab.name, msg: `${c.base !== null ? `A retomada custou ~${fmtTok(Math.max(0, c.after - c.base))} tokens` : 'Retomada concluída'} · ${parts.join(' · ')}` });
+  renderRail();
+}
 function markCount(term) { // quantas vezes o aviso final aparece no texto do terminal (linhas quebradas são unidas)
   const b = term.buffer.active; let t = '';
   for (let i = 0; i < b.length; i++) { const l = b.getLine(i); if (l) t += (l.isWrapped ? '' : '\n') + l.translateToString(true); }
@@ -401,8 +421,11 @@ function clearDockState(p) {
   const cp = ((MET[tab.id] || {}).context_window || {}).used_percentage;
   const ready = !!(r && r.alive && r.st === 'wait' && !r.flow);
   const a = +clearCfg().alert;
-  return { off: !ready, busy: !!(r && r.flow), pulse: ready && a > 0 && typeof cp === 'number' && cp >= a };
+  const st = stOf(tab);
+  return { off: !ready, busy: !!(r && r.flow), pulse: ready && a > 0 && typeof cp === 'number' && cp >= a,
+    rst: { spin: st === 'restart', off: st === 'restart' || !!(r && r.flow), tip: st === 'end' ? 'Retomar a conversa' : st === 'fail' ? 'Tentar de novo' : 'Reiniciar com a conversa atual' } };
 }
+function dockRestart() { const p = curProject(), tab = p && curTab(p); if (tab) restartTab(p, tab); }
 async function clearFlow() {
   const p = curProject(), tab = p && curTab(p), r = tab && RT[tab.id];
   if (!r || !r.alive || r.st !== 'wait' || r.flow) return;
@@ -425,6 +448,7 @@ async function clearFlow() {
 function doClear(tab, resumeText) { // resumeText vazio = só limpar, sem pedir a retomada
   const r = RT[tab.id];
   r.flow = { step: 'clearing', t0: Date.now(), resume: resumeText };
+  r.cost = resumeText ? { phase: 'clearing', before: ctxTok(MET[tab.id]), base: null, after: null } : null; // só mede quando há retomada
   typeTo(tab, '/clear');
   renderRail();
 }
@@ -543,8 +567,10 @@ function railHTML(p, tab) {
   // contexto
   const cw = m.context_window || {};
   const cp = typeof cw.used_percentage === 'number' ? cw.used_percentage : null;
+  const rc = (RT[tab.id] || {}).cost; // última retomada medida: base (CLAUDE.md, plugins, skills) e custo
+  const cost = rc && rc.phase === 'done' && rc.after !== null ? ` · ${rc.base !== null ? `base ${fmtTok(rc.base)}, retomada custou ~${fmtTok(Math.max(0, rc.after - rc.base))}` : `após a retomada ${fmtTok(rc.after)}`}` : '';
   const ctx = cp !== null
-    ? ring('CTX', cp, Math.round(cp), `Contexto · ${Math.round(cp)}%`, cw.total_input_tokens ? `${fmtTok(cw.total_input_tokens)}${cw.context_window_size ? ` de ${fmtTok(cw.context_window_size)}` : ''} tokens` : 'desta conversa')
+    ? ring('CTX', cp, Math.round(cp), `Contexto · ${Math.round(cp)}%`, (cw.total_input_tokens ? `${fmtTok(cw.total_input_tokens)}${cw.context_window_size ? ` de ${fmtTok(cw.context_window_size)}` : ''} tokens` : 'desta conversa') + cost)
     : ring('CTX', null, '—', 'Contexto', noData);
 
   // cache de prompt: tempo até esfriar (o TTL vem do Claude Code: 1 h na assinatura, 5 min com créditos extras ou chave de API).
@@ -692,7 +718,6 @@ function renderTabs() {
       ${closed ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
       <span class="state"><i class="dot ${sc}"></i>${sl}</span>
       ${st === 'fail' ? `<button class="btn sm" data-newconv="${cur.id}">Nova conversa</button>` : ''}
-      <button class="btn icon ${st === 'restart' ? 'spin' : ''}" data-restart="${cur.id}" ${st === 'restart' ? 'disabled' : ''} title="${st === 'end' ? 'Retomar a conversa' : st === 'fail' ? 'Tentar de novo' : 'Reiniciar com a conversa atual'}" aria-label="Reiniciar">${ic('refresh', 15)}</button>
     </div>`;
 }
 
