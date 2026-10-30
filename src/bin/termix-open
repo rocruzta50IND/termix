@@ -1,0 +1,7 @@
+#!/bin/sh
+# termix-open: abre uma página local na aba Web do Termix (só existe nos terminais do Termix). Versão para o Git Bash.
+here="$(cd "$(dirname "$0")" && pwd)"
+if command -v node >/dev/null 2>&1; then
+  exec node "$here/../open-wrapper.js" "$@"
+fi
+exec "$TERMIX_EXE" --termix-run "$here/../open-wrapper.js" "$@"

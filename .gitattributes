@@ -1,0 +1,2 @@
+src/bin/termix-open text eol=lf
+src/bin/*.cmd text eol=crlf

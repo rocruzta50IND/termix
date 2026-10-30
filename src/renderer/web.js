@@ -91,9 +91,24 @@ function ensureWebBar() {
   inp.addEventListener('focus', () => inp.select());
 }
 
+// a Web é só para testes locais: o resto abre no navegador do sistema (mesma regra do processo principal)
+const LOCAL_HOST = /^(localhost|127(\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2}|[^.]+\.localhost)$/i;
+function isLocalUrl(u) {
+  try {
+    const x = new URL(u);
+    return x.protocol === 'file:' || (/^https?:$/.test(x.protocol) && LOCAL_HOST.test(x.hostname));
+  } catch { return false; }
+}
+
 function goUrl(t, raw) {
   const url = normalizeUrl(raw);
   if (!url) return;
+  if (!isLocalUrl(url)) {
+    api.webExternal(url);
+    addEvent({ who: 'Web', msg: `A aba Web abre só páginas locais. Aberto no navegador do sistema: ${url}`, done: true });
+    const inp = $('#wurl'); if (inp) inp.value = t.url || '';
+    return;
+  }
   t.url = url; save();
   UI.webFocus = false;
   if (WEB[t.id] && WEB[t.id].created) api.webGo(t.id, url); // a vista já existe
@@ -119,9 +134,53 @@ function renderWebStart() {
   const el = $('#wstart');
   const show = !!t && !t.url && mode() === 'web';
   el.classList.toggle('hide', !show);
-  if (!show || el.firstChild) return;
-  el.innerHTML = `<div class="wst">${wic('globe', 34)}<h2>Navegador do projeto</h2><p>Digite um endereço na barra acima, ou abra um destes:</p>
+  if (!show) return;
+  const det = detectedFor(p);
+  const html = `<div class="wst">${wic('globe', 34)}<h2>Navegador do projeto</h2>
+    ${det.length ? `<p>Servidores detectados nos terminais deste projeto:</p><div class="wq">${det.map((d) => `<button class="btn pri sm" data-wquick="${esc(d.url)}">${esc(shortUrl(d.url))}</button>`).join('')}</div>` : ''}
+    <p>Digite um endereço local na barra acima${det.length ? ' ou abra outro' : ', ou abra um destes'}:</p>
     <div class="wq">${['localhost:3000', 'localhost:5173', 'localhost:8080', 'localhost:4200'].map((u) => `<button class="btn sm" data-wquick="${u}">${u}</button>`).join('')}</div></div>`;
+  if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
+}
+
+/* ---------- servidores locais detectados nos terminais (selo no alternador) ---------- */
+const DET = {}; // id do projeto -> [{ url, t }]
+const detProbe = new Map(); // projeto|origem -> instante da última checagem
+const shortUrl = (u) => u.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+const sameUrl = (a, b) => a.replace(/\/$/, '') === b.replace(/\/$/, '');
+function detectedFor(p) {
+  const open = webOf(p).tabs.map((t) => t.url);
+  DET[p.id] = (DET[p.id] || []).filter((d) => !open.some((u) => sameUrl(u, d.url)));
+  return DET[p.id];
+}
+const ANSI_RE = /\x1b\[[0-9;?]*[ -\/]*[@-~]|\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g;
+const LOCAL_URL_RE = /https?:\/\/(?:localhost|127(?:\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|192\.168(?:\.\d{1,3}){2}|10(?:\.\d{1,3}){3})(?::\d{2,5})?/gi;
+function webDetect(p, data) {
+  const found = data.replace(ANSI_RE, '').match(LOCAL_URL_RE);
+  if (!found) return;
+  for (const raw of new Set(found)) {
+    const url = `${raw.replace('0.0.0.0', 'localhost').toLowerCase()}/`;
+    const key = `${p.id}|${url}`;
+    if (Date.now() - (detProbe.get(key) || 0) < 30000) continue;
+    detProbe.set(key, Date.now());
+    api.webProbe(url).then((alive) => {
+      if (!alive || webOf(p).tabs.some((t) => sameUrl(t.url, url)) || (DET[p.id] || []).some((d) => sameUrl(d.url, url))) return;
+      (DET[p.id] = DET[p.id] || []).unshift({ url, t: Date.now() });
+      DET[p.id] = DET[p.id].slice(0, 5);
+      UI.webNew = { ...(UI.webNew || {}), [p.id]: true };
+      if (mode() === 'web' && curProject() === p) renderWebDet();
+      queueSync();
+    });
+  }
+}
+// faixa com os servidores detectados que ainda não estão abertos (a tela inicial da aba em branco já os mostra)
+function renderWebDet() {
+  const p = curProject(), t = p && curWebTab(p);
+  const el = $('#wdet');
+  const det = p && t && t.url ? detectedFor(p) : [];
+  el.classList.toggle('hide', !det.length || mode() !== 'web');
+  const html = det.length ? `<span>Detectado nos terminais:</span>${det.map((d) => `<button class="btn sm" data-wnewurl="${esc(d.url)}" title="Abrir em nova aba">${esc(shortUrl(d.url))}</button>`).join('')}` : '';
+  if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
 }
 
 function webRender(m) {
@@ -133,8 +192,10 @@ function webRender(m) {
     $('#wtabs').innerHTML = webTabsHTML(p);
     ensureWebBar();
     updateWebBar();
+    if (UI.webNew && UI.webNew[p.id]) UI.webNew = { ...UI.webNew, [p.id]: false }; // quem abre a Web viu o aviso
   }
   renderWebStart();
+  renderWebDet();
   webSync();
 }
 
@@ -153,13 +214,14 @@ function viewRect() {
 
 function sendDock(m, p) {
   const c = $('#col').getBoundingClientRect();
-  const W = 250, H = 46;
+  const W = 276, H = 46;
   const visible = !!p && (m === 'term' || m === 'noterm' || m === 'web') && !overlayOpen() && !$('#splash');
   const st = {
     visible, mode: m === 'web' ? 'web' : 'term',
     terms: p ? openTabs(p).length : 0,
     attention: p ? openTabs(p).some((t) => RT[t.id] && RT[t.id].unread) : false,
     webs: p && p.web ? p.web.tabs.filter((t) => t.url).length : 0,
+    fresh: !!(p && UI.webNew && UI.webNew[p.id]), // algo novo na Web deste projeto (aberto por um terminal ou servidor detectado)
     fade: !!railCfg().fade,
     rect: { x: c.left + (c.width - W) / 2, y: c.bottom - H + 8, width: W, height: H }, // metade dentro da base de vidro, para cobrir pouco do terminal
   };
@@ -218,6 +280,25 @@ api.onWebNewTab(({ from, url }) => {
   WEB[t.id] = { created: true };
   if (mode() === 'web') renderAll();
 });
+// um terminal pediu para abrir uma página local (termix-open ou BROWSER): vira aba web do projeto dessa aba, sem tirar o usuário do que está fazendo
+api.onWebOpen(({ tabId, url }) => {
+  const f = findTab(tabId);
+  if (!f || !isLocalUrl(url)) return;
+  const { p, tab } = f, w = webOf(p);
+  const viewing = UI.surface === 'web' && curProject() === p;
+  const cur = curWebTab(p);
+  let t = w.tabs.find((x) => sameUrl(x.url, url));
+  let activate = !viewing || !!(cur && !cur.url);
+  if (t) { if (WEB[t.id] && WEB[t.id].created) api.webNav(t.id, 'reload'); }
+  else if (cur && !cur.url) { t = cur; t.url = url; } // aproveita a aba em branco
+  else t = addWebTab(p, url, false);
+  if (activate) w.active = t.id;
+  DET[p.id] = (DET[p.id] || []).filter((d) => !sameUrl(d.url, url));
+  save();
+  addEvent({ who: tab.name, c: tab.color, msg: `Aberto na aba Web: ${shortUrl(url)}`, done: true });
+  if (!(viewing && activate)) UI.webNew = { ...(UI.webNew || {}), [p.id]: true };
+  if (mode() === 'web') renderAll(); else queueSync();
+});
 api.onWebToggle(toggleSurface);
 api.onWebFocusUrl(() => { if (mode() === 'web') { const i = $('#wurl'); if (i) i.focus(); } });
 api.onDockAction((m) => setSurface(m === 'web' ? 'web' : 'term'));
@@ -234,6 +315,7 @@ document.addEventListener('click', (e) => {
   if ((el = q('[data-wx]'))) { e.stopPropagation(); if (p) { closeWebTab(p, el.dataset.wx); renderAll(); } return; }
   if ((el = q('[data-wtab]'))) { if (p) { webOf(p).active = el.dataset.wtab; save(); renderAll(); } return; }
   if (q('[data-wnew]')) { if (p) { const t = addWebTab(p, ''); UI.webFocus = false; renderAll(); setTimeout(() => $('#wurl') && $('#wurl').focus(), 0); void t; } return; }
+  if ((el = q('[data-wnewurl]'))) { if (p) { const t = addWebTab(p, el.dataset.wnewurl); WEB[t.id] = {}; renderAll(); } return; }
   if ((el = q('[data-wquick]'))) { const t = p && curWebTab(p); if (t) { goUrl(t, el.dataset.wquick); renderAll(); } return; }
   if ((el = q('[data-wnav]'))) { const t = p && curWebTab(p); if (t) api.webNav(t.id, el.dataset.wnav === 'reload' && e.shiftKey ? 'hardreload' : el.dataset.wnav); return; }
   if (q('[data-wdev]')) { if (p) { const w = webOf(p); w.device = ((w.device || 0) + 1) % DEVICES.length; save(); updateWebBar(); webSync(); } return; }

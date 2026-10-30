@@ -2,11 +2,22 @@
 // Navegador embutido (TASK-022): uma WebContentsView por aba web e uma vista pequena só com o alternador Terminais / Web.
 // A vista nativa fica por cima do HTML, por isso o alternador é outra vista (adicionada depois, logo acima) e, com menu/modal aberto,
 // a interface troca a vista do navegador por uma imagem dela (web:snapshot).
-const { WebContentsView, session } = require('electron');
+const { WebContentsView, session, shell } = require('electron');
 const path = require('path');
+const net = require('net');
 
 const PARTITION = 'persist:termix-web'; // perfil próprio e persistente: cookies e logins ficam entre aberturas, separados da interface do app
-const isWeb = (u) => /^https?:\/\//i.test(u);
+const isHttp = (u) => /^https?:\/\//i.test(u);
+// a Web é só para testes locais (TASK-024): localhost, redes privadas e arquivos; o resto abre no navegador do sistema
+const LOCAL_HOST = /^(localhost|127(\.\d{1,3}){3}|0\.0\.0\.0|\[::1\]|10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2}|[^.]+\.localhost)$/i;
+function isLocal(u) {
+  try {
+    const x = new URL(u);
+    if (x.protocol === 'file:') return true;
+    return /^https?:$/.test(x.protocol) && LOCAL_HOST.test(x.hostname);
+  } catch { return false; }
+}
+const openExternal = (u) => { if (isHttp(u)) shell.openExternal(u); };
 
 function setupWeb({ ipcMain, getWin }) {
   const views = new Map(); // id da aba web -> WebContentsView
@@ -39,13 +50,15 @@ function setupWeb({ ipcMain, getWin }) {
     const upd = () => { if (!wc.isDestroyed()) send('web:update', state()); };
     for (const ev of ['did-navigate', 'did-navigate-in-page', 'page-title-updated', 'did-start-loading', 'did-stop-loading']) wc.on(ev, upd);
     wc.setWindowOpenHandler(({ url, disposition }) => {
-      if (!isWeb(url)) return { action: 'deny' };
-      // janela com tamanho (window.open com features), como "Entrar com Google/GitHub": precisa de janela de verdade, com o mesmo perfil e ligada à página de origem
+      if (!isLocal(url)) { openExternal(url); return { action: 'deny' }; }
+      // janela com tamanho (window.open com features): precisa de janela de verdade, com o mesmo perfil e ligada à página de origem
       if (disposition === 'new-window') return { action: 'allow', overrideBrowserWindowOptions: { parent: win() || undefined, width: 520, height: 700, autoHideMenuBar: true, backgroundColor: '#ffffff', webPreferences: { partition: PARTITION, sandbox: true, contextIsolation: true, nodeIntegration: false } } };
       send('web:newtab', { from: id, url }); // link com target=_blank vira aba web
       return { action: 'deny' };
     });
-    wc.on('will-navigate', (e, url) => { if (!isWeb(url) && !/^about:blank$/i.test(url)) e.preventDefault(); });
+    const guard = (e, url) => { if (!isLocal(url) && !/^about:blank$/i.test(url)) { e.preventDefault(); openExternal(url); } };
+    wc.on('will-navigate', guard);
+    wc.on('will-redirect', guard);
     wc.on('before-input-event', (e, input) => {
       if (input.type !== 'keyDown' || !input.control) return;
       if (input.key === '`') { e.preventDefault(); send('web:toggle'); }
@@ -63,7 +76,7 @@ function setupWeb({ ipcMain, getWin }) {
   ipcMain.on('web:show', (_e, m) => {
     if (!m || !m.id) { hideAll(); return; }
     let view = views.get(m.id);
-    if (!view) { view = create(m.id); if (m.url && isWeb(m.url)) view.webContents.loadURL(m.url).catch(() => {}); }
+    if (!view) { view = create(m.id); if (m.url && isLocal(m.url)) view.webContents.loadURL(m.url).catch(() => {}); }
     for (const [id, v] of views) if (id !== m.id) v.setVisible(false);
     view.setBounds(rectOf(m.rect));
     view.setVisible(true);
@@ -73,8 +86,19 @@ function setupWeb({ ipcMain, getWin }) {
   ipcMain.on('web:go', (_e, { id, url }) => {
     const view = views.get(id);
     if (!view) return;
-    if (isWeb(url)) { view.webContents.loadURL(url).catch(() => {}); view.webContents.focus(); }
+    if (isLocal(url)) { view.webContents.loadURL(url).catch(() => {}); view.webContents.focus(); } else openExternal(url);
   });
+  ipcMain.on('web:external', (_e, url) => openExternal(String(url)));
+  // só mostra um servidor detectado no terminal se ele estiver mesmo de pé (texto de documentação também cita localhost)
+  ipcMain.handle('web:probe', (_e, url) => new Promise((ok) => {
+    let u;
+    try { u = new URL(url); } catch { ok(false); return; }
+    if (!isLocal(url) || u.protocol === 'file:') { ok(false); return; }
+    const sock = net.connect({ host: u.hostname.replace(/^\[|\]$/g, ''), port: +u.port || (u.protocol === 'https:' ? 443 : 80), timeout: 600 });
+    sock.on('connect', () => { sock.destroy(); ok(true); });
+    sock.on('timeout', () => { sock.destroy(); ok(false); });
+    sock.on('error', () => ok(false));
+  }));
   ipcMain.on('web:nav', (_e, { id, cmd }) => {
     const view = views.get(id);
     if (!view) return;

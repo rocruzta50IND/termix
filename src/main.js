@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { execFile } = require('child_process');
+const { pathToFileURL } = require('url');
 const { setupWeb } = require('./web');
 
 // Modo "executar script": o Claude Code chama os encaminhadores (hooks e status line) como comando externo.
@@ -74,6 +75,16 @@ function findInPath(names) {
 }
 
 const METRICS_DIR = () => path.join(app.getPath('userData'), 'metrics');
+const BIN_DIR = () => path.join(__dirname, 'bin');
+const OPEN_HINT = 'Se o comando termix-open existir, voce esta dentro do app Termix: para abrir paginas locais, como um index.html ou um servidor em localhost, use termix-open seguido do caminho do arquivo ou do endereco local, por exemplo termix-open index.html ou termix-open http://localhost:3000, em vez de start, open ou do navegador padrao. Se o comando nao existir, abra do jeito normal.';
+// ambiente do terminal do Termix: comando termix-open no PATH e BROWSER apontando para ele, só nesta sessão (terminais fora do app não mudam)
+function sessionEnv(tabId) {
+  const env = { ...cleanEnv(), TERM: 'xterm-256color', COLORTERM: 'truecolor', TERMIX_METRICS_DIR: METRICS_DIR(), TERMIX_TAB_ID: tabId, TERMIX_EXE: process.execPath };
+  const pathKey = Object.keys(env).find((k) => k.toLowerCase() === 'path') || 'Path';
+  env[pathKey] = `${BIN_DIR()}${path.delimiter}${env[pathKey] || ''}`;
+  env.BROWSER = path.join(BIN_DIR(), 'termix-open.cmd');
+  return env;
+}
 const HOOK = () => path.join(__dirname, 'hook-wrapper.js').replace(/\\/g, '/');
 const WRAPPER = () => path.join(__dirname, 'statusline-wrapper.js').replace(/\\/g, '/');
 
@@ -223,6 +234,8 @@ ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
     const hooks = {};
     for (const ev of ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Notification', 'Stop']) hooks[ev] = [hook];
     extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd }, hooks }));
+    // só nesta sessão: pede ao Claude Code que abra páginas locais pela aba Web (texto simples: passa por cmd.exe sem aspas nem símbolos)
+    extra.push('--append-system-prompt', OPEN_HINT);
     const finalArgs = [...args, ...extra];
     const fullArgs = isCmd ? ['/c', claude, ...finalArgs] : finalArgs;
     fs.mkdirSync(METRICS_DIR(), { recursive: true });
@@ -231,7 +244,7 @@ ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
       cols: cols || 120,
       rows: rows || 30,
       cwd,
-      env: { ...cleanEnv(), TERM: 'xterm-256color', COLORTERM: 'truecolor', TERMIX_METRICS_DIR: METRICS_DIR(), TERMIX_TAB_ID: tabId },
+      env: sessionEnv(tabId),
     });
     procs.set(tabId, p);
     // junta a saída do terminal em lotes (~8 ms) para não inundar o IPC com milhares de mensagens pequenas
@@ -425,6 +438,21 @@ function pollHooks() {
   }
 }
 
+// pedidos do termix-open (abrir página local na aba Web): o comando grava um arquivo, o app lê, entrega à interface e apaga
+function pollOpens() {
+  if (!win || win.isDestroyed()) return;
+  let files = [];
+  try { files = fs.readdirSync(METRICS_DIR()).filter((f) => f.startsWith('open-') && f.endsWith('.json')); } catch { return; }
+  for (const f of files) {
+    const full = path.join(METRICS_DIR(), f);
+    const data = readJson(full);
+    try { fs.unlinkSync(full); } catch { /* já removido */ }
+    if (!data || !data.tabId || !data.target || Date.now() - data.t > 60000) continue;
+    const url = /^https?:\/\//i.test(data.target) ? data.target : pathToFileURL(data.target).href;
+    win.webContents.send('web:open', { tabId: data.tabId, url });
+  }
+}
+
 // instantâneo das métricas já gravadas: a interface pede ao iniciar, para não perder o que chegou antes de estar pronta
 ipcMain.handle('metrics:all', () => {
   let files = [];
@@ -445,7 +473,7 @@ if (!RUN_MODE) {
   if (!app.requestSingleInstanceLock()) app.quit();
   else {
     app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-    app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); });
+    app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
   }
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
 }

@@ -8,7 +8,7 @@ let last = '';
 window.dock.onRender((st) => {
   document.body.classList.toggle('fade', !!st.fade);
   const html = `<button class="${st.mode === 'term' ? 'on' : ''}" data-m="term">${svg('term')}Terminais${st.terms ? `<span class="n ${st.attention ? 'att' : ''}">${st.terms}</span>` : ''}</button>`
-    + `<button class="${st.mode === 'web' ? 'on' : ''}" data-m="web">${svg('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}</button>`;
+    + `<button class="${st.mode === 'web' ? 'on' : ''}" data-m="web">${svg('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>`;
   if (html !== last) { last = html; document.getElementById('pill').innerHTML = html; }
 });
 document.addEventListener('click', (e) => {

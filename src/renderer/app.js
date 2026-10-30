@@ -233,6 +233,7 @@ api.onData(({ tabId, data }) => {
   if (!f) return;
   const r = ensureRT(f.tab);
   r.term.write(data);
+  if (window.webDetect) webDetect(f.p, data); // servidores locais citados na saída (selo na Web)
   const now = Date.now();
   r.lastData = now;
   if (!r.hooks && r.st === 'wait' && now - r.lastInput > 500) setSt(f.tab, 'work');

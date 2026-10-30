@@ -353,3 +353,6 @@ button.cl-row{width:100%;text-align:left;cursor:pointer;color:inherit;font:inher
 .wst h2{font-size:18px;color:var(--text);font-weight:600}
 .wst p{color:var(--text3)}
 .wq{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+
+/* TASK-024: servidores locais detectados nos terminais */
+.wdet{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(9,7,20,var(--term-op));border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text3);flex-wrap:wrap}
