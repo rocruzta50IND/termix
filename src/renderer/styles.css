@@ -337,3 +337,19 @@ button.cl-row{width:100%;text-align:left;cursor:pointer;color:inherit;font:inher
 .cl-go{padding:5px 14px;border-radius:99px;background:linear-gradient(135deg,#4f8dff,#2563eb);color:#fff;font-weight:600;font-size:12.5px;box-shadow:0 4px 16px rgba(59,130,246,.4)}
 .cl-more{align-self:flex-start;margin:2px 4px 0;color:var(--text3);font-size:12.5px;padding:4px 8px;border-radius:8px}
 .cl-more:hover{color:var(--text);background:var(--glass)}
+
+/* navegador embutido (TASK-022): a vista nativa do navegador ocupa o #whost; o alternador é uma vista própria por cima */
+.webpane{flex:1;min-height:0;display:flex;flex-direction:column;border-top:2px solid #5B9DFF}
+.wbar{display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(9,7,20,var(--term-op));border-bottom:1px solid var(--border)}
+.wb{height:30px;min-width:30px;padding:0 7px;border-radius:9px;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;white-space:nowrap}
+.wb:hover:not(:disabled){background:var(--glass2);color:var(--text)}
+.wb:disabled{opacity:.35;cursor:default}
+.wurl{flex:1;min-width:0;height:30px;border-radius:99px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);font:13px var(--sans);padding:0 16px;outline:0;user-select:text}
+.wurl:focus{border-color:var(--accent);background:rgba(255,255,255,.09)}
+.whost{flex:1;min-height:0;position:relative;background:rgba(9,7,20,var(--term-op))}
+.wshot{position:absolute;pointer-events:none}
+.wstart{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--text2)}
+.wst{display:flex;flex-direction:column;align-items:center;gap:10px}
+.wst h2{font-size:18px;color:var(--text);font-weight:600}
+.wst p{color:var(--text3)}
+.wq{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}

@@ -26,6 +26,11 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - Por padrão a cápsula **flutua sobre o texto** e fica **esmaecida (40 %)**, voltando ao normal ao passar o mouse; com "reservar espaço" o terminal ganha 82 px de margem à direita e o fundo vem da sessão. Menu da engrenagem abre ao lado da cápsula. Etiqueta opcional (modelo · projeto · branch · permissões) no canto inferior direito.
 - Só aparece com terminal aberto; a cápsula 5 h / 7 d do cabeçalho sai enquanto o rail está ligado.
 
+## Alternador Terminais / Web e navegador
+- **Pílula** de 46 px de altura e 250 px de largura no centro da base do recorte, meio dentro da base de vidro (cobre pouco do terminal): botões **Terminais** (ícone de janelas + selo com o número de abas, amarelo quando alguma pede atenção) e **Web** (globo + selo), o ativo em azul. Esmaecida (45 %) quando parada, normal ao passar o mouse. É uma vista própria por cima (ver abaixo), não HTML da interface.
+- **Tela Web:** abas de página no mesmo estilo das abas do terminal (cor azul), barra de navegação com voltar, avançar, recarregar/parar, endereço em cápsula, tamanho de dispositivo e DevTools, e a página embaixo. Aba sem endereço mostra uma tela inicial com atalhos de localhost.
+- **Regra técnica:** a vista nativa do navegador fica por cima de todo o HTML. Por isso o alternador é outra vista adicionada depois, e com menu, modal ou popover aberto a vista do navegador é trocada por uma imagem dela (`capturePage`) para o HTML ficar por cima. Em outras telas (Plugins, Consumo etc.) a vista é escondida.
+
 ## Marca e ícones
 - **Logo do cabeçalho:** só o prompt `>_`, sem caixa, com brilho; alinhado à altura do nome "Termix".
 - **Ícone do app / barra de tarefas:** quadrado escuro com borda azul luminosa, barra de abas coloridas e `>_` com brilho; versão de traço grosso para 16 e 32 px (`assets/icon.svg`, `assets/icon-small.svg`; gerar com `tools/make-icon.js`).

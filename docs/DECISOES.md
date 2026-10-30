@@ -49,6 +49,12 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Contexto, tokens e custo da sessão são coisas distintas; **custo é só estimativa**.
 - Captura: um encaminhador (`src/statusline-wrapper.js`) é injetado por sessão com `--settings`, grava os dados e repassa tudo para a status line original do usuário, sem mudar o que ele vê.
 
+## Navegador embutido (TASK-022)
+- Um **alternador Terminais / Web** flutua no centro da base do app (atalho **Ctrl+`**). A Web serve para **ver e testar** sistemas web do projeto; o agente controlar o navegador é uma ideia futura (MCP do próprio Termix), fora do MVP.
+- A Web é **por projeto**: cada projeto lembra suas abas web, endereços e tamanho de dispositivo. O perfil é **persistente** e separado da interface (cookies e logins ficam entre aberturas). A vista do navegador só é criada quando a aba é aberta.
+- Só abre **http/https**. Sem câmera, microfone, localização nem notificações no MVP. Links com `target=_blank` viram nova aba web.
+- O alternador esmaece quando parado (como o rail de informações). Ele flutua sobre a base do terminal, então cobre um pouco do rodapé; se atrapalhar, a alternativa é reservar uma faixa.
+
 ## Plugins, Skills e MCPs
 - No MVP são **somente leitura**, a partir dos arquivos reais de configuração (escopos User, Project e Local).
 - Gerenciá-los pelo app é uma ideia que o usuário quer, **pós-MVP** (TASK-013).

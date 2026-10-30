@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { execFile } = require('child_process');
+const { setupWeb } = require('./web');
 
 // Modo "executar script": o Claude Code chama os encaminhadores (hooks e status line) como comando externo.
 // Sem Node.js instalado, o próprio Termix os executa: `Termix.exe --termix-run <script>`. Não abre janela nem pega a trava de instância única.
@@ -26,6 +27,7 @@ try {
 } catch { /* sem migração: o app abre limpo */ }
 
 let win = null;
+const web = RUN_MODE ? null : setupWeb({ ipcMain, getWin: () => win }); // navegador embutido e alternador Terminais / Web (TASK-022)
 let quitting = false;
 let summary = { active: 0, working: 0 };
 const procs = new Map(); // tabId -> pty
@@ -127,6 +129,8 @@ function createWindow() {
   win.on('maximize', sendMax);
   win.on('unmaximize', sendMax);
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  web.attach();
+  win.on('closed', () => web.destroy());
 
   win.on('close', (e) => {
     if (quitting || summary.active === 0) { killAll(); return; }

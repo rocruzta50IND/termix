@@ -484,6 +484,7 @@ function mode() {
   const p = curProject();
   if (!p) return 'empty';
   if (UI.cur.page !== 'Terminais') return 'page';
+  if (UI.surface === 'web') return 'web'; // navegador embutido (TASK-022)
   return curTab(p) ? 'term' : 'noterm';
 }
 
@@ -731,7 +732,8 @@ function renderAll() {
   renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu(); renderRail();
   $('#tabsRow').classList.toggle('hide', m !== 'term');
   $('#sess').classList.toggle('hide', m !== 'term');
-  $('#page').classList.toggle('hide', m === 'term');
+  $('#page').classList.toggle('hide', m === 'term' || m === 'web');
+  if (window.webRender) webRender(m);
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
   if (m === 'term') showTab(curTab(curProject()));
 }

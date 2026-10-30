@@ -34,6 +34,18 @@ contextBridge.exposeInMainWorld('termix', {
   relaunch: () => ipcRenderer.send('app:relaunch'),
   saveText: (name, text) => ipcRenderer.invoke('file:saveText', { name, text }),
 
+  webShow: (m) => ipcRenderer.send('web:show', m),
+  webGo: (id, url) => ipcRenderer.send('web:go', { id, url }),
+  webNav: (id, cmd) => ipcRenderer.send('web:nav', { id, cmd }),
+  webClose: (id) => ipcRenderer.send('web:close', { id }),
+  webSnapshot: () => ipcRenderer.invoke('web:snapshot'),
+  onWebUpdate: (fn) => ipcRenderer.on('web:update', (_e, m) => fn(m)),
+  onWebNewTab: (fn) => ipcRenderer.on('web:newtab', (_e, m) => fn(m)),
+  onWebToggle: (fn) => ipcRenderer.on('web:toggle', () => fn()),
+  onWebFocusUrl: (fn) => ipcRenderer.on('web:focusurl', () => fn()),
+  dockState: (st) => ipcRenderer.send('dock:state', st),
+  onDockAction: (fn) => ipcRenderer.on('dock:action', (_e, m) => fn(m)),
+
   checkEnv: () => ipcRenderer.invoke('env:check'),
   scan: (projectPath) => ipcRenderer.invoke('scan:resources', projectPath),
 });

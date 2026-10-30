@@ -8,6 +8,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
+**TASK-022 — Alternador Terminais / Web com navegador embutido** (DEV1, aguardando teste do usuário)
+
+- Alternador em pílula (`Terminais` com selo de abas e atenção, `Web` com selo de abas) no centro da base, esmaecido quando parado; atalho Ctrl+`. Tela Web com abas de página, voltar/avançar/recarregar/parar, barra de endereço (localhost e porta viram `http://`, domínio vira `https://`, o resto vai para a busca), tamanho de dispositivo (Responsivo, Celular, Tablet) e DevTools. Web por projeto, com perfil persistente (`persist:termix-web`); a vista só é criada quando a aba é aberta. `target=_blank` abre nova aba web; só http/https; sem câmera, microfone, localização nem notificações.
+- Como funciona: `src/web.js` (processo principal) cria uma `WebContentsView` por aba; o alternador é outra vista (`src/dock.html`, `dock.js`, `dock-preload.js`) logo acima, porque a vista nativa fica por cima do HTML; com menu, modal ou popover aberto a vista do navegador é trocada por uma imagem dela (`capturePage`). Interface em `src/renderer/web.js`.
+- Testado numa instância isolada (CDP + captura só da janela do app): alternador por cima da página, página no retângulo certo, modal sobre a imagem, link em nova aba, tamanho Celular, restauração das abas ao reabrir sem criar vistas antes da hora.
+
 **TASK-021 — Rail de informações do terminal** (DEV1)
 
 - Cápsula vertical de anéis dentro do terminal, junto à borda direita, com contexto, 5h, 7d e cache do prompt (detalhe ao passar o mouse), menu de configuração próprio (mostrar, reservar espaço, esmaecer, etiqueta de modelo/branch/permissões; padrões: espaço desligado e esmaecer ligado) e dados vindos do encaminhador da status line (`prompt_cache`, pasta, últimos limites conhecidos) e do `git branch`. A cápsula 5h/7d do cabeçalho sai com o rail ligado. O plugin da status line foi retirado do terminal (e do `~/.claude/settings.json`, com backup). Atualização do rail sem recriar elementos, para o tooltip não piscar. Decisões em `docs/DECISOES.md`, visual em `docs/DESIGN.md`. VALIDADA EM DEV1: o usuário testou e aprovou.

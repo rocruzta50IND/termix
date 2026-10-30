@@ -8,7 +8,23 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-_Nenhuma no momento._
+### TASK-022 — Rail flutuante com alternador Terminais / Web (MVP)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (implementada; aguardando teste do usuário)
+- **Prioridade:** Alta (MVP)
+- **Objetivo:** ver o navegador dentro do app para testar sistemas web, alternando com os terminais por um alternador flutuante no centro da base. Só visualizar e navegar; o agente controlar o navegador fica para uma versão futura.
+- **Critérios de aceite:**
+  - Alternador em pílula, flutuando no centro da base, com **Terminais** (selo do número de abas e de atenção) e **Web**; atalho Ctrl+`.
+  - A tela Web tem abas de página, voltar, avançar, recarregar, barra de URL, tamanho de dispositivo e DevTools.
+  - A Web é por projeto (lembra abas e URL), com perfil persistente (não perde login); a vista só é criada quando a pessoa abre a Web.
+  - O alternador, os menus e os modais continuam visíveis por cima da vista do navegador.
+- **Decisões (2026-10-30, padrões adotados sem objeção do usuário):** Web **por projeto**; alternador **esmaece** quando parado (como o rail de informações). Arquitetura: `WebContentsView` por aba web (`src/web.js`), um segundo `WebContentsView` pequeno só com o alternador por cima (a vista nativa fica acima do HTML), e, com menu/modal aberto, a vista do navegador vira uma imagem (`capturePage`) para o HTML ficar por cima.
+- **Feito até agora:** `src/web.js` (uma `WebContentsView` por aba web, perfil `persist:termix-web`, só http/https, permissões negadas, `target=_blank` vira aba), alternador como vista própria (`src/dock.html`, `dock.js`, `dock-preload.js`), tela Web na interface (`src/renderer/web.js`: abas, voltar/avançar/recarregar/parar, endereço, dispositivo Responsivo/Celular/Tablet, DevTools, tela inicial com atalhos de localhost), troca da vista por imagem com menu/modal aberto, Ctrl+` (também com o foco dentro da página) e Ctrl+L. Web por projeto, salva em `projects[].web`; as abas voltam ao reabrir e a vista só nasce quando a aba é aberta. Testado numa instância isolada (CDP + captura só da janela): alternador acima da página, retângulo certo, modal sobre a imagem, link em nova aba, Celular, restauração.
+- **Arquivos tocados:** `src/web.js`, `src/dock.html`, `src/dock.js`, `src/dock-preload.js`, `src/main.js`, `src/preload.js`, `src/renderer/index.html`, `src/renderer/app.js`, `src/renderer/web.js`, `src/renderer/styles.css`, `package.json` (check), `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; com um projeto aberto, clicar em **Web** no alternador (ou Ctrl+`): digitar `localhost:3000` (ou outro endereço) na barra e Enter; abrir um link com nova aba, usar voltar/avançar/recarregar, o botão de dispositivo (Responsivo → Celular → Tablet) e o DevTools; abrir o menu "+" de um projeto ou um modal com a Web aberta (a página some atrás, o menu fica por cima); trocar para outro projeto e voltar; voltar a **Terminais** pelo alternador e conferir que os terminais continuam vivos; fechar e reabrir o app (as abas web voltam).
+- **Pendências:** o alternador cobre um pouco do rodapé do terminal (se incomodar, reservar uma faixa ou mudar a posição); o botão de dispositivo alterna a cada clique (sem menu); cantos de baixo da vista do navegador são retos; testar em janela estreita e com o painel de notificações aberto; não testado com um terminal do Claude Code aberto junto (só instância isolada sem sessões).
+- **Próximo passo:** o usuário testa; ajustar o que pedir; com a aprovação, registrar como VALIDADA EM DEV1.
 
 ## Aguardando validação DEV1
 
@@ -196,22 +212,7 @@ _Nenhuma no momento._
 
 ## Prontas
 
-### TASK-022 — Rail flutuante com alternador Terminais / Web (MVP)
-
-- **Responsável:** A definir
-- **Status:** PRONTA
-- **Prioridade:** Alta (MVP; é a próxima)
-- **Objetivo:** ver o navegador dentro do app para testar sistemas web, alternando com os terminais por um alternador flutuante no centro da base do app (o rail de informações da TASK-021 ficou na lateral direita do terminal, então a base está livre). Só visualizar e navegar; o agente controlar o navegador fica para uma versão futura.
-- **Critérios de aceite:**
-  - Rail em forma de pílula, flutuando no centro da base, com os botões **Terminais** (com selo do número de abas e de atenção) e **Web**; atalho sugerido Ctrl+`.
-  - A tela Web tem abas de página, voltar, avançar, recarregar, barra de URL, tamanho de dispositivo e DevTools.
-  - A Web é por projeto (lembra abas e URL) e com perfil persistente, para não perder login; a vista só é criada quando a pessoa abre a Web (economiza memória).
-  - O rail e os menus/modais continuam visíveis por cima da vista do navegador.
-- **Notas técnicas:** usar `WebContentsView` (o `<webview>` está em desuso). A vista é nativa e fica por cima do HTML; é preciso garantir o rail, menus e modais acima dela (esconder/encolher a vista ou desenhar o rail numa vista própria por cima). Validar isso primeiro com um protótipo, numa instância isolada (`--user-data-dir` próprio) para não mexer nas abas em uso. Sessão do navegador separada da do app; pensar em limitar a `localhost` e a URLs liberadas quando o agente puder controlá-lo.
-- **Fora de escopo (futuro):** o Claude Code controlar o navegador (MCP do próprio Termix via `webContents.debugger`/CDP: navegar, clicar, digitar, ler o DOM, screenshot, console e rede).
-- **Demo visual:** `docs/prototipos/rail-demo.html`.
-- **Pendências:** decidir se o alternador esmaece quando parado (como o rail de informações) e se a Web é por projeto ou uma só para o app (a inclinação é por projeto); o demo `rail-demo.html` mostra o alternador na base, ainda com as informações juntas (a TASK-021 as colocou na lateral).
-- **Próximo passo:** protótipo da vista do navegador (`WebContentsView`) com o alternador por cima, numa instância isolada.
+_Nenhuma no momento._
 
 ## Backlog
 
