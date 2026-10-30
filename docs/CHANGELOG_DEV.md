@@ -8,7 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
-**TASK-022 — Alternador Terminais / Web com navegador embutido** (DEV1, aguardando teste do usuário)
+**TASK-023 registrada — atalhos e grupos de páginas no navegador do app** (DEV1)
+
+- A pedido do usuário: deixar à mão plataformas de uso constante (Vercel, GitHub, pesquisa etc.) em grupos globais e por projeto, com barra de atalhos e "salvar aba como atalho". Inclui um teste de compatibilidade de login antes de construir, porque serviços como o Google podem barrar navegadores embutidos (plano em `docs/TASKS.md`). Nada implementado ainda.
+
+**TASK-022 — Alternador Terminais / Web com navegador embutido** (DEV1, VALIDADA EM DEV1: o usuário aprovou o rail e pediu para mantê-lo)
 
 - Alternador em pílula (`Terminais` com selo de abas e atenção, `Web` com selo de abas) no centro da base, esmaecido quando parado; atalho Ctrl+`. Tela Web com abas de página, voltar/avançar/recarregar/parar, barra de endereço (localhost e porta viram `http://`, domínio vira `https://`, o resto vai para a busca), tamanho de dispositivo (Responsivo, Celular, Tablet) e DevTools. Web por projeto, com perfil persistente (`persist:termix-web`); a vista só é criada quando a aba é aberta. `target=_blank` abre nova aba web; só http/https; sem câmera, microfone, localização nem notificações.
 - Como funciona: `src/web.js` (processo principal) cria uma `WebContentsView` por aba; o alternador é outra vista (`src/dock.html`, `dock.js`, `dock-preload.js`) logo acima, porque a vista nativa fica por cima do HTML; com menu, modal ou popover aberto a vista do navegador é trocada por uma imagem dela (`capturePage`). Interface em `src/renderer/web.js`.
