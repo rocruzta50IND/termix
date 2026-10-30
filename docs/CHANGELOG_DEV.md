@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-023 registrada — atalhos e grupos de páginas no navegador do app** (DEV1)
 
-- Etapa 1 feita (compatibilidade de login): identidade de Chrome comum (user agent e client hints) e janelas de login como janela filha com o mesmo perfil, em `src/web.js`; testado só em servidor local, **falta o teste do usuário nos serviços reais**. Decisão: uso por grupo restrito; se o login falhar, a Web fica só para testes locais.
+- Etapa 1 (compatibilidade de login): user agent sem Electron/Termix e janelas de login como janela filha com o mesmo perfil, em `src/web.js`. **Login com Google é barrado** pelo Google no navegador embutido (visto pelo usuário e reproduzido em instância isolada, com e sem o ajuste dos client hints, que foi retirado). Plano: entrar nos serviços por GitHub ou e-mail; falta o teste do usuário em GitHub, Vercel e Supabase. Decisão: uso por grupo restrito; se o login falhar nos demais, a Web fica só para testes locais.
 - A pedido do usuário: deixar à mão plataformas de uso constante (Vercel, GitHub, pesquisa etc.) em grupos globais e por projeto, com barra de atalhos e "salvar aba como atalho". Inclui um teste de compatibilidade de login antes de construir, porque serviços como o Google podem barrar navegadores embutidos (plano em `docs/TASKS.md`). Nada implementado ainda.
 
 **TASK-022 — Alternador Terminais / Web com navegador embutido** (DEV1, VALIDADA EM DEV1: o usuário aprovou o rail e pediu para mantê-lo)

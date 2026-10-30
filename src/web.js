@@ -26,23 +26,8 @@ function setupWeb({ ipcMain, getWin }) {
     // MVP: o navegador é para ver e testar sistemas; sem câmera, microfone, localização nem notificações
     const ses = session.fromPartition(PARTITION);
     ses.setPermissionRequestHandler((_wc, perm, cb) => cb(['clipboard-sanitized-write', 'fullscreen'].includes(perm)));
-    // identidade de Chrome comum: sem as marcas Electron/Termix no user agent, porque serviços como o Google barram login em navegador embutido
+    // user agent sem as marcas Electron/Termix (sozinho não basta: o Google ainda barra o login, testado; ajuda em outros serviços)
     ses.setUserAgent(ses.getUserAgent().replace(/\s(Electron|Termix)\/\S+/g, ''));
-  }
-
-  // o Electron só anuncia as marcas "Chromium"; o Google confere também a marca "Google Chrome" (client hints), então ela é acrescentada pelo protocolo do Chromium
-  function chromeIdentity(wc) {
-    try {
-      const ua = wc.session.getUserAgent();
-      const full = (ua.match(/Chrome\/([\d.]+)/) || [])[1] || '130.0.0.0';
-      const major = full.split('.')[0];
-      const list = (v) => [{ brand: 'Not.A/Brand', version: '99' }, { brand: 'Chromium', version: v }, { brand: 'Google Chrome', version: v }];
-      wc.debugger.attach('1.3');
-      wc.debugger.sendCommand('Emulation.setUserAgentOverride', {
-        userAgent: ua,
-        userAgentMetadata: { brands: list(major), fullVersionList: list(full), platform: 'Windows', platformVersion: '10.0.0', architecture: 'x86', bitness: '64', model: '', mobile: false, wow64: false },
-      }).catch(() => {});
-    } catch { /* sem a marca extra: o login em alguns serviços pode ser barrado */ }
   }
 
   function create(id) {
@@ -50,8 +35,6 @@ function setupWeb({ ipcMain, getWin }) {
     const view = new WebContentsView({ webPreferences: { partition: PARTITION, sandbox: true, contextIsolation: true, nodeIntegration: false } });
     view.setBackgroundColor('#ffffff');
     const wc = view.webContents;
-    chromeIdentity(wc);
-    wc.on('did-create-window', (child) => chromeIdentity(child.webContents));
     const state = () => ({ id, url: wc.getURL(), title: wc.getTitle(), loading: wc.isLoading(), canBack: wc.navigationHistory.canGoBack(), canForward: wc.navigationHistory.canGoForward() });
     const upd = () => { if (!wc.isDestroyed()) send('web:update', state()); };
     for (const ev of ['did-navigate', 'did-navigate-in-page', 'page-title-updated', 'did-start-loading', 'did-stop-loading']) wc.on(ev, upd);
