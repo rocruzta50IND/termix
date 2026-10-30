@@ -14,8 +14,8 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Pulsa quando o CTX passa do limite configurado; limite e textos dos dois pedidos ficam em Configurações > Botão Clear (só no app).
 - Registrada a TASK-026 (registro de consumo e alertas de ritmo), derivada do guia de economia de tokens.
 - Ajustes pós-teste: alternador não some mais com o menu do rail; novo ícone; o /clear agora apaga também o texto antigo da tela; Ctrl+C/Ctrl+V funcionam nos terminais.
-- Estado: aguardando novo teste do usuário.
-- TASK-027 etapa 1 — retomada enxuta: nos projetos no fluxo Rocruzta o botão Clear usa pedidos de fechar e retomar que seguem o fluxo e leem só o necessário (papel/branch de CLAUDE.local.md, validação do fluxo.json, só as seções ativas do TASKS.md); opções "usar o fluxo" e "commit e push ao fechar" em Configurações; textos vazios = automático. Fluxo e plugin intactos. Aguardando teste do usuário; etapa 2 (medir o custo da retomada) a seguir.
+- Estado: VALIDADA EM DEV1 (2026-10-30, testada e aprovada pelo usuário).
+- TASK-027 etapa 1 — retomada enxuta: nos projetos no fluxo Rocruzta o botão Clear usa pedidos de fechar e retomar que seguem o fluxo e leem só o necessário (papel/branch de CLAUDE.local.md, validação do fluxo.json, só as seções ativas do TASKS.md); opções "usar o fluxo" e "commit e push ao fechar" em Configurações; textos vazios = automático. Fluxo e plugin intactos. VALIDADA EM DEV1 (2026-10-30, testada e aprovada pelo usuário). Etapa 2 (medir o custo da retomada) e novos gatilhos viraram a TASK-028 (Backlog).
 
 **TASK-025 registrada — ações rápidas no rail de baixo** (DEV1)
 
