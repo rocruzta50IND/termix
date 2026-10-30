@@ -6,6 +6,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-10-30
+
+**TASK-021 e TASK-022 — Rail flutuante: informações do terminal e navegador (planejamento)** (DEV1)
+
+- Registradas duas tarefas de MVP a partir da conversa de alinhamento: TASK-021 (mostrar no app as informações que a status line do plugin mostra hoje, no rail da base em vez do cabeçalho; em andamento, é a primeira) e TASK-022 (rail com alternador Terminais/Web e navegador embutido só para visualizar; pronta, vem depois). Demo visual do rail salvo em `docs/prototipos/rail-demo.html`. Sem mudança de código.
+
 ## 2026-10-29
 
 **TASK-010 — Instalador e portabilidade** (DEV1)
