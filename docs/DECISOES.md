@@ -56,7 +56,8 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - O alternador esmaece quando parado (como o rail de informações). Ele flutua sobre a base do terminal, então cobre um pouco do rodapé; se atrapalhar, a alternativa é reservar uma faixa.
 - **Uso restrito (2026-10-30):** o Termix será usado por um grupo restrito, não por todos. A Web funciona primeiro para nós; se os testes de login (GitHub, Vercel, Supabase) não forem positivos, ela serve só para testes locais.
 - **Login com Google não funciona no navegador embutido (testado em 2026-10-30):** o Google barra ("Esse navegador ou app pode não ser seguro"), mesmo com user agent de Chrome comum e client hints. Não vamos tentar burlar a detecção. Nos serviços, entrar por **GitHub ou e-mail/senha** (ou chave de acesso). O user agent sem as marcas Electron/Termix fica; janelas de login (`window.open` com tamanho) abrem como janela filha com o mesmo perfil.
-- **Planejado (TASK-023):** grupos de páginas prontas, globais e por projeto, com barra de atalhos e sessão única compartilhada; o que não funcionar nos testes de login será registrado aqui.
+- **Web só para testes locais (2026-10-30):** plataformas com login (Vercel, GitHub etc.) e grupos de atalhos ficam para o pós-MVP (TASK-023). Por ora a Web mostra projetos locais e abre sozinha quando um terminal abre algo local (TASK-024), com aviso no ícone Web do rail.
+- **Pós-MVP (TASK-023, antes "planejado"):** grupos de páginas prontas, globais e por projeto, com barra de atalhos e sessão única compartilhada; o que não funcionar nos testes de login será registrado aqui.
 
 ## Plugins, Skills e MCPs
 - No MVP são **somente leitura**, a partir dos arquivos reais de configuração (escopos User, Project e Local).

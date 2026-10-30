@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
+**TASK-023 vai para o pós-MVP; TASK-024 registrada** (DEV1)
+
+- A pedido do usuário: plataformas com login e grupos de atalhos ficam para depois (TASK-023, backlog). A Web fica só para testes de projetos locais, com abertura automática a partir dos terminais e aviso no ícone Web do rail (TASK-024, pronta, ainda não iniciada).
+
 **TASK-023 registrada — atalhos e grupos de páginas no navegador do app** (DEV1)
 
 - Etapa 1 (compatibilidade de login): user agent sem Electron/Termix e janelas de login como janela filha com o mesmo perfil, em `src/web.js`. **Login com Google é barrado** pelo Google no navegador embutido (visto pelo usuário e reproduzido em instância isolada, com e sem o ajuste dos client hints, que foi retirado). Plano: entrar nos serviços por GitHub ou e-mail; falta o teste do usuário em GitHub, Vercel e Supabase. Decisão: uso por grupo restrito; se o login falhar nos demais, a Web fica só para testes locais.
