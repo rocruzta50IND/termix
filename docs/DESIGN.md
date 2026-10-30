@@ -19,6 +19,13 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - Enquanto o agente **trabalha**, **só a linha colorida** sob as abas pulsa, na cor da aba (sutil).
 - Botão de reiniciar: **só o ícone**, discreto. Dangerously: **⚠ na aba**.
 
+## Rail (informações da sessão)
+- **Cápsula vertical dentro do terminal**, a 12 px da borda direita e centralizada na altura: 58 px de largura, vidro escuro com borda clara. Quatro **anéis de 44 px** (traço de 4 px) empilhados: `CTX`, `5H`, `7D`, `CACHE`, com o número no centro (sem o %) e o rótulo pequeno embaixo; engrenagem no rodapé.
+- Cores do anel e do número: verde, amarelo a partir de 70 %, vermelho a partir de 90 %. O anel do cache mostra o **tempo que resta** (cheio = recém-escrito), amarelo com menos de 20 % da validade, vermelho "frio". Sem dado: anel vazio com "—".
+- Ao passar o mouse num anel abre, à esquerda, um cartão com o título e o detalhe (ex.: "Limite de 5 horas · 15% — renova em 3h36m").
+- Por padrão a cápsula **flutua sobre o texto** e fica **esmaecida (40 %)**, voltando ao normal ao passar o mouse; com "reservar espaço" o terminal ganha 82 px de margem à direita e o fundo vem da sessão. Menu da engrenagem abre ao lado da cápsula. Etiqueta opcional (modelo · projeto · branch · permissões) no canto inferior direito.
+- Só aparece com terminal aberto; a cápsula 5 h / 7 d do cabeçalho sai enquanto o rail está ligado.
+
 ## Marca e ícones
 - **Logo do cabeçalho:** só o prompt `>_`, sem caixa, com brilho; alinhado à altura do nome "Termix".
 - **Ícone do app / barra de tarefas:** quadrado escuro com borda azul luminosa, barra de abas coloridas e `>_` com brilho; versão de traço grosso para 16 e 32 px (`assets/icon.svg`, `assets/icon-small.svg`; gerar com `tools/make-icon.js`).

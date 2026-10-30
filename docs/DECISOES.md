@@ -40,7 +40,10 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Dangerously é indicado por um **⚠ na aba** (com explicação ao passar o mouse). Não há selo grande.
 
 ## Consumo e limites
-- Mostra **5 h e 7 d** (plano Max), lidos da status line do Claude Code, em uma cápsula no cabeçalho.
+- **Rail (TASK-021):** as informações da sessão ativa ficam numa **cápsula vertical de anéis dentro do terminal, junto à borda direita**: **contexto, 5 h, 7 d e cache do prompt sempre visíveis** (número dentro do anel; detalhe ao passar o mouse: tokens usados/limite, quando o limite renova, validade do cache). Substitui a status line do plugin que aparecia dentro do terminal. Engrenagem própria (menu ao lado da cápsula) para: mostrar/ocultar tudo, **reservar espaço** (o terminal fica mais estreito e o texto não passa por baixo; **padrão desligado**: a cápsula flutua sobre o texto), **esmaecer quando parada** (**padrão ligado**: o usuário escolhe deixar sempre à vista ou passar o mouse para ver as informações) e uma etiqueta no canto inferior direito com modelo, projeto, branch e permissões da aba (`settings.rail`). Antes de chegar a esta forma foram avaliadas a pílula horizontal na base de vidro e uma lateral larga; a lateral compacta foi a escolhida pelo usuário (2026-10-30).
+- **Cache do prompt:** vem do `prompt_cache` que o Claude Code (≥ 2.1.251) manda na status line; versões antigas são estimadas pelo arquivo da conversa. A validade (1 h ou 5 min) vem do dado: 1 h na assinatura, 5 min com créditos extras, chave de API ou nuvem. Verde enquanto resta mais de 20 % da validade, amarelo perto de vencer, vermelho "frio" (com os tokens a reescrever).
+- Com o rail ligado, a cápsula 5 h / 7 d sai do cabeçalho (não duplicar); com o rail desligado, a cápsula volta.
+- Antes era: **5 h e 7 d** (plano Max), lidos da status line do Claude Code, em uma cápsula no cabeçalho.
 - Dado indisponível aparece como **"indisponível"**, nunca como zero.
 - As porcentagens da conta **não são somadas por terminal**.
 - Contexto, tokens e custo da sessão são coisas distintas; **custo é só estimativa**.

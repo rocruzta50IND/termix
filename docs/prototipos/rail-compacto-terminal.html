@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Termix — rail compacto dentro do terminal (mockup)</title>
+<style>
+:root{
+  --text:#EEF2F8; --text2:#A9B3C4; --text3:#6F7A8E; --accent:#5B9DFF;
+  --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171;
+  --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.13);
+  --border:rgba(255,255,255,.13); --border2:rgba(255,255,255,.22);
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,monospace;
+  --sans:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:#05070c;color:var(--text);font:13px var(--sans);display:grid;place-items:center;padding:14px;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.app{position:relative;width:min(1240px,100%);height:min(740px,calc(100vh - 28px));border-radius:22px;overflow:hidden;
+  background:radial-gradient(520px 360px at 12% 8%,rgba(60,110,200,.30),transparent 70%),radial-gradient(520px 380px at 92% 92%,rgba(40,90,170,.20),transparent 70%),#080b12;
+  border:1px solid var(--border);box-shadow:0 30px 80px rgba(0,0,0,.6);display:grid;grid-template-rows:46px 1fr 12px;grid-template-columns:200px 1fr 12px}
+.head{grid-column:1/4;display:flex;align-items:center;padding:0 16px;gap:10px;background:var(--glass);border-bottom:1px solid var(--border)}
+.logo{font:700 15px var(--mono);color:var(--accent);text-shadow:0 0 10px rgba(91,157,255,.7)}
+.head .sp{flex:1}
+.bell{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;color:var(--text2)}
+.side{padding:12px;background:var(--glass);border-right:1px solid var(--border);color:var(--text2)}
+.side h6{font-size:10px;letter-spacing:.1em;color:var(--text3);margin:4px 6px 8px}
+.proj{padding:8px;border-radius:10px}.proj.on{background:var(--glass2);color:var(--text)}
+.center{margin:8px 0 0 8px;min-width:0;display:flex}
+.terminal{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;background:rgba(6,9,15,.92);border:1px solid var(--border)}
+.tabs{display:flex;gap:2px;height:32px;align-items:flex-end;padding:0 8px;background:rgba(9,7,20,.6)}
+.tab{padding:7px 14px;border-radius:8px 8px 0 0;background:rgba(255,255,255,.05);color:var(--text2);font-size:12px;border-top:2px solid transparent}
+.tab.on{background:rgba(6,9,15,.95);color:var(--text);border-top-color:#34D399}
+.tabs .st{margin-left:auto;align-self:center;color:var(--text2);font-size:12px;display:flex;align-items:center;gap:6px}
+.tabs .st i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.term{flex:1;padding:14px 16px;font:12.5px/1.55 var(--mono);color:#cfd8e6;overflow:hidden;border-top:2px solid #34D399;transition:padding .2s}
+body[data-reserve=on] .term{padding-right:82px}
+.term .p{color:#7fb2ff}.term .g{color:var(--ok)}.term .d{color:var(--text3)}
+.term p{margin:0 0 10px}
+.inbox{margin-top:26px;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);padding:6px 0}
+/* RAIL COMPACTO dentro do terminal */
+.rail{position:absolute;right:12px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:15px;width:58px;padding:12px 6px 6px;border-radius:30px;
+  background:rgba(14,19,30,.82);border:1px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.07);transition:opacity .2s}
+body[data-pos=mid] .rail{top:50%;transform:translateY(-50%)}
+body[data-pos=top] .rail{top:46px}
+body[data-pos=bottom] .rail{bottom:12px}
+body[data-fade=on] .rail{opacity:.4}body[data-fade=on] .rail:hover{opacity:1}
+.ring{position:relative;width:44px;height:44px;margin-bottom:11px}
+.ring svg{width:44px;height:44px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:4}
+.ring .t{stroke:rgba(255,255,255,.1)}
+.ring .v{stroke-linecap:round}
+.ring .n{position:absolute;inset:0;display:grid;place-items:center;font:700 11px var(--mono)}
+.ring small{position:absolute;left:-4px;right:-4px;bottom:-12px;text-align:center;font:600 9px var(--mono);color:var(--text3);letter-spacing:.05em}
+.g{color:var(--ok)}.y{color:var(--warn)}.r{color:var(--bad)}
+.gear{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--text3);margin-top:-2px}
+.gear:hover{background:var(--glass2);color:var(--text)}
+/* detalhe ao passar o mouse: abre para a esquerda */
+.ring .tip{position:absolute;right:calc(100% + 16px);top:50%;transform:translateY(-50%);white-space:nowrap;background:#171e2d;border:1px solid var(--border2);border-radius:12px;padding:8px 12px;
+  font:12px var(--mono);color:var(--text2);box-shadow:0 10px 28px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .12s}
+.ring .tip b{color:var(--text);display:block;font-size:12.5px;margin-bottom:2px}
+.ring:hover .tip{opacity:1}
+.meta{display:none;position:absolute;right:12px;bottom:10px;z-index:4;font-size:11.5px;color:var(--text3);background:rgba(14,19,30,.7);border:1px solid var(--border);border-radius:99px;padding:3px 12px}
+body[data-meta=on] .meta{display:block}
+.meta .m{color:#5fd0c4}.meta .b{color:var(--ok)}.meta .w{color:var(--warn)}
+.demo{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;align-items:center;background:rgba(12,17,28,.94);border:1px solid var(--border2);border-radius:99px;padding:5px 10px;z-index:9;font-size:12px;color:var(--text2);flex-wrap:wrap;justify-content:center}
+.demo label{display:flex;gap:5px;align-items:center;padding:0 6px;cursor:pointer}
+.demo .s{width:1px;height:16px;background:var(--border)}
+.demo button{padding:5px 12px;border-radius:99px;color:var(--text2)}
+.demo button.on{background:rgba(91,157,255,.2);color:#fff;box-shadow:inset 0 0 0 1px rgba(91,157,255,.5)}
+@media (max-width:760px){.side{display:none}.app{grid-template-columns:0 1fr 12px}}
+</style>
+</head>
+<body data-pos="mid" data-reserve="on" data-fade="off" data-meta="off">
+<div class="app">
+  <div class="head"><span class="logo">&gt;_</span><b>Termix</b><span class="sp"></span><button class="bell">🔔</button></div>
+  <div class="side"><h6>PROJETOS</h6><div class="proj on">Termix</div><div class="proj">new-rocruzta-page</div></div>
+
+  <div class="center">
+    <div class="terminal">
+      <div class="tabs"><div class="tab on">Aba A</div><div class="tab">Aba B</div><span class="st"><i></i>Aguardando você</span></div>
+      <div class="term">
+        <p><span class="p">❯</span> corrige o botão de login e roda os testes</p>
+        <p class="d">● Editando src/components/LoginButton.tsx — o botão agora desabilita enquanto a requisição está em andamento e mostra o erro da API logo abaixo do campo, em vez de apenas no console.</p>
+        <p class="g">✔ 14 testes passaram</p>
+        <p>Resumo: ajustei o estado de carregamento e o tratamento de erro; nenhum outro arquivo foi alterado. Quer que eu rode o lint também?</p>
+        <div class="inbox"><span class="p">❯</span> ▌</div>
+        <div style="padding:8px 0 0 12px;color:#ff7a90">▸▸ bypass permissions on <span class="d">(shift+tab to cycle)</span></div>
+      </div>
+
+      <div class="meta"><span class="m">Sonnet 5.5</span> · Termix · <span class="b">dev1</span> · <span class="w">⚠ bypass</span></div>
+
+      <aside class="rail">
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="91"/></svg><span class="n g">19</span><small>CTX</small>
+          <div class="tip"><b>Contexto · 19%</b>189k de 1M tokens</div></div>
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="96"/></svg><span class="n g">15</span><small>5H</small>
+          <div class="tip"><b>Limite de 5 horas · 15%</b>renova em 3h36m</div></div>
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="47"/></svg><span class="n g">58</span><small>7D</small>
+          <div class="tip"><b>Limite semanal · 58%</b>renova em 2d21h</div></div>
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="62"/></svg><span class="n g" style="font-size:10px">26m</span><small>CACHE</small>
+          <div class="tip"><b>Cache do prompt · 26m</b>de 1h de validade</div></div>
+        <button class="gear" title="Configurar o rail">⚙</button>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="demo">
+  <span>Posição:</span>
+  <button data-k="pos" data-v="top">Topo</button>
+  <button data-k="pos" data-v="mid" class="on">Meio</button>
+  <button data-k="pos" data-v="bottom">Base</button>
+  <span class="s"></span>
+  <label><input type="checkbox" id="reserve" checked> Reservar espaço (texto não passa por baixo)</label>
+  <label><input type="checkbox" id="fade"> Esmaecer quando parado</label>
+  <label><input type="checkbox" id="meta"> Modelo · branch · permissões</label>
+</div>
+<script>
+const b=document.body;
+document.querySelectorAll('.demo button').forEach(x=>x.onclick=()=>{b.dataset[x.dataset.k]=x.dataset.v;document.querySelectorAll('.demo button').forEach(y=>y.classList.toggle('on',y.dataset.v===b.dataset.pos))});
+reserve.onchange=()=>b.dataset.reserve=reserve.checked?'on':'off';
+fade.onchange=()=>b.dataset.fade=fade.checked?'on':'off';
+meta.onchange=()=>b.dataset.meta=meta.checked?'on':'off';
+</script>
+</body>
+</html>

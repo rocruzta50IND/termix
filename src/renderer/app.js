@@ -266,7 +266,7 @@ function onMetric({ tabId, data }) {
     const w = (x) => (x && typeof x.used_percentage === 'number' ? { pct: x.used_percentage, resets: x.resets_at } : null);
     UI.limits = { five: w(rl.five_hour), week: w(rl.seven_day), updated: data.updated };
   }
-  renderTop();
+  renderTop(); renderRail();
   if (UI.pop) renderPop();
   if (UI.cur.p === '_' && UI.cur.page === 'Consumo') renderPage();
 }
@@ -364,6 +364,121 @@ function fmtReset(epoch) {
 }
 const liveWin = (d) => d && d.resets * 1000 > Date.now();
 
+/* ---------- rail: informações da sessão ativa (no lugar da status line do terminal) ---------- */
+const RAIL_DEF = { v: 2, on: true, reserve: false, fade: true, meta: false }; // v: versão dos padrões (ao subir, as escolhas salvas voltam ao padrão novo)
+const railCfg = () => S.settings.rail || RAIL_DEF;
+function fmtDur(secs) { // 45s, 12m, 4h38m, 5d18h
+  secs = Math.max(0, Math.floor(secs));
+  if (secs < 60) return `${secs}s`;
+  const m = Math.floor(secs / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h${String(m % 60).padStart(2, '0')}m`;
+  return `${Math.floor(h / 24)}d${String(h % 24).padStart(2, '0')}h`;
+}
+function fmtTok(n) {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`.replace('.0M', 'M');
+  if (n >= 1000) return `${Math.round(n / 1000)}k`;
+  return String(n);
+}
+UI.br = {}; // branch git por pasta
+function railBranch(p) {
+  const b = UI.br[p.path];
+  if (!b || Date.now() - b.t > 20000) {
+    UI.br[p.path] = { t: Date.now(), v: b ? b.v : '' };
+    api.gitBranch(p.path).then((v) => { const changed = !UI.br[p.path] || UI.br[p.path].v !== v; UI.br[p.path] = { t: Date.now(), v }; if (changed) renderRail(); });
+  }
+  return (UI.br[p.path] || {}).v || '';
+}
+
+const RING_C = 113.1; // circunferência do anel (r = 18)
+// anel de progresso: pct = % preenchido (null = sem dado); fill = quanto do anel desenhar (padrão = pct); cls = cor forçada (g/y/r)
+function ring(lbl, pct, center, tipTitle, tipSub, { sm = false, fill = pct, cls } = {}) {
+  const c = cls || (pct === null ? '' : pct >= 90 ? 'r' : pct >= 70 ? 'y' : 'g');
+  const col = c === 'r' ? 'var(--bad)' : c === 'y' ? 'var(--warn)' : 'var(--ok)';
+  const arc = fill === null ? '' : `<circle class="v" cx="22" cy="22" r="18" style="stroke:${col}" stroke-dasharray="${RING_C}" stroke-dashoffset="${(RING_C * (1 - Math.min(100, Math.max(0, fill)) / 100)).toFixed(1)}"/>`;
+  return `<div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/>${arc}</svg><span class="n ${c} ${sm ? 'sm' : ''} ${pct === null ? 'na' : ''}">${center}</span><small>${lbl}</small><div class="tip"><b>${esc(tipTitle)}</b>${esc(tipSub)}</div></div>`;
+}
+
+function railHTML(p, tab) {
+  const m = MET[tab.id] || {};
+  const noData = 'sem dados ainda (aparecem depois da primeira resposta)';
+  const win = (lbl, d, title) => (liveWin(d)
+    ? ring(lbl, d.pct, Math.round(d.pct), `${title} · ${Math.round(d.pct)}%`, `renova em ${fmtDur(d.resets - Date.now() / 1000)}`)
+    : ring(lbl, null, '—', title, noData));
+
+  // contexto
+  const cw = m.context_window || {};
+  const cp = typeof cw.used_percentage === 'number' ? cw.used_percentage : null;
+  const ctx = cp !== null
+    ? ring('CTX', cp, Math.round(cp), `Contexto · ${Math.round(cp)}%`, cw.total_input_tokens ? `${fmtTok(cw.total_input_tokens)}${cw.context_window_size ? ` de ${fmtTok(cw.context_window_size)}` : ''} tokens` : 'desta conversa')
+    : ring('CTX', null, '—', 'Contexto', noData);
+
+  // cache de prompt: tempo até esfriar (o TTL vem do Claude Code: 1 h na assinatura, 5 min com créditos extras ou chave de API).
+  // O anel mostra o tempo que resta (cheio = recém-escrito).
+  const pc = m.prompt_cache;
+  let cache;
+  if (!pc || pc.caching_observed === false) cache = ring('CACHE', null, '—', 'Cache do prompt', 'sem informação ainda nesta conversa');
+  else {
+    const ttl = pc.ttl || '5m', ttlS = ttl === '1h' ? 3600 : 300;
+    const rem = pc.expires_at ? pc.expires_at - Date.now() / 1000 : 0;
+    if (!pc.warm || rem <= 0) {
+      cache = ring('CACHE', 0, 'frio', 'Cache do prompt · frio', pc.recache_tokens_if_cold ? `a próxima mensagem reescreve ${fmtTok(pc.recache_tokens_if_cold)} tokens` : 'a próxima mensagem reescreve o contexto', { sm: true, fill: 0, cls: 'r' });
+    } else {
+      const left = rem < 600 ? `${Math.floor(rem / 60)}:${String(Math.floor(rem % 60)).padStart(2, '0')}` : fmtDur(rem);
+      const frac = rem / ttlS * 100;
+      cache = ring('CACHE', 0, left, `Cache do prompt · ${left}`, `de ${ttl} de validade${pc.estimated ? ' (estimado pelo histórico)' : ''}`, { sm: true, fill: frac, cls: frac > 20 ? 'g' : 'y' });
+    }
+  }
+  return `${ctx}${win('5H', UI.limits && UI.limits.five, 'Limite de 5 horas')}${win('7D', UI.limits && UI.limits.week, 'Limite semanal')}${cache}`;
+}
+
+function railMetaHTML(p, tab) {
+  const m = MET[tab.id] || {};
+  const model = (m.model && m.model.display_name) || '';
+  const br = railBranch(p);
+  const perm = tab.perm === 'd' ? '<span class="w" title="Esta aba ignora as verificações de permissão">⚠ bypass</span>' : '<span>permissões normais</span>';
+  return `${model ? `<span class="m">${esc(model)}</span> · ` : ''}${esc(p.name)}${br ? ` · <span class="b">${esc(br)}</span>` : ''} · ${perm}`;
+}
+
+// atualiza o conteúdo de um elemento só onde o HTML novo difere (não recria os nós: o tooltip aberto não pisca a cada segundo)
+function morph(a, b) {
+  const an = [...a.childNodes], bn = [...b.childNodes];
+  bn.forEach((y, i) => {
+    const x = an[i];
+    if (!x) { a.appendChild(y.cloneNode(true)); return; }
+    if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName) { a.replaceChild(y.cloneNode(true), x); return; }
+    if (x.nodeType === 3) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; return; }
+    for (const at of [...x.attributes]) if (!y.hasAttribute(at.name)) x.removeAttribute(at.name);
+    for (const at of y.attributes) if (x.getAttribute(at.name) !== at.value) x.setAttribute(at.name, at.value);
+    morph(x, y);
+  });
+  while (a.childNodes.length > bn.length) a.removeChild(a.lastChild);
+}
+function setHTML(el, html) { const t = document.createElement('div'); t.innerHTML = html; morph(el, t); }
+
+let railLast = '', metaLast = '';
+function renderRail() {
+  const p = curProject(), tab = p && curTab(p);
+  const show = mode() === 'term' && !!tab;
+  const cfg = railCfg();
+  $('#rail').classList.toggle('hide', !show);
+  $('#rmeta').classList.toggle('hide', !(show && cfg.on && cfg.meta));
+  $('#sess').classList.toggle('reserve', show && cfg.on && cfg.reserve);
+  if (!show) { railLast = ''; metaLast = ''; return; }
+  const rail = $('#rail');
+  const menuOpen = !!(UI.menu && UI.menu.type === 'rail');
+  rail.classList.toggle('off', !cfg.on);
+  rail.classList.toggle('fade', cfg.on && cfg.fade);
+  rail.classList.toggle('menuopen', menuOpen);
+  $('#rgear').classList.toggle('on', menuOpen);
+  $('#rinfo').style.display = cfg.on ? '' : 'none';
+  const html = cfg.on ? railHTML(p, tab) : '';
+  if (html !== railLast) { railLast = html; setHTML($('#rinfo'), html); }
+  if (cfg.on && cfg.meta) { const mh = railMetaHTML(p, tab); if (mh !== metaLast) { metaLast = mh; setHTML($('#rmeta'), mh); } }
+}
+setInterval(renderRail, 1000); // contagem regressiva do cache; só troca o HTML quando o texto muda
+
 function mode() {
   if (UI.cur.p === '_') return 'page';
   const p = curProject();
@@ -382,7 +497,7 @@ function renderTop() {
     ? '<rect x="7" y="9" width="10" height="10" rx="1.5"/><path d="M9.5 9V7a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 18.5 7v6A1.5 1.5 0 0 1 17 14.5h-2"/>'
     : '<rect x="5.5" y="5.5" width="13" height="13" rx="1.8"/>';
   $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix</div><span class="sp"></span>
-    <div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>
+    ${railCfg().on ? '' : `<div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>`}
     <span class="sp"></span>
     <button class="tbtn round ${UI.actOpen ? 'on' : ''}" data-togact title="Notificações">${ic('bell', 18)}${pending() ? `<span class="nb">${pending()}</span>` : ''}</button>
     <div class="wc">
@@ -584,6 +699,18 @@ function renderMenu() {
   const m = UI.menu;
   if (!m) { $('#menuRoot').innerHTML = ''; return; }
   if (m.type === 'tab') return renderTabMenu(m);
+  if (m.type === 'rail') {
+    const c = railCfg();
+    const row = (k, label, sub) => `<button class="mi" data-rail="${k}"><span class="t"><span class="mchk ${c[k] ? 'on' : ''}">${c[k] ? '✓' : ''}</span>${label}</span><small>${sub}</small></button>`;
+    $('#menuRoot').innerHTML = `<div class="menu" style="right:${m.r}px;bottom:${m.b}px;min-width:320px;max-width:420px">
+      <div class="mlabel">Rail · informações da sessão</div>
+      ${row('on', 'Mostrar informações', 'Contexto, 5 h, 7 d e cache em anéis, junto à borda direita do terminal')}
+      <div class="msep"></div>
+      ${row('reserve', 'Reservar espaço no terminal', 'O texto para antes da cápsula, sem passar por baixo dela')}
+      ${row('fade', 'Esmaecer quando parado', 'Fica discreta e volta ao normal ao passar o mouse')}
+      ${row('meta', 'Modelo, branch e permissões', 'Etiqueta no canto inferior direito do terminal')}</div>`;
+    return;
+  }
   const p = curProject();
   const closed = p ? p.tabs.filter((t) => !t.open && !t.archived).length : 0;
   $('#menuRoot').innerHTML = `<div class="menu" style="left:${Math.max(8, Math.min(m.x, window.innerWidth - 320))}px;top:${m.y}px">
@@ -597,11 +724,11 @@ function renderMenu() {
     <button class="mi" data-projmenu><span class="t">Gerenciar projeto…</span></button></div>`;
 }
 
-function renderChrome() { renderSide(); renderTabs(); renderTop(); if (UI.pop) renderPop(); }
+function renderChrome() { renderSide(); renderTabs(); renderTop(); renderRail(); if (UI.pop) renderPop(); }
 
 function renderAll() {
   const m = mode();
-  renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu();
+  renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu(); renderRail();
   $('#tabsRow').classList.toggle('hide', m !== 'term');
   $('#sess').classList.toggle('hide', m !== 'term');
   $('#page').classList.toggle('hide', m === 'term');
@@ -822,8 +949,8 @@ async function closeMany(p, list) { for (const t of list) await closeTab(p, t); 
 function closeFloaters(e) {
   let changed = false;
   if (UI.pop && !e.target.closest('.pop,[data-lim]')) { UI.pop = false; changed = true; }
-  if (UI.menu && !e.target.closest('.menu,[data-menu]')) { UI.menu = null; changed = true; }
-  if (changed) { renderPop(); renderAct(); renderMenu(); renderTop(); }
+  if (UI.menu && !e.target.closest('.menu,[data-menu],[data-railmenu]')) { UI.menu = null; changed = true; }
+  if (changed) { renderPop(); renderAct(); renderMenu(); renderTop(); renderRail(); }
 }
 
 document.addEventListener('click', async (e) => {
@@ -842,6 +969,15 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-menu]'))) {
     if (UI.menu) { UI.menu = null; renderMenu(); return; }
     const r = el.getBoundingClientRect(); UI.menu = { type: 'new', x: r.left, y: r.bottom + 6 }; renderMenu(); return;
+  }
+  if ((el = q('[data-railmenu]'))) {
+    if (UI.menu && UI.menu.type === 'rail') UI.menu = null;
+    else { const r = el.getBoundingClientRect(); UI.menu = { type: 'rail', r: window.innerWidth - r.left + 12, b: Math.max(8, window.innerHeight - r.bottom - 4) }; } // abre ao lado da cápsula, sem cobri-la
+    renderMenu(); renderRail(); return;
+  }
+  if ((el = q('[data-rail]'))) {
+    const k = el.dataset.rail; railCfg()[k] = !railCfg()[k]; save();
+    renderMenu(); renderRail(); renderTop(); return;
   }
   if ((el = q('[data-bg]'))) { S.settings.bg = el.dataset.bg; save(); applyBg(); if (UI.cur.page === 'Configurações') renderPage(); return; }
   if ((el = q('[data-win]'))) { api.winCtl(el.dataset.win); return; }
@@ -928,13 +1064,13 @@ setInterval(async () => {
 const bgMode = () => (['blur', 'acrylic', 'mica'].includes(S.settings.bg) ? 'blur' : 'gradient');
 /* ---------- moldura em "U": geometria do vidro ---------- */
 const FR = { R: 22, RI: 14, HEAD: 46, BOT: 12, SIDE_OPEN: 252, SIDE_MINI: 70, ARM_OPEN: 346, ARM_CLOSED: 12 };
-const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED };
+const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base de vidro não engrossa
 const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN);
 const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
 
 // anel fechado: contorno externo arredondado + recorte (o terminal) com os quatro cantos suavizados
 function framePath(W, H, S_, A) {
-  const { R, RI, HEAD: h, BOT: b } = FR;
+  const { R, RI, HEAD: h } = FR, b = GEO.bot;
   const outer = `M${R} 0H${W - R}A${R} ${R} 0 0 1 ${W} ${R}V${H - R}A${R} ${R} 0 0 1 ${W - R} ${H}H${R}A${R} ${R} 0 0 1 0 ${H - R}V${R}A${R} ${R} 0 0 1 ${R} 0Z`;
   const hole = `M${S_} ${h + RI}A${RI} ${RI} 0 0 1 ${S_ + RI} ${h}H${W - A - RI}A${RI} ${RI} 0 0 1 ${W - A} ${h + RI}V${H - b - RI}A${RI} ${RI} 0 0 1 ${W - A - RI} ${H - b}H${S_ + RI}A${RI} ${RI} 0 0 1 ${S_} ${H - b - RI}Z`;
   return outer + hole;
@@ -951,7 +1087,7 @@ function layout() {
   $('#side').style.width = `${GEO.sideW}px`;
   $('#arm').style.width = `${GEO.armW}px`;
   $('#arm').classList.toggle('open', UI.actOpen && GEO.armW > 200);
-  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${FR.BOT}px` });
+  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${GEO.bot}px` });
 }
 
 let tweening = 0; // durante a animação: sem sombra pesada e sem refazer o tamanho do terminal a cada quadro
@@ -993,6 +1129,8 @@ async function applyBg() {
 (async function init() {
   const saved = await api.loadState();
   if (saved && Array.isArray(saved.projects)) S = { ...saved, settings: { termOp: 88, sideCollapsed: false, ...(saved.settings || {}) } };
+  S.settings.rail = S.settings.rail && S.settings.rail.v === RAIL_DEF.v ? { ...RAIL_DEF, ...S.settings.rail } : { ...RAIL_DEF };
+  $('#rgear').innerHTML = ic('gear', 16);
   for (const p of S.projects) {
     p.tabs = p.tabs || [];
     if (!(await api.folderExists(p.path))) addEvent({ who: p.name, msg: `A pasta do projeto não foi encontrada: ${p.path}` });

@@ -8,29 +8,30 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-021 — Informações do terminal no app (substituir a status line do plugin) (MVP, prioridade agora)
-
-- **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
-- **Prioridade:** Alta (MVP, é a primeira a fazer)
-- **Objetivo:** o Termix passa a mostrar por conta própria tudo o que a status line do plugin mostra hoje dentro do terminal (e que um dia vai sumir), no rail flutuante da base do app em vez de ficar só na parte superior (cabeçalho).
-- **Critérios de aceite:**
-  - Mostra, por aba/sessão: modelo (ex.: Sonnet 5.5), projeto, branch git, contexto usado (% e tokens usados/limite, ex.: `16% 159k/1M`), limite de 5 h (% e quando zera), limite de 7 d (% e quando zera), validade do cache (ex.: `59m of 1h`) e o modo de permissões (ex.: `bypass permissions on`).
-  - Decidido o que fica no rail, o que fica no cabeçalho (hoje: cápsula de limites 5 h / 7 d) e o que some, sem duplicar a mesma informação nos dois lugares.
-  - Os dados vêm do que o app já captura (`src/statusline-wrapper.js`: modelo, janela de contexto, limites, custo) e dos hooks; o que não vem de lá (branch, cache, modo de permissões) tem origem definida.
-  - A status line original do usuário continua funcionando dentro do terminal (o wrapper repassa a entrada).
-- **Feito até agora:** conversa de alinhamento. Demo visual do rail salvo em `docs/prototipos/rail-demo.html` (alternador Terminais/Web e opção de mostrar ctx · 5 h · 7 d no rail). Já captura `model`, `context_window`, `rate_limits` e `cost` por aba; o cabeçalho já mostra 5 h / 7 d.
-- **Decisões (usuário, 2026-10-30):** (1) as informações da sessão ativa ficam no rail, e mostrá-las é **opcional**: o rail terá o seu próprio menu de configuração para ligar/desligar; (2) quando ligadas, **contexto, 5 h, 7 d e cache ficam sempre visíveis** (não escondidos em hover); (3) modelo, projeto, branch e modo de permissões ficam em segundo plano (detalhe/segunda linha ou opção do menu), a definir no mockup. Origem dos dados, vista no script do usuário (`~/.claude/statusline-command.py`): `prompt_cache` (`ttl`, `expires_at`, `warm`, `recache_tokens_if_cold`) vem no JSON da status line do Claude Code ≥ 2.1.251; em versões antigas, estima-se pelo último `assistant` do arquivo da conversa (`transcript_path`: TTL pela última escrita de cache, 5 min ou 1 h, e horário da última chamada); frio = `cache cold · Nk to rewrite`. Cores: verde < 70 %, amarelo ≥ 70 %, vermelho ≥ 90 %; cache amarelo com menos de 20 % do TTL, vermelho se frio. A branch vem de `git branch --show-current` na pasta do projeto.
-- **Arquivos tocados:** `docs/prototipos/rail-demo.html`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
-- **Como validar:** (a definir após o desenho) comparar os valores do rail com a status line do terminal da mesma aba.
-- **Pendências:** o `src/statusline-wrapper.js` ainda não grava `prompt_cache`, `transcript_path` e `workspace` (só `model`, `context_window`, `rate_limits`, `cost`): incluir; fallback do cache pelo transcript quando o Claude Code for antigo; contagem regressiva (cache e resets) calculada no app, sem depender de a status line atualizar. O modo de permissões sai dos parâmetros com que a aba foi aberta; a branch, do `git` da pasta. Desenhar o menu de configuração do rail (o que ligar/desligar) e o que sai do cabeçalho.
-- **Próximo passo:** mockup do rail com ctx · 5 h · 7 d · cache sempre visíveis e o menu de configuração (em `docs/prototipos/`), para o usuário aprovar; depois implementar. A TASK-022 (alternador Terminais/Web) usa o mesmo rail e vem em seguida.
+_Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
 _Nenhuma no momento._
 
 ## Validadas em DEV1
+
+### TASK-021 — Informações do terminal no app (rail no lugar da status line do plugin) (MVP)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Alta (MVP)
+- **Objetivo:** o Termix mostra por conta própria o que a status line do plugin mostrava dentro do terminal (e que um dia vai sumir), num rail dentro do app, em vez de só no cabeçalho.
+- **Critérios de aceite:** (atendidos)
+  - Mostra, por aba/sessão: contexto (% e tokens usados/limite), limite de 5 h, limite de 7 d (com quando renovam) e validade do cache; modelo, projeto, branch e permissões como etiqueta opcional.
+  - Decidido o que fica no rail e o que sai do cabeçalho, sem duplicar: a cápsula 5 h / 7 d do cabeçalho só aparece com o rail desligado.
+  - Todos os dados têm origem definida: `statusline-wrapper.js` (modelo, contexto, limites, `prompt_cache`, pasta), `git branch` na pasta do projeto e as opções com que a aba foi aberta (permissões).
+- **Feito:** cápsula vertical de anéis (CTX, 5H, 7D, CACHE) dentro do terminal, junto à borda direita; número no anel e detalhe ao passar o mouse (tokens usados/limite, quando renova, validade do cache); cores verde/amarelo (≥ 70 %)/vermelho (≥ 90 %); cache pelo `prompt_cache` do Claude Code (≥ 2.1.251), com estimativa pelo arquivo da conversa em versões antigas, validade (1 h ou 5 min) vinda do dado e estado "frio". Engrenagem com menu ao lado da cápsula: mostrar informações, reservar espaço no terminal (padrão desligado), esmaecer quando parada (padrão ligado), etiqueta de modelo/branch/permissões (padrão desligada); as escolhas ficam em `settings.rail` com versão dos padrões (`v: 2`). O encaminhador mantém os últimos limites conhecidos até a primeira resposta da sessão. A atualização do rail troca só o que mudou (sem recriar os nós), para o tooltip não piscar a cada segundo. O plugin da status line (`statusline-command.py`, do repositório Jhonatan-de-Souza/claude-code-statusline, sem licença declarada, por isso reimplementado e não copiado) foi retirado do `~/.claude/settings.json` do usuário (backup em `settings.json.bak-termix-statusline`). Valores conferidos contra os da status line antiga (ctx, 5h, 7d, cache). Testado numa instância isolada com sessão real do Claude Code v2.1.314.
+- **Decisões (usuário, 2026-10-30):** informações da sessão no rail e opcionais (menu próprio); contexto, 5 h, 7 d e cache sempre visíveis quando ligadas; entre a pílula horizontal na base, a lateral larga e a lateral compacta, escolheu a **lateral compacta dentro do terminal**; reservar espaço desligado e esmaecer ligado por padrão (o usuário escolhe deixar sempre à vista ou ver ao passar o mouse). Detalhes em `docs/DECISOES.md` e `docs/DESIGN.md`.
+- **Arquivos tocados:** `src/statusline-wrapper.js`, `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `src/renderer/index.html`, `src/renderer/styles.css`, `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/prototipos/rail-demo.html`, `docs/prototipos/rail-lateral.html`, `docs/prototipos/rail-compacto-terminal.html`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; abrir uma aba e mandar uma mensagem: a cápsula mostra CTX, 5H, 7D e CACHE (antes da primeira resposta, "—"), esmaecida até passar o mouse; o terminal não mostra mais a status line antiga. Na engrenagem: ligar "Reservar espaço" (o terminal estreita), desligar "Esmaecer", ligar a etiqueta de modelo/branch, desligar "Mostrar informações" (a cápsula 5 h / 7 d volta ao cabeçalho).
+- **Pendências:** o cache de 5 min (créditos extras ou chave de API) não foi exercitado, só o de 1 h; em janela estreita (< ~980 px) a cápsula só estreita o terminal; o plugin foi retirado também do Claude Code fora do Termix (backup do `settings.json` guardado).
+- **Validada em:** 2026-10-30 (o usuário testou e aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-010 — Instalador, atalho e backup do estado (MVP)
 
@@ -199,8 +200,8 @@ _Nenhuma no momento._
 
 - **Responsável:** A definir
 - **Status:** PRONTA
-- **Prioridade:** Alta (MVP; depois da TASK-021, que define o conteúdo do rail)
-- **Objetivo:** ver o navegador dentro do app para testar sistemas web, alternando com os terminais por um rail flutuante no centro da base do app. Só visualizar e navegar; o agente controlar o navegador fica para uma versão futura.
+- **Prioridade:** Alta (MVP; é a próxima)
+- **Objetivo:** ver o navegador dentro do app para testar sistemas web, alternando com os terminais por um alternador flutuante no centro da base do app (o rail de informações da TASK-021 ficou na lateral direita do terminal, então a base está livre). Só visualizar e navegar; o agente controlar o navegador fica para uma versão futura.
 - **Critérios de aceite:**
   - Rail em forma de pílula, flutuando no centro da base, com os botões **Terminais** (com selo do número de abas e de atenção) e **Web**; atalho sugerido Ctrl+`.
   - A tela Web tem abas de página, voltar, avançar, recarregar, barra de URL, tamanho de dispositivo e DevTools.
@@ -209,8 +210,8 @@ _Nenhuma no momento._
 - **Notas técnicas:** usar `WebContentsView` (o `<webview>` está em desuso). A vista é nativa e fica por cima do HTML; é preciso garantir o rail, menus e modais acima dela (esconder/encolher a vista ou desenhar o rail numa vista própria por cima). Validar isso primeiro com um protótipo, numa instância isolada (`--user-data-dir` próprio) para não mexer nas abas em uso. Sessão do navegador separada da do app; pensar em limitar a `localhost` e a URLs liberadas quando o agente puder controlá-lo.
 - **Fora de escopo (futuro):** o Claude Code controlar o navegador (MCP do próprio Termix via `webContents.debugger`/CDP: navegar, clicar, digitar, ler o DOM, screenshot, console e rede).
 - **Demo visual:** `docs/prototipos/rail-demo.html`.
-- **Pendências:** decidir se o rail esmaece quando parado e se é por projeto ou um só para o app (a inclinação é por projeto).
-- **Próximo passo:** depois da TASK-021, protótipo da vista do navegador com o rail por cima.
+- **Pendências:** decidir se o alternador esmaece quando parado (como o rail de informações) e se a Web é por projeto ou uma só para o app (a inclinação é por projeto); o demo `rail-demo.html` mostra o alternador na base, ainda com as informações juntas (a TASK-021 as colocou na lateral).
+- **Próximo passo:** protótipo da vista do navegador (`WebContentsView`) com o alternador por cima, numa instância isolada.
 
 ## Backlog
 

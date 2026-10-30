@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Termix — rail na lateral direita (mockup)</title>
+<style>
+:root{
+  --text:#EEF2F8; --text2:#A9B3C4; --text3:#6F7A8E; --accent:#5B9DFF;
+  --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171;
+  --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.13);
+  --border:rgba(255,255,255,.13); --border2:rgba(255,255,255,.22);
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,monospace;
+  --sans:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:#05070c;color:var(--text);font:13px var(--sans);display:grid;place-items:center;padding:14px;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.app{position:relative;width:min(1240px,100%);height:min(740px,calc(100vh - 28px));border-radius:22px;overflow:hidden;
+  background:radial-gradient(520px 360px at 12% 8%,rgba(60,110,200,.30),transparent 70%),radial-gradient(520px 380px at 92% 92%,rgba(40,90,170,.20),transparent 70%),#080b12;
+  border:1px solid var(--border);box-shadow:0 30px 80px rgba(0,0,0,.6);display:grid;
+  grid-template-rows:46px 1fr var(--bot,12px);grid-template-columns:200px 1fr var(--arm,12px)}
+.head{grid-column:1/4;display:flex;align-items:center;padding:0 16px;gap:10px;background:var(--glass);border-bottom:1px solid var(--border)}
+.logo{font:700 15px var(--mono);color:var(--accent);text-shadow:0 0 10px rgba(91,157,255,.7)}
+.head .sp{flex:1}
+.bell{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;color:var(--text2)}
+.bell.on{background:var(--glass2);color:var(--text)}
+.side{grid-row:2;padding:12px;background:var(--glass);border-right:1px solid var(--border);color:var(--text2)}
+.side h6{font-size:10px;letter-spacing:.1em;color:var(--text3);margin:4px 6px 8px}
+.proj{padding:8px;border-radius:10px}.proj.on{background:var(--glass2);color:var(--text)}
+.center{grid-row:2;grid-column:2;display:flex;min-width:0;margin:8px 8px 0 8px;gap:8px}
+.terminal{flex:1;min-width:0;display:flex;flex-direction:column;border-radius:14px;overflow:hidden;background:rgba(6,9,15,.92);border:1px solid var(--border)}
+.tabs{display:flex;gap:2px;height:32px;align-items:flex-end;padding:0 8px;background:rgba(9,7,20,.6)}
+.tab{padding:7px 14px;border-radius:8px 8px 0 0;background:rgba(255,255,255,.05);color:var(--text2);font-size:12px;border-top:2px solid transparent}
+.tab.on{background:rgba(6,9,15,.95);color:var(--text);border-top-color:#34D399}
+.term{flex:1;padding:14px 16px;font:12.5px/1.55 var(--mono);color:#cfd8e6;overflow:hidden;border-top:2px solid #34D399}
+.term .p{color:#7fb2ff}.term .g{color:var(--ok)}.term .d{color:var(--text3)}
+.inbox{margin-top:70px;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);padding:6px 0}
+/* arm (coluna direita da moldura) */
+.arm{grid-row:2;grid-column:3;overflow:hidden;background:var(--glass);border-left:1px solid var(--border);display:none;padding:12px}
+.arm h3{font-size:13px;margin-bottom:8px}
+.ev{border-left:3px solid #34D399;background:var(--glass);border-radius:8px;padding:8px 10px;margin-bottom:8px;color:var(--text2);font-size:12px}
+.ev b{color:var(--text)}
+/* base */
+.base{grid-row:3;grid-column:1/4;display:none;align-items:center;justify-content:center;padding-left:200px}
+/* RAIL */
+.rail{display:flex;border-radius:18px;background:rgba(14,19,30,.82);border:1px solid var(--border2);box-shadow:0 6px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.07)}
+.bar{display:inline-block;height:7px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;vertical-align:middle}
+.bar i{display:block;height:100%}
+.g{color:var(--ok)}.y{color:var(--warn)}.r{color:var(--bad)}
+.na{color:var(--text3)}
+.gear{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--text3)}
+.gear:hover{background:var(--glass2);color:var(--text)}
+/* layout: base */
+body[data-l=base] .base{display:flex}
+body[data-l=base]{--bot:68px}
+body[data-l=base] .rail{border-radius:99px;align-items:center;padding:4px 6px}
+body[data-l=base] .rail .meta{display:none}
+body[data-l=base] .rail .stats{display:flex}
+body[data-l=base] .rs{display:flex;gap:7px;align-items:center;padding:6px 12px;font:12px var(--mono);white-space:nowrap}
+body[data-l=base] .rs+.rs{border-left:1px solid var(--border)}
+body[data-l=base] .bar{width:60px}
+body[data-l=base] .vside{display:none}
+/* layout: lateral larga e compacta */
+.vside{display:none}
+body[data-l=wide] .vside,body[data-l=slim] .vside{display:flex;flex-direction:column;flex:none;border-radius:14px;background:rgba(14,19,30,.72);border:1px solid var(--border2);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+body[data-l=wide] .vside{width:178px;padding:12px 12px 10px}
+body[data-l=slim] .vside{width:62px;padding:10px 6px;align-items:center}
+body[data-l=base] .center{margin-bottom:0}
+.vs{padding:9px 0;border-bottom:1px solid var(--border)}
+.vs:last-of-type{border-bottom:0}
+.vs .lb{display:flex;justify-content:space-between;align-items:baseline;font:600 11px var(--mono);color:var(--text2);letter-spacing:.04em;text-transform:uppercase}
+.vs .lb b{font:700 16px var(--mono)}
+.vs .bar{display:block;width:100%;height:6px;margin:6px 0 4px}
+.vs .sub{font:11px var(--mono);color:var(--text3)}
+.vmeta{padding-bottom:10px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--text3);line-height:1.6}
+.vmeta .m{color:#5fd0c4}.vmeta .b{color:var(--ok)}.vmeta .w{color:var(--warn)}
+.vfoot{margin-top:auto;display:flex;justify-content:flex-end}
+/* compacta: anéis */
+.ring{position:relative;width:44px;height:44px;margin:5px 0}
+.ring svg{width:44px;height:44px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:4}
+.ring .t{stroke:rgba(255,255,255,.1)}
+.ring .v{stroke-linecap:round}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;font:700 11px var(--mono)}
+.ring small{position:absolute;left:0;right:0;bottom:-11px;text-align:center;font:600 9px var(--mono);color:var(--text3);letter-spacing:.05em}
+body[data-l=wide] .ringset{display:none}
+body[data-l=slim] .widebody{display:none}
+body[data-l=slim] .ringset{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:4px}
+.ringset{display:none}
+.vtip{display:none}
+/* lateral cápsula: o mesmo visual da pílula horizontal, na vertical */
+body[data-l=pill] .vside{display:flex;flex-direction:column;flex:none;width:150px;align-self:center;padding:6px 6px 6px;border-radius:26px;background:rgba(14,19,30,.82);border:1px solid var(--border2);box-shadow:0 6px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.07)}
+body[data-l=pill] .widebody,body[data-l=pill] .ringset{display:none}
+.pillbody{display:none}
+body[data-l=pill] .pillbody{display:block}
+.ps{padding:9px 10px;font:12px var(--mono);white-space:nowrap}
+.ps+.ps{border-top:1px solid var(--border)}
+.ps .row{display:flex;align-items:center;gap:7px}
+.ps .lb{color:var(--text2);font-weight:600;min-width:34px}
+.ps .bar{flex:1;width:auto;height:7px}
+.ps b{font-weight:700}
+.ps .sub{display:block;margin-top:4px;color:var(--text3);font-size:11px;text-align:right}
+body[data-l=pill] .vfoot{justify-content:center;border-top:1px solid var(--border);padding-top:4px}
+/* controles da demo */
+.demo{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;align-items:center;background:rgba(12,17,28,.94);border:1px solid var(--border2);border-radius:99px;padding:5px 8px;z-index:9;font-size:12px;color:var(--text2)}
+.demo button{padding:6px 14px;border-radius:99px;color:var(--text2)}
+.demo button.on{background:rgba(91,157,255,.2);color:#fff;box-shadow:inset 0 0 0 1px rgba(91,157,255,.5)}
+.demo label{display:flex;gap:5px;align-items:center;padding:0 8px;cursor:pointer}
+.demo .s{width:1px;height:16px;background:var(--border)}
+body[data-arm=open]{--arm:300px}
+body[data-arm=open] .arm{display:block}
+@media (max-width:760px){.side{display:none}.app{grid-template-columns:0 1fr var(--arm,12px)}.base{padding-left:0}}
+</style>
+</head>
+<body data-l="wide" data-arm="closed">
+<div class="app">
+  <div class="head"><span class="logo">&gt;_</span><b>Termix</b><span class="sp"></span><button class="bell" id="bell" title="Notificações">🔔</button></div>
+  <div class="side"><h6>PROJETOS</h6><div class="proj on">Termix</div><div class="proj">new-rocruzta-page</div></div>
+
+  <div class="center">
+    <div class="terminal">
+      <div class="tabs"><div class="tab on">Aba A</div><div class="tab">Aba B</div></div>
+      <div class="term">
+        <div><span class="p">❯</span> corrige o botão de login e roda os testes</div>
+        <div class="d">● Editando src/components/LoginButton.tsx …</div>
+        <div class="g">✔ 14 testes passaram</div>
+        <div class="inbox"><span class="p">❯</span> ▌</div>
+        <div style="padding:8px 0 0 12px;color:#ff7a90">▸▸ bypass permissions on <span class="d">(shift+tab to cycle)</span></div>
+      </div>
+    </div>
+
+    <!-- lateral -->
+    <aside class="vside" id="vside">
+      <div class="widebody">
+        <div class="vmeta"><span class="m">Sonnet 5.5</span><br>Termix · <span class="b">dev1</span><br><span class="w">⚠ bypass permissions</span></div>
+        <div class="vs"><div class="lb"><span>ctx</span><b class="g">5%</b></div><span class="bar"><i style="width:5%;background:var(--ok)"></i></span><div class="sub">51k / 1M</div></div>
+        <div class="vs"><div class="lb"><span>5h</span><b class="g">13%</b></div><span class="bar"><i style="width:13%;background:var(--ok)"></i></span><div class="sub">renova em 3h36m</div></div>
+        <div class="vs"><div class="lb"><span>7d</span><b class="g">58%</b></div><span class="bar"><i style="width:58%;background:var(--ok)"></i></span><div class="sub">renova em 2d21h</div></div>
+        <div class="vs"><div class="lb"><span>cache</span><b class="g">54m</b></div><span class="bar"><i style="width:90%;background:var(--ok)"></i></span><div class="sub">de 1h de validade</div></div>
+      </div>
+      <div class="pillbody">
+        <div class="ps"><div class="row"><span class="lb">ctx</span><span class="bar"><i style="width:19%;background:var(--ok)"></i></span><b class="g">19%</b></div><span class="sub">189k/1M</span></div>
+        <div class="ps"><div class="row"><span class="lb">5h</span><span class="bar"><i style="width:15%;background:var(--ok)"></i></span><b class="g">15%</b></div><span class="sub">(3h36m)</span></div>
+        <div class="ps"><div class="row"><span class="lb">7d</span><span class="bar"><i style="width:58%;background:var(--ok)"></i></span><b class="g">58%</b></div><span class="sub">(2d21h)</span></div>
+        <div class="ps"><div class="row"><span class="lb">cache</span><b class="g" style="margin-left:auto">26m</b></div><span class="sub">de 1h</span></div>
+      </div>
+      <div class="ringset">
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="107"/></svg><span class="g">5</span><small>CTX</small></div>
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="98"/></svg><span class="g">13</span><small>5H</small></div>
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="47"/></svg><span class="g">58</span><small>7D</small></div>
+        <div class="ring"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="v" cx="22" cy="22" r="18" stroke="#4ADE80" stroke-dasharray="113" stroke-dashoffset="11"/></svg><span class="g" style="font-size:10px">54m</span><small>CACHE</small></div>
+      </div>
+      <div class="vfoot"><button class="gear" title="Configurar o rail">⚙</button></div>
+    </aside>
+  </div>
+
+  <aside class="arm"><h3>Notificações</h3>
+    <div class="ev"><b>Aba B</b><br>Terminou a resposta.</div>
+    <div class="ev" style="border-color:#FBBF24"><b>Aba A</b><br>Precisa de você: permissão.</div>
+  </aside>
+
+  <!-- base (versão atual, para comparar) -->
+  <div class="base">
+    <div class="rail">
+      <div class="stats" style="display:flex">
+        <div class="rs">ctx <span class="bar"><i style="width:5%;background:var(--ok)"></i></span> <b class="g">5%</b> <span class="na">51k/1M</span></div>
+        <div class="rs">5h <span class="bar"><i style="width:13%;background:var(--ok)"></i></span> <b class="g">13%</b> <span class="na">(3h36m)</span></div>
+        <div class="rs">7d <span class="bar"><i style="width:58%;background:var(--ok)"></i></span> <b class="g">58%</b> <span class="na">(2d21h)</span></div>
+        <div class="rs">cache <b class="g">54m</b> <span class="na">de 1h</span></div>
+      </div>
+      <button class="gear">⚙</button>
+    </div>
+  </div>
+</div>
+
+<div class="demo">
+  <button data-l="base">Base (atual)</button>
+  <button data-l="wide" class="on">Lateral larga</button>
+  <button data-l="slim">Lateral compacta</button>
+  <button data-l="pill">Lateral cápsula</button>
+  <span class="s"></span>
+  <label><input type="checkbox" id="arm"> Painel de notificações aberto</label>
+</div>
+<script>
+const b=document.body;
+document.querySelectorAll('.demo button').forEach(x=>x.onclick=()=>{b.dataset.l=x.dataset.l;document.querySelectorAll('.demo button').forEach(y=>y.classList.toggle('on',y===x))});
+document.getElementById('arm').onchange=e=>{b.dataset.arm=e.target.checked?'open':'closed';document.getElementById('bell').classList.toggle('on',e.target.checked)};
+</script>
+</body>
+</html>

@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('termix', {
   onHook: (fn) => ipcRenderer.on('hook:event', (_e, m) => fn(m)),
   onMetrics: (fn) => ipcRenderer.on('metrics:update', (_e, m) => fn(m)),
   allMetrics: () => ipcRenderer.invoke('metrics:all'),
+  gitBranch: (cwd) => ipcRenderer.invoke('git:branch', cwd),
 
   createProject: (name) => ipcRenderer.invoke('project:create', name),
   pickFolder: () => ipcRenderer.invoke('project:pick'),

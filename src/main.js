@@ -428,6 +428,12 @@ ipcMain.handle('metrics:all', () => {
   return files.map((f) => ({ tabId: f.slice(4, -5), data: readJson(path.join(METRICS_DIR(), f)) })).filter((x) => x.data);
 });
 
+// branch git da pasta de um projeto (para o rail); vazio se não for repositório ou sem git
+ipcMain.handle('git:branch', (_e, cwd) => new Promise((resolve) => {
+  if (!cwd || !fs.existsSync(cwd)) return resolve('');
+  execFile('git', ['-C', cwd, 'branch', '--show-current'], { timeout: 3000, windowsHide: true }, (err, out) => resolve(err ? '' : String(out).trim()));
+}));
+
 /* ---------- ciclo de vida ---------- */
 if (!RUN_MODE) {
   app.setAppUserModelId('com.termix.app');

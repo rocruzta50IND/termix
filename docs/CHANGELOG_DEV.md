@@ -8,9 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
-**TASK-021 e TASK-022 — Rail flutuante: informações do terminal e navegador (planejamento)** (DEV1)
+**TASK-021 — Rail de informações do terminal** (DEV1)
 
-- Registradas duas tarefas de MVP a partir da conversa de alinhamento: TASK-021 (mostrar no app as informações que a status line do plugin mostra hoje, no rail da base em vez do cabeçalho; em andamento, é a primeira) e TASK-022 (rail com alternador Terminais/Web e navegador embutido só para visualizar; pronta, vem depois). Demo visual do rail salvo em `docs/prototipos/rail-demo.html`. Sem mudança de código.
+- Cápsula vertical de anéis dentro do terminal, junto à borda direita, com contexto, 5h, 7d e cache do prompt (detalhe ao passar o mouse), menu de configuração próprio (mostrar, reservar espaço, esmaecer, etiqueta de modelo/branch/permissões; padrões: espaço desligado e esmaecer ligado) e dados vindos do encaminhador da status line (`prompt_cache`, pasta, últimos limites conhecidos) e do `git branch`. A cápsula 5h/7d do cabeçalho sai com o rail ligado. O plugin da status line foi retirado do terminal (e do `~/.claude/settings.json`, com backup). Atualização do rail sem recriar elementos, para o tooltip não piscar. Decisões em `docs/DECISOES.md`, visual em `docs/DESIGN.md`. VALIDADA EM DEV1: o usuário testou e aprovou.
+- Registrada também a TASK-022 (alternador Terminais/Web com navegador embutido, só para visualizar), próxima da fila; demos em `docs/prototipos/`.
+
 
 ## 2026-10-29
 

@@ -132,6 +132,34 @@ body.maxed .shadow{filter:none}
 @keyframes linepulse{0%,100%{opacity:.15}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.sess.working::before{animation:none;opacity:.7}}
 #page:not(.hide){margin:8px}
+/* rail: cápsula vertical de anéis (contexto, 5 h, 7 d, cache) dentro do terminal, junto à borda direita */
+.rail{position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;width:58px;padding:12px 6px 6px;border-radius:30px;
+  background:rgba(14,19,30,.82);border:1px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.07);transition:opacity .2s}
+.rail.fade{opacity:.4}.rail.fade:hover,.rail.fade.menuopen{opacity:1}
+.rail.off{width:auto;padding:4px;border-radius:99px}
+.rinfo{display:flex;flex-direction:column;align-items:center;gap:15px;padding-bottom:4px}
+.ring{position:relative;width:44px;height:44px;margin-bottom:11px}
+.ring svg{width:44px;height:44px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:4}
+.ring .t{stroke:rgba(255,255,255,.1)}
+.ring .v{stroke-linecap:round}
+.ring .n{position:absolute;inset:0;display:grid;place-items:center;font:700 11px var(--mono)}
+.ring .n.sm{font-size:10px}
+.ring .n.na{color:var(--text3);font-weight:400}
+.ring small{position:absolute;left:-4px;right:-4px;bottom:-12px;text-align:center;font:600 9px var(--mono);color:var(--text3);letter-spacing:.05em}
+.ring .tip{position:absolute;right:calc(100% + 16px);top:50%;transform:translateY(-50%);white-space:nowrap;background:#171e2d;border:1px solid var(--border2);border-radius:12px;padding:8px 12px;
+  font:12px var(--mono);color:var(--text2);box-shadow:0 10px 28px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .12s}
+.ring .tip b{color:var(--text);display:block;font-size:12.5px;margin-bottom:2px}
+.ring:hover .tip{opacity:1}
+.rgear{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--text3)}
+.rgear:hover,.rgear.on{background:var(--glass2);color:var(--text)}
+.rmeta2{position:absolute;right:12px;bottom:10px;z-index:4;font-size:11.5px;color:var(--text3);background:rgba(14,19,30,.7);border:1px solid var(--border);border-radius:99px;padding:3px 12px;white-space:nowrap}
+.rmeta2 .m{color:#5fd0c4}.rmeta2 .b{color:var(--ok)}.rmeta2 .w{color:var(--warn)}
+/* espaço reservado: o terminal para antes da cápsula (o fundo vem da sessão para continuar contínuo) */
+.sess.reserve{background:rgba(9,7,20,var(--term-op))}
+.sess.reserve .term{background:transparent;margin-right:82px}
+.mchk{width:16px;height:16px;border-radius:5px;border:1px solid var(--border2);display:grid;place-items:center;flex:none;font-size:11px;line-height:1;color:#06101f}
+.mchk.on{background:var(--accent);border-color:var(--accent)}
 .stage{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0}
 .stage.panel{overflow:auto}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:99px;border:1px solid var(--border2);background:var(--glass);color:var(--text);white-space:nowrap}
