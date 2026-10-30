@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
+**TASK-029 registrada — notificações no MVP** (DEV1)
+
+- Nova tarefa no Backlog (Alta, MVP): refazer as notificações com o cache dos terminais como função principal (aviso aos 10 min), contador do sino que zera ao fechar a tela, tooltip animada ao lado do sino só para terminal que terminou, nada de terminal trabalhando e controle total (configurar e excluir). Sem código nesta etapa.
+
 **TASK-028 etapa 2 — custo da retomada medido** (DEV1)
 
 - Ao usar Clear com retomada, o app mede o contexto (em tokens) antes do `/clear`, a base da conversa nova e o fim da primeira resposta; mostra "A retomada custou ~X tokens" no painel de eventos e no tooltip do anel CTX.

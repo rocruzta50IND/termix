@@ -259,6 +259,23 @@ _Nenhuma no momento._
 
 ## Backlog
 
+### TASK-029 — Notificações bem encaixadas no app, com o cache como função principal (MVP)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Alta (MVP) — pedido do usuário em 2026-10-30, para depois da TASK-013
+- **Objetivo:** avaliar e refazer a parte de notificações para ela ser útil de verdade e ficar perfeitamente encaixada no app. Hoje o painel só acumula avisos ("terminou", "precisa de você", "erro") e o contador do sino não zera.
+- **Pedidos do usuário (2026-10-30):**
+  - **Contador:** ao abrir a tela de notificações e fechá-la, o indicador do sino volta a **0 (some)**, porque a pessoa já viu o que havia lá.
+  - **Cache como função principal:** relacionar as notificações com o **cache dos terminais**; quando um terminal chegar a **10 minutos** (do cache esfriar, a confirmar a leitura), a notificação aparece.
+  - **Terminal trabalhando não notifica:** enquanto o terminal está trabalhando, não aparece nada dele.
+  - **Terminal que terminou:** aparece uma **tooltip animada ao lado esquerdo do ícone de notificações**, mostrando rápido a ação daquele momento; para ver mais detalhes, clica no ícone e abre a telinha lateral.
+  - **Controle total:** configurar (o que notificar, tempos, som, tooltip) e excluir (uma, várias, limpar tudo) as notificações.
+- **A avaliar (observado na captura do usuário):** o painel mostra só o nome da aba e "há X min", sem a mensagem do evento (texto cortado nos cartões); 16 avisos seguidos de "Coder"/"Brain" sem dizer o que aconteceu. Pensar em agrupar por aba, tipo (terminou, precisa de você, erro, cache) e limite de histórico.
+- **Perguntas ao retomar:** o aviso de cache é "faltam 10 min para esfriar" ou "esfriou há 10 min"? Vale para o TTL de 1 h e o de 5 min (neste, 10 min não cabe)? O som e a notificação do Windows seguem as mesmas regras? O que continua sendo avisado além do cache?
+- **Base existente:** `notifyTab()` em `src/renderer/app.js` (painel, selo da aba, notificação do Windows, ícone piscando), TASK-004, e o cache do rail (`prompt_cache`, TASK-021).
+- **Próximo passo:** (ao retomar) ler `notifyTab`, o painel e as configurações atuais, listar o que fica, o que sai e o que entra, e propor os critérios de aceite ao usuário antes de mexer.
+
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 
 - **Responsável:** A definir
