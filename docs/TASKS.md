@@ -8,7 +8,33 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-_Nenhuma no momento._
+### TASK-023 — Atalhos e grupos de páginas no navegador do app (MVP)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (etapa 1: compatibilidade de login; aguardando teste do usuário)
+- **Prioridade:** Alta (MVP)
+- **Objetivo:** deixar à mão, dentro do app, as plataformas que o usuário usa o tempo todo (Vercel, GitHub, Supabase, pesquisa etc.) e o teste do que está sendo codado, organizados em grupos de páginas prontas, sem sair do Termix.
+- **Critérios de aceite:**
+  - **Grupos de páginas:** o usuário cria, renomeia, reordena e apaga grupos (ex.: "Deploy", "Pesquisa", "Banco") e guarda páginas dentro deles. Um clique abre a página numa aba nova ou leva até a aba já aberta.
+  - **Dois níveis:** grupos **globais** (valem em todo projeto) e grupos **do projeto** (localhost, painel daquele projeto).
+  - **Barra de atalhos** na tela Web, com os grupos e as páginas fixadas; **"salvar aba como atalho"** em um clique a partir de uma aba aberta.
+  - **Sessão compartilhada:** o login vale para todos os projetos (perfil único). As abas abertas continuam por projeto.
+  - **Opcional, se couber:** um grupo abrir várias páginas de uma vez ("abrir ambiente de deploy").
+  - **Login funcionando (critério de entrada, ver abaixo):** conseguir entrar e pesquisar nos serviços mais usados sem ser barrado.
+- **Risco principal — login e bloqueio de navegador embutido:** alguns serviços recusam login em navegadores embutidos (o do Google costuma mostrar "este navegador ou app pode não ser seguro"; o do GitHub costuma funcionar). Não dá para garantir sem testar. Plano, nesta ordem:
+  1. **Teste de compatibilidade primeiro (antes de construir os grupos):** com o usuário, testar entrar em Google, GitHub, Vercel, Supabase e outros que ele usa, e pesquisar no Google/outros, e registrar o resultado numa tabela na tarefa.
+  2. **Identidade de navegador comum:** remover do user agent as marcas `Electron` e `Termix` (a vista passa a se identificar como um Chrome comum). É o ajuste que mais costuma resolver.
+  3. **Janelas de login (popup):** hoje `target=_blank` vira aba, mas o login "Entrar com Google/GitHub" abre uma janela que precisa falar com a página de origem (`window.opener`). Tratar esses casos abrindo uma janela filha com o mesmo perfil, só para fluxos de login.
+  4. **Se o Google ainda barrar:** alternativas, em ordem de preferência: entrar nos serviços por **GitHub ou e-mail** em vez de Google (quando o serviço oferecer); usar uma **chave de acesso (passkey)**; como último recurso, abrir o serviço no navegador do sistema (sem compartilhar a sessão com o app). Pesquisa pode usar um buscador que não exige login (o próprio Google pesquisa sem login).
+  5. O resultado e o que não funcionar ficam registrados em `docs/DECISOES.md`, sem prometer o que não foi testado.
+- **Notas técnicas:** guardar os grupos em `settings.webGroups` (globais) e `projects[].web.groups` (do projeto), com versão dos dados; barra de atalhos como HTML da própria tela Web (acima da vista nativa, sem mudar a arquitetura da TASK-022); decidir se arrastar para reordenar entra agora ou depois.
+- **Fora de escopo (futuro):** o Claude Code controlar o navegador (MCP do Termix); sincronizar atalhos entre computadores.
+- **Decisão do usuário (2026-10-30):** o Termix será usado por um grupo restrito, não por todos. Fazer funcionar **para nós primeiro**; se os testes de login não forem positivos, a Web passa a servir **apenas para testes locais** (localhost e páginas do próprio projeto), sem plataformas com login.
+- **Feito até agora (etapa 1, itens 2 e 3 do plano):** o navegador agora se identifica como Chrome comum (user agent sem `Electron`/`Termix` e marca "Google Chrome" nos client hints, via `Emulation.setUserAgentOverride`, em `src/web.js`); janelas abertas por `window.open` com tamanho (login "Entrar com Google/GitHub") viram janela filha com o mesmo perfil e `window.opener` preservado, e links `target=_blank` continuam virando aba. Testado numa instância isolada com servidor local: user agent sem Electron, marcas "Not.A/Brand, Chromium, Google Chrome", popup com `opener:true` e mensagem entregue à página de origem, DevTools continua abrindo. **Ainda não testado em serviços reais** (Google, GitHub, Vercel, Supabase).
+- **Arquivos tocados:** `src/web.js`, `docs/TASKS.md`.
+- **Como validar a etapa 1:** `npm start`; abrir a Web e, na barra de endereço, tentar entrar em: google.com (pesquisar e entrar na conta), github.com, vercel.com (por GitHub e por Google) e supabase.com; anotar o que entra, o que pede verificação extra e o que é barrado ("navegador não seguro"). O login deve ficar salvo ao fechar e reabrir o app.
+- **Tabela de compatibilidade (preencher com o usuário):** Google (pesquisa) ?, Google (login) ?, GitHub ?, Vercel ?, Supabase ?
+- **Próximo passo:** o usuário roda o teste de login; com o resultado, ou seguimos para os grupos e a barra de atalhos (etapa 2) ou reduzimos a Web a testes locais.
 
 ## Aguardando validação DEV1
 
@@ -214,28 +240,7 @@ _Nenhuma no momento._
 
 ## Prontas
 
-### TASK-023 — Atalhos e grupos de páginas no navegador do app (MVP)
-
-- **Responsável:** A definir
-- **Status:** PRONTA
-- **Prioridade:** Alta (MVP; próxima)
-- **Objetivo:** deixar à mão, dentro do app, as plataformas que o usuário usa o tempo todo (Vercel, GitHub, Supabase, pesquisa etc.) e o teste do que está sendo codado, organizados em grupos de páginas prontas, sem sair do Termix.
-- **Critérios de aceite:**
-  - **Grupos de páginas:** o usuário cria, renomeia, reordena e apaga grupos (ex.: "Deploy", "Pesquisa", "Banco") e guarda páginas dentro deles. Um clique abre a página numa aba nova ou leva até a aba já aberta.
-  - **Dois níveis:** grupos **globais** (valem em todo projeto) e grupos **do projeto** (localhost, painel daquele projeto).
-  - **Barra de atalhos** na tela Web, com os grupos e as páginas fixadas; **"salvar aba como atalho"** em um clique a partir de uma aba aberta.
-  - **Sessão compartilhada:** o login vale para todos os projetos (perfil único). As abas abertas continuam por projeto.
-  - **Opcional, se couber:** um grupo abrir várias páginas de uma vez ("abrir ambiente de deploy").
-  - **Login funcionando (critério de entrada, ver abaixo):** conseguir entrar e pesquisar nos serviços mais usados sem ser barrado.
-- **Risco principal — login e bloqueio de navegador embutido:** alguns serviços recusam login em navegadores embutidos (o do Google costuma mostrar "este navegador ou app pode não ser seguro"; o do GitHub costuma funcionar). Não dá para garantir sem testar. Plano, nesta ordem:
-  1. **Teste de compatibilidade primeiro (antes de construir os grupos):** com o usuário, testar entrar em Google, GitHub, Vercel, Supabase e outros que ele usa, e pesquisar no Google/outros, e registrar o resultado numa tabela na tarefa.
-  2. **Identidade de navegador comum:** remover do user agent as marcas `Electron` e `Termix` (a vista passa a se identificar como um Chrome comum). É o ajuste que mais costuma resolver.
-  3. **Janelas de login (popup):** hoje `target=_blank` vira aba, mas o login "Entrar com Google/GitHub" abre uma janela que precisa falar com a página de origem (`window.opener`). Tratar esses casos abrindo uma janela filha com o mesmo perfil, só para fluxos de login.
-  4. **Se o Google ainda barrar:** alternativas, em ordem de preferência: entrar nos serviços por **GitHub ou e-mail** em vez de Google (quando o serviço oferecer); usar uma **chave de acesso (passkey)**; como último recurso, abrir o serviço no navegador do sistema (sem compartilhar a sessão com o app). Pesquisa pode usar um buscador que não exige login (o próprio Google pesquisa sem login).
-  5. O resultado e o que não funcionar ficam registrados em `docs/DECISOES.md`, sem prometer o que não foi testado.
-- **Notas técnicas:** guardar os grupos em `settings.webGroups` (globais) e `projects[].web.groups` (do projeto), com versão dos dados; barra de atalhos como HTML da própria tela Web (acima da vista nativa, sem mudar a arquitetura da TASK-022); decidir se arrastar para reordenar entra agora ou depois.
-- **Fora de escopo (futuro):** o Claude Code controlar o navegador (MCP do Termix); sincronizar atalhos entre computadores.
-- **Próximo passo:** teste de compatibilidade de login com o usuário (itens 1 e 2) antes de desenhar a barra de atalhos.
+_Nenhuma no momento._
 
 ## Backlog
 

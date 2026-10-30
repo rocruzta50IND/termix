@@ -54,7 +54,8 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - A Web é **por projeto**: cada projeto lembra suas abas web, endereços e tamanho de dispositivo. O perfil é **persistente** e separado da interface (cookies e logins ficam entre aberturas). A vista do navegador só é criada quando a aba é aberta.
 - Só abre **http/https**. Sem câmera, microfone, localização nem notificações no MVP. Links com `target=_blank` viram nova aba web.
 - O alternador esmaece quando parado (como o rail de informações). Ele flutua sobre a base do terminal, então cobre um pouco do rodapé; se atrapalhar, a alternativa é reservar uma faixa.
-- **Planejado (TASK-023):** grupos de páginas prontas, globais e por projeto, com barra de atalhos e sessão única compartilhada; antes, teste de compatibilidade de login (Google pode barrar navegador embutido). O que não funcionar será registrado aqui.
+- **Uso restrito (2026-10-30):** o Termix será usado por um grupo restrito, não por todos. A Web funciona primeiro para nós; se os testes de login (Google, GitHub, Vercel, Supabase) não forem positivos, ela serve só para testes locais. O navegador se identifica como Chrome comum (sem as marcas Electron/Termix) para não ser barrado em logins; janelas de login (`window.open` com tamanho) abrem como janela filha com o mesmo perfil.
+- **Planejado (TASK-023):** grupos de páginas prontas, globais e por projeto, com barra de atalhos e sessão única compartilhada; o que não funcionar nos testes de login será registrado aqui.
 
 ## Plugins, Skills e MCPs
 - No MVP são **somente leitura**, a partir dos arquivos reais de configuração (escopos User, Project e Local).
