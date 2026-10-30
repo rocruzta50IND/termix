@@ -66,7 +66,8 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - O Clear tem duas saídas: **Só limpar** (`/clear`) e **Fechar a tarefa e limpar** (o agente registra a tarefa em arquivo, o app manda `/clear` e pede para retomar). A ideia vem do guia de economia de tokens: guardar tudo em arquivo, limpar e retomar lendo o arquivo.
 - Só vale com o agente **aguardando**; nunca no meio de uma resposta.
 - O botão **pulsa** quando o contexto (CTX) chega ao limite que a pessoa configurou (padrão 15 %; 0 desliga). O app não escolhe modelo nem impõe ritmo: isso é da pessoa.
-- Os textos dos dois pedidos (fechar e retomar) são editáveis em Configurações e valem só no app; os padrões são genéricos e não fazem commit. Quando o agente termina o fechamento escrevendo `TERMIX-CLEAR-OK`, o app limpa sozinho; sem o aviso, ele pergunta antes.
+- **Projetos no fluxo Rocruzta** (com `.claude/fluxo.json`): o fluxo e o plugin não são alterados; o app é que se adapta. O Clear usa pedidos próprios que seguem o fluxo (papel e branch de `CLAUDE.local.md`, validação do `fluxo.json`) e leem o mínimo: só as seções ativas do `TASKS.md`, a última entrada do changelog, `DECISOES`/`DESIGN` só se a tarefa pedir. O fechamento faz commit e push só na branch do papel (opção desligável) e nunca promove; o GERENTE (somente leitura) só pode "Só limpar". Motivo: a retomada pelo `/retomar` lendo tudo custava ~21 a 27 mil tokens e cresce com o `TASKS.md`.
+- Os textos dos dois pedidos (fechar e retomar) são editáveis em Configurações e valem só no app; texto vazio = automático (do fluxo ou genérico, conforme o projeto); o que a pessoa escrever vale sempre. Quando o agente termina o fechamento escrevendo `TERMIX-CLEAR-OK`, o app limpa sozinho; sem o aviso, ele pergunta antes.
 
 ## Plugins, Skills e MCPs
 - No MVP são **somente leitura**, a partir dos arquivos reais de configuração (escopos User, Project e Local).

@@ -15,7 +15,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Registrada a TASK-026 (registro de consumo e alertas de ritmo), derivada do guia de economia de tokens.
 - Ajustes pós-teste: alternador não some mais com o menu do rail; novo ícone; o /clear agora apaga também o texto antigo da tela; Ctrl+C/Ctrl+V funcionam nos terminais.
 - Estado: aguardando novo teste do usuário.
-- Registrada a TASK-027 (controle de contexto sob medida para o fluxo Rocruzta, pós-MVP) com a análise do fluxo, sem alterá-lo.
+- TASK-027 etapa 1 — retomada enxuta: nos projetos no fluxo Rocruzta o botão Clear usa pedidos de fechar e retomar que seguem o fluxo e leem só o necessário (papel/branch de CLAUDE.local.md, validação do fluxo.json, só as seções ativas do TASKS.md); opções "usar o fluxo" e "commit e push ao fechar" em Configurações; textos vazios = automático. Fluxo e plugin intactos. Aguardando teste do usuário; etapa 2 (medir o custo da retomada) a seguir.
 
 **TASK-025 registrada — ações rápidas no rail de baixo** (DEV1)
 

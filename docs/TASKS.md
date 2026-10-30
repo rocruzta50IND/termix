@@ -22,6 +22,21 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Pendências:** testar o fluxo completo com um Claude Code real (inclusive o `/clear` digitado pelo menu de comandos e o retomar na conversa nova); o aviso final `TERMIX-CLEAR-OK` depende de o agente obedecer; o botão age só na aba ativa do projeto atual; sem atalho de teclado (TASK-009).
 - **Próximo passo:** o usuário testa; ajustar o que aparecer. Fora de escopo registrado na TASK-026 (Backlog).
 
+### TASK-027 — Controle de contexto sob medida para o fluxo Rocruzta (só no app)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (etapa 1 feita; aguardando teste do usuário)
+- **Prioridade:** Alta (reflete direto no gasto de tokens)
+- **Objetivo:** o fluxo Rocruzta é iniciado em todo projeto; o Termix deve fechar, limpar e retomar com o mínimo de tokens nesse fluxo, **só com configuração dentro do app**. O fluxo e o plugin não serão alterados (decisão do usuário; o dono já foi avisado).
+- **Achados da análise (2026-10-30):** (1) o plugin `fluxo` não traz `/retomar` nem `/encerrar-tarefa` (são deste repositório); (2) o fluxo manda ler `CLAUDE.md`, `WORKFLOW.md` e `docs/TASKS.md` inteiros a cada tarefa; aqui o `TASKS.md` tem ~48 KB (≈ 14 mil tokens) e o `/retomar` custa ≈ 21 a 27 mil tokens antes de qualquer trabalho; (3) a retomada só precisa das seções *Em andamento* e *Aguardando* e da última entrada do changelog (≈ 4 mil tokens); (4) o hook `SessionStart` do plugin já injeta papel, branch, validação e nomes das tarefas ativas; (5) o app já recebe do Claude Code o contexto, o cache e o fim de cada resposta.
+- **Etapa 1 — retomada enxuta (feita):** o app detecta o projeto no fluxo (`.claude/fluxo.json`) e lê o papel e a branch de `CLAUDE.local.md` (`flow:info` em `src/main.js`). Nesses projetos, o botão Clear usa pedidos próprios: **retomar** lê `CLAUDE.md` e `CLAUDE.local.md`, só as seções ativas do `TASKS.md` (busca por títulos + leitura com offset/limite), só a última entrada do changelog, `DECISOES`/`DESIGN` só se a tarefa pedir, `git status`/`log`, respeita a trava de contexto do DEV1 e, para devs auxiliares, confere se a dev1 tem novidades; **fechar** confirma aprovação, roda a validação do `fluxo.json`, edita só a entrada da tarefa ativa (status certo para o papel), acrescenta o changelog, registra o que ficou fora do escopo no Backlog, reescreve o HANDOFF (devs auxiliares), faz commit e push só na branch do papel (nunca promove) e termina com o aviso `TERMIX-CLEAR-OK`. GERENTE (somente leitura) só pode "Só limpar". Fora do fluxo, ou com a opção desligada, valem os textos genéricos. Em Configurações > Botão Clear: "Usar o fluxo Rocruzta nos projetos que o têm" (padrão Sim), "Commit e push ao fechar" (padrão Sim) e os dois textos, agora **vazios = automático** (o que a pessoa escrever vale sempre; textos genéricos salvos na versão anterior voltam a automático). Testado numa instância isolada: a detecção, o papel/branch/validação lidos e os textos gerados para o Termix e para uma pasta fora do fluxo; **o ciclo completo com um Claude Code real ainda não foi exercitado** (nem o ganho de tokens medido).
+- **Etapa 2 — medir o custo (a fazer):** guardar o CTX antes do `/clear`, logo depois da retomada e ao fim da primeira resposta e mostrar "a retomada custou X mil tokens", mais a "base da sessão" (CTX antes do primeiro pedido).
+- **Candidatas seguintes (só no app):** aviso "pronto para limpar" quando o fechamento termina; pulso também com cache frio e contexto grande; modo "tarefa pequena" (alerta 15 %) e "tarefa longa" (35 %) por aba ou projeto, trocável no botão; mostrar plugins/skills/MCPs ativos e o peso estimado (liga com a TASK-013).
+- **Arquivos tocados:** `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; num terminal do Claude Code neste projeto (que está no fluxo), usar Clear > "Fechar a tarefa e limpar" depois de aprovar um trabalho pequeno: o agente deve validar, registrar só a tarefa ativa, fazer commit/push na `dev1` e escrever o aviso; o app limpa e o agente responde um resumo curto lendo só o necessário (conferir no CTX quanto a retomada custou). Num projeto fora do fluxo, o texto genérico. Em Configurações, desligar o fluxo e conferir que volta ao genérico.
+- **Pendências:** testar com Claude Code real; o ganho de tokens ainda é estimado; o texto do pedido depende de o agente obedecer (sem o aviso final o app pergunta antes de limpar); o modo GERENTE não foi exercitado.
+- **Próximo passo:** o usuário testa a etapa 1; depois a etapa 2.
+
 ## Aguardando validação DEV1
 
 _Nenhuma no momento._
@@ -236,25 +251,6 @@ _Nenhuma no momento._
 - **Objetivo:** o `statusline-wrapper.js` já recebe `rate_limits` e `context_window`; passar a gravar um registro (`consumo-limites.jsonl`, no máximo 1 linha por minuto e uma quando a % muda, como no `statusline-registro.py.txt` do pacote) para medir **quem gasta a cota** por projeto/sessão, e mostrar isso no app (junto da TASK-011), em vez do `consumo.mjs` externo.
 - **Ideias do guia a avaliar:** ritmo de ~20 % da cota por hora na janela de 5 h (aviso no rail quando passar); alerta de cache perto de esfriar (< ~1 min); hábito de `/clear` (contexto mediano ao limpar, sessões que ficaram pesadas). Os limiares de contexto (15 % / 35 %) dependem do tamanho da janela do modelo: conferir com o plano do usuário antes de fixar.
 - **Origem:** `economia-tokens-pacote.zip` (guia, `consumo.mjs`, `statusline-registro.py.txt`) enviado pelo usuário em 2026-10-30.
-
-### TASK-027 — Controle de contexto sob medida para o fluxo Rocruzta (pós-MVP, a avaliar)
-
-- **Responsável:** A definir
-- **Status:** BACKLOG (análise feita em 2026-10-30; nada do fluxo foi alterado)
-- **Prioridade:** Alta entre as pós-MVP (reflete direto no gasto de tokens)
-- **Objetivo:** o fluxo é iniciado em todo projeto novo; o Termix deve fechar, limpar e retomar com o mínimo de tokens nesse fluxo, só com configuração dentro do app.
-- **Achados:** (1) o plugin `fluxo` **não traz** `/retomar` nem `/encerrar-tarefa` (são deste repositório); em projeto novo não existe mecanismo de continuidade, só o botão Clear do app. (2) O fluxo manda ler `CLAUDE.md`, `WORKFLOW.md` e `docs/TASKS.md` por inteiro a cada tarefa. Aqui o `TASKS.md` tem ~48 KB (≈ 14 mil tokens) e cresce a cada tarefa; o `/retomar` atual custa ≈ 21 a 27 mil tokens antes de qualquer trabalho (≈ 10 a 13 % de uma janela de 200 mil, acima do alerta de 15 % do guia). (3) A retomada só precisa das seções *Em andamento* / *Aguardando* e da última entrada do changelog (≈ 4 mil tokens). (4) O hook `SessionStart` do plugin já injeta nome das tarefas em andamento, branch, papel e validação (barato) e o guardrail não gasta tokens. (5) O app já recebe do Claude Code o tamanho do contexto, o cache (`prompt_cache`, com tokens a reescrever se frio) e os hooks de fim de resposta.
-- **Candidatas de configuração (só no app, sem mexer no fluxo):**
-  - **Perfil "projeto no fluxo"** (detecta `.claude/fluxo.json`): pedidos de fechar e retomar prontos para o fluxo, lendo o papel de `CLAUDE.local.md` e a validação de `fluxo.json`.
-  - **Retomada enxuta:** ler só as seções ativas do `TASKS.md` (busca por título, sem abrir o arquivo todo) e a última entrada do changelog; ler `DECISOES`/`DESIGN` só se a tarefa mexer em produto/visual.
-  - **Fechamento do fluxo:** validar, registrar a tarefa ativa no `TASKS.md`/changelog e fazer commit/push só na branch do papel, nunca promover; opção liga/desliga do commit.
-  - **Gatilhos de graça:** o aviso final do fechamento (hoje `TERMIX-CLEAR-OK`, no fluxo "Pode dar /clear.") faz o botão avisar "pronto para limpar"; pulso também com cache frio e contexto grande (limpar é mais barato que reescrever).
-  - **Modo por aba/projeto:** "tarefa pequena" (alerta 15 %) e "tarefa longa" (alerta 35 %), trocável no próprio botão.
-  - **Medir o custo da retomada:** o app guarda o CTX antes do `/clear`, logo depois da retomada e ao fim da primeira resposta, e mostra "retomada custou X mil tokens"; também a "base da sessão" (CTX antes do primeiro pedido: CLAUDE.md, plugins, skills).
-  - **Higiene de base:** mostrar plugins/skills/MCPs ativos no projeto e o peso estimado (liga com a TASK-013).
-- **Propostas para o dono do fluxo (não aplicadas):** dividir o `TASKS.md` em índice + arquivo de tarefas encerradas e limitar cada entrada a ~6 linhas (como no guia); incluir no plugin comandos de retomar/fechar (hoje só existem aqui); `WORKFLOW.md` do template tem 12 KB e é relido a cada tarefa.
-- **Fora de escopo:** registro de consumo e ritmo por hora (TASK-026); modelo escolhido pela pessoa.
-- **Próximo passo:** (ao retomar) escolher com o usuário quais candidatas entram, começando por retomada enxuta + medir o custo da retomada.
 
 ### TASK-024 — Web só para testes locais, com abertura automática a partir dos terminais (standby, pós-MVP)
 

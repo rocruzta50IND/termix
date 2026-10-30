@@ -191,6 +191,20 @@ ipcMain.on('win:ctl', (_e, kind) => {
   else if (kind === 'max') { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
   else if (kind === 'close') win.close();
 });
+// projeto no fluxo Rocruzta: .claude/fluxo.json (comandos de validação) e CLAUDE.local.md (papel e branch desta máquina)
+ipcMain.handle('flow:info', (_e, dir) => {
+  try {
+    if (typeof dir !== 'string' || !dir) return { on: false };
+    const cfg = JSON.parse(fs.readFileSync(path.join(dir, '.claude', 'fluxo.json'), 'utf8'));
+    let role = '', branch = '';
+    try {
+      const loc = fs.readFileSync(path.join(dir, 'CLAUDE.local.md'), 'utf8');
+      role = (/^\s*papel:\s*"?([A-Za-z0-9]+)/m.exec(loc) || [])[1] || '';
+      branch = (/^\s*branch_padrao:\s*"?([\w/.-]*)/m.exec(loc) || [])[1] || '';
+    } catch { /* sem papel definido */ }
+    return { on: true, role: role.toUpperCase(), branch, validacao: Array.isArray(cfg.validacao) ? cfg.validacao.filter((x) => typeof x === 'string') : [] };
+  } catch { return { on: false }; }
+});
 ipcMain.handle('clip:read', () => clipboard.readText());
 ipcMain.on('clip:write', (_e, t) => clipboard.writeText(String(t)));
 // aviso do Windows quando o app está em segundo plano; clicar nele traz a janela e abre a aba

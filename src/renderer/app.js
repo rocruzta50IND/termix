@@ -330,7 +330,7 @@ api.onHook(({ tabId, data }) => {
       if (r.flow && r.flow.step === 'clearing' && data.source === 'clear') {
         const resume = r.flow.resume;
         r.flow = null;
-        if (resume) setTimeout(() => typeTo(tab, clearCfg().resumePrompt), 900);
+        if (resume) setTimeout(() => typeTo(tab, resume), 900);
         renderRail();
       }
       break;
@@ -347,11 +347,46 @@ api.onHook(({ tabId, data }) => {
 
 /* ---------- botão Clear (alternador): fechar a tarefa, /clear e retomar ---------- */
 const CLEAR_MARK = 'TERMIX-CLEAR-OK';
+const GENERIC_CLOSE = 'Vou fechar esta tarefa. Faça nesta ordem: 1) confirme que o trabalho está aprovado por mim; se não estiver, resuma o que foi feito e pare, sem escrever o aviso final. 2) Rode a validação do projeto e corrija se falhar. 3) Registre a tarefa no arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir): o que foi feito, arquivos alterados, padrão seguido, decisões e pendências, em até 6 linhas. 4) Não faça commit nem push. 5) Só se tudo isso foi concluído, termine escrevendo exatamente ' + CLEAR_MARK + '.';
+const GENERIC_RESUME = 'Estou retomando o trabalho depois de um /clear. Leia o CLAUDE.md, o arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir) e os últimos commits. Resuma em poucas linhas onde paramos e o que está pendente. Antes de mexer em algo de uma tarefa já encerrada, leia a entrada dela e siga o mesmo padrão. Se faltar informação, pergunte em vez de supor. Não leia arquivos além do necessário.';
 const CLEAR_DEF = {
-  v: 1, alert: 15, // alert: % de contexto a partir do qual o botão pulsa (0 = nunca)
-  closePrompt: 'Vou fechar esta tarefa. Faça nesta ordem: 1) confirme que o trabalho está aprovado por mim; se não estiver, resuma o que foi feito e pare, sem escrever o aviso final. 2) Rode a validação do projeto e corrija se falhar. 3) Registre a tarefa no arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir): o que foi feito, arquivos alterados, padrão seguido, decisões e pendências, em até 6 linhas. 4) Não faça commit nem push. 5) Só se tudo isso foi concluído, termine escrevendo exatamente ' + CLEAR_MARK + '.',
-  resumePrompt: 'Estou retomando o trabalho depois de um /clear. Leia o CLAUDE.md, o arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir) e os últimos commits. Resuma em poucas linhas onde paramos e o que está pendente. Antes de mexer em algo de uma tarefa já encerrada, leia a entrada dela e siga o mesmo padrão. Se faltar informação, pergunte em vez de supor. Não leia arquivos além do necessário.',
+  v: 2, alert: 15, // alert: % de contexto a partir do qual o botão pulsa (0 = nunca)
+  flow: true, commit: true, // flow: usar os pedidos do fluxo Rocruzta nos projetos que o têm; commit: fechar com commit e push na branch do papel
+  closePrompt: '', resumePrompt: '', // vazio = automático (fluxo ou genérico, conforme o projeto)
 };
+// pedidos para projetos no fluxo Rocruzta: só o que o fluxo exige, lendo o mínimo (nada de abrir o TASKS.md inteiro)
+const AUX_ROLES = ['DEV2', 'DEV3', 'DEV4', 'DEV5'];
+const flowResume = (i) => 'Estou retomando o trabalho depois de um /clear; a conversa anterior foi apagada, não dependa dela. '
+  + `Papel desta máquina: ${i.role || 'veja o CLAUDE.local.md'}${i.branch ? `, branch ${i.branch}` : ''}. `
+  + 'Leia o CLAUDE.md e o CLAUDE.local.md (o WORKFLOW.md só se precisar do passo a passo). '
+  + 'Do docs/TASKS.md NÃO abra o arquivo inteiro: ache os títulos com Grep -n "^## " e leia só as seções "Em andamento" e "Aguardando validação DEV1" (Read com offset e limit); das demais tarefas veja só os títulos (Grep -n "^### TASK"). '
+  + 'Do docs/CHANGELOG_DEV.md leia só a entrada mais recente (as primeiras ~40 linhas). '
+  + 'Leia docs/DECISOES.md ou docs/DESIGN.md só se a tarefa em andamento mexer no comportamento do produto ou na aparência, e apenas a seção relevante. '
+  + 'Confira git status -sb e git log --oneline -5. '
+  + (AUX_ROLES.includes(i.role) ? 'Confira se a dev1 tem commits que a sua branch ainda não tem (git log ..origin/dev1 --oneline) e avise antes de seguir. ' : i.role === 'DEV1' ? 'Não consulte as branches dev2 a dev5 (trava de contexto do fluxo). ' : '')
+  + 'Responda em poucas linhas: onde paramos, o que depende de mim e o próximo passo. Não comece a desenvolver até eu confirmar.';
+const flowClose = (i, commit) => {
+  const aux = AUX_ROLES.includes(i.role);
+  const val = i.validacao && i.validacao.length ? i.validacao.join(' e ') : 'a validação do projeto (.claude/fluxo.json)';
+  return 'Vou fechar a tarefa em andamento. Faça nesta ordem, lendo só o necessário: '
+    + '1) confirme que o resultado foi aprovado por mim nesta conversa; se não foi, resuma o que foi feito e como testar e pare, sem escrever o aviso final. '
+    + `2) rode ${val}; se falhar, corrija. `
+    + `3) em docs/TASKS.md edite só a entrada da tarefa ativa (ache-a com Grep -n e leia só esse trecho; não abra o arquivo inteiro): preencha Feito até agora, Decisões, Arquivos tocados, Como validar, Pendências e Próximo passo, mude o status para ${aux ? 'AGUARDANDO VALIDAÇÃO DEV1' : 'VALIDADA EM DEV1'} e mova a entrada para a seção correspondente. `
+    + '4) acrescente a entrada de hoje no topo de docs/CHANGELOG_DEV.md. '
+    + '5) o que surgiu fora do escopo vira tarefa no Backlog. '
+    + (aux ? `6) reescreva docs/HANDOFF_${i.role}.md (resumo em alto nível, sem colar código). ` : '')
+    + (commit ? `${aux ? '7' : '6'}) faça o commit "TASK-XXX: descrição curta no imperativo" e o push somente para origin/${i.branch || 'a branch do seu papel'}; nunca promova para a main. ` : `${aux ? '7' : '6'}) não faça commit nem push. `)
+    + `${aux ? '8' : '7'}) só se tudo isso foi concluído, termine escrevendo exatamente ${CLEAR_MARK}.`;
+};
+// textos efetivos para um projeto: o que a pessoa escreveu nas configurações vale sempre; vazio = automático
+async function clearPrompts(p) {
+  const c = clearCfg();
+  const info = c.flow ? await api.flowInfo(p.path) : { on: false };
+  const fl = !!info.on;
+  return { fl, info, canClose: !(fl && info.role === 'GERENTE'),
+    close: c.closePrompt || (fl ? flowClose(info, c.commit) : GENERIC_CLOSE),
+    resume: c.resumePrompt || (fl ? flowResume(info) : GENERIC_RESUME) };
+}
 const clearCfg = () => S.settings.clear || CLEAR_DEF;
 const typeTo = (tab, text) => { api.write(tab.id, text); setTimeout(() => api.write(tab.id, '\r'), 150); };
 function markCount(term) { // quantas vezes o aviso final aparece no texto do terminal (linhas quebradas são unidas)
@@ -371,28 +406,32 @@ function clearDockState(p) {
 async function clearFlow() {
   const p = curProject(), tab = p && curTab(p), r = tab && RT[tab.id];
   if (!r || !r.alive || r.st !== 'wait' || r.flow) return;
+  const pr = await clearPrompts(p);
+  if (!r.alive || r.st !== 'wait' || r.flow) return;
+  const nota = pr.fl ? `<p class="meta">Projeto no fluxo Rocruzta${pr.info.role ? ` · papel ${esc(pr.info.role)}` : ''}: o fechamento e a retomada seguem o fluxo e leem só o necessário.</p>` : '';
   const c = await modal({
     title: 'Limpar o contexto?',
-    body: '<p>O <code>/clear</code> apaga o contexto e começa uma conversa nova. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, limpa e manda ele retomar pelos arquivos do projeto.</p>',
-    buttons: [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']],
+    body: '<p>O <code>/clear</code> apaga o contexto e começa uma conversa nova. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, limpa e manda ele retomar pelos arquivos do projeto.</p>' + nota,
+    buttons: pr.canClose ? [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']] : [['Cancelar', null], ['Só limpar', 'only', 'pri']],
   });
   if (!c.value || !r.alive || r.st !== 'wait' || r.flow) return;
-  if (c.value === 'only') { doClear(tab, false); return; }
-  r.flow = { step: 'closing', t0: Date.now(), saw: false, base: null };
-  typeTo(tab, clearCfg().closePrompt);
+  if (c.value === 'only') { doClear(tab, ''); return; }
+  r.flow = { step: 'closing', t0: Date.now(), saw: false, base: null, resumeText: pr.resume };
+  typeTo(tab, pr.close);
   setTimeout(() => { if (r.flow && r.flow.base === null) r.flow.base = markCount(r.term); }, 1500);
   addEvent({ c: tab.color, who: tab.name, msg: 'Fechando a tarefa antes do /clear…' });
   renderRail();
 }
-function doClear(tab, resume) {
+function doClear(tab, resumeText) { // resumeText vazio = só limpar, sem pedir a retomada
   const r = RT[tab.id];
-  r.flow = { step: 'clearing', t0: Date.now(), resume };
+  r.flow = { step: 'clearing', t0: Date.now(), resume: resumeText };
   typeTo(tab, '/clear');
   renderRail();
 }
 async function clearClosed(tab) { // o agente terminou de fechar a tarefa: limpa se o aviso final apareceu; senão pergunta
   const r = RT[tab.id];
-  if (markCount(r.term) > r.flow.base) { doClear(tab, true); return; }
+  const text = r.flow.resumeText;
+  if (markCount(r.term) > r.flow.base) { doClear(tab, text); return; }
   r.flow = { step: 'asking', t0: Date.now() };
   renderRail();
   const c = await modal({
@@ -400,7 +439,7 @@ async function clearClosed(tab) { // o agente terminou de fechar a tarefa: limpa
     body: '<p>Não encontrei o aviso de que o fechamento terminou (o agente pode ter pedido sua aprovação ou deixado algo pendente). Olhe o terminal antes de decidir.</p>',
     buttons: [['Não limpar', null], ['Limpar e retomar mesmo assim', 'ok', 'pri']],
   });
-  if (c.value === 'ok' && r.alive) doClear(tab, true); else { r.flow = null; renderRail(); }
+  if (c.value === 'ok' && r.alive) doClear(tab, text); else { r.flow = null; renderRail(); }
 }
 function clearTick(tab) { // chamado a cada 700 ms para cada aba viva
   const r = RT[tab.id], f = r.flow;
@@ -697,6 +736,7 @@ function integHTML() {
     <div class="card"><h5>Codex</h5><p>Planejado para uma próxima fase.</p><div class="tags"><span class="tag">Em breve</span></div></div></div></div>`;
 }
 
+const yn = (k) => `<div class="seg"><button class="${clearCfg()[k] ? 'sel' : ''}" data-clrflag="${k}|1">Sim</button><button class="${clearCfg()[k] ? '' : 'sel'}" data-clrflag="${k}|0">Não</button></div>`;
 function confHTML() {
   const arch = S.projects.filter((p) => p.archived);
   return `<div class="page">${ptitle('Configurações')}<div class="card" style="padding:6px 18px">
@@ -709,8 +749,10 @@ function confHTML() {
     <h5 style="margin:22px 0 8px">Botão Clear (base da janela)</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row"><div class="grow">Pulsar quando o contexto chegar a<small>% do anel CTX a partir da qual o botão Clear pisca. 0 desliga o aviso. Sugestão: 15 para tarefas pequenas, 35 para tarefas longas.</small></div><input type="number" min="0" max="100" class="inp" id="clrAlert" value="${clearCfg().alert}"><span class="chip">%</span></div>
-    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Para o app limpar sozinho, ele deve terminar escrevendo ${CLEAR_MARK}; sem isso o app pergunta antes de limpar. Pode ser um comando seu, como /encerrar-tarefa.</small></div><textarea class="inp ta" id="clrClose" rows="5">${esc(clearCfg().closePrompt)}</textarea></div>
-    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de retomada<small>Enviado depois do /clear, na conversa nova. Pode ser um comando seu, como /retomar.</small></div><textarea class="inp ta" id="clrResume" rows="5">${esc(clearCfg().resumePrompt)}</textarea></div>
+    <div class="row"><div class="grow">Usar o fluxo Rocruzta nos projetos que o têm<small>Detecta .claude/fluxo.json e usa pedidos enxutos que seguem o fluxo (papel, validação, TASKS e CHANGELOG, sem abrir os arquivos inteiros)</small></div>${yn('flow')}</div>
+    <div class="row"><div class="grow">Commit e push ao fechar a tarefa (projetos do fluxo)<small>Commit "TASK-XXX: ..." e push só na branch do seu papel; nunca promove para a main</small></div>${yn('commit')}</div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Vazio = automático (fluxo ou genérico, conforme o projeto). Para o app limpar sozinho, o texto deve terminar pedindo que o agente escreva ${CLEAR_MARK}; sem isso o app pergunta antes de limpar.</small></div><textarea class="inp ta" id="clrClose" rows="5" placeholder="Automático">${esc(clearCfg().closePrompt)}</textarea></div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de retomada<small>Enviado depois do /clear, na conversa nova. Vazio = automático. Pode ser um comando seu, como /retomar.</small></div><textarea class="inp ta" id="clrResume" rows="5" placeholder="Automático">${esc(clearCfg().resumePrompt)}</textarea></div>
     <div class="row"><div class="grow">Restaurar os textos padrão</div><button class="btn sm" data-clrreset>Restaurar</button></div></div>
     <h5 style="margin:22px 0 8px">Projetos arquivados</h5>
     <div class="card">${arch.length ? arch.map((p) => `<div class="lrow"><span class="nm">${esc(p.name)}<br><span class="meta">${esc(p.path)}</span></span><button class="btn sm" data-unarchive="${p.id}">Restaurar</button></div>`).join('') : '<span class="meta">Nenhum projeto arquivado.</span>'}</div></div>`;
@@ -1078,6 +1120,7 @@ document.addEventListener('click', async (e) => {
     else { const r = el.getBoundingClientRect(); UI.menu = { type: 'rail', r: window.innerWidth - r.left + 12, b: Math.max(8, window.innerHeight - r.bottom - 4) }; } // abre ao lado da cápsula, sem cobri-la
     renderMenu(); renderRail(); return;
   }
+  if ((el = q('[data-clrflag]'))) { const [k, v] = el.dataset.clrflag.split('|'); S.settings.clear[k] = v === '1'; save(); renderPage(); return; }
   if (q('[data-clrreset]')) { S.settings.clear = { ...CLEAR_DEF }; save(); renderPage(); renderRail(); return; }
   if ((el = q('[data-rail]'))) {
     const k = el.dataset.rail; railCfg()[k] = !railCfg()[k]; save();
@@ -1241,7 +1284,9 @@ async function applyBg() {
   const saved = await api.loadState();
   if (saved && Array.isArray(saved.projects)) S = { ...saved, settings: { termOp: 88, sideCollapsed: false, ...(saved.settings || {}) } };
   S.settings.rail = S.settings.rail && S.settings.rail.v === RAIL_DEF.v ? { ...RAIL_DEF, ...S.settings.rail } : { ...RAIL_DEF };
-  S.settings.clear = { ...CLEAR_DEF, ...(S.settings.clear || {}) };
+  S.settings.clear = { ...CLEAR_DEF, ...(S.settings.clear || {}), v: CLEAR_DEF.v };
+  if (S.settings.clear.closePrompt === GENERIC_CLOSE) S.settings.clear.closePrompt = ''; // a versão 1 gravava o texto genérico; agora vazio = automático
+  if (S.settings.clear.resumePrompt === GENERIC_RESUME) S.settings.clear.resumePrompt = '';
   $('#rgear').innerHTML = ic('gear', 16);
   for (const p of S.projects) {
     p.tabs = p.tabs || [];
