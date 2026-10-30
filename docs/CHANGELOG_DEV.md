@@ -15,6 +15,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Registrada a TASK-026 (registro de consumo e alertas de ritmo), derivada do guia de economia de tokens.
 - Ajustes pós-teste: alternador não some mais com o menu do rail; novo ícone; o /clear agora apaga também o texto antigo da tela; Ctrl+C/Ctrl+V funcionam nos terminais.
 - Estado: aguardando novo teste do usuário.
+- Registrada a TASK-027 (controle de contexto sob medida para o fluxo Rocruzta, pós-MVP) com a análise do fluxo, sem alterá-lo.
 
 **TASK-025 registrada — ações rápidas no rail de baixo** (DEV1)
 
