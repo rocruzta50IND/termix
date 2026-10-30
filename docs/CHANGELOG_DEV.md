@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
+**TASK-030 registrada — abas encaixadas no terminal (MVP)** (DEV1)
+
+- Nova tarefa no Backlog (Alta, MVP): a aba ativa se funde com a janela do terminal, como no Terminal do Windows. Sem código nesta etapa.
+
 **TASK-029 registrada — notificações no MVP** (DEV1)
 
 - Nova tarefa no Backlog (Alta, MVP): refazer as notificações com o cache dos terminais como função principal (aviso aos 10 min), contador do sino que zera ao fechar a tela, tooltip animada ao lado do sino só para terminal que terminou, nada de terminal trabalhando e controle total (configurar e excluir). Sem código nesta etapa.
