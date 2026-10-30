@@ -17,7 +17,7 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - Terminal **quadrado**, encaixado no recorte (cantos de baixo acompanhando os do recorte), com margem interna uniforme; o fundo do terminal vem só do contêiner.
 - Abas **coladas** no terminal, estilo Windows Terminal, cada uma com cor própria (a linha de cima do terminal usa a cor da aba ativa). Menu de botão direito (cor, renomear, duplicar, reiniciar, exportar texto, fechar outras/à direita, fechar). "+" com seta para escolher a ferramenta.
 - Enquanto o agente **trabalha**, **só a linha colorida** sob as abas pulsa, na cor da aba (sutil).
-- Botão de reiniciar: **só o ícone**, na pílula do alternador de baixo, depois do Clear (não fica mais no cabeçalho; gira ao reiniciar). Dangerously: **⚠ na aba**.
+- Botão de reiniciar: ícone **com o texto "Reiniciar"**, na pílula do alternador de baixo, depois do Clear (não fica mais no cabeçalho; gira ao reiniciar). Os botões do alternador mantêm o rótulo para não parecer vazio; reavaliar deixar só ícones no futuro. Dangerously: **não** tem aviso na aba (a etiqueta "⚠ bypass" do rail de baixo já mostra).
 
 ## Rail (informações da sessão)
 - **Cápsula vertical dentro do terminal**, a 12 px da borda direita e centralizada na altura: 58 px de largura, vidro escuro com borda clara. Quatro **anéis de 44 px** (traço de 4 px) empilhados: `CTX`, `5H`, `7D`, `CACHE`, com o número no centro (sem o %) e o rótulo pequeno embaixo; engrenagem no rodapé.

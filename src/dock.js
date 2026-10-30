@@ -13,7 +13,7 @@ window.dock.onRender((st) => {
     + `<button class="${st.mode === 'web' ? 'on' : ''}" data-m="web">${svg('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>`;
   const c = st.clear;
   const html2 = html + (c ? '<i class="sep"></i>' + '<button class="clr ' + (c.pulse ? 'pulse ' : '') + (c.busy ? 'busy' : '') + '" data-m="clear" ' + (c.off ? 'disabled' : '') + '>' + svg('clear') + 'Clear</button>'
-    + '<button class="rst ' + (c.rst.spin ? 'spin' : '') + '" data-m="restart" ' + (c.rst.off ? 'disabled' : '') + ' title="' + c.rst.tip + '" aria-label="' + c.rst.tip + '">' + svg('refresh') + '</button>' : '');
+    + '<button class="rst ' + (c.rst.spin ? 'spin' : '') + '" data-m="restart" ' + (c.rst.off ? 'disabled' : '') + ' title="' + c.rst.tip + '" aria-label="' + c.rst.tip + '">' + svg('refresh') + 'Reiniciar</button>' : '');
   if (html2 !== last) { last = html2; document.getElementById('pill').innerHTML = html2; }
 });
 document.addEventListener('click', (e) => {

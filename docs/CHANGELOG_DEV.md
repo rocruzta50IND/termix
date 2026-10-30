@@ -11,7 +11,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 **TASK-028 etapa 2 — custo da retomada medido** (DEV1)
 
 - Ao usar Clear com retomada, o app mede o contexto (em tokens) antes do `/clear`, a base da conversa nova e o fim da primeira resposta; mostra "A retomada custou ~X tokens" no painel de eventos e no tooltip do anel CTX.
-- Botão de reiniciar o chat movido do cabeçalho para o alternador de baixo, ao lado do Clear (só o ícone).
+- Botão de reiniciar o chat movido do cabeçalho para o alternador de baixo, ao lado do Clear, com ícone e texto "Reiniciar". O ⚠ de "dangerously" saiu da aba (a etiqueta "⚠ bypass" do rail já mostra).
 - Estado: VALIDADA EM DEV1 (2026-10-30). Custo da retomada testado e aprovado; o botão de reiniciar no alternador foi aceito para fechar.
 - Decisão de escopo: TASK-013 (plugins, skills e MCPs) entra no MVP e é o foco seguinte; TASK-010 é a última do MVP e a promoção para a `main` espera o instalador testado (TASK-010 + TASK-020).
 
