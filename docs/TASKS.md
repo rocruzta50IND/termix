@@ -214,7 +214,22 @@ _Nenhuma no momento._
 
 ## Prontas
 
-_Nenhuma no momento._
+### TASK-025 — Ações rápidas no rail de baixo, ao lado de "Terminais" (MVP)
+
+- **Responsável:** A definir
+- **Status:** PRONTA
+- **Prioridade:** Alta (MVP; próxima)
+- **Objetivo:** botões de ação no alternador de baixo, logo ao lado de **Terminais**, que agem sobre o terminal ativo no momento. Primeiro exemplo pedido pelo usuário: **Clear**, que manda o clear para o terminal em uso. Esta tarefa começa com a **avaliação** (quais ações, onde ficam, como se comportam) e termina com as ações aprovadas funcionando.
+- **Ponto de atenção — o que "Clear" significa (decidir com o usuário no início):** no Claude Code, `/clear` **apaga o contexto da conversa e cria uma conversa nova** (outro ID de sessão; ver TASK-012), enquanto limpar a tela (`Ctrl+L`) só redesenha. São coisas bem diferentes. Recomendação: o botão se chama "Clear" e manda `/clear` só com o agente **aguardando** (nunca no meio de uma resposta) e com confirmação curta, porque perde contexto; uma segunda ação separada, "Limpar tela", manda só o redesenho.
+- **Ações candidatas (o usuário escolhe quais entram):** Clear (`/clear`), Limpar tela (`Ctrl+L`), Compact (`/compact`), Interromper (`Esc`), Copiar a última resposta, Rolar até o fim. Mínimo sugerido para o MVP: Clear, Compact e Interromper.
+- **Critérios de aceite (a refinar na avaliação):**
+  - Os botões ficam junto de **Terminais** no alternador, aparecem com os Terminais ativos e agem sempre no terminal da aba ativa do projeto atual; ficam desabilitados sem terminal vivo.
+  - Ações que perdem contexto pedem confirmação; ações de texto (`/clear`, `/compact`) só são enviadas com o agente aguardando (estado vindo dos hooks).
+  - Dica ao passar o mouse com o nome da ação (a dica nativa do navegador não aparece na vista do alternador; desenhar uma própria).
+  - O alternador cresce conforme os botões e continua centralizado, com fade quando parado e sem cobrir mais do terminal do que hoje.
+- **Notas técnicas:** o alternador é uma vista própria (`src/dock.html`, `dock.js`); hoje o clique volta para a interface por `dock:click` → `dock:action` (só alterna Terminais/Web); estender para ações (`act:clear` etc.). A interface envia o texto ao terminal por `api.write(tabId, ...)` (Enter = `\r`); largura do alternador hoje fixa em `sendDock` (`src/renderer/web.js`), passar a calcular pelo número de botões. Possível opção em `settings` para escolher quais ações aparecem (pode ficar para depois).
+- **Fora de escopo:** atalhos de teclado e paleta de comandos (TASK-009).
+- **Próximo passo:** conversar com o usuário: o que o Clear deve fazer, quais ações entram e se ficam como ícone, texto ou os dois; depois implementar.
 
 ## Backlog
 
