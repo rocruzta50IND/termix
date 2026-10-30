@@ -8,7 +8,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
-**TASK-024 — Web só para testes locais, aberta a partir dos terminais** (DEV1, aguardando teste do usuário)
+**TASK-024 — Web só para testes locais, aberta a partir dos terminais** (DEV1, EM STANDBY: no teste real do usuário o Claude abriu no navegador normal e a Web mostrou só a listagem do servidor; vai para o backlog pós-MVP)
 
 - Comando `termix-open` e `BROWSER` só nos terminais do Termix, instrução por sessão para o Claude Code usá-lo, detecção de servidores locais na saída (selo verde no botão Web e faixa de detectados) e Web restrita a endereços locais (externos abrem no navegador do sistema). A status line do `settings.json` do usuário não foi mexida. Detalhes em `docs/TASKS.md`.
 

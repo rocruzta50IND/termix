@@ -8,26 +8,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-024 — Web só para testes locais, com abertura automática a partir dos terminais (MVP)
-
-- **Responsável:** DEV1
-- **Status:** EM ANDAMENTO (implementada; aguardando teste do usuário)
-- **Prioridade:** Alta (MVP; próxima)
-- **Objetivo:** a aba Web serve para ver e testar projetos locais. Quando um terminal abre algo local (um `index.html`, um servidor em `localhost`), isso aparece direto na Web do app, e o ícone **Web** do rail avisa que há algo aberto.
-- **Critérios de aceite:**
-  - **Aviso no rail:** quando um terminal imprime um endereço local (`http://localhost:5173`, `127.0.0.1`, `0.0.0.0`, endereço da rede local) ou abre um arquivo local, o botão Web do alternador ganha um selo; um clique abre numa aba web do projeto daquela aba. Sem repetir para o mesmo endereço.
-  - **`termix-open <página ou endereço>`:** comando disponível só nos terminais do Termix (atalho no PATH da sessão) que abre direto na Web; a variável `BROWSER` da sessão aponta para ele, para servidores que a respeitam (Vite e similares) abrirem sozinhos no app.
-  - **Pedir ao Claude Code:** instrução curta injetada na sessão (por `--append-system-prompt`, a confirmar com o usuário) para abrir páginas locais com `termix-open`; sem ela, `start index.html` abre no navegador do sistema (não dá para interceptar).
-  - **Só local:** a Web abre apenas `localhost`, `127.0.0.1`, `[::1]`, endereços da rede local e arquivos (`file://`) do projeto; links externos abrem no navegador do sistema.
-  - Abas web por projeto, DevTools, tamanho de dispositivo e a vista só criada ao usar continuam como na TASK-022.
-- **Notas técnicas:** detectar endereços na saída do terminal (já passa por `pty:data`), com limpeza dos códigos de cor; `termix-open` fala com o app por um arquivo/pipe local (como os hooks) e identifica a aba pela variável de ambiente da sessão; avaliar `file://` com a política de segurança da vista (hoje só http/https); decidir se o selo vive só no alternador ou também na aba do terminal.
-- **Fora de escopo:** plataformas com login (TASK-023, pós-MVP); o Claude Code controlar o navegador (MCP do Termix).
-- **Decisões (usuário, 2026-10-30):** instrução injetada só nas sessões do Termix, com fallback ("se o comando existir"); status line do `settings.json` fica como está; terminais fora do app não mudam.
-- **Feito até agora:** (1) `termix-open <arquivo, pasta ou endereço local>` (`src/open-wrapper.js`, atalhos `src/bin/termix-open.cmd` e `src/bin/termix-open` para o Git Bash): grava um pedido que o app lê (`pollOpens`) e abre numa aba web do projeto da aba que pediu, sem tirar o usuário do que está fazendo; (2) `sessionEnv` em `src/main.js`: só no terminal do Termix, `src/bin` entra no PATH, `BROWSER` aponta para o `termix-open.cmd` e `TERMIX_EXE` permite rodar sem Node; (3) `--append-system-prompt` por sessão pedindo ao Claude Code que use `termix-open` para páginas locais (e abra do jeito normal se o comando não existir); (4) detecção de servidores locais na saída dos terminais (`webDetect`, só conta se a porta está de fato aberta, checada por `web:probe`): selo verde no botão Web do alternador, chips na tela inicial da aba em branco e faixa "Detectado nos terminais" acima da página; (5) a Web só abre localhost, 127.x, 0.0.0.0, redes privadas e arquivos; links e endereços externos abrem no navegador do sistema; (6) `.gitattributes` para manter o script sh em LF e o `.cmd` em CRLF. Testado numa instância isolada com um Claude Code de verdade: o Claude abriu o `index.html` sozinho com `termix-open`, o servidor em 3921 foi detectado (selo e faixa), o selo some ao abrir a Web, e um endereço externo foi para o navegador do sistema.
-- **Arquivos tocados:** `src/open-wrapper.js`, `src/bin/termix-open`, `src/bin/termix-open.cmd`, `src/main.js`, `src/web.js`, `src/preload.js`, `src/dock.js`, `src/dock.html`, `src/renderer/web.js`, `src/renderer/app.js`, `src/renderer/index.html`, `src/renderer/styles.css`, `package.json`, `.gitattributes`, `docs/*`.
-- **Como validar:** `npm start`; abrir uma aba do Claude Code num projeto com um `index.html` e pedir "abre o index no navegador": deve abrir na aba Web (não no Chrome) e o botão Web ganha um selo verde; clicar em Web mostra a página e o selo some. Subir um servidor (`npm run dev`, `python -m http.server`): o endereço aparece como "Detectado nos terminais". Digitar um endereço externo (example.com) na barra: abre no navegador do sistema. Abrir o Claude Code num terminal comum fora do app e pedir o mesmo: abre no navegador padrão, como sempre.
-- **Pendências:** o selo só aparece para o projeto aberto no momento (aviso de outro projeto não aparece até trocar para ele); `BROWSER` só funciona com ferramentas que o respeitam e sabem executar `.cmd` (a detecção na saída cobre o resto); `file://` aceita qualquer arquivo local, sem limitar à pasta do projeto; não testado com Vite/Next reais abrindo o navegador sozinhos.
-- **Próximo passo:** o usuário testa e aprova; com a aprovação, registrar como VALIDADA EM DEV1.
+_Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
@@ -236,6 +217,29 @@ _Nenhuma no momento._
 _Nenhuma no momento._
 
 ## Backlog
+
+### TASK-024 — Web só para testes locais, com abertura automática a partir dos terminais (standby, pós-MVP)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG (em standby; código já está na dev1)
+- **Prioridade:** Baixa (pós-MVP)
+- **Objetivo:** a aba Web serve para ver e testar projetos locais. Quando um terminal abre algo local (um `index.html`, um servidor em `localhost`), isso aparece direto na Web do app, e o ícone **Web** do rail avisa que há algo aberto.
+- **Critérios de aceite:**
+  - **Aviso no rail:** quando um terminal imprime um endereço local (`http://localhost:5173`, `127.0.0.1`, `0.0.0.0`, endereço da rede local) ou abre um arquivo local, o botão Web do alternador ganha um selo; um clique abre numa aba web do projeto daquela aba. Sem repetir para o mesmo endereço.
+  - **`termix-open <página ou endereço>`:** comando disponível só nos terminais do Termix (atalho no PATH da sessão) que abre direto na Web; a variável `BROWSER` da sessão aponta para ele, para servidores que a respeitam (Vite e similares) abrirem sozinhos no app.
+  - **Pedir ao Claude Code:** instrução curta injetada na sessão (por `--append-system-prompt`, a confirmar com o usuário) para abrir páginas locais com `termix-open`; sem ela, `start index.html` abre no navegador do sistema (não dá para interceptar).
+  - **Só local:** a Web abre apenas `localhost`, `127.0.0.1`, `[::1]`, endereços da rede local e arquivos (`file://`) do projeto; links externos abrem no navegador do sistema.
+  - Abas web por projeto, DevTools, tamanho de dispositivo e a vista só criada ao usar continuam como na TASK-022.
+- **Notas técnicas:** detectar endereços na saída do terminal (já passa por `pty:data`), com limpeza dos códigos de cor; `termix-open` fala com o app por um arquivo/pipe local (como os hooks) e identifica a aba pela variável de ambiente da sessão; avaliar `file://` com a política de segurança da vista (hoje só http/https); decidir se o selo vive só no alternador ou também na aba do terminal.
+- **Fora de escopo:** plataformas com login (TASK-023, pós-MVP); o Claude Code controlar o navegador (MCP do Termix).
+- **Decisões (usuário, 2026-10-30):** instrução injetada só nas sessões do Termix, com fallback ("se o comando existir"); status line do `settings.json` fica como está; terminais fora do app não mudam.
+- **Feito até agora:** (1) `termix-open <arquivo, pasta ou endereço local>` (`src/open-wrapper.js`, atalhos `src/bin/termix-open.cmd` e `src/bin/termix-open` para o Git Bash): grava um pedido que o app lê (`pollOpens`) e abre numa aba web do projeto da aba que pediu, sem tirar o usuário do que está fazendo; (2) `sessionEnv` em `src/main.js`: só no terminal do Termix, `src/bin` entra no PATH, `BROWSER` aponta para o `termix-open.cmd` e `TERMIX_EXE` permite rodar sem Node; (3) `--append-system-prompt` por sessão pedindo ao Claude Code que use `termix-open` para páginas locais (e abra do jeito normal se o comando não existir); (4) detecção de servidores locais na saída dos terminais (`webDetect`, só conta se a porta está de fato aberta, checada por `web:probe`): selo verde no botão Web do alternador, chips na tela inicial da aba em branco e faixa "Detectado nos terminais" acima da página; (5) a Web só abre localhost, 127.x, 0.0.0.0, redes privadas e arquivos; links e endereços externos abrem no navegador do sistema; (6) `.gitattributes` para manter o script sh em LF e o `.cmd` em CRLF. Testado numa instância isolada com um Claude Code de verdade: o Claude abriu o `index.html` sozinho com `termix-open`, o servidor em 3921 foi detectado (selo e faixa), o selo some ao abrir a Web, e um endereço externo foi para o navegador do sistema.
+- **Arquivos tocados:** `src/open-wrapper.js`, `src/bin/termix-open`, `src/bin/termix-open.cmd`, `src/main.js`, `src/web.js`, `src/preload.js`, `src/dock.js`, `src/dock.html`, `src/renderer/web.js`, `src/renderer/app.js`, `src/renderer/index.html`, `src/renderer/styles.css`, `package.json`, `.gitattributes`, `docs/*`.
+- **Como validar:** `npm start`; abrir uma aba do Claude Code num projeto com um `index.html` e pedir "abre o index no navegador": deve abrir na aba Web (não no Chrome) e o botão Web ganha um selo verde; clicar em Web mostra a página e o selo some. Subir um servidor (`npm run dev`, `python -m http.server`): o endereço aparece como "Detectado nos terminais". Digitar um endereço externo (example.com) na barra: abre no navegador do sistema. Abrir o Claude Code num terminal comum fora do app e pedir o mesmo: abre no navegador padrão, como sempre.
+- **Pendências:** o selo só aparece para o projeto aberto no momento (aviso de outro projeto não aparece até trocar para ele); `BROWSER` só funciona com ferramentas que o respeitam e sabem executar `.cmd` (a detecção na saída cobre o resto); `file://` aceita qualquer arquivo local, sem limitar à pasta do projeto; não testado com Vite/Next reais abrindo o navegador sozinhos.
+- **Teste do usuário (2026-10-30), motivo do standby:** o usuário pediu a um terminal para abrir uma página local e ela abriu **no navegador normal do sistema**, não na aba Web; no app, a Web mostrou apenas a listagem de pastas de um servidor local (`http://127.0.0.1:8765/`, tipo `python -m http.server`, raiz do projeto) em vez da página pedida. Ou seja, o redirecionamento automático não cumpriu o objetivo nesse caso. Causas **não investigadas**; hipóteses: o Claude Code usou `start`/navegador padrão em vez de `termix-open` (a instrução vale só em sessões novas; uma conversa retomada pode não tê-la, e o modelo pode ignorá-la), e a aba Web foi aberta pelo servidor detectado (raiz do servidor), não pelo arquivo.
+- **Decisão do usuário (2026-10-30):** deixar a função em standby e focar em outra coisa. O código continua na `dev1` (comando `termix-open`, detecção de servidores, selo no alternador, Web só local); retomar depois, começando por reproduzir o caso (qual comando o Claude usou e por que ignorou a instrução).
+- **Próximo passo:** (ao retomar) reproduzir o caso do usuário, ver o que o Claude executou e ajustar; decidir se a instrução injetada basta ou se vale interceptar outra camada.
 
 ### TASK-023 — Atalhos e grupos de páginas no navegador do app (pós-MVP)
 
