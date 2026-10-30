@@ -109,6 +109,22 @@ function ensureRT(tab) {
   el.className = 'tview';
   $('#termHost').appendChild(el);
   const r = (RT[tab.id] = { term, fit, el, opened: false, alive: false, st: 'end', hooks: false, lastData: 0, lastInput: 0, spawnAt: 0, evidence: false, killing: false, waiter: null });
+  // Ctrl+C copia quando há texto selecionado (sem seleção continua sendo o Ctrl+C do terminal); Ctrl+V cola
+  term.attachCustomKeyEventHandler((ev) => {
+    if (ev.type !== 'keydown' || !ev.ctrlKey || ev.altKey) return true;
+    const k = ev.key.toLowerCase();
+    if (k === 'c' && (term.hasSelection() || ev.shiftKey)) {
+      ev.preventDefault();
+      if (term.hasSelection()) { api.clipWrite(term.getSelection()); term.clearSelection(); }
+      return false;
+    }
+    if (k === 'v') {
+      ev.preventDefault();
+      api.clipRead().then((t) => { if (t) term.paste(t); else api.write(tab.id, '\x16'); }); // sem texto (ex.: imagem), deixa o Claude Code tratar o Ctrl+V
+      return false;
+    }
+    return true;
+  });
   term.onData((d) => { r.lastInput = Date.now(); api.write(tab.id, d); });
   term.onResize(({ cols, rows }) => api.resize(tab.id, cols, rows));
   return r;
@@ -310,6 +326,7 @@ api.onHook(({ tabId, data }) => {
     case 'UserPromptSubmit': case 'PostToolUse': setSt(tab, 'work'); break;
     case 'SessionStart':
       setSt(tab, 'wait');
+      if (data.source === 'clear') { r.term.write('\x1b[2J\x1b[3J\x1b[H'); api.write(tab.id, '\x0c'); } // apaga a tela e o histórico visível e pede o redesenho (Ctrl+L)
       if (r.flow && r.flow.step === 'clearing' && data.source === 'clear') {
         const resume = r.flow.resume;
         r.flow = null;

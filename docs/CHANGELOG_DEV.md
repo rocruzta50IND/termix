@@ -13,7 +13,8 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Botão "Clear" ao lado de Terminais: limpa o contexto do terminal ativo. Confirmação com "Só limpar" ou "Fechar a tarefa e limpar" (registra a tarefa, manda `/clear` e pede para retomar pelos arquivos do projeto).
 - Pulsa quando o CTX passa do limite configurado; limite e textos dos dois pedidos ficam em Configurações > Botão Clear (só no app).
 - Registrada a TASK-026 (registro de consumo e alertas de ritmo), derivada do guia de economia de tokens.
-- Estado: aguardando teste do usuário com um Claude Code real.
+- Ajustes pós-teste: alternador não some mais com o menu do rail; novo ícone; o /clear agora apaga também o texto antigo da tela; Ctrl+C/Ctrl+V funcionam nos terminais.
+- Estado: aguardando novo teste do usuário.
 
 **TASK-025 registrada — ações rápidas no rail de baixo** (DEV1)
 

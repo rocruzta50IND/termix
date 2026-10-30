@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Notification, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -191,6 +191,8 @@ ipcMain.on('win:ctl', (_e, kind) => {
   else if (kind === 'max') { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
   else if (kind === 'close') win.close();
 });
+ipcMain.handle('clip:read', () => clipboard.readText());
+ipcMain.on('clip:write', (_e, t) => clipboard.writeText(String(t)));
 // aviso do Windows quando o app está em segundo plano; clicar nele traz a janela e abre a aba
 ipcMain.on('notify:show', (_e, { tabId, title, body }) => {
   if (!win || win.isDestroyed() || win.isFocused()) return;

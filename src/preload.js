@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('termix', {
   setMaterial: (kind) => ipcRenderer.invoke('win:material', kind),
   winCtl: (kind) => ipcRenderer.send('win:ctl', kind),
   notify: (n) => ipcRenderer.send('notify:show', n),
+  clipRead: () => ipcRenderer.invoke('clip:read'),
+  clipWrite: (t) => ipcRenderer.send('clip:write', t),
   onNotifyClick: (fn) => ipcRenderer.on('notify:click', (_e, m) => fn(m)),
   onFocus: (fn) => ipcRenderer.on('win:focus', () => fn()),
   isMaximized: () => ipcRenderer.invoke('win:isMax'),

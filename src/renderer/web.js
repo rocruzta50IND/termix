@@ -216,7 +216,7 @@ function sendDock(m, p) {
   const c = $('#col').getBoundingClientRect();
   const clr = m === 'web' ? null : clearDockState(p);
   const W = 276 + (clr ? 92 : 0), H = 46;
-  const visible = !!p && (m === 'term' || m === 'noterm' || m === 'web') && !overlayOpen() && !$('#splash');
+  const visible = !!p && (m === 'term' || m === 'noterm' || m === 'web') && (!overlayOpen() || (UI.menu && UI.menu.type === 'rail' && !UI.pop && !$('#modalRoot').firstChild)) && !$('#splash');
   const st = {
     visible, mode: m === 'web' ? 'web' : 'term',
     terms: p ? openTabs(p).length : 0,
