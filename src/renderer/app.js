@@ -308,7 +308,15 @@ api.onHook(({ tabId, data }) => {
   if (data.session_id && data.session_id !== tab.sessionId) { tab.sessionId = data.session_id; tab.started = true; save(); }
   switch (data.event) {
     case 'UserPromptSubmit': case 'PostToolUse': setSt(tab, 'work'); break;
-    case 'SessionStart': setSt(tab, 'wait'); break;
+    case 'SessionStart':
+      setSt(tab, 'wait');
+      if (r.flow && r.flow.step === 'clearing' && data.source === 'clear') {
+        const resume = r.flow.resume;
+        r.flow = null;
+        if (resume) setTimeout(() => typeTo(tab, clearCfg().resumePrompt), 900);
+        renderRail();
+      }
+      break;
     case 'Stop':
       setSt(tab, 'wait');
       notifyTab(p, tab, 'done', 'Terminou · aguarda você');
@@ -320,11 +328,79 @@ api.onHook(({ tabId, data }) => {
   }
 });
 
+/* ---------- botão Clear (alternador): fechar a tarefa, /clear e retomar ---------- */
+const CLEAR_MARK = 'TERMIX-CLEAR-OK';
+const CLEAR_DEF = {
+  v: 1, alert: 15, // alert: % de contexto a partir do qual o botão pulsa (0 = nunca)
+  closePrompt: 'Vou fechar esta tarefa. Faça nesta ordem: 1) confirme que o trabalho está aprovado por mim; se não estiver, resuma o que foi feito e pare, sem escrever o aviso final. 2) Rode a validação do projeto e corrija se falhar. 3) Registre a tarefa no arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir): o que foi feito, arquivos alterados, padrão seguido, decisões e pendências, em até 6 linhas. 4) Não faça commit nem push. 5) Só se tudo isso foi concluído, termine escrevendo exatamente ' + CLEAR_MARK + '.',
+  resumePrompt: 'Estou retomando o trabalho depois de um /clear. Leia o CLAUDE.md, o arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir) e os últimos commits. Resuma em poucas linhas onde paramos e o que está pendente. Antes de mexer em algo de uma tarefa já encerrada, leia a entrada dela e siga o mesmo padrão. Se faltar informação, pergunte em vez de supor. Não leia arquivos além do necessário.',
+};
+const clearCfg = () => S.settings.clear || CLEAR_DEF;
+const typeTo = (tab, text) => { api.write(tab.id, text); setTimeout(() => api.write(tab.id, '\r'), 150); };
+function markCount(term) { // quantas vezes o aviso final aparece no texto do terminal (linhas quebradas são unidas)
+  const b = term.buffer.active; let t = '';
+  for (let i = 0; i < b.length; i++) { const l = b.getLine(i); if (l) t += (l.isWrapped ? '' : '\n') + l.translateToString(true); }
+  return (t.match(new RegExp(CLEAR_MARK, 'g')) || []).length;
+}
+// estado do botão no alternador: off = desabilitado, pulse = contexto passou do limite configurado
+function clearDockState(p) {
+  const tab = p && curTab(p), r = tab && RT[tab.id];
+  if (!tab || !openTabs(p).length) return null;
+  const cp = ((MET[tab.id] || {}).context_window || {}).used_percentage;
+  const ready = !!(r && r.alive && r.st === 'wait' && !r.flow);
+  const a = +clearCfg().alert;
+  return { off: !ready, busy: !!(r && r.flow), pulse: ready && a > 0 && typeof cp === 'number' && cp >= a };
+}
+async function clearFlow() {
+  const p = curProject(), tab = p && curTab(p), r = tab && RT[tab.id];
+  if (!r || !r.alive || r.st !== 'wait' || r.flow) return;
+  const c = await modal({
+    title: 'Limpar o contexto?',
+    body: '<p>O <code>/clear</code> apaga o contexto e começa uma conversa nova. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, limpa e manda ele retomar pelos arquivos do projeto.</p>',
+    buttons: [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']],
+  });
+  if (!c.value || !r.alive || r.st !== 'wait' || r.flow) return;
+  if (c.value === 'only') { doClear(tab, false); return; }
+  r.flow = { step: 'closing', t0: Date.now(), saw: false, base: null };
+  typeTo(tab, clearCfg().closePrompt);
+  setTimeout(() => { if (r.flow && r.flow.base === null) r.flow.base = markCount(r.term); }, 1500);
+  addEvent({ c: tab.color, who: tab.name, msg: 'Fechando a tarefa antes do /clear…' });
+  renderRail();
+}
+function doClear(tab, resume) {
+  const r = RT[tab.id];
+  r.flow = { step: 'clearing', t0: Date.now(), resume };
+  typeTo(tab, '/clear');
+  renderRail();
+}
+async function clearClosed(tab) { // o agente terminou de fechar a tarefa: limpa se o aviso final apareceu; senão pergunta
+  const r = RT[tab.id];
+  if (markCount(r.term) > r.flow.base) { doClear(tab, true); return; }
+  r.flow = { step: 'asking', t0: Date.now() };
+  renderRail();
+  const c = await modal({
+    title: 'A tarefa foi registrada?',
+    body: '<p>Não encontrei o aviso de que o fechamento terminou (o agente pode ter pedido sua aprovação ou deixado algo pendente). Olhe o terminal antes de decidir.</p>',
+    buttons: [['Não limpar', null], ['Limpar e retomar mesmo assim', 'ok', 'pri']],
+  });
+  if (c.value === 'ok' && r.alive) doClear(tab, true); else { r.flow = null; renderRail(); }
+}
+function clearTick(tab) { // chamado a cada 700 ms para cada aba viva
+  const r = RT[tab.id], f = r.flow;
+  if (!f) return;
+  if (f.step === 'closing') {
+    if (r.st === 'work') f.saw = true;
+    if (!f.saw && Date.now() - f.t0 > 10000) { r.flow = null; renderRail(); } // o agente não recebeu o pedido
+    else if (f.saw && r.st === 'wait' && f.base !== null) clearClosed(tab);
+  } else if (f.step === 'clearing' && Date.now() - f.t0 > 12000) { r.flow = null; renderRail(); }
+}
+
 // heurística de reserva: sem saída por 2,5 s = aguardando você. Com hooks, só cobre o caso de interrupção
 // (Esc não dispara o Stop): 20 s de silêncio total.
 setInterval(() => {
   for (const { p, tab } of aliveTabs()) {
     const r = RT[tab.id];
+    clearTick(tab);
     const quiet = r.hooks ? 20000 : 2500;
     if (r.st === 'work' && Date.now() - r.lastData > quiet && Date.now() - r.spawnAt > 2500) {
       setSt(tab, 'wait');
@@ -461,6 +537,7 @@ function setHTML(el, html) { const t = document.createElement('div'); t.innerHTM
 let railLast = '', metaLast = '';
 function renderRail() {
   const p = curProject(), tab = p && curTab(p);
+  if (typeof dockRefresh === 'function') dockRefresh();
   const show = mode() === 'term' && !!tab;
   const cfg = railCfg();
   $('#rail').classList.toggle('hide', !show);
@@ -612,6 +689,12 @@ function confHTML() {
     <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small>Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip">…</span></div>
     <div class="row"><div class="grow">Ao fechar o app<small>Encerra os processos, com confirmação. As conversas ficam guardadas.</small></div><span class="chip">Pergunta antes de sair</span></div>
     <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
+    <h5 style="margin:22px 0 8px">Botão Clear (base da janela)</h5>
+    <div class="card" style="padding:6px 18px">
+    <div class="row"><div class="grow">Pulsar quando o contexto chegar a<small>% do anel CTX a partir da qual o botão Clear pisca. 0 desliga o aviso. Sugestão: 15 para tarefas pequenas, 35 para tarefas longas.</small></div><input type="number" min="0" max="100" class="inp" id="clrAlert" value="${clearCfg().alert}"><span class="chip">%</span></div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Para o app limpar sozinho, ele deve terminar escrevendo ${CLEAR_MARK}; sem isso o app pergunta antes de limpar. Pode ser um comando seu, como /encerrar-tarefa.</small></div><textarea class="inp ta" id="clrClose" rows="5">${esc(clearCfg().closePrompt)}</textarea></div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de retomada<small>Enviado depois do /clear, na conversa nova. Pode ser um comando seu, como /retomar.</small></div><textarea class="inp ta" id="clrResume" rows="5">${esc(clearCfg().resumePrompt)}</textarea></div>
+    <div class="row"><div class="grow">Restaurar os textos padrão</div><button class="btn sm" data-clrreset>Restaurar</button></div></div>
     <h5 style="margin:22px 0 8px">Projetos arquivados</h5>
     <div class="card">${arch.length ? arch.map((p) => `<div class="lrow"><span class="nm">${esc(p.name)}<br><span class="meta">${esc(p.path)}</span></span><button class="btn sm" data-unarchive="${p.id}">Restaurar</button></div>`).join('') : '<span class="meta">Nenhum projeto arquivado.</span>'}</div></div>`;
 }
@@ -978,6 +1061,7 @@ document.addEventListener('click', async (e) => {
     else { const r = el.getBoundingClientRect(); UI.menu = { type: 'rail', r: window.innerWidth - r.left + 12, b: Math.max(8, window.innerHeight - r.bottom - 4) }; } // abre ao lado da cápsula, sem cobri-la
     renderMenu(); renderRail(); return;
   }
+  if (q('[data-clrreset]')) { S.settings.clear = { ...CLEAR_DEF }; save(); renderPage(); renderRail(); return; }
   if ((el = q('[data-rail]'))) {
     const k = el.dataset.rail; railCfg()[k] = !railCfg()[k]; save();
     renderMenu(); renderRail(); renderTop(); return;
@@ -1043,7 +1127,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('input', (e) => {
-  if (e.target.id !== 'rngOp') return;
+  const id = e.target.id;
+  if (id === 'clrAlert' || id === 'clrClose' || id === 'clrResume') {
+    const c = S.settings.clear;
+    if (id === 'clrAlert') c.alert = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
+    else c[id === 'clrClose' ? 'closePrompt' : 'resumePrompt'] = e.target.value;
+    save(); renderRail(); return;
+  }
+  if (id !== 'rngOp') return;
   S.settings.termOp = +e.target.value;
   $('#opv').textContent = `${e.target.value}%`;
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
@@ -1133,6 +1224,7 @@ async function applyBg() {
   const saved = await api.loadState();
   if (saved && Array.isArray(saved.projects)) S = { ...saved, settings: { termOp: 88, sideCollapsed: false, ...(saved.settings || {}) } };
   S.settings.rail = S.settings.rail && S.settings.rail.v === RAIL_DEF.v ? { ...RAIL_DEF, ...S.settings.rail } : { ...RAIL_DEF };
+  S.settings.clear = { ...CLEAR_DEF, ...(S.settings.clear || {}) };
   $('#rgear').innerHTML = ic('gear', 16);
   for (const p of S.projects) {
     p.tabs = p.tabs || [];

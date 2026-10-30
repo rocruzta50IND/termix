@@ -356,3 +356,7 @@ button.cl-row{width:100%;text-align:left;cursor:pointer;color:inherit;font:inher
 
 /* TASK-024: servidores locais detectados nos terminais */
 .wdet{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(9,7,20,var(--term-op));border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text3);flex-wrap:wrap}
+
+.inp{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:10px;color:var(--text);font:inherit;padding:7px 10px;width:72px}
+.inp:focus{outline:0;border-color:var(--accent)}
+.inp.ta{width:340px;max-width:50%;resize:vertical;font-size:12px;line-height:1.45;min-height:90px}

@@ -8,6 +8,13 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-30
 
+**TASK-025 — botão Clear no alternador de baixo** (DEV1)
+
+- Botão "Clear" ao lado de Terminais: limpa o contexto do terminal ativo. Confirmação com "Só limpar" ou "Fechar a tarefa e limpar" (registra a tarefa, manda `/clear` e pede para retomar pelos arquivos do projeto).
+- Pulsa quando o CTX passa do limite configurado; limite e textos dos dois pedidos ficam em Configurações > Botão Clear (só no app).
+- Registrada a TASK-026 (registro de consumo e alertas de ritmo), derivada do guia de economia de tokens.
+- Estado: aguardando teste do usuário com um Claude Code real.
+
 **TASK-025 registrada — ações rápidas no rail de baixo** (DEV1)
 
 - A pedido do usuário: botões de ação ao lado de "Terminais" no alternador (primeiro exemplo: Clear no terminal ativo), dentro do MVP. Registrada com os pontos a decidir (o que "Clear" significa no Claude Code, quais ações entram). Nada implementado ainda.

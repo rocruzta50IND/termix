@@ -60,6 +60,14 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - **Web só para testes locais (2026-10-30):** plataformas com login (Vercel, GitHub etc.) e grupos de atalhos ficam para o pós-MVP (TASK-023). Por ora a Web mostra projetos locais e abre sozinha quando um terminal abre algo local (TASK-024), com aviso no ícone Web do rail.
 - **Pós-MVP (TASK-023, antes "planejado"):** grupos de páginas prontas, globais e por projeto, com barra de atalhos e sessão única compartilhada; o que não funcionar nos testes de login será registrado aqui.
 
+## Botão Clear (TASK-025)
+
+- Só o **Clear** fica no alternador de baixo por enquanto; Compact, Interromper e outras ações foram descartadas (dificilmente seriam usadas).
+- O Clear tem duas saídas: **Só limpar** (`/clear`) e **Fechar a tarefa e limpar** (o agente registra a tarefa em arquivo, o app manda `/clear` e pede para retomar). A ideia vem do guia de economia de tokens: guardar tudo em arquivo, limpar e retomar lendo o arquivo.
+- Só vale com o agente **aguardando**; nunca no meio de uma resposta.
+- O botão **pulsa** quando o contexto (CTX) chega ao limite que a pessoa configurou (padrão 15 %; 0 desliga). O app não escolhe modelo nem impõe ritmo: isso é da pessoa.
+- Os textos dos dois pedidos (fechar e retomar) são editáveis em Configurações e valem só no app; os padrões são genéricos e não fazem commit. Quando o agente termina o fechamento escrevendo `TERMIX-CLEAR-OK`, o app limpa sozinho; sem o aviso, ele pergunta antes.
+
 ## Plugins, Skills e MCPs
 - No MVP são **somente leitura**, a partir dos arquivos reais de configuração (escopos User, Project e Local).
 - Gerenciá-los pelo app é uma ideia que o usuário quer, **pós-MVP** (TASK-013).

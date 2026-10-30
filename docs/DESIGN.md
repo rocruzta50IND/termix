@@ -32,6 +32,8 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - **Aviso de algo aberto na Web:** ponto verde pulsando no botão Web do alternador (TASK-024), quando um terminal abriu uma página local ou um servidor foi detectado; some ao abrir a Web. Servidores detectados aparecem como botões azuis na tela inicial da aba em branco e numa faixa fina sob a barra de endereço.
 - **Regra técnica:** a vista nativa do navegador fica por cima de todo o HTML. Por isso o alternador é outra vista adicionada depois, e com menu, modal ou popover aberto a vista do navegador é trocada por uma imagem dela (`capturePage`) para o HTML ficar por cima. Em outras telas (Plugins, Consumo etc.) a vista é escondida.
 
+- **Botão Clear:** na pílula do alternador, depois de um separador fino, com ícone de borracha e o rótulo "Clear" sempre visível (a dica nativa não aparece nessa vista). Desabilitado (opacidade baixa) sem terminal vivo e aguardando; com o contexto acima do limite configurado pulsa em âmbar (borda e brilho, só `box-shadow`/fundo; sem animação com "reduzir movimento"). Só aparece na tela Terminais.
+
 ## Marca e ícones
 - **Logo do cabeçalho:** só o prompt `>_`, sem caixa, com brilho; alinhado à altura do nome "Termix".
 - **Ícone do app / barra de tarefas:** quadrado escuro com borda azul luminosa, barra de abas coloridas e `>_` com brilho; versão de traço grosso para 16 e 32 px (`assets/icon.svg`, `assets/icon-small.svg`; gerar com `tools/make-icon.js`).

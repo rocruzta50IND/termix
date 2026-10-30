@@ -8,7 +8,18 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-_Nenhuma no momento._
+### TASK-025 — Botão Clear no alternador de baixo (MVP)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (feito; aguardando teste do usuário)
+- **Prioridade:** Alta (MVP)
+- **Objetivo:** um botão **Clear** no alternador, ao lado de Terminais, que limpa o contexto do terminal ativo sem perder o fio: fecha a tarefa em arquivo, manda `/clear` e pede para retomar pelos arquivos do projeto (ideia do guia de economia de tokens do pacote `economia-tokens-pacote.zip`, que o app reproduz por dentro).
+- **Decisões (usuário, 2026-10-30):** só o Clear por enquanto (Compact, Interromper e outras ações ficam fora; dificilmente serão usadas); o limite de contexto que faz o botão **pulsar** é configurável (exemplo dado: 15 %); o modelo é escolha da pessoa, o app não se envolve; as configurações ficam só dentro do app. Decisões minhas, sem objeção até aqui: um único botão que abre uma confirmação com duas saídas (**Só limpar** e **Fechar a tarefa e limpar**); o botão só vale com o agente aguardando; o rótulo "Clear" fica visível (a dica nativa não aparece na vista do alternador).
+- **Feito até agora:** botão "Clear" na pílula do alternador (só na tela Terminais, junto de um separador), desabilitado sem terminal vivo e aguardando, com pulso âmbar quando o CTX do terminal ativo chega ao limite configurado; a largura do alternador cresce com o botão. Fluxo em `src/renderer/app.js` (`clearFlow`): confirmação → "Fechar a tarefa e limpar" envia o pedido de fechamento, espera o agente terminar (estado vindo dos hooks, conferido a cada 700 ms), confere se o terminal mostra o aviso final `TERMIX-CLEAR-OK` (senão pergunta se limpa mesmo assim) → envia `/clear` → ao chegar o hook `SessionStart` com `source: clear`, envia o pedido de retomada na conversa nova. "Só limpar" envia só o `/clear`. Travas: sem resposta do agente em 10 s o fluxo é cancelado; sem o `SessionStart` em 12 s também. Configurações > "Botão Clear": limite de contexto (0 desliga), texto do pedido de fechamento, texto do pedido de retomada e "Restaurar" (guardados em `settings.clear`). Os textos padrão são genéricos (procuram `docs/TASKS.md` ou `docs/HISTORICO-TAREFAS.md`, não fazem commit) e podem ser trocados por `/encerrar-tarefa` e `/retomar` neste projeto. Testado numa instância isolada: o app carrega, a página de Configurações e o botão (com pulso) aparecem certos; **o fluxo completo com um Claude Code de verdade ainda não foi exercitado**.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/web.js`, `src/renderer/styles.css`, `src/dock.js`, `src/dock.html`, `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; abrir um terminal do Claude Code, mandar uma mensagem e esperar terminar. (1) O botão Clear fica habilitado; durante uma resposta, desabilitado. (2) Clicar: aparece a confirmação; "Só limpar" deve limpar a conversa; "Fechar a tarefa e limpar" deve registrar a tarefa, limpar e o agente retomar sozinho. (3) Em Configurações > Botão Clear, baixar o limite para 1: o botão pulsa quando o CTX passa disso; 0 desliga o pulso. (4) Trocar os textos por `/encerrar-tarefa` e `/retomar` e repetir (o app deve perguntar antes de limpar, pois o aviso final não aparece).
+- **Pendências:** testar o fluxo completo com um Claude Code real (inclusive o `/clear` digitado pelo menu de comandos e o retomar na conversa nova); o aviso final `TERMIX-CLEAR-OK` depende de o agente obedecer; o botão age só na aba ativa do projeto atual; sem atalho de teclado (TASK-009).
+- **Próximo passo:** o usuário testa; ajustar o que aparecer. Fora de escopo registrado na TASK-026 (Backlog).
 
 ## Aguardando validação DEV1
 
@@ -214,24 +225,16 @@ _Nenhuma no momento._
 
 ## Prontas
 
-### TASK-025 — Ações rápidas no rail de baixo, ao lado de "Terminais" (MVP)
+## Backlog
+
+### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 
 - **Responsável:** A definir
-- **Status:** PRONTA
-- **Prioridade:** Alta (MVP; próxima)
-- **Objetivo:** botões de ação no alternador de baixo, logo ao lado de **Terminais**, que agem sobre o terminal ativo no momento. Primeiro exemplo pedido pelo usuário: **Clear**, que manda o clear para o terminal em uso. Esta tarefa começa com a **avaliação** (quais ações, onde ficam, como se comportam) e termina com as ações aprovadas funcionando.
-- **Ponto de atenção — o que "Clear" significa (decidir com o usuário no início):** no Claude Code, `/clear` **apaga o contexto da conversa e cria uma conversa nova** (outro ID de sessão; ver TASK-012), enquanto limpar a tela (`Ctrl+L`) só redesenha. São coisas bem diferentes. Recomendação: o botão se chama "Clear" e manda `/clear` só com o agente **aguardando** (nunca no meio de uma resposta) e com confirmação curta, porque perde contexto; uma segunda ação separada, "Limpar tela", manda só o redesenho.
-- **Ações candidatas (o usuário escolhe quais entram):** Clear (`/clear`), Limpar tela (`Ctrl+L`), Compact (`/compact`), Interromper (`Esc`), Copiar a última resposta, Rolar até o fim. Mínimo sugerido para o MVP: Clear, Compact e Interromper.
-- **Critérios de aceite (a refinar na avaliação):**
-  - Os botões ficam junto de **Terminais** no alternador, aparecem com os Terminais ativos e agem sempre no terminal da aba ativa do projeto atual; ficam desabilitados sem terminal vivo.
-  - Ações que perdem contexto pedem confirmação; ações de texto (`/clear`, `/compact`) só são enviadas com o agente aguardando (estado vindo dos hooks).
-  - Dica ao passar o mouse com o nome da ação (a dica nativa do navegador não aparece na vista do alternador; desenhar uma própria).
-  - O alternador cresce conforme os botões e continua centralizado, com fade quando parado e sem cobrir mais do terminal do que hoje.
-- **Notas técnicas:** o alternador é uma vista própria (`src/dock.html`, `dock.js`); hoje o clique volta para a interface por `dock:click` → `dock:action` (só alterna Terminais/Web); estender para ações (`act:clear` etc.). A interface envia o texto ao terminal por `api.write(tabId, ...)` (Enter = `\r`); largura do alternador hoje fixa em `sendDock` (`src/renderer/web.js`), passar a calcular pelo número de botões. Possível opção em `settings` para escolher quais ações aparecem (pode ficar para depois).
-- **Fora de escopo:** atalhos de teclado e paleta de comandos (TASK-009).
-- **Próximo passo:** conversar com o usuário: o que o Clear deve fazer, quais ações entram e se ficam como ícone, texto ou os dois; depois implementar.
-
-## Backlog
+- **Status:** BACKLOG
+- **Prioridade:** Média
+- **Objetivo:** o `statusline-wrapper.js` já recebe `rate_limits` e `context_window`; passar a gravar um registro (`consumo-limites.jsonl`, no máximo 1 linha por minuto e uma quando a % muda, como no `statusline-registro.py.txt` do pacote) para medir **quem gasta a cota** por projeto/sessão, e mostrar isso no app (junto da TASK-011), em vez do `consumo.mjs` externo.
+- **Ideias do guia a avaliar:** ritmo de ~20 % da cota por hora na janela de 5 h (aviso no rail quando passar); alerta de cache perto de esfriar (< ~1 min); hábito de `/clear` (contexto mediano ao limpar, sessões que ficaram pesadas). Os limiares de contexto (15 % / 35 %) dependem do tamanho da janela do modelo: conferir com o plano do usuário antes de fixar.
+- **Origem:** `economia-tokens-pacote.zip` (guia, `consumo.mjs`, `statusline-registro.py.txt`) enviado pelo usuário em 2026-10-30.
 
 ### TASK-024 — Web só para testes locais, com abertura automática a partir dos terminais (standby, pós-MVP)
 

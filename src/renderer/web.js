@@ -214,7 +214,8 @@ function viewRect() {
 
 function sendDock(m, p) {
   const c = $('#col').getBoundingClientRect();
-  const W = 276, H = 46;
+  const clr = m === 'web' ? null : clearDockState(p);
+  const W = 276 + (clr ? 92 : 0), H = 46;
   const visible = !!p && (m === 'term' || m === 'noterm' || m === 'web') && !overlayOpen() && !$('#splash');
   const st = {
     visible, mode: m === 'web' ? 'web' : 'term',
@@ -223,11 +224,14 @@ function sendDock(m, p) {
     webs: p && p.web ? p.web.tabs.filter((t) => t.url).length : 0,
     fresh: !!(p && UI.webNew && UI.webNew[p.id]), // algo novo na Web deste projeto (aberto por um terminal ou servidor detectado)
     fade: !!railCfg().fade,
+    clear: clr,
     rect: { x: c.left + (c.width - W) / 2, y: c.bottom - H + 8, width: W, height: H }, // metade dentro da base de vidro, para cobrir pouco do terminal
   };
   const j = JSON.stringify(st);
   if (j !== lastDock) { lastDock = j; api.dockState(st); }
 }
+
+function dockRefresh() { sendDock(mode(), curProject()); }
 
 async function webSync() {
   const tok = ++syncTok;
@@ -301,7 +305,7 @@ api.onWebOpen(({ tabId, url }) => {
 });
 api.onWebToggle(toggleSurface);
 api.onWebFocusUrl(() => { if (mode() === 'web') { const i = $('#wurl'); if (i) i.focus(); } });
-api.onDockAction((m) => setSurface(m === 'web' ? 'web' : 'term'));
+api.onDockAction((m) => { if (m === 'clear') clearFlow(); else setSurface(m === 'web' ? 'web' : 'term'); });
 
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key === '`') { e.preventDefault(); e.stopPropagation(); toggleSurface(); }
