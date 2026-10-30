@@ -232,7 +232,7 @@ _Nenhuma no momento._
 
 ## Backlog
 
-### TASK-023 — Atalhos e grupos de páginas no navegador do app (MVP)
+### TASK-023 — Atalhos e grupos de páginas no navegador do app (pós-MVP)
 
 - **Responsável:** A definir
 - **Status:** BACKLOG
