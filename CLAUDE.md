@@ -2,7 +2,7 @@
 
 Aplicativo desktop (Electron, Windows 11) de uso pessoal para gerenciar vários terminais de agentes de programação (Claude Code primeiro; Codex e outros depois) numa janela única em glassmorphism. Projetos, abas de terminal, retomada de conversas pelo ID, limites de uso (5h/7d) vindos da status line do Claude Code.
 
-- Rodar: `npm start` · Validar: `npm run check` (checagem de sintaxe dos arquivos JS)
+- Rodar: `npm start` · Validar: `npm run check` (checagem de sintaxe dos arquivos JS) · Instalador: `npm run dist` (gera `dist\Termix-Setup-<versão>.exe`)
 - Estrutura: `src/main.js` (processo principal: janela, PTYs, estado), `src/preload.js` (ponte), `src/renderer/` (interface: `index.html`, `app.js`, `styles.css`), `src/statusline-wrapper.js` (captura os limites), `tools/make-icon.js` (gera o ícone)
 - O app se chamava Vitra; os dados salvos são migrados da pasta `%APPDATA%\Vitra` para `%APPDATA%\Termix`.
 - Não edite arquivos UTF-8 do código com `Get-Content`/`Set-Content` do PowerShell (corrompe acentos); use a ferramenta de edição ou Node.

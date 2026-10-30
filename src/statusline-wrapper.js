@@ -7,10 +7,10 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
+// leitura síncrona do stdin: funciona igual no Node e quando o próprio Termix executa o script (--termix-run)
 let raw = '';
-process.stdin.setEncoding('utf8');
-process.stdin.on('data', (d) => { raw += d; });
-process.stdin.on('end', () => {
+try { raw = fs.readFileSync(0, 'utf8'); } catch { /* sem entrada */ }
+{
   let j = {};
   try { j = JSON.parse(raw); } catch { /* entrada inesperada */ }
 
@@ -38,7 +38,7 @@ process.stdin.on('end', () => {
       process.stdout.write(r.stdout || '');
     } catch { /* ignora */ }
   }
-});
+}
 
 function originalCommand(j) {
   const cwd = (j.workspace && j.workspace.current_dir) || j.cwd || process.cwd();

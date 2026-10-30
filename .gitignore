@@ -4,3 +4,4 @@ node_modules/
 *.log
 # fluxo: papel local por máquina, nunca versionar
 CLAUDE.local.md
+dist/

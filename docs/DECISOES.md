@@ -57,6 +57,15 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Dados salvos em `%APPDATA%\Termix` (`state.json`, gravado de forma atômica, e `metrics\`). O app se chamava Vitra: na primeira abertura os dados da pasta antiga são copiados.
 - As variáveis de ambiente herdadas de uma sessão do Claude Code (`CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION` etc.) são **removidas** ao abrir terminais; senão o Claude Code desliga a gravação do histórico ("Transcript saving is off").
 - Os terminais usam `@lydell/node-pty` + xterm 6 (WebGL só na aba visível).
+- `state.json` tem backup (`state.bak.json`, a versão anterior, no máximo 1 por hora); se o principal estiver ilegível, o app abre com o backup.
+- Só uma janela do Termix por vez: abrir de novo traz a que já existe.
+
+## Instalador e portabilidade (TASK-010)
+- Instalador NSIS **por usuário** (não pede administrador), Windows 10/11 x64, gerado com `npm run dist` em `dist\Termix-Setup-<versão>.exe`. Cria atalhos no menu Iniciar e na área de trabalho; desinstalar **não** apaga os dados em `%APPDATA%\Termix`.
+- O app instalado **não depende de Node.js**: com `node` no PATH os hooks/status line usam `node`; sem ele, o próprio Termix executa os scripts (`Termix.exe --termix-run <script>`).
+- O Claude Code é procurado no PATH e nas pastas conhecidas (`~\.local\bin`, `%APPDATA%\npm`); se não achar, a aba mostra como resolver. O app **não instala** o Claude Code.
+- Empacotado **sem `asar`** (módulo nativo do terminal e scripts chamados por fora ficam como arquivos normais; mais simples e seguro).
+- O instalador **não é assinado**: o Windows SmartScreen avisa "editor desconhecido" (Mais informações → Executar assim mesmo). Assinatura exige certificado pago; fica para depois.
 
 ## Janela e fundo
 - Dois modos: **Degradê** (janela transparente, o app é o degradê) e **Ofuscado** (o mesmo degradê, mais leve, sobre o vidro fosco do Windows 11).

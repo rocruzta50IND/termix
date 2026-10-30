@@ -6,15 +6,60 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/statusline-wrapper.js && node --check src/hook-wrapper.js && node --check src/renderer/app.js && node --check tools/make-icon.js"
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/statusline-wrapper.js && node --check src/hook-wrapper.js && node --check src/renderer/app.js && node --check tools/make-icon.js",
+    "dist": "electron-builder --win nsis --x64"
   },
+  "author": "Rocruzta",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
     "@lydell/node-pty": "^1.2.0-beta.18",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-webgl": "^0.19.0",
-    "@xterm/xterm": "^6.0.0",
-    "electron": "^45.1.0"
+    "@xterm/xterm": "^6.0.0"
+  },
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.termix.app",
+    "productName": "Termix",
+    "copyright": "Rocruzta",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/icon.ico",
+      "assets/icon.png",
+      "assets/logo-mark.svg",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "Termix-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Termix",
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "language": "1046"
+    }
   }
 }

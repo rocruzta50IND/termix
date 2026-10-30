@@ -3,9 +3,21 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { execFile } = require('child_process');
-const pty = require('@lydell/node-pty');
+
+// Modo "executar script": o Claude Code chama os encaminhadores (hooks e status line) como comando externo.
+// Sem Node.js instalado, o próprio Termix os executa: `Termix.exe --termix-run <script>`. Não abre janela nem pega a trava de instância única.
+const RUN_IDX = process.argv.indexOf('--termix-run');
+const RUN_MODE = RUN_IDX > 0 && !!process.argv[RUN_IDX + 1];
+if (RUN_MODE) {
+  const script = process.argv[RUN_IDX + 1];
+  process.argv.splice(RUN_IDX, 2, script); // o script vê o mesmo argv de quando roda no Node
+  require(script); // lê o stdin e escreve tudo de forma síncrona
+  setTimeout(() => app.exit(0), 150); // dá tempo de a saída ser entregue antes de encerrar
+}
+const pty = RUN_MODE ? null : require('@lydell/node-pty');
 
 const STATE_FILE = () => path.join(app.getPath('userData'), 'state.json');
+const STATE_BACKUP = () => path.join(app.getPath('userData'), 'state.bak.json');
 const DEFAULT_ROOT = () => path.join(app.getPath('documents'), 'Termix');
 // o app se chamava Vitra: na primeira abertura copia os dados salvos para a pasta nova (a antiga fica intacta)
 try {
@@ -19,10 +31,18 @@ let summary = { active: 0, working: 0 };
 const procs = new Map(); // tabId -> pty
 
 /* ---------- utilidades ---------- */
+// Onde o Claude Code costuma ficar. O PATH vem primeiro; as pastas conhecidas cobrem o PATH antigo
+// (app aberto pelo menu Iniciar logo depois de instalar o Claude Code, sem reiniciar a sessão do Windows).
+function claudeDirs() {
+  const home = os.homedir();
+  const dirs = (process.env.PATH || '').split(path.delimiter);
+  dirs.push(path.join(home, '.local', 'bin'), path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'npm'),
+    path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), 'Programs', 'claude'));
+  return dirs;
+}
 function findClaude() {
-  const exts = ['claude.exe', 'claude.cmd'];
-  for (const dir of (process.env.PATH || '').split(path.delimiter)) {
-    for (const f of exts) {
+  for (const dir of claudeDirs()) {
+    for (const f of ['claude.exe', 'claude.cmd']) {
       const full = path.join(dir, f);
       if (dir && fs.existsSync(full)) return full;
     }
@@ -132,10 +152,16 @@ function killAll() {
 }
 
 /* ---------- IPC: estado ---------- */
-ipcMain.handle('state:load', () => readJson(STATE_FILE()));
+// se o state.json estiver ilegível (disco cheio, queda de energia), recupera do backup
+ipcMain.handle('state:load', () => readJson(STATE_FILE()) || readJson(STATE_BACKUP()));
 ipcMain.handle('state:save', (_e, state) => {
   const file = STATE_FILE();
   fs.mkdirSync(path.dirname(file), { recursive: true });
+  // backup: guarda a versão anterior, no máximo uma vez por hora (só se ela estiver legível)
+  try {
+    const bak = STATE_BACKUP();
+    if ((!fs.existsSync(bak) || Date.now() - fs.statSync(bak).mtimeMs > 3600e3) && readJson(file)) fs.copyFileSync(file, bak);
+  } catch { /* o backup nunca atrapalha o salvamento */ }
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
   fs.renameSync(tmp, file);
@@ -176,7 +202,7 @@ ipcMain.handle('win:material', (_e, kind) => {
 /* ---------- IPC: terminais ---------- */
 ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
   const claude = findClaude();
-  if (!claude) return { ok: false, error: 'Claude Code não foi encontrado no PATH.' };
+  if (!claude) return { ok: false, error: 'Claude Code não foi encontrado neste computador. Instale-o (claude.com/claude-code), abra o Termix de novo e use "Tentar de novo".' };
   if (!fs.existsSync(cwd)) return { ok: false, error: `A pasta do projeto não existe: ${cwd}` };
   if (procs.has(tabId)) { try { procs.get(tabId).kill(); } catch { /* ignora */ } procs.delete(tabId); }
   try {
@@ -185,14 +211,14 @@ ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
     // captura dos limites: a status line da sessão passa por um encaminhador que grava os dados
     // e repassa tudo para a status line original do usuário (o visual não muda)
     const extra = [];
-    if (findInPath(['node.exe', 'node.cmd'])) {
-      const cmd = `node "${WRAPPER()}"`;
-      // hooks: o Claude Code avisa quando começa a trabalhar, termina ou pede atenção (somam-se aos hooks do usuário)
-      const hook = { hooks: [{ type: 'command', command: `node "${HOOK()}"` }] };
-      const hooks = {};
-      for (const ev of ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Notification', 'Stop']) hooks[ev] = [hook];
-      extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd }, hooks }));
-    }
+    // com Node.js no PATH usa o node (mais leve); sem ele, o próprio Termix executa os encaminhadores
+    const runner = findInPath(['node.exe', 'node.cmd']) ? 'node' : `"${process.execPath.replace(/\\/g, '/')}" --termix-run`;
+    const cmd = `${runner} "${WRAPPER()}"`;
+    // hooks: o Claude Code avisa quando começa a trabalhar, termina ou pede atenção (somam-se aos hooks do usuário)
+    const hook = { hooks: [{ type: 'command', command: `${runner} "${HOOK()}"` }] };
+    const hooks = {};
+    for (const ev of ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Notification', 'Stop']) hooks[ev] = [hook];
+    extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd }, hooks }));
     const finalArgs = [...args, ...extra];
     const fullArgs = isCmd ? ['/c', claude, ...finalArgs] : finalArgs;
     fs.mkdirSync(METRICS_DIR(), { recursive: true });
@@ -403,7 +429,14 @@ ipcMain.handle('metrics:all', () => {
 });
 
 /* ---------- ciclo de vida ---------- */
-app.setAppUserModelId('com.termix.app');
-app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); });
-app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
+if (!RUN_MODE) {
+  app.setAppUserModelId('com.termix.app');
+  // uma instância só: abrir de novo (atalho, menu Iniciar) traz a janela que já existe, em vez de duas escrevendo no mesmo estado
+  if (!app.requestSingleInstanceLock()) app.quit();
+  else {
+    app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
+    app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); });
+  }
+  app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
+}
 ipcMain.on('app:relaunch', () => { wantRelaunch = true; if (win && !win.isDestroyed()) win.close(); });

@@ -16,6 +16,25 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-010 — Instalador, atalho e backup do estado (MVP)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1
+- **Prioridade:** Alta (MVP)
+- **Objetivo:** gerar um instalador `.exe` (electron-builder) que funcione em qualquer PC com Windows 10/11 x64, com atalho no menu Iniciar/área de trabalho e backup do `state.json` (a gravação já é atômica).
+- **Critérios de aceite:**
+  - O instalador abre o Termix sem precisar de Node, npm nem de rebuild de módulos nativos.
+  - Terminais (node-pty), hooks e captura dos limites funcionam também no app instalado (arquivos fora do `app.asar`).
+  - Funciona em PC sem Node.js no PATH (Claude Code instalado pelo instalador nativo).
+  - Se o Claude Code não for encontrado, o app explica o que fazer, em vez de falhar calado.
+  - Testado instalando e abrindo o app a partir da pasta de instalação (não do código-fonte).
+- **Feito até agora:** electron-builder configurado (`npm run dist` → `dist\Termix-Setup-0.1.0.exe`, ~118 MB, NSIS por usuário, atalhos no menu Iniciar e na área de trabalho, pasta de instalação escolhível). Ajustes de portabilidade em `src/main.js`: (1) sem Node.js no PATH, hooks e status line rodam pelo próprio Termix (`--termix-run`), e os dois scripts passaram a ler o stdin de forma síncrona (no Electron o stdin por evento chegava vazio); (2) `findClaude()` também procura em `~\.local\bin` e `%APPDATA%\npm`, com mensagem clara se não achar; (3) trava de instância única; (4) backup do `state.json` (`state.bak.json`, 1 por hora) e recuperação se o principal estiver ilegível. Testado **instalando de verdade** (silencioso, em pasta temporária): o app abre, o `node-pty` abre o terminal e o Claude Code responde, o hook `SessionStart` e a status line gravam os dados, tudo com o PATH sem Node. A instalação de teste foi removida (pasta, atalhos e registro).
+- **Decisões:** NSIS por usuário, só x64; sem `asar`; instalador não assinado (SmartScreen avisa); o app não instala o Claude Code. Detalhes em `docs/DECISOES.md`. `electron` passou para `devDependencies` (exigência do builder).
+- **Arquivos tocados:** `package.json`, `package-lock.json`, `.gitignore`, `CLAUDE.md`, `src/main.js`, `src/hook-wrapper.js`, `src/statusline-wrapper.js`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm run dist`; instalar o `.exe` de `dist\` (de preferência num PC sem Node.js, com o Claude Code instalado e logado); abrir pelo atalho, criar um projeto e uma aba, enviar uma mensagem; conferir o selo/aviso ao terminar; abrir o atalho de novo (deve trazer a janela existente); desinstalar e conferir que os dados em `%APPDATA%\Termix` continuam.
+- **Pendências:** teste em Windows limpo (vira TASK-020); Windows 10 (o fundo "Ofuscado" depende do Windows 11). Não feito: assinatura do código e atualização automática.
+- **Validada em:** 2026-10-30. O usuário não tem como testar em outro PC agora e vai usar o app no dia a dia para dar feedback; aceitou o estado atual como MVP, com o teste em Windows limpo registrado na TASK-020. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-005 — Validar controles da janela e menus das abas
 
 - **Responsável:** DEV1
@@ -193,19 +212,20 @@ _Nenhuma no momento._
 - **Prioridade:** Média
 - **Objetivo:** Ctrl+T/W/Tab/1..9, Ctrl+F no terminal, links clicáveis e paleta de comandos.
 
-### TASK-010 — Instalador, atalho e backup do estado
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Média (MVP)
-- **Objetivo:** gerar `.exe` com electron-builder, atalho no menu Iniciar e backup do `state.json` (a gravação já é atômica).
-
 ### TASK-011 — Consumo por sessão e alertas de limite
 
 - **Responsável:** A definir
 - **Status:** BACKLOG
 - **Prioridade:** Média
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
+
+### TASK-020 — Testar o instalador em um Windows limpo (Sandbox)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Média
+- **Objetivo:** garantir que o instalador funcione em um computador sem nada do ambiente de desenvolvimento. Ativar o Windows Sandbox (como administrador: `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All`, exige reiniciar) e testar: instalação pelo instalador com janelas, abertura do app, aviso na aba quando não há Claude Code, atalhos e desinstalação (que mantém os dados).
+- **Notas:** o Windows Sandbox não estava ativado em 2026-10-30 (virtualização presente). Fora do Sandbox já foi testado instalando em pasta temporária com PATH sem Node (TASK-010). Windows 10 não foi testado.
 
 ### TASK-013 — Gerenciar plugins, skills e MCPs pelo app
 

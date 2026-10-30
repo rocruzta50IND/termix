@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-29
 
+**TASK-010 — Instalador e portabilidade** (DEV1)
+
+- Instalador NSIS por usuário (`npm run dist`) com atalhos no menu Iniciar e na área de trabalho. O app funciona sem Node.js (os scripts de hooks/status line rodam pelo próprio Termix), acha o Claude Code em pastas conhecidas além do PATH, abre uma janela só e guarda backup do `state.json`. Testado instalando de verdade e abrindo o app instalado. VALIDADA EM DEV1 em 2026-10-30: o usuário aceitou o estado atual; o teste em Windows limpo ficou registrado como TASK-020 (backlog).
+
 **TASK-005 — Controles da janela e menus das abas** (DEV1)
 
 - Testados por cliques reais, sem defeitos e sem mudança de código: minimizar, maximizar/restaurar, arrastar o cabeçalho, fechar (com a confirmação de sessões ativas) e, no menu da aba, duplicar, exportar texto, fechar à direita e fechar outras. VALIDADA EM DEV1: o usuário aprovou.
