@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-031 e TASK-032 registradas; nova ordem** (DEV1)
+
+- TASK-031 (PRONTA, Alta, próxima): auditoria de UI/UX e desempenho do app inteiro — campos fora de alinhamento, pequenos e com cara antiga (setinhas do campo numérico, campo estreito do Novo projeto), responsividade e medição de desempenho antes e depois. TASK-032 (BACKLOG, por último, antes do instalador): teste geral de plugins, MCPs e skills feito pelo Claude, que fecha a TASK-013. Ordem: 031, depois 029 e 030, depois 032, depois TASK-020 (instalador em Windows limpo) e a promoção. Sem código nesta etapa.
+
 **TASK-013 iniciada — plugins, skills e MCPs pelo app (MVP)** (DEV1)
 
 - **Etapa 1 (ver tudo) feita:** as telas Plugins, Skills e MCPs agora mostram o que o Claude Code enxerga no projeto, lido pela CLI (plugins com versão, escopo e custo em tokens; MCPs com o estado real, inclusive os 9 conectores da conta, que antes não apareciam) e pelos arquivos (skills e comandos de usuário, projeto e plugins). Busca, filtros por escopo e estado, "Atualizar" e atualização automática. Módulo novo `src/resources.js`. Só leitura; aguarda o teste do usuário antes da etapa 2.

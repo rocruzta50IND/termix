@@ -30,7 +30,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Como validar (etapas 2 e 3 e Conectores):** `npm start`. Plugins: "Desligar aqui" num plugin e conferir no terminal (`/plugin`) que, depois de reiniciar a aba, ele não carrega; "Gerenciar…" mostra atualizar/remover (não precisa remover para testar). MCPs: "Desligar aqui" num conector e conferir no `/mcp` do terminal ("disabled for this project"); adicionar um MCP de teste e removê-lo; "Gerenciar…" num conector que pede login e entrar (abre o navegador). Skills: criar uma skill de projeto, editar, ver no terminal, excluir (confere na lixeira). Configurações > Conectores > Limpo; criar um projeto novo e abrir um terminal nele: o `/plugin` e o `/mcp` devem vir vazios/desligados. Voltar para Automático e criar outro: vem como sempre.
 - **Pendências (etapas 2 e 3):** não exercitados com conta real: login/logout de conector (abre o navegador), instalar plugin de verdade, atualizar e remover plugin (o remover é destrutivo; só a janela e a confirmação foram vistas); conectores adicionados à conta depois não entram no "limpo" já feito; skills/comandos de **usuário** valem em todo projeto (limite do Claude Code); com uma ação em andamento a tela não aceita outra (mostra "…"); o app não desliga skills de plugin individualmente.
 - **Pendências (etapa 1):** a leitura de skills não conhece skills de MCP nem as embutidas do Claude Code; plugins instalados só em outro projeto não aparecem; o estado dos MCPs de projeto (`.mcp.json`) pendentes de aprovação aparece como "Aguardando aprovação" (conferir com um projeto real); sem controle ainda (etapa 2).
-- **Próximo passo:** o usuário testa tudo (ver "Como validar"); aprovada, fecha a tarefa (VALIDADA EM DEV1). Ajustes pedidos no teste entram aqui.
+- **Próximo passo:** a validação foi delegada ao Claude (decisão do usuário, 2026-10-31): teste geral na TASK-032, depois da TASK-031 (auditoria de UI/UX e desempenho) e das TASK-029/030, e antes do teste do instalador (TASK-020). Aprovada a TASK-032, fecha a TASK-013 (VALIDADA EM DEV1).
 
 ## Aguardando validação DEV1
 
@@ -279,7 +279,32 @@ _Nenhuma no momento._
 
 ## Prontas
 
+### TASK-031 — Auditoria de UI/UX e desempenho do app inteiro (MVP)
+
+- **Responsável:** DEV1
+- **Status:** PRONTA
+- **Prioridade:** Alta (MVP) — **próxima tarefa**, antes de TASK-029 e TASK-030 (decisão do usuário, 2026-10-31)
+- **Objetivo:** varrer o app inteiro atrás de elementos que não combinam com a estética (glassmorphism, escuro, cantos arredondados, azul de destaque), consertar tudo o que achar e medir o desempenho. Quem testa tudo é o Claude (CDP numa instância isolada, capturando só o conteúdo do app), como já vem sendo feito.
+- **Pedido do usuário (2026-10-31):** diversos campos fora de alinhamento; campos pequenos e não responsivos; campos com cara dos anos 2000.
+- **Casos já vistos (capturas do usuário):** (1) campo numérico do Botão Clear (Configurações) com as setinhas brancas nativas do navegador; (2) campo "Nome do projeto" da janela Novo projeto minúsculo (cortava o texto do exemplo). O segundo vinha da regra `.inp{width:72px}` das Configurações vencendo a regra das janelas; já foi corrigido para as janelas na TASK-013 (`.dlg .inp`), mas a auditoria confere de novo e procura o mesmo tipo de conflito em outros lugares.
+- **Escopo da varredura:** todo campo e controle do app — texto, número, seleção (`select`), área de texto, controle deslizante, alternadores, botões, etiquetas, tabelas, barras de rolagem, menus, janelas (modais), a barra de endereço da Web, o renomear de aba, o painel de notificações e as telas de Consumo, Integrações, Configurações, Plugins, MCPs, Skills, Terminais e Web. Em cada um: tamanho, alinhamento, espaçamento, estados (foco, passar o mouse, desabilitado, erro), e uma aparência única para os campos (altura, raio, cor, foco).
+- **Responsividade:** conferir em larguras estreitas (janela pequena, painel lateral recolhido ou aberto) e com texto longo; nada cortado, sobreposto nem com rolagem horizontal.
+- **Desempenho (medir antes e depois, anotar os números):** tempo até a primeira tela, memória e CPU do app parado e com várias abas, custo dos temporizadores (varredura de recursos a cada 4 s, leitura dos hooks a cada 300 ms etc.), redesenho de telas inteiras por `innerHTML`, WebGL do terminal só na aba visível, tempo de trocar de aba, de projeto e de tela, e abrir a tela de Configurações/Skills com muitos itens.
+- **Critérios de aceite (a refinar ao começar):** (1) lista de achados em `docs/DESIGN.md` (padrão dos controles) e na tarefa; (2) nenhum controle com aparência nativa antiga (setinhas de número, select cru, barras de rolagem padrão) nem fora da paleta; (3) alinhamento consistente nas linhas de Configurações e nas janelas; (4) sem corte nem rolagem horizontal em largura estreita; (5) números de desempenho antes e depois, sem regressão e com os ganhos registrados; (6) capturas de cada tela e janela como evidência (feitas pelo Claude).
+- **Base existente:** `src/renderer/styles.css`, `docs/DESIGN.md`, as capturas do usuário e o roteiro de teste CDP já usado nas tarefas anteriores.
+- **Próximo passo:** (ao começar) inventariar os controles de cada tela com um roteiro automático (capturas em 3 larguras), listar os achados por gravidade, propor o padrão visual dos campos e corrigir em lotes, medindo o desempenho no início e no fim.
+
 ## Backlog
+
+### TASK-032 — Teste geral de plugins, MCPs e skills (feito pelo Claude)
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Alta, mas **por último**: depois de TASK-031, TASK-029 e TASK-030, e **antes do teste do instalador** (TASK-020 e a promoção para a `main`) — decisão do usuário, 2026-10-31
+- **Objetivo:** o usuário não vai testar a TASK-013 à mão; o Claude faz o teste geral e completo das telas Plugins, MCPs e Skills e da opção Configurações > Conectores, e só então a TASK-013 pode ser marcada como validada.
+- **O que testar (além dos 33 testes ponta a ponta já feitos):** instalar, atualizar e remover um plugin de verdade (num projeto/escopo de teste, sem tocar nos plugins do usuário); login e logout de um conector; ligar/desligar em todos os escopos; "limpo" em projeto novo contra uma sessão real do Claude Code (comparar ferramentas e skills); fluxo do aviso de reinício com um terminal aberto; mudanças feitas pelo terminal aparecendo no app; casos de erro (CLI ausente, `.claude.json` ilegível, nome inválido, sem rede); desempenho das leituras com muitos itens; depois das mudanças visuais da TASK-031, repetir os testes de tela.
+- **Critérios de aceite:** relatório na tarefa com cada caso e o resultado (passou/falhou/limitação), defeitos corrigidos ou registrados, `.claude.json` e `settings.json` do usuário conferidos intactos no fim, e TASK-013 marcada como VALIDADA EM DEV1.
+- **Próximo passo:** (ao chegar a vez) montar o roteiro a partir dos 33 testes existentes e dos casos acima.
 
 ### TASK-030 — Abas encaixadas na janela do terminal, como no Terminal do Windows (MVP)
 
