@@ -441,6 +441,7 @@ _Nenhuma no momento._
 - **Status:** BACKLOG
 - **Prioridade:** Média (pré-requisito da promoção para a `main`, junto da TASK-010)
 - **Objetivo:** garantir que o instalador funcione em um computador sem nada do ambiente de desenvolvimento. Ativar o Windows Sandbox (como administrador: `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All`, exige reiniciar) e testar: instalação pelo instalador com janelas, abertura do app, aviso na aba quando não há Claude Code, atalhos e desinstalação (que mantém os dados).
+- **Preparo conferido (2026-10-31):** o PC atende (Windows 11 Pro, virtualização ligada, 32 GB de RAM, 16 núcleos, 7,6 GB livres), mas o recurso continua desativado (não existe o WindowsSandbox.exe). **Falta um único reinício, e só depois de ativar** o recurso: PowerShell como administrador, `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All -NoRestart`, e então reiniciar o PC. Reiniciar antes de ativar não adianta.
 - **Notas:** o Windows Sandbox não estava ativado em 2026-10-30 (virtualização presente). Fora do Sandbox já foi testado instalando em pasta temporária com PATH sem Node (TASK-010). Windows 10 não foi testado.
 
 ## Concluídas
