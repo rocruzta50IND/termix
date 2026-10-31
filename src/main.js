@@ -380,10 +380,11 @@ ipcMain.handle('env:check', () => new Promise((resolve) => {
   });
 }));
 
-const resources = require('./resources')({ findClaude, readJson, cleanEnv });
+const resources = require('./resources')({ findClaude, readJson, cleanEnv, trash: (p) => shell.trashItem(p), reveal: (p) => shell.showItemInFolder(p) });
 ipcMain.handle('scan:resources', (_e, projectPath) => resources.scanFiles(projectPath));
 ipcMain.handle('scan:plugins', (_e, projectPath) => resources.scanPlugins(projectPath));
 ipcMain.handle('scan:mcpstatus', (_e, projectPath) => resources.scanMcpStatus(projectPath));
+ipcMain.handle('res:do', (_e, a) => resources.run(a && a.op, a && a.args));
 
 /* ---------- métricas vindas da status line ---------- */
 const seen = new Map(); // arquivo -> mtime

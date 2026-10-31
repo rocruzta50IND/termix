@@ -56,4 +56,5 @@ contextBridge.exposeInMainWorld('termix', {
   scan: (projectPath) => ipcRenderer.invoke('scan:resources', projectPath),
   scanPlugins: (projectPath) => ipcRenderer.invoke('scan:plugins', projectPath),
   scanMcpStatus: (projectPath) => ipcRenderer.invoke('scan:mcpstatus', projectPath),
+  resDo: (op, args) => ipcRenderer.invoke('res:do', { op, args }),
 });

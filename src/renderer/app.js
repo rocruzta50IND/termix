@@ -395,6 +395,7 @@ async function clearPrompts(p) {
     resume: c.resumePrompt || (fl ? flowResume(info) : GENERIC_RESUME) };
 }
 const clearCfg = () => S.settings.clear || CLEAR_DEF;
+const connCfg = () => S.settings.connectors || { v: 1, newProject: 'auto' };
 const typeTo = (tab, text) => { api.write(tab.id, text); setTimeout(() => api.write(tab.id, '\r'), 150); };
 // tokens no contexto agora (soma do uso atual; o used_percentage vem em inteiro e a 1M de janela cada 1 % são 10 mil tokens)
 const ctxTok = (m) => { const u = m && m.context_window && m.context_window.current_usage; return u ? (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0) : null; };
@@ -727,12 +728,12 @@ function emptyHTML() {
 }
 const ptitle = (t) => `<div class="ptitle"><span>${UI.cur.p === '_' ? 'Geral' : esc(curProject().name)} ›</span> ${t}</div>`;
 
-/* ---------- plugins, skills e MCPs (TASK-013, etapa 1: ver tudo) ---------- */
+/* ---------- plugins, skills e MCPs (TASK-013: ver tudo e controlar) ---------- */
 const RES_PAGES = ['Plugins', 'Skills', 'MCPs'];
 const RES_SCOPES = { Plugins: ['Usuário', 'Projeto', 'Local', 'Sincronizado'], Skills: ['Usuário', 'Projeto', 'Plugin'], MCPs: ['Conta', 'Usuário', 'Projeto', 'Local', 'Plugin'] };
-const RES_STATES = { Plugins: [['on', 'Ligados'], ['off', 'Desligados']], Skills: [], MCPs: [['ok', 'Conectados'], ['issue', 'Com problema']] };
+const RES_STATES = { Plugins: [['on', 'Ligados'], ['off', 'Desligados']], Skills: [], MCPs: [['ok', 'Conectados'], ['issue', 'Com problema'], ['off', 'Desligados']] };
 const PL_SCOPE = { user: 'Usuário', project: 'Projeto', local: 'Local', synced: 'Sincronizado' };
-const RESC = {}; // por projeto: plugins e estado dos MCPs lidos pela CLI (aparecem na hora e atualizam por trás)
+const RESC = {}; // por projeto: plugins e estado dos MCPs lidos pela CLI (aparecem na hora e atualizam por trás) e aviso de reinício
 const safeTarget = (t) => (!t ? '' : /^https?:/i.test(t) ? t.replace(/[?#].*$/, '') : t.split(/\s+/)[0]); // sem argumentos (podem ter chaves)
 const fmtTokPt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.', ',')} mil` : String(n)); // preciso, para somar custos
 const resNoun = (kind, n) => (kind === 'MCPs' ? (n === 1 ? 'MCP' : 'MCPs') : n === 1 ? kind.slice(0, -1).toLowerCase() : kind.toLowerCase());
@@ -740,49 +741,57 @@ const plShort = (id) => String(id || '').split('@')[0];
 
 function resEnsure(kind) {
   const p = curProject();
-  if (!UI.res || UI.res.pid !== p.id) UI.res = { pid: p.id, files: null, filesJson: '', q: '', scope: '', st: '' };
+  if (!UI.res || UI.res.pid !== p.id) UI.res = { pid: p.id, files: null, filesJson: '', q: '', scope: '', st: '', busy: '', msg: null, byKey: {} };
   const r = UI.res;
   if (!r.files && !r.loadingFiles) { r.loadingFiles = true; api.scan(p.path).then((d) => { r.loadingFiles = false; r.files = d; r.filesJson = JSON.stringify(d); repaintRes(); }); }
   if (kind === 'Plugins') resLoadPlugins(p, false);
   if (kind === 'MCPs') resLoadMcp(p, false);
 }
+// leituras pela CLI: devolvem a promessa (a ação espera a lista nova); uma leitura em andamento não é duplicada
 function resLoadPlugins(p, force) {
   const c = RESC[p.id] || (RESC[p.id] = {});
-  if (c.plLoading || (c.pl && !force)) return;
-  c.plLoading = true;
-  api.scanPlugins(p.path).then((d) => { c.pl = d; c.plAt = Date.now(); c.plLoading = false; repaintRes(); });
+  const go = () => { c.plLoading = true; c.plP = api.scanPlugins(p.path).then((d) => { c.pl = d; c.plAt = Date.now(); }).finally(() => { c.plLoading = false; c.plP = null; repaintRes(); }); return c.plP; };
+  if (c.plP) return force ? c.plP.then(go) : c.plP;
+  return c.pl && !force ? Promise.resolve() : go();
 }
 function resLoadMcp(p, force) {
   const c = RESC[p.id] || (RESC[p.id] = {});
-  if (c.mcpLoading || (c.mcp && !force)) return;
-  c.mcpLoading = true;
-  api.scanMcpStatus(p.path).then((d) => { c.mcp = d; c.mcpAt = Date.now(); c.mcpLoading = false; repaintRes(); });
+  const go = () => { c.mcpLoading = true; c.mcpP = api.scanMcpStatus(p.path).then((d) => { c.mcp = d; c.mcpAt = Date.now(); }).finally(() => { c.mcpLoading = false; c.mcpP = null; repaintRes(); }); return c.mcpP; };
+  if (c.mcpP) return force ? c.mcpP.then(go) : c.mcpP;
+  return c.mcp && !force ? Promise.resolve() : go();
 }
 
-// itens de cada tela, já no formato comum { search, scope, st, html }
+// itens de cada tela, já no formato comum { key, raw, search, scope, st, html }
 function resItems(kind) {
   const r = UI.res, c = RESC[r.pid] || {};
   const tag = (txt, k = '') => `<span class="tag ${k}">${esc(txt)}</span>`;
-  const files = r.files || { skills: [], mcps: [] };
+  const btn = (act, key, label, cls = '') => `<button class="btn sm ${cls}" data-ract="${act}" data-rk="${esc(key)}">${label}</button>`;
+  const files = r.files || { skills: [], mcps: [], disabledMcps: [] };
   if (kind === 'Plugins') {
     if (!c.pl) return null;
     return c.pl.plugins.map((x) => {
+      const key = 'pl:' + x.id;
       const inv = [x.skills.length && `${x.skills.length} skill${x.skills.length > 1 ? 's' : ''}`, x.agents && `${x.agents} agente${x.agents > 1 ? 's' : ''}`, x.hooks.length && `${x.hooks.length} hook${x.hooks.length > 1 ? 's' : ''}`, x.mcps.length && `${x.mcps.length} MCP${x.mcps.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ') || 'sem componentes';
-      return { search: `${x.name} ${x.marketplace} ${x.desc} ${x.skills.join(' ')}`, scope: PL_SCOPE[x.scope] || x.scope, st: x.enabled ? 'on' : 'off',
+      return { key, raw: x, search: `${x.name} ${x.marketplace} ${x.desc} ${x.skills.join(' ')}`, scope: PL_SCOPE[x.scope] || x.scope, st: x.enabled ? 'on' : 'off',
         html: `<div class="card${x.enabled ? '' : ' dim'}"><h5>${esc(x.name)}</h5><p class="rmeta">${esc(x.marketplace)} · v${esc(String(x.version).slice(0, 12))}</p>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : ''}<p class="rmeta">${esc(inv)}</p>${x.skills.length ? `<p class="rmeta" title="${esc(x.skills.join(', '))}">Skills: ${esc(x.skills.slice(0, 6).join(', '))}${x.skills.length > 6 ? '…' : ''}</p>` : ''}
-          <div class="tags">${tag('Escopo: ' + (PL_SCOPE[x.scope] || x.scope))}${tag(x.enabled ? 'Ligado' : 'Desligado', x.enabled ? 'ok' : 'warn')}${typeof x.alwaysOn === 'number' ? `<span class="tag" title="Custo estimado, em todo início de sessão, enquanto o plugin estiver ligado">~${fmtTokPt(x.alwaysOn)} tokens/sessão</span>` : ''}${x.notes.length ? `<span class="tag warn" title="${esc(x.notes.join(' '))}">Aviso</span>` : ''}</div></div>` };
+          <div class="tags">${tag('Escopo: ' + (PL_SCOPE[x.scope] || x.scope))}${tag(x.enabled ? 'Ligado' : 'Desligado', x.enabled ? 'ok' : 'warn')}${typeof x.alwaysOn === 'number' ? `<span class="tag" title="Custo estimado, em todo início de sessão, enquanto o plugin estiver ligado">~${fmtTokPt(x.alwaysOn)} tokens/sessão</span>` : ''}${x.notes.length ? `<span class="tag warn" title="${esc(x.notes.join(' '))}">Aviso</span>` : ''}</div>
+          <div class="acts">${btn('pl-toggle', key, x.enabled ? 'Desligar aqui' : 'Ligar aqui', x.enabled ? '' : 'pri')}${btn('pl-manage', key, 'Gerenciar…')}</div></div>` };
     });
   }
   if (kind === 'Skills') {
     return files.skills.map((x) => {
+      const key = `sk:${x.scope}:${x.kind}:${x.name}:${x.origin}`;
       const nm = x.scope === 'Plugin' ? `${plShort(x.origin)}:${x.name}` : x.name;
-      return { search: `${x.name} ${x.desc} ${x.origin}`, scope: x.scope, st: '',
+      const own = x.scope === 'Usuário' || x.scope === 'Projeto';
+      return { key, raw: x, search: `${x.name} ${x.desc} ${x.origin}`, scope: x.scope, st: '',
         html: `<div class="card${x.off ? ' dim' : ''}"><h5>/${esc(nm)}</h5>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : '<p class="rmeta">Sem descrição.</p>'}
-          <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' ? ' · ' + plShort(x.origin) : ''))}${tag(x.kind === 'skill' ? 'Skill' : 'Comando')}${x.off ? tag('Plugin desligado', 'warn') : ''}</div></div>` };
+          <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' ? ' · ' + plShort(x.origin) : ''))}${tag(x.kind === 'skill' ? 'Skill' : 'Comando')}${x.off ? tag('Plugin desligado', 'warn') : ''}</div>
+          <div class="acts">${own ? btn('sk-edit', key, 'Editar') + btn('sk-del', key, 'Excluir', 'bad') : '<span class="rmeta">Faz parte do plugin; para desligar, desligue o plugin.</span>'}</div></div>` };
     });
   }
-  // MCPs: o estado real (CLI) manda; os arquivos dão o escopo e a origem
+  // MCPs: o estado real (CLI) manda; os arquivos dão o escopo e a origem e dizem o que está desligado neste projeto
   const live = c.mcp && c.mcp.items;
+  const offSet = new Set(files.disabledMcps || []);
   const findCfg = (n) => files.mcps.find((f) => f.name === n || (f.scope === 'Plugin' && n.endsWith(':' + f.name) && n.includes(plShort(f.origin))));
   const rows = [];
   for (const it of live || []) {
@@ -794,9 +803,16 @@ function resItems(kind) {
     if (live && rows.some((x) => findCfg(x.name) === f)) continue;
     rows.push({ name: f.name, scope: f.scope, origin: f.origin, type: f.type, target: f.target, kind: '', label: live ? 'Sem leitura de estado' : 'Verificando…', detail: '' });
   }
-  return rows.map((x) => ({ search: `${x.name} ${x.origin} ${x.target}`, scope: x.scope, st: x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '',
-    html: `<div class="card${x.kind === 'ok' || !x.kind ? '' : ' dim'}"><h5>${esc(x.name)}</h5>${x.target ? `<p class="rmeta">${esc(safeTarget(x.target))}</p>` : ''}${x.detail ? `<p class="rmeta" title="${esc(x.detail)}">${esc(x.detail.slice(0, 90))}</p>` : ''}
-      <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' && x.origin ? ' · ' + plShort(x.origin) : ''))}${tag(x.label, x.kind)}${x.type ? tag(x.type) : ''}</div></div>` }));
+  return rows.map((x) => {
+    const off = offSet.has(x.name) || x.kind === 'off';
+    if (off) { x.kind = 'off'; x.label = 'Desligado neste projeto'; x.detail = ''; }
+    const key = 'mcp:' + x.name;
+    const ctl = x.scope !== 'Plugin';
+    return { key, raw: x, search: `${x.name} ${x.origin} ${x.target}`, scope: x.scope, st: off ? 'off' : x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '',
+      html: `<div class="card${x.kind === 'ok' || !x.kind ? '' : ' dim'}"><h5>${esc(x.name)}</h5>${x.target ? `<p class="rmeta">${esc(safeTarget(x.target))}</p>` : ''}${x.detail ? `<p class="rmeta" title="${esc(x.detail)}">${esc(x.detail.slice(0, 90))}</p>` : ''}
+        <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' && x.origin ? ' · ' + plShort(x.origin) : ''))}${tag(x.label, x.kind === 'off' ? '' : x.kind)}${x.type ? tag(x.type) : ''}</div>
+        <div class="acts">${ctl ? btn('mcp-toggle', key, off ? 'Ligar aqui' : 'Desligar aqui', off ? 'pri' : '') : '<span class="rmeta">Vem do plugin; o plugin controla.</span>'}${btn('mcp-manage', key, 'Gerenciar…')}</div></div>` };
+  });
 }
 
 function resListHTML(kind) {
@@ -804,6 +820,7 @@ function resListHTML(kind) {
   if (!r.files && kind !== 'Plugins') return '<div class="empty" style="height:auto">Lendo configurações…</div>';
   const items = resItems(kind);
   if (!items) return `<div class="empty" style="height:auto">${c.pl && c.pl.error ? esc(c.pl.error) : 'Lendo plugins pelo Claude Code…'}</div>`;
+  r.byKey = Object.fromEntries(items.map((x) => [x.key, x.raw]));
   const q = r.q.trim().toLowerCase();
   const list = items.filter((x) => (!r.scope || x.scope === r.scope) && (!r.st || x.st === r.st) && (!q || x.search.toLowerCase().includes(q)));
   const one = kind.slice(0, -1).toLowerCase();
@@ -812,6 +829,7 @@ function resListHTML(kind) {
 }
 function resMetaText(kind) {
   const r = UI.res, c = RESC[r.pid] || {};
+  if (r.busy) return r.busy;
   const items = (r.files || kind === 'Plugins') ? resItems(kind) : null;
   const n = items ? items.length : 0;
   const on = kind === 'Plugins' && c.pl ? c.pl.plugins.filter((x) => x.enabled && typeof x.alwaysOn === 'number') : [];
@@ -824,22 +842,209 @@ function resMetaText(kind) {
   const err = (kind === 'MCPs' && c.mcp && c.mcp.error) ? ` · ${c.mcp.error}` : '';
   return `${items ? `${n} ${resNoun(kind, n)}${kind === 'Plugins' ? sum : ''}${st ? ' · ' : ''}` : ''}${st}${err}`;
 }
+const resMsgHTML = () => (UI.res && UI.res.msg ? `<div class="resmsg ${UI.res.msg.ok ? 'ok' : 'bad'}">${esc(UI.res.msg.text)}</div>` : '');
+const resBannerHTML = () => {
+  const c = (UI.res && RESC[UI.res.pid]) || {};
+  const p = curProject();
+  const t = p && curTab(p);
+  return c.restart ? `<div class="note restartnote"><span>Mudança aplicada. Os terminais já abertos deste projeto só passam a ver depois de reiniciar.</span><span class="acts" style="margin:0">${t && t.live ? '<button class="btn sm pri" data-ract="restart-tab">Reiniciar a aba ativa</button>' : ''}<button class="btn sm" data-ract="restart-dismiss">Dispensar</button></span></div>` : '';
+};
 function repaintRes() {
   const kind = UI.cur.page;
   if (!UI.res || !RES_PAGES.includes(kind) || UI.cur.p !== UI.res.pid || mode() !== 'page') return;
-  const l = $('#reslist'), m = $('#resmeta');
+  const l = $('#reslist'), m = $('#resmeta'), g = $('#resmsg'), b = $('#resbanner');
   if (l) l.innerHTML = resListHTML(kind);
   if (m) m.textContent = resMetaText(kind);
+  if (g) g.innerHTML = resMsgHTML();
+  if (b) b.innerHTML = resBannerHTML();
 }
 
 function resPageHTML(kind) {
   resEnsure(kind);
   const r = UI.res;
   const seg = (attr, cur, opts) => `<div class="seg sm">${[['', 'Todos']].concat(opts).map(([v, l]) => `<button ${attr}="${esc(v)}" class="${cur === v ? 'sel' : ''}">${esc(l)}</button>`).join('')}</div>`;
-  return `<div class="page">${ptitle(kind)}<div class="note">Mostra o mesmo que o Claude Code enxerga neste projeto (${kind === 'MCPs' ? 'inclusive os conectores da sua conta' : kind === 'Plugins' ? 'com o custo estimado em tokens' : 'de usuário, de projeto e de plugins'}). Mudanças feitas pelo terminal aparecem aqui sozinhas. Por enquanto só leitura; o controle pela tela vem nas próximas etapas.</div>
+  const A = (act, label, cls = '') => `<button class="btn sm ${cls}" data-ract="${act}">${label}</button>`;
+  const actions = kind === 'Plugins' ? A('pl-install', '+ Instalar plugin…', 'pri') + A('pl-all-off', 'Desligar todos aqui') + A('pl-all-on', 'Ligar todos aqui')
+    : kind === 'MCPs' ? A('mcp-add', '+ Adicionar MCP…', 'pri') + A('mcp-all-off', 'Desligar todos aqui') + A('mcp-all-on', 'Ligar todos aqui')
+      : A('sk-new', '+ Nova skill ou comando…', 'pri');
+  const hint = kind === 'MCPs' ? 'inclusive os conectores da sua conta' : kind === 'Plugins' ? 'com o custo estimado em tokens' : 'de usuário, de projeto e de plugins';
+  return `<div class="page">${ptitle(kind)}<div class="note">Mostra o mesmo que o Claude Code enxerga neste projeto (${hint}). "Aqui" vale só para este projeto. Tudo o que você muda pela tela pode ser mudado também pelo terminal (e vice-versa), e o app acompanha.</div>
+    <div id="resbanner">${resBannerHTML()}</div>
     <div class="restools"><input id="resq" class="resq" type="text" placeholder="Buscar em ${resNoun(kind, 2)}…" value="${esc(r.q)}">${seg('data-resscope', r.scope, RES_SCOPES[kind].map((s) => [s, s]))}${RES_STATES[kind].length ? seg('data-resst', r.st, RES_STATES[kind]) : ''}<button class="btn sm" data-resrefresh>Atualizar</button></div>
+    <div class="restools">${actions}</div>
+    <div id="resmsg">${resMsgHTML()}</div>
     <div class="rmeta" id="resmeta" style="margin:2px 0 4px">${esc(resMetaText(kind))}</div>
     <div id="reslist">${resListHTML(kind)}</div></div>`;
+}
+
+/* ---- ações ---- */
+// roda uma ação: mostra o andamento, o resultado e recarrega as listas; restart = a mudança só vale depois de reiniciar o terminal
+async function resRun(label, fn, restart) {
+  const p = curProject();
+  const r = UI.res;
+  if (!p || !r || r.busy) return null;
+  r.busy = label; r.msg = null; repaintRes();
+  let out;
+  try { out = await fn(); } catch (e) { out = { ok: false, message: String((e && e.message) || e) }; }
+  // espera as listas novas antes de liberar a tela, para os cartões já mostrarem o estado novo (o estado dos MCPs vem por trás)
+  const onPlugins = UI.cur.page === 'Plugins';
+  r.busy = 'Atualizando a lista…'; repaintRes();
+  const [d] = await Promise.all([api.scan(p.path), onPlugins ? resLoadPlugins(p, true) : null]);
+  if (UI.res === r) { r.files = d; r.filesJson = JSON.stringify(d); }
+  resLoadMcp(p, true);
+  if (!onPlugins) resLoadPlugins(p, true);
+  r.busy = ''; r.msg = { ok: !!out.ok, text: out.message || (out.ok ? 'Feito.' : 'Não deu certo.') };
+  const c = RESC[p.id] || (RESC[p.id] = {});
+  if (out.ok && restart) c.restart = true;
+  repaintRes();
+  return out;
+}
+const PLMSG = (x) => `Remover o plugin "${x.name}"? Ele deixa de existir ${x.scope === 'user' ? 'para todos os seus projetos' : 'no escopo ' + (PL_SCOPE[x.scope] || x.scope)}. Dá para instalar de novo depois.`;
+
+async function resAct(act, key) {
+  const p = curProject(), r = UI.res;
+  if (!p || !r) return;
+  const x = key ? r.byKey[key] : null;
+  const run = (op, args) => api.resDo(op, { projectPath: p.path, ...args });
+  if (act === 'restart-dismiss') { (RESC[p.id] || {}).restart = false; repaintRes(); return; }
+  if (act === 'restart-tab') { const t = curTab(p); (RESC[p.id] || {}).restart = false; repaintRes(); if (t) restartTab(p, t); return; }
+
+  if (act === 'pl-toggle' && x) return resRun(`${x.enabled ? 'Desligando' : 'Ligando'} ${x.name} neste projeto…`, () => run('pluginAction', { action: x.enabled ? 'disable' : 'enable', id: x.id, scope: 'local' }), true);
+  if (act === 'pl-all-off' || act === 'pl-all-on') {
+    const on = act === 'pl-all-on';
+    const ok = await modal({ title: on ? 'Ligar todos os plugins aqui?' : 'Desligar todos os plugins aqui?', body: `<p>${on ? 'Todos os plugins instalados passam a valer' : 'Nenhum plugin vai valer'} <b>só neste projeto</b> (guardado em .claude/settings.local.json, que não vai para o git). Os outros projetos não mudam.</p>`, buttons: [['Cancelar', null], [on ? 'Ligar todos' : 'Desligar todos', 'ok', 'pri']] });
+    if (ok.value !== 'ok') return;
+    return resRun(`${on ? 'Ligando' : 'Desligando'} os plugins neste projeto… (alguns segundos)`, () => run('pluginsBulk', { enable: on }), true);
+  }
+  if (act === 'pl-manage' && x) {
+    const canAll = x.scope !== 'synced';
+    const allLabel = `${x.enabled ? 'Desligar' : 'Ligar'} em ${x.scope === 'user' ? 'todos os projetos' : 'escopo ' + (PL_SCOPE[x.scope] || x.scope)}`;
+    const m = await modal({ title: `Gerenciar ${esc(x.name)}`, body: `<p>${esc(x.desc || 'Plugin do Claude Code.')}</p><p class="meta">${esc(x.id)} · v${esc(String(x.version).slice(0, 12))} · instalado no escopo ${esc(PL_SCOPE[x.scope] || x.scope)} · ${x.enabled ? 'ligado' : 'desligado'} neste projeto</p><p class="meta">Atualizar e remover valem para todos os projetos que usam este plugin.</p>`,
+      buttons: [['Fechar', null], ['Remover…', 'uninstall', 'bad'], ['Atualizar', 'update'], ...(canAll ? [[allLabel, 'all']] : [])] });
+    if (m.value === 'update') return resRun(`Atualizando ${x.name}…`, () => run('pluginAction', { action: 'update', id: x.id }), true);
+    if (m.value === 'all') return resRun(`${x.enabled ? 'Desligando' : 'Ligando'} ${x.name}…`, () => run('pluginAction', { action: x.enabled ? 'disable' : 'enable', id: x.id, scope: x.scope }), true);
+    if (m.value === 'uninstall') {
+      const c = await modal({ title: 'Remover plugin?', body: `<p>${esc(PLMSG(x))}</p>`, buttons: [['Cancelar', null], ['Remover', 'ok', 'bad']] });
+      if (c.value === 'ok') return resRun(`Removendo ${x.name}…`, () => run('pluginAction', { action: 'uninstall', id: x.id, scope: x.scope }), true);
+    }
+    return;
+  }
+  if (act === 'pl-install') return plInstallFlow();
+
+  if (act === 'mcp-toggle' && x) {
+    const off = x.kind === 'off';
+    return resRun(`${off ? 'Ligando' : 'Desligando'} ${x.name} neste projeto…`, () => run('mcpDisabled', { items: [{ name: x.name, scope: x.scope }], disabled: !off }), true);
+  }
+  if (act === 'mcp-all-off' || act === 'mcp-all-on') {
+    const on = act === 'mcp-all-on';
+    const ok = await modal({ title: on ? 'Ligar todos os MCPs e conectores aqui?' : 'Desligar todos os MCPs e conectores aqui?', body: `<p>${on ? 'Todos voltam a valer' : 'Nenhum MCP nem conector da conta vai valer'} <b>só neste projeto</b>. Os outros projetos não mudam. É o mesmo que desligar um a um no /mcp do terminal.</p>`, buttons: [['Cancelar', null], [on ? 'Ligar todos' : 'Desligar todos', 'ok', 'pri']] });
+    if (ok.value !== 'ok') return;
+    return resRun(`${on ? 'Ligando' : 'Desligando'} os MCPs neste projeto… (alguns segundos)`, () => run('mcpBulk', { disabled: !on }), true);
+  }
+  if (act === 'mcp-manage' && x) return mcpManageFlow(x);
+  if (act === 'mcp-add') return mcpAddFlow({});
+
+  if (act === 'sk-new') return skNewFlow();
+  if (act === 'sk-edit' && x) return skEditFlow(x);
+  if (act === 'sk-del' && x) {
+    const c = await modal({ title: `Excluir ${x.kind === 'skill' ? 'a skill' : 'o comando'} /${esc(x.name)}?`, body: `<p>${x.scope === 'Usuário' ? 'Vale para todos os seus projetos.' : 'Vale só neste projeto.'} O arquivo vai para a <b>lixeira</b> do Windows, então dá para recuperar.</p>`, buttons: [['Cancelar', null], ['Excluir', 'ok', 'bad']] });
+    if (c.value === 'ok') return resRun(`Excluindo /${x.name}…`, () => run('skillOp', { op: 'delete', scope: x.scope, kind: x.kind, name: x.name }), false);
+  }
+}
+
+const selHTML = (f, opts, cur) => `<select class="inp" data-f="${f}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+
+async function plInstallFlow() {
+  const p = curProject();
+  let avail = null;
+  const m = await modal({ title: 'Instalar plugin', body: `<p>Plugins dos marketplaces que o seu Claude Code já conhece. Digite para buscar ou escreva <b>nome@marketplace</b>.</p>
+    <div class="f"><label>Plugin</label><input class="inp" type="text" data-f="id" id="plq" placeholder="ex.: frontend-design@claude-plugins-official" autocomplete="off"></div><div id="plres" class="plres meta">Carregando a lista dos marketplaces…</div>
+    <div class="f"><label>Instalar para</label>${selHTML('scope', [['user', 'Todos os meus projetos (usuário)'], ['local', 'Só neste projeto, só para mim (local)'], ['project', 'Este projeto, compartilhado com o time (.claude/settings.json)']], 'user')}</div>`,
+    buttons: [['Cancelar', null], ['Instalar', 'ok', 'pri']],
+    onOpen: (root) => {
+      const input = root.querySelector('#plq'), box = root.querySelector('#plres');
+      const draw = () => {
+        if (!avail) return;
+        const q = input.value.trim().toLowerCase();
+        const rank = (a) => (a.name.toLowerCase() === q ? 0 : a.name.toLowerCase().startsWith(q) ? 1 : a.name.toLowerCase().includes(q) ? 2 : 3); // nome primeiro, descrição por último
+        const list = (q ? avail.filter((a) => `${a.id} ${a.desc}`.toLowerCase().includes(q)).sort((a, b) => rank(a) - rank(b)) : avail).slice(0, 7);
+        box.innerHTML = list.length ? list.map((a) => `<button class="cl-row" type="button" data-plpick="${esc(a.id)}"><span class="cl-txt"><b>${esc(a.name)}</b><small>${esc(a.marketplace)}${a.desc ? ' · ' + esc(a.desc.slice(0, 90)) : ''}</small></span></button>`).join('') : 'Nada encontrado. Se souber o nome exato, escreva nome@marketplace.';
+        box.querySelectorAll('[data-plpick]').forEach((b) => { b.onclick = () => { input.value = b.dataset.plpick; draw(); }; });
+      };
+      input.addEventListener('input', draw);
+      api.resDo('pluginsAvailable', { projectPath: p.path }).then((d) => { avail = d.items || []; if (!avail.length) box.textContent = d.error || 'Nenhum marketplace com plugins encontrado; escreva nome@marketplace.'; else draw(); });
+    } });
+  if (m.value !== 'ok') return;
+  const id = (m.form.id || '').trim();
+  if (!id) return;
+  return resRun(`Instalando ${id}… (pode levar um minuto)`, () => api.resDo('pluginInstall', { id, scope: m.form.scope, projectPath: p.path }), true);
+}
+
+async function mcpManageFlow(x) {
+  const p = curProject();
+  const run = (op, args) => api.resDo(op, { projectPath: p.path, ...args });
+  const can = ['Usuário', 'Local', 'Projeto'].includes(x.scope);
+  const http = x.type === 'http' || x.type === 'sse' || x.scope === 'Conta' || /^https?:/i.test(x.target || '');
+  const note = x.scope === 'Conta' ? '<p class="meta">Este conector pertence à sua conta do claude.ai. Aqui você pode entrar, sair e ligar ou desligar neste projeto; para removê-lo de vez, use claude.ai › Configurações › Conectores.</p>'
+    : x.scope === 'Plugin' ? `<p class="meta">Este MCP vem do plugin ${esc(plShort(x.origin))}; quem o liga ou desliga é o plugin.</p>` : '';
+  const m = await modal({ title: `Gerenciar ${esc(x.name)}`, body: `<p class="meta">Escopo ${esc(x.scope)} · ${esc(x.label)}${x.target ? ' · ' + esc(safeTarget(x.target)) : ''}</p>${x.detail ? `<p class="meta">${esc(x.detail.slice(0, 200))}</p>` : ''}${note}`,
+    buttons: [['Fechar', null], ...(can ? [['Remover…', 'remove', 'bad']] : []), ...(http && x.scope !== 'Plugin' ? [['Sair (logout)', 'logout'], ['Entrar (login)', 'login', 'pri']] : [])] });
+  if (m.value === 'login') return resRun(`Aguardando o login de ${x.name} no navegador…`, () => run('mcpAuth', { action: 'login', name: x.name }), true);
+  if (m.value === 'logout') return resRun(`Saindo de ${x.name}…`, () => run('mcpAuth', { action: 'logout', name: x.name }), true);
+  if (m.value === 'remove') {
+    const c = await modal({ title: 'Remover MCP?', body: `<p>Remover <b>${esc(x.name)}</b> do escopo ${esc(x.scope)}? ${x.scope === 'Usuário' ? 'Deixa de existir para todos os seus projetos.' : x.scope === 'Projeto' ? 'Sai do .mcp.json deste projeto (afeta o time).' : 'Deixa de existir só neste projeto.'}</p>`, buttons: [['Cancelar', null], ['Remover', 'ok', 'bad']] });
+    if (c.value === 'ok') return resRun(`Removendo ${x.name}…`, () => run('mcpRemove', { name: x.name, scope: x.scope }), true);
+  }
+}
+
+async function mcpAddFlow(prev) {
+  const p = curProject();
+  const v = { name: '', type: 'http', url: '', command: '', args: '', env: '', headers: '', scope: 'local', ...prev };
+  const m = await modal({ title: 'Adicionar MCP', body: `${v.error ? `<div class="resmsg bad">${esc(v.error)}</div>` : ''}
+    <div class="f"><label>Nome</label><input class="inp" type="text" data-f="name" value="${esc(v.name)}" placeholder="ex.: github"></div>
+    <div class="f"><label>Tipo</label>${selHTML('type', [['http', 'Servidor na web (HTTP)'], ['sse', 'Servidor na web (SSE)'], ['stdio', 'Programa local (comando)']], v.type)}</div>
+    <div data-mcpf="web"><div class="f"><label>Endereço</label><input class="inp" type="text" data-f="url" value="${esc(v.url)}" placeholder="https://servidor.exemplo.com/mcp"></div>
+      <div class="f"><label>Cabeçalhos (um por linha, <i>Nome: valor</i>)</label><textarea class="inp ta" rows="2" data-f="headers" placeholder="Authorization: Bearer ...">${esc(v.headers)}</textarea></div></div>
+    <div data-mcpf="cmd"><div class="f"><label>Comando</label><input class="inp" type="text" data-f="command" value="${esc(v.command)}" placeholder="npx"></div>
+      <div class="f"><label>Argumentos (um por linha)</label><textarea class="inp ta" rows="3" data-f="args" placeholder="-y&#10;@modelcontextprotocol/server-github">${esc(v.args)}</textarea></div>
+      <div class="f"><label>Variáveis de ambiente (uma por linha, <i>CHAVE=valor</i>)</label><textarea class="inp ta" rows="2" data-f="env" placeholder="GITHUB_TOKEN=...">${esc(v.env)}</textarea></div></div>
+    <div class="f"><label>Valer para</label>${selHTML('scope', [['local', 'Só neste projeto, só para mim (local)'], ['user', 'Todos os meus projetos (usuário)'], ['project', 'Este projeto, compartilhado com o time (.mcp.json)']], v.scope)}</div>`,
+    buttons: [['Cancelar', null], ['Adicionar', 'ok', 'pri']],
+    onOpen: (root) => {
+      const sel = root.querySelector('[data-f=type]');
+      const sync = () => { const web = sel.value !== 'stdio'; root.querySelector('[data-mcpf=web]').style.display = web ? '' : 'none'; root.querySelector('[data-mcpf=cmd]').style.display = web ? 'none' : ''; };
+      sel.addEventListener('change', sync); sync();
+    } });
+  if (m.value !== 'ok') return;
+  const f = m.form;
+  const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const kv = (s, sep) => Object.fromEntries(lines(s).map((l) => { const i = l.indexOf(sep); return i > 0 ? [l.slice(0, i).trim(), l.slice(i + 1).trim()] : null; }).filter(Boolean));
+  const out = await resRun(`Adicionando ${f.name}…`, () => api.resDo('mcpAdd', { name: (f.name || '').trim(), type: f.type, url: (f.url || '').trim(), command: f.command, args: lines(f.args), env: kv(f.env, '='), headers: kv(f.headers, ':'), scope: f.scope, projectPath: p.path }), true);
+  if (out && !out.ok) return mcpAddFlow({ ...f, error: out.message }); // não perde o que foi digitado
+}
+
+async function skNewFlow() {
+  const p = curProject();
+  const m = await modal({ title: 'Nova skill ou comando', body: `<p>Uma <b>skill</b> o Claude usa quando faz sentido; um <b>comando</b> você chama digitando /nome.</p>
+    <div class="f"><label>Tipo</label>${selHTML('kind', [['skill', 'Skill'], ['comando', 'Comando']], 'skill')}</div>
+    <div class="f"><label>Valer para</label>${selHTML('scope', [['Projeto', 'Só este projeto'], ['Usuário', 'Todos os meus projetos']], 'Projeto')}</div>
+    <div class="f"><label>Nome (letras, números, hífen)</label><input class="inp" type="text" data-f="name" placeholder="minha-skill"></div>
+    <div class="f"><label>Descrição (quando usar)</label><input class="inp" type="text" data-f="desc" placeholder="Use quando o usuário pedir..."></div>`,
+    buttons: [['Cancelar', null], ['Criar e editar', 'ok', 'pri']] });
+  if (m.value !== 'ok') return;
+  const f = m.form;
+  const out = await resRun(`Criando /${f.name}…`, () => api.resDo('skillOp', { op: 'create', scope: f.scope, kind: f.kind, name: (f.name || '').trim(), desc: f.desc, projectPath: p.path }), false);
+  if (out && out.ok) return skEditFlow({ scope: f.scope, kind: f.kind, name: (f.name || '').trim() });
+}
+async function skEditFlow(x) {
+  const p = curProject();
+  const args = { scope: x.scope, kind: x.kind, name: x.name, projectPath: p.path };
+  const rd = await api.resDo('skillOp', { op: 'read', ...args });
+  if (!rd.ok) { UI.res.msg = { ok: false, text: rd.message }; repaintRes(); return; }
+  const m = await modal({ title: `/${esc(x.name)} <small class="meta">${esc(x.scope)} · ${x.kind === 'skill' ? 'skill' : 'comando'}</small>`, body: `<textarea class="inp ta mono" rows="18" data-f="text" spellcheck="false">${esc(rd.text)}</textarea><p class="meta">O Claude Code relê as skills sozinho; normalmente não precisa reiniciar o terminal.</p>`,
+    buttons: [['Fechar', null], ['Abrir pasta', 'reveal'], ['Salvar', 'ok', 'pri']] });
+  if (m.value === 'reveal') { await api.resDo('skillOp', { op: 'reveal', ...args }); return; }
+  if (m.value === 'ok') return resRun(`Salvando /${x.name}…`, () => api.resDo('skillOp', { op: 'write', ...args, text: m.form.text }), false);
 }
 
 function consumoHTML() {
@@ -883,6 +1088,11 @@ function confHTML() {
     <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Vazio = automático (fluxo ou genérico, conforme o projeto). Para o app limpar sozinho, o texto deve terminar pedindo que o agente escreva ${CLEAR_MARK}; sem isso o app pergunta antes de limpar.</small></div><textarea class="inp ta" id="clrClose" rows="5" placeholder="Automático">${esc(clearCfg().closePrompt)}</textarea></div>
     <div class="row" style="align-items:flex-start"><div class="grow">Pedido de retomada<small>Enviado depois do /clear, na conversa nova. Vazio = automático. Pode ser um comando seu, como /retomar.</small></div><textarea class="inp ta" id="clrResume" rows="5" placeholder="Automático">${esc(clearCfg().resumePrompt)}</textarea></div>
     <div class="row"><div class="grow">Restaurar os textos padrão</div><button class="btn sm" data-clrreset>Restaurar</button></div></div>
+    <h5 style="margin:22px 0 8px">Conectores (plugins, skills e MCPs)</h5>
+    <div class="card" style="padding:6px 18px">
+    <div class="row" style="align-items:flex-start"><div class="grow">Projeto novo criado pelo Termix<small><b>Automático:</b> o projeto nasce como o Claude Code monta por padrão, com os seus plugins, MCPs e conectores já valendo (isso pesa nos tokens de cada sessão). <b>Limpo:</b> o projeto nasce sem nenhum plugin, MCP nem conector; você liga só o que quiser nas telas Plugins, MCPs e Skills.</small></div>
+      <div class="seg"><button class="${connCfg().newProject === 'auto' ? 'sel' : ''}" data-conn="auto">Automático</button><button class="${connCfg().newProject === 'clean' ? 'sel' : ''}" data-conn="clean">Limpo</button></div></div>
+    <div class="row"><div class="grow"><small>O "limpo" desliga só dentro do projeto novo (plugins em .claude/settings.local.json e MCPs/conectores na entrada do projeto do Claude Code); os outros projetos e as suas configurações de usuário não mudam. Skills e comandos de <b>usuário</b> (pasta .claude do seu usuário) não têm como ser desligados por projeto. Plugins, MCPs ou conectores instalados depois ficam ligados até você desligar. Projetos importados não são alterados.</small></div></div></div>
     <h5 style="margin:22px 0 8px">Projetos arquivados</h5>
     <div class="card">${arch.length ? arch.map((p) => `<div class="lrow"><span class="nm">${esc(p.name)}<br><span class="meta">${esc(p.path)}</span></span><button class="btn sm" data-unarchive="${p.id}">Restaurar</button></div>`).join('') : '<span class="meta">Nenhum projeto arquivado.</span>'}</div></div>`;
 }
@@ -1022,7 +1232,15 @@ async function newProjectFlow() {
   const name = (r.form.name || '').trim();
   if (!name) return;
   const { path } = await api.createProject(name);
+  let note = '';
+  if (connCfg().newProject === 'clean') {
+    $('#modalRoot').innerHTML = '<div class="modal"><div class="dlg glass"><h2>Preparando o projeto limpo…</h2><p>Desligando plugins, MCPs e conectores só neste projeto. Leva alguns segundos.</p></div></div>';
+    const out = await api.resDo('cleanProject', { projectPath: path });
+    $('#modalRoot').innerHTML = '';
+    note = out.ok ? `Projeto limpo: ${out.plugins} plugin${out.plugins === 1 ? '' : 's'} e ${out.mcps} MCP${out.mcps === 1 ? '' : 's'}/conectores desligados aqui.${out.userSkills ? ` ${out.userSkills} skill(s) de usuário continuam valendo (limite do Claude Code).` : ''}` : `Não consegui deixar o projeto limpo: ${out.message}`;
+  }
   addProject({ name, path, imported: false });
+  if (note) addEvent({ who: name, msg: note });
 }
 async function importFlow() {
   const dir = await api.pickFolder();
@@ -1250,6 +1468,7 @@ document.addEventListener('click', async (e) => {
     renderMenu(); renderRail(); return;
   }
   if ((el = q('[data-clrflag]'))) { const [k, v] = el.dataset.clrflag.split('|'); S.settings.clear[k] = v === '1'; save(); renderPage(); return; }
+  if ((el = q('[data-conn]'))) { S.settings.connectors = { v: 1, newProject: el.dataset.conn }; save(); renderPage(); return; }
   if (q('[data-clrreset]')) { S.settings.clear = { ...CLEAR_DEF }; save(); renderPage(); renderRail(); return; }
   if ((el = q('[data-rail]'))) {
     const k = el.dataset.rail; railCfg()[k] = !railCfg()[k]; save();
@@ -1265,6 +1484,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
+  if ((el = q('[data-ract]'))) { resAct(el.dataset.ract, el.dataset.rk); return; }
   if ((el = q('[data-resscope]'))) { UI.res.scope = el.dataset.resscope; renderPage(); return; }
   if ((el = q('[data-resst]'))) { UI.res.st = el.dataset.resst; renderPage(); return; }
   if ((el = q('[data-resrefresh]'))) {

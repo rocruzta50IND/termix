@@ -6,7 +6,7 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 
-module.exports = function createResources({ findClaude, readJson, cleanEnv }) {
+module.exports = function createResources({ findClaude, readJson, cleanEnv, trash, reveal }) {
   const home = os.homedir();
   const same = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
 
@@ -118,7 +118,13 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv }) {
     for (const n of ((cj && cj.claudeAiMcpEverConnected) || [])) {
       if (!mcps.some((m) => m.name === n)) mcps.push({ name: n, scope: 'Conta', origin: '', type: 'http', target: '' });
     }
-    return { skills, mcps };
+    let disabled = [];
+    const entry = projectPath && cj && Object.keys(cj.projects || {}).find((k) => same(k, projectPath) || (() => { try { return same(k, fs.realpathSync.native(path.resolve(projectPath))); } catch { return false; } })());
+    if (entry) {
+      const e = cj.projects[entry];
+      disabled = (e.disabledMcpServers || []).concat(e.disabledMcpjsonServers || []);
+    }
+    return { skills, mcps, disabledMcps: disabled };
   }
 
   // "~1.553 tok" (milhar com ponto) ou "~4.6k"
@@ -175,18 +181,239 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv }) {
     if (!r.ok && !r.out) return { error: r.err || 'Não consegui consultar os MCPs.', items: [] };
     const items = [];
     for (const raw of r.out.split(/\r?\n/)) {
-      const m = raw.match(/^(.+?): (.*) - ([✔!✘⏸].*)$/);
+      const m = raw.match(/^(.+?): (.*) - ([✔!✘⏸⊘].*)$/);
       if (!m) continue;
       const st = m[3];
-      let kind = 'warn'; let label = st.replace(/^[✔!✘⏸]\s*/, '');
+      let kind = 'warn'; let label = st.replace(/^[✔!✘⏸⊘]\s*/, '');
       if (/^✔/.test(st)) { kind = 'ok'; label = 'Conectado'; }
       else if (/needs auth/i.test(st)) label = 'Precisa de login';
       else if (/^✘/.test(st)) { kind = 'bad'; label = 'Falhou ao conectar'; }
       else if (/^⏸/.test(st)) label = 'Aguardando aprovação';
+      else if (/^⊘/.test(st)) { kind = 'off'; label = 'Desligado neste projeto'; }
       items.push({ name: m[1], target: m[2], kind, label, detail: /^✘/.test(st) ? st.replace(/^✘\s*/, '') : '' });
     }
     return { items };
   }
 
-  return { scanFiles, scanPlugins, scanMcpStatus };
+
+  /* ---------- ações (etapas 2 e 3) ---------- */
+  const SCOPE_FLAG = { 'Usuário': 'user', 'Projeto': 'project', 'Local': 'local' };
+  const ID_RE = /^[A-Za-z0-9][\w.-]{0,80}(@[A-Za-z0-9][\w.-]{0,80})?$/;
+  const NAME_RE = /^[A-Za-z0-9][\w.-]{0,63}$/;
+  const stripAnsi = (s) => String(s || '').replace(/\u001b\[[0-9;]*[A-Za-z]/g, '').trim();
+
+  function parseJsonLine(out) {
+    for (const l of String(out || '').split(/\r?\n/).reverse()) {
+      try { const j = JSON.parse(l); if (j && typeof j === 'object') return j; } catch { /* não é a linha de resultado */ }
+    }
+    return null;
+  }
+  // resultado padrão de uma ação da CLI
+  function result(r, okMsg) {
+    const j = parseJsonLine(r.out);
+    const failed = !r.ok || (j && j.outcome && j.outcome !== 'ok');
+    const msg = stripAnsi((j && (j.message || j.error)) || (failed ? (r.err || r.out) : r.out) || okMsg || '').split(/\r?\n/).filter(Boolean).slice(-3).join(' ').replace(/\s*File modified:.*$/, '');
+    return { ok: !failed, message: msg || (failed ? 'Não deu certo.' : okMsg || 'Feito.') };
+  }
+
+  async function pluginAction({ action, id, scope, projectPath }) {
+    if (!['enable', 'disable', 'update', 'uninstall'].includes(action) || !ID_RE.test(id || '')) return { ok: false, message: 'Pedido inválido.' };
+    const args = ['plugin', action, id];
+    if (['user', 'project', 'local'].includes(scope) && action !== 'update') args.push('--scope', scope);
+    args.push('--json');
+    const r = await runClaude(args, projectPath, 120000);
+    if (action === 'update' || action === 'uninstall') detailsCache.clear();
+    const res = result(r, 'Feito.');
+    if (res.ok && action !== 'update') {
+      const where = scope === 'local' ? ' neste projeto' : scope === 'user' ? ' para todos os projetos' : scope === 'project' ? ' no projeto (compartilhado)' : '';
+      res.message = { enable: `Plugin ${plShort(id)} ligado${where}.`, disable: `Plugin ${plShort(id)} desligado${where}.`, uninstall: `Plugin ${plShort(id)} removido.` }[action];
+    }
+    return res;
+  }
+
+  async function pluginInstall({ id, scope, projectPath }) {
+    if (!ID_RE.test(id || '')) return { ok: false, message: 'Informe o plugin como nome@marketplace.' };
+    const sc = ['user', 'project', 'local'].includes(scope) ? scope : 'user';
+    const r = await runClaude(['plugin', 'install', id, '--scope', sc, '--json'], projectPath, 180000);
+    const res = result(r, 'Plugin instalado.');
+    if (res.ok) res.message = `Plugin ${id} instalado.`;
+    return res;
+  }
+
+  async function pluginsAvailable(projectPath) {
+    const r = await runClaude(['plugin', 'list', '--available', '--json'], projectPath, 60000);
+    try {
+      const j = JSON.parse(r.out);
+      const list = Array.isArray(j) ? j : (j.available || []);
+      return { items: list.map((x) => ({ id: x.id || x.pluginId || '', name: x.name || String(x.id || '').split('@')[0], desc: String(x.description || x.desc || '').slice(0, 200), marketplace: x.marketplaceName || x.marketplace || String(x.id || '').split('@')[1] || '' })).filter((x) => x.id) };
+    } catch { return { items: [], error: 'Não consegui ler a lista de plugins disponíveis.' }; }
+  }
+
+  // liga ou desliga todos os plugins neste projeto (escopo local: só vale aqui, não vai para o git)
+  async function pluginsBulk({ enable, projectPath }) {
+    const r = await runClaude(['plugin', 'list', '--json'], projectPath, 30000);
+    let list = [];
+    try { list = JSON.parse(r.out); } catch { return { ok: false, message: 'Não consegui ler a lista de plugins.' }; }
+    const todo = list.filter((p) => (p.enabled !== false) !== enable);
+    let done = 0; const fail = [];
+    for (const p of todo) { // um por vez: todos regravam o mesmo settings.local.json e em paralelo uma mudança apaga a outra
+      const x = await runClaude(['plugin', enable ? 'enable' : 'disable', p.id, '--scope', 'local', '--json'], projectPath, 60000);
+      if (result(x).ok) done++; else fail.push(plShort(p.id));
+    }
+    return { ok: !fail.length, done, failed: fail, message: `${done} plugin${done === 1 ? '' : 's'} ${enable ? 'ligado' : 'desligado'}${done === 1 ? '' : 's'} neste projeto${fail.length ? `; não consegui: ${fail.join(', ')}` : ''}.` };
+  }
+  const plShort = (id) => String(id || '').split('@')[0];
+
+  async function mcpAdd({ name, type, url, command, args, env, headers, scope, projectPath }) {
+    if (!NAME_RE.test(name || '')) return { ok: false, message: 'Nome inválido: use letras, números, ponto, hífen ou sublinhado.' };
+    const sc = ['user', 'local', 'project'].includes(scope) ? scope : 'local';
+    let cfg;
+    if (type === 'http' || type === 'sse') {
+      if (!/^https?:\/\/\S+$/i.test(url || '')) return { ok: false, message: 'Informe um endereço http(s) válido.' };
+      cfg = { type, url };
+      if (headers && Object.keys(headers).length) cfg.headers = headers;
+    } else {
+      if (!String(command || '').trim()) return { ok: false, message: 'Informe o comando.' };
+      cfg = { type: 'stdio', command: String(command).trim(), args: Array.isArray(args) ? args : [] };
+      if (env && Object.keys(env).length) cfg.env = env;
+    }
+    const r = await runClaude(['mcp', 'add-json', name, JSON.stringify(cfg), '--scope', sc], projectPath, 60000);
+    const res = result(r, 'MCP adicionado.');
+    if (res.ok) res.message = `MCP ${name} adicionado.`;
+    return res;
+  }
+  async function mcpRemove({ name, scope, projectPath }) {
+    const sc = SCOPE_FLAG[scope];
+    if (!name || !sc) return { ok: false, message: 'Só dá para remover MCPs de usuário, projeto ou local.' };
+    const res = result(await runClaude(['mcp', 'remove', name, '--scope', sc], projectPath, 60000), 'MCP removido.');
+    if (res.ok) res.message = `MCP ${name} removido.`;
+    return res;
+  }
+  async function mcpAuth({ action, name, projectPath }) {
+    if (!name || !['login', 'logout'].includes(action)) return { ok: false, message: 'Pedido inválido.' };
+    // o login abre o navegador e espera a pessoa concluir
+    return result(await runClaude(['mcp', action, name], projectPath, action === 'login' ? 300000 : 60000), action === 'login' ? 'Login concluído.' : 'Sessão encerrada.');
+  }
+
+  /* Ligar/desligar MCP e conector POR PROJETO: a CLI não tem comando para isso, então o app grava só o campo
+     disabledMcpServers (e o par enabled/disabledMcpjsonServers, para o .mcp.json) da entrada do projeto no ~/.claude.json —
+     o mesmo que o /mcp do terminal grava. Escrita atômica, com backup diário, e relida para conferir. */
+  const CJ = () => path.join(home, '.claude.json');
+  function claudeJsonEdit(mutate) {
+    const f = CJ();
+    let j;
+    try { j = JSON.parse(fs.readFileSync(f, 'utf8')); } catch { throw new Error('Não consegui ler o .claude.json; nada foi alterado.'); }
+    try {
+      const bak = f + '.termix-backup';
+      if (!fs.existsSync(bak) || Date.now() - fs.statSync(bak).mtimeMs > 24 * 3600 * 1000) fs.copyFileSync(f, bak);
+    } catch { /* sem backup: segue, a escrita é atômica */ }
+    mutate(j);
+    const tmp = f + '.tmp-termix';
+    fs.writeFileSync(tmp, JSON.stringify(j, null, 2));
+    for (let i = 0; ; i++) {
+      try { fs.renameSync(tmp, f); break; } catch (e) { if (i >= 4) { try { fs.unlinkSync(tmp); } catch { /* ok */ } throw e; } Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 120); }
+    }
+  }
+  function projectEntry(j, projectPath, create) {
+    j.projects = j.projects || {};
+    const real = (() => { try { return fs.realpathSync.native(path.resolve(projectPath)); } catch { return path.resolve(projectPath); } })();
+    let key = Object.keys(j.projects).find((k) => same(k, real));
+    if (!key && create) {
+      key = real.split('\\').join('/');
+      j.projects[key] = { allowedTools: [], mcpServers: {}, enabledMcpjsonServers: [], disabledMcpjsonServers: [], hasTrustDialogAccepted: false };
+    }
+    return key ? j.projects[key] : null;
+  }
+  const uniq = (a) => Array.from(new Set(a));
+  function setMcpDisabled({ items, disabled, projectPath }) {
+    if (!projectPath || !Array.isArray(items)) return { ok: false, message: 'Pedido inválido.' };
+    try {
+      claudeJsonEdit((j) => {
+        const e = projectEntry(j, projectPath, true);
+        for (const it of items) {
+          if (!it || typeof it.name !== 'string') continue;
+          if (it.scope === 'Projeto') { // servidor do .mcp.json: lista própria
+            e.disabledMcpjsonServers = uniq((e.disabledMcpjsonServers || []).filter((n) => n !== it.name).concat(disabled ? [it.name] : []));
+            e.enabledMcpjsonServers = uniq((e.enabledMcpjsonServers || []).filter((n) => n !== it.name).concat(disabled ? [] : [it.name]));
+          } else {
+            e.disabledMcpServers = uniq((e.disabledMcpServers || []).filter((n) => n !== it.name).concat(disabled ? [it.name] : []));
+          }
+        }
+      });
+      const e = projectEntry(JSON.parse(fs.readFileSync(CJ(), 'utf8')), projectPath, false) || {};
+      const ok = items.every((it) => it.scope === 'Projeto' ? (e.disabledMcpjsonServers || []).includes(it.name) === !!disabled : (e.disabledMcpServers || []).includes(it.name) === !!disabled);
+      return ok ? { ok: true, message: disabled ? 'Desligado neste projeto.' : 'Ligado neste projeto.' } : { ok: false, message: 'A mudança não ficou gravada (o Claude Code pode ter reescrito o arquivo). Tente de novo.' };
+    } catch (e) { return { ok: false, message: String(e.message || e) }; }
+  }
+  // todos os MCPs e conectores conhecidos neste projeto (nomes), para ligar/desligar em bloco
+  async function allMcpItems(projectPath) {
+    const files = scanFiles(projectPath);
+    const st = await scanMcpStatus(projectPath);
+    const map = new Map();
+    for (const m of files.mcps) if (m.scope !== 'Plugin') map.set(m.name, { name: m.name, scope: m.scope });
+    for (const it of st.items) if (!/^plugin:/.test(it.name) && !map.has(it.name)) map.set(it.name, { name: it.name, scope: /^claude\.ai /.test(it.name) ? 'Conta' : 'Usuário' });
+    return Array.from(map.values());
+  }
+  async function mcpBulk({ disabled, projectPath }) {
+    const items = disabled ? await allMcpItems(projectPath) : [];
+    if (!disabled) {
+      try {
+        claudeJsonEdit((j) => { const e = projectEntry(j, projectPath, false); if (e) { e.disabledMcpServers = []; e.disabledMcpjsonServers = []; } });
+        return { ok: true, count: 0, message: 'Todos os MCPs e conectores ligados neste projeto.' };
+      } catch (e) { return { ok: false, message: String(e.message || e) }; }
+    }
+    const r = setMcpDisabled({ items, disabled: true, projectPath });
+    return { ...r, count: items.length, message: r.ok ? `${items.length} MCP${items.length === 1 ? '' : 's'} e conectores desligados neste projeto.` : r.message };
+  }
+
+  // projeto limpo: nenhum plugin, MCP ou conector automático (as skills e comandos de usuário não têm como ser desligados por projeto)
+  async function cleanProject({ projectPath }) {
+    const [pl, mc] = await Promise.all([pluginsBulk({ enable: false, projectPath }), mcpBulk({ disabled: true, projectPath })]);
+    const userSkills = scanFiles(projectPath).skills.filter((s) => s.scope === 'Usuário').length;
+    return { ok: pl.ok && mc.ok, plugins: pl.done || 0, mcps: mc.count || 0, userSkills, message: [pl.message, mc.message].join(' ') };
+  }
+
+  /* ---------- skills e comandos de usuário e de projeto (arquivos do próprio usuário) ---------- */
+  function skillFile(scope, kind, name, projectPath) {
+    if (!NAME_RE.test(name || '')) return null;
+    const root = scope === 'Usuário' ? path.join(home, '.claude') : scope === 'Projeto' && projectPath ? path.join(projectPath, '.claude') : null;
+    if (!root) return null;
+    return kind === 'comando'
+      ? { file: path.join(root, 'commands', name + '.md'), target: path.join(root, 'commands', name + '.md') }
+      : { file: path.join(root, 'skills', name, 'SKILL.md'), target: path.join(root, 'skills', name) };
+  }
+  async function skillOp({ op, scope, kind, name, desc, text, projectPath }) {
+    const f = skillFile(scope, kind, name, projectPath);
+    if (!f) return { ok: false, message: 'Só dá para mexer em skills e comandos de usuário ou de projeto (nome com letras, números, ponto, hífen ou sublinhado).' };
+    if (op === 'read') { try { return { ok: true, text: fs.readFileSync(f.file, 'utf8') }; } catch { return { ok: false, message: 'Não consegui ler o arquivo.' }; } }
+    if (op === 'create') {
+      if (fs.existsSync(f.target)) return { ok: false, message: 'Já existe uma com esse nome.' };
+      const d = String(desc || '').replace(/\r?\n/g, ' ').trim() || 'Descreva quando usar.';
+      const body = kind === 'comando'
+        ? `---\ndescription: ${d}\n---\n\nEscreva aqui o que o comando deve fazer.\n`
+        : `---\nname: ${name}\ndescription: ${d}\n---\n\n# ${name}\n\nEscreva aqui as instruções da skill.\n`;
+      fs.mkdirSync(path.dirname(f.file), { recursive: true });
+      fs.writeFileSync(f.file, body, 'utf8');
+      return { ok: true, message: 'Criada.', file: f.file };
+    }
+    if (op === 'write') {
+      if (!fs.existsSync(f.file)) return { ok: false, message: 'O arquivo não existe mais.' };
+      fs.writeFileSync(f.file, String(text == null ? '' : text), 'utf8');
+      return { ok: true, message: 'Salva.' };
+    }
+    if (op === 'delete') {
+      if (!fs.existsSync(f.target)) return { ok: false, message: 'Já não existe.' };
+      try { await trash(f.target); return { ok: true, message: 'Enviada para a lixeira.' }; } catch (e) { return { ok: false, message: String(e.message || e) }; }
+    }
+    if (op === 'reveal') { reveal(f.file); return { ok: true }; }
+    return { ok: false, message: 'Pedido inválido.' };
+  }
+
+  const OPS = { pluginAction, pluginInstall, pluginsAvailable, pluginsBulk, mcpAdd, mcpRemove, mcpAuth, mcpDisabled: async (a) => setMcpDisabled(a), mcpBulk, cleanProject, skillOp };
+  async function run(op, args) {
+    if (!Object.prototype.hasOwnProperty.call(OPS, op)) return { ok: false, message: 'Operação desconhecida.' };
+    try { return await OPS[op](args || {}); } catch (e) { return { ok: false, message: String(e.message || e) }; }
+  }
+
+  return { scanFiles, scanPlugins, scanMcpStatus, run };
 };

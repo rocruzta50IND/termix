@@ -369,3 +369,16 @@ button.cl-row{width:100%;text-align:left;cursor:pointer;color:inherit;font:inher
 .rmeta{font-size:11.5px;color:var(--text3);margin-top:4px}
 .rdesc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-top:6px}
 .card.dim{opacity:.7}
+.acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.btn.sm.bad{border-color:rgba(248,113,113,.55);color:#fecaca}
+.resmsg{margin:4px 0 8px;padding:8px 12px;border-radius:12px;font-size:12.5px;border:1px solid var(--border)}
+.resmsg.ok{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.4);color:#bbf7d0}
+.resmsg.bad{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.45);color:#fecaca}
+.restartnote{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.45);color:#fde68a}
+.plres{max-height:210px;overflow:auto;margin:-4px 0 10px}
+.plres .cl-row{width:100%}
+textarea.mono{font:12.5px var(--mono);white-space:pre;overflow:auto}
+.dlg .inp{width:100%;max-width:none;padding:10px 12px;border-radius:12px;border:1px solid var(--border2);background:rgba(255,255,255,.07)}
+.dlg .inp.ta{width:100%;max-width:100%}
+.dlg select.inp{appearance:auto}
+.dlg:has(textarea.mono){width:760px}
