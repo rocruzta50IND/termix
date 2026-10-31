@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-030 — 3º ajuste: a primeira aba segue a curva do canto** (DEV1)
+
+- A barra de abas encosta na lateral esquerda do container; a primeira aba e a linha de cor do topo seguem o canto arredondado. Pedido do usuário com captura. `npm run check` passou.
+
 **TASK-030 — 2º ajuste: abas rentes ao container dos terminais** (DEV1)
 
 - Removida a margem de fundo acima das abas (a barra agora toca o topo do container) e reduzida a da esquerda; faixa escura mais discreta. Valido para terminais e Web; pedido do usuário com captura. `npm run check` passou.
