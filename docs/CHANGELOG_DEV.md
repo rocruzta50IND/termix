@@ -8,6 +8,14 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-032 e TASK-013 — fechadas: VALIDADAS EM DEV1** (DEV1)
+
+- Aprovadas pelo usuário em 2026-10-31. Segue em aberto o login de MCP/conector com conta real. Próxima: TASK-020 (instalador em Windows limpo).
+
+**TASK-032 — teste geral de plugins, MCPs e skills feito** (DEV1)
+
+- Teste completo numa pasta de usuário isolada, com a CLI real do Claude Code e o app Electron (cliques reais, 3 larguras, terminal vivo): plugins 33/33, skills 32/32, interface 68/68, mais MCPs, projeto limpo, erros (CLI ausente, sem rede, `.claude.json` ilegível, nomes inválidos) e desempenho com 752 skills. Arquivos do usuário conferidos intactos. **Dois defeitos achados e corrigidos:** (1) o login de MCP/conector nunca funcionaria (a CLI exige terminal; agora roda num PTY); (2) o cartão de MCP mostrava "Desligado" velho logo depois de ligar (agora os arquivos mandam). Relatório completo e limitações na TASK-032. Aguarda a aprovação do usuário para fechar esta e a TASK-013. `npm run check` passou.
+
 **TASK-030 — fechada: VALIDADA EM DEV1** (DEV1)
 
 - Aprovada pelo usuário em 2026-10-31. Próxima: TASK-032.

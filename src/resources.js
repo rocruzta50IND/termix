@@ -6,7 +6,7 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 
-module.exports = function createResources({ findClaude, readJson, cleanEnv, trash, reveal }) {
+module.exports = function createResources({ findClaude, readJson, cleanEnv, pty, trash, reveal }) {
   const home = os.homedir();
   const same = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
 
@@ -19,6 +19,32 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, tras
       const argv = isCmd ? ['/c', claude, ...args] : args;
       execFile(cmd, argv, { cwd: cwd && fs.existsSync(cwd) ? cwd : home, timeout, env: cleanEnv(), windowsHide: true, maxBuffer: 8 * 1024 * 1024 },
         (err, stdout, stderr) => resolve({ ok: !err, out: String(stdout || ''), err: String(stderr || (err && err.message) || '') }));
+    });
+  }
+
+  // roda a CLI dentro de um terminal (PTY): o `claude mcp login` recusa rodar sem terminal ("stdin isn't a terminal")
+  function runClaudePty(args, cwd, timeout) {
+    return new Promise((resolve) => {
+      const claude = findClaude();
+      if (!claude) return resolve({ ok: false, out: '', err: 'Claude Code não encontrado' });
+      if (!pty) return resolve({ ok: false, out: '', err: 'Terminal indisponível neste app.' });
+      const isCmd = claude.toLowerCase().endsWith('.cmd');
+      let buf = ''; let done = false; let p;
+      const finish = (extra, code) => {
+        if (done) return;
+        done = true;
+        try { p.kill(); } catch { /* já encerrou */ }
+        // o terminal entrega sequências de controle (cores, título da janela): tira antes de ler a mensagem
+        const out = buf.replace(/\u001b\][^\u0007\u001b]*(\u0007|\u001b\\)/g, '').replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '').replace(/\r/g, '');
+        const bad = extra || (typeof code === 'number' && code !== 0) || /couldn't complete|failed|error|no mcp server named/i.test(out);
+        resolve({ ok: !bad, out, err: extra || out });
+      };
+      try {
+        p = pty.spawn(isCmd ? 'cmd.exe' : claude, isCmd ? ['/c', claude, ...args] : args, { name: 'xterm-256color', cols: 160, rows: 30, cwd: cwd && fs.existsSync(cwd) ? cwd : home, env: cleanEnv() });
+      } catch (e) { return resolve({ ok: false, out: '', err: String(e.message || e) }); }
+      p.onData((d) => { buf += d; });
+      p.onExit((e) => finish('', e && e.exitCode));
+      setTimeout(() => finish('Tempo esgotado: o login não foi concluído a tempo.'), timeout);
     });
   }
 
@@ -291,8 +317,9 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, tras
   }
   async function mcpAuth({ action, name, projectPath }) {
     if (!name || !['login', 'logout'].includes(action)) return { ok: false, message: 'Pedido inválido.' };
-    // o login abre o navegador e espera a pessoa concluir
-    return result(await runClaude(['mcp', action, name], projectPath, action === 'login' ? 300000 : 60000), action === 'login' ? 'Login concluído.' : 'Sessão encerrada.');
+    // o login abre o navegador e espera a pessoa concluir; só funciona dentro de um terminal (PTY)
+    if (action === 'login') return result(await runClaudePty(['mcp', 'login', name], projectPath, 300000), 'Login concluído.');
+    return result(await runClaude(['mcp', 'logout', name], projectPath, 60000), 'Sessão encerrada.');
   }
 
   /* Ligar/desligar MCP e conector POR PROJETO: a CLI não tem comando para isso, então o app grava só o campo

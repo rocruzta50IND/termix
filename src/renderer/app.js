@@ -885,8 +885,11 @@ function resItems(kind) {
     rows.push({ name: f.name, scope: f.scope, origin: f.origin, type: f.type, target: f.target, kind: '', label: live ? 'Sem leitura de estado' : 'Verificando…', detail: '' });
   }
   return rows.map((x) => {
-    const off = offSet.has(x.name) || x.kind === 'off';
+    // os arquivos (lidos a cada poucos segundos) dizem o que está desligado aqui; o "desligado" que vem da CLI pode estar velho
+    // logo depois de ligar (a leitura do estado leva alguns segundos) e não vale sozinho, a não ser nos MCPs de plugin
+    const off = offSet.has(x.name) || (x.kind === 'off' && x.scope === 'Plugin');
     if (off) { x.kind = 'off'; x.label = 'Desligado neste projeto'; x.detail = ''; }
+    else if (x.kind === 'off') { x.kind = ''; x.label = 'Verificando…'; x.detail = ''; }
     const key = 'mcp:' + x.name;
     const ctl = x.scope !== 'Plugin';
     return { key, raw: x, search: `${x.name} ${x.origin} ${x.target}`, scope: x.scope, st: off ? 'off' : x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '',

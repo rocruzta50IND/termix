@@ -8,10 +8,49 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+_Nenhuma no momento._
+
+## Aguardando validação DEV1
+
+_Nenhuma no momento._
+
+## Validadas em DEV1
+
+### TASK-032 — Teste geral de plugins, MCPs e skills (feito pelo Claude)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-10-31)
+- **Prioridade:** Alta, antes do teste do instalador (TASK-020) e da promoção para a `main`
+- **Objetivo:** o usuário não testa a TASK-013 à mão; o Claude fez o teste geral das telas Plugins, MCPs e Skills e de Configurações > Conectores.
+- **Método:** tudo numa **pasta de usuário isolada** (`USERPROFILE` próprio, com marketplace local de teste, plugins `alfa` e `beta`, um servidor MCP de verdade escrito para o teste e um projeto temporário), com a CLI real do Claude Code 2.1.316; o ambiente do usuário só foi **lido**. Parte 1: funções do `src/resources.js` chamadas direto com a CLI real. Parte 2: o app Electron isolado (CDP), com cliques reais, nas 3 larguras (1600×900, 1180×720, 980×620). Os roteiros ficaram fora do repositório (pasta temporária da sessão).
+- **Relatório (passou / falhou / limitação):**
+  - **Plugins (33/33 passaram):** marketplace local, lista de disponíveis (3.603 itens), instalar em escopo usuário e local, versão/escopo/ligado/skills/tokens, desligar em usuário, ligar em local sobrepondo o usuário (local vence), ligar/desligar todos aqui, atualizar (1.0.0 → 1.1.0), mudança feita pelo terminal refletida no app, remover (os dois), erros (plugin inexistente, id inválido ou perigoso, ação desconhecida, remover o que não existe), CLI ausente (`scanPlugins` e `scanMcpStatus` devolvem erro sem quebrar), marketplace inalcançável (sem rede).
+  - **MCPs (arquivos e CLI):** adicionar stdio, http (com cabeçalho, que não aparece na tela) e de projeto; nome, URL e comando inválidos recusados; nome repetido recusado pela CLI; estado real (conectado, falhou); ligar/desligar por projeto conferido pela CLI (`⊘ Disabled for this project`); aprovar MCP de projeto; desligar/ligar todos; **`.claude.json` preserva campos que o app não conhece**, backup criado, sem arquivo temporário sobrando; `.claude.json` ilegível: recusa e não altera; remover (local, usuário, projeto), inexistente e conector da conta recusados. Tudo passou, exceto 3 verificações do meu primeiro roteiro que usavam um "servidor MCP" de mentira; repetidas com um servidor MCP de verdade, 3 passaram e 3 viraram a limitação 1 abaixo.
+  - **Skills e comandos (32/32 passaram):** criar, listar (descrição de várias linhas vira uma), ler, salvar (acentos e dois-pontos intactos), nome repetido recusado e excluir (lixeira), para skill e comando, de usuário e de projeto; nome com `../`, escopo Plugin, excluir/salvar o que não existe: recusados.
+  - **Projeto limpo (3/3 passaram):** plugins e MCPs desligados só no projeto, outro projeto continua com o plugin do usuário ligado, e a CLI confirma (0 plugins ligados, MCP do usuário `Disabled for this project`). Criado de verdade pela tela (Configurações > Conectores > Limpo > Novo projeto) e conferido; voltando a Automático, o projeto novo vem como sempre.
+  - **Interface (68/68 passaram):** as 3 telas, status na tela, desligar/ligar aqui (grava só `disabledMcpServers`), Gerenciar, remover com confirmação (cancelar mantém), adicionar MCP com erro que reabre a janela sem perder o que foi digitado, instalar plugin (lista de 3.603 abre em ~1 s; digitar é instantâneo), erro em vermelho, mudança pelo terminal aparecendo sozinha (≤ 40 s), skill nova → editor → salvar → excluir, busca e filtros, entrar/sair de um MCP web, **sem rolagem horizontal nem texto vazando em 3 larguras** e janela Adicionar MCP cabendo em 980×620, nenhum erro de JavaScript no console. **Aviso de reinício com terminal vivo** (sessão real do Claude Code): aparece com o botão "Reiniciar a aba ativa", que reinicia a aba.
+  - **Integridade:** `settings.json`, `installed_plugins.json` e `known_marketplaces.json` do usuário idênticos (SHA-256) ao início; no `.claude.json` real, MCPs, conectores e "desligados por projeto" idênticos. Leitura real comparada com a CLI: 5 plugins e 9 MCPs (5 conectados) iguais; 22 skills.
+  - **Desempenho:** `scanFiles` com 752 skills e comandos: ~80 ms (com ~20, ~15 ms); abrir a tela Skills com 752 cartões: ~200 ms; redesenhar 9 ms; busca 32 ms por 4 teclas. Plugins reais: 2,4 s; MCPs reais: 4,9 s (em segundo plano).
+- **Defeitos achados e corrigidos:**
+  1. **Entrar (login) num MCP/conector nunca funcionaria:** a CLI recusa rodar `claude mcp login` sem terminal ("stdin isn't a terminal") e o app a chamava sem terminal. Agora o login roda dentro de um terminal (PTY) em `src/resources.js` (`runClaudePty`; `pty` passado por `src/main.js`), com limite de 5 min, e a mensagem mostra a causa real. Testado até o ponto em que o servidor responde (servidor inalcançável: mostra o erro real; MCP inexistente e CLI ausente: erro claro; logout segue sem terminal).
+  2. **Cartão de MCP mostrava "Desligado" velho depois de ligar:** o estado vinha da leitura da CLI (que leva alguns segundos e pode estar em andamento) e vencia os arquivos. Agora os arquivos (lidos a cada 4 s) mandam no "desligado"; o "desligado" velho da CLI vira "Verificando…" até a leitura nova (`src/renderer/app.js`, `resItems`).
+- **Limitações e observações (não são defeitos do app):**
+  1. MCP de projeto (`.mcp.json`): em pasta ainda não confiada, o `claude mcp list` pode nem listá-lo (aparece "Sem leitura de estado") ou listá-lo como "Aguardando aprovação"; aprovar pela tela grava `enabledMcpjsonServers`, mas o efeito real depende de o Claude Code confiar na pasta (não consegui provocar o estado "Aguardando aprovação" de forma repetível).
+  2. **Login com conta real não foi exercitado** (precisa de navegador e de uma conta; não mexi nos conectores reais do usuário): só foi provado que a CLI é chamada do jeito certo e que erros chegam à tela. O sucesso depende de o Claude Code devolver código 0 e nenhuma frase de falha.
+  3. Pasta de projeto por caminho curto 8.3 (`GLAYON~1`) não casa com a entrada do Claude Code; o app resolve o caminho real ao gravar, a CLI chamada de fora com o caminho curto não enxerga (só afetou o meu teste).
+  4. O texto do erro de um MCP no cartão é cortado em 90 caracteres (o completo aparece ao passar o mouse).
+  5. `scanFiles` roda no processo principal, de forma síncrona, a cada 4 s com a tela aberta: ~80 ms com 750 skills (inofensivo no uso normal, mas é trabalho parado; trocar por `fs.watch` fica como ideia).
+  6. Se a pasta Documentos do Windows não puder ser lida, o app trava na tela de abertura (`app:info` falha); só aconteceu na pasta de usuário isolada, mas vale proteger (ideia para o Backlog).
+- **Arquivos tocados:** `src/resources.js`, `src/main.js`, `src/renderer/app.js`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; em Plugins/MCPs/Skills conferir uma mudança (desligar e ligar um MCP: o cartão deve voltar a "Verificando…" e depois ao estado certo, nunca ficar em "Desligado"); num conector que pede login, "Gerenciar… > Entrar (login)" deve abrir o navegador.
+- **Pendências:** o login com conta real (limitação 2) e as ideias das limitações 5 e 6.
+- **Próximo passo:** TASK-020 (instalador em Windows limpo).
+- **Validada em:** 2026-10-31. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-013 — Gerenciar plugins, skills e MCPs pelo app (MVP)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO (etapas 1, 2 e 3 e a opção Conectores prontas; aguardando a validação do usuário)
+- **Status:** VALIDADA EM DEV1 (testada pelo Claude na TASK-032, por decisão do usuário; aprovada em 2026-10-31)
 - **Prioridade:** Alta (MVP) — foco da etapa atual (decisão do usuário, 2026-10-30)
 - **Objetivo:** as telas **Plugins, MCPs e Skills** mostram tudo o que o Claude Code enxerga no projeto (inclusive os conectores do claude.ai da conta, que não estão em arquivo) e permitem controlar pela tela ou pelo terminal, sem conflito com a organização do Claude Code.
 - **Achados (2026-10-31):** `claude mcp list` traz todos os MCPs com o estado real (conectado, precisa de login, falhou), inclusive os conectores da conta (9 na máquina do usuário; hoje o app mostra 0), mas leva ~10 a 20 s (listar na hora e preencher o status depois); `claude plugin list --json` traz versão, escopo, ativo e avisos; `claude plugin details <nome>` traz o inventário do plugin e o custo estimado em tokens; a CLI tem `plugin enable/disable/install/uninstall/update` e `mcp add/add-json/remove/login/logout`. Não há comando para listar skills: ler os arquivos (usuário, projeto, comandos e pastas dos plugins).
@@ -30,13 +69,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Como validar (etapas 2 e 3 e Conectores):** `npm start`. Plugins: "Desligar aqui" num plugin e conferir no terminal (`/plugin`) que, depois de reiniciar a aba, ele não carrega; "Gerenciar…" mostra atualizar/remover (não precisa remover para testar). MCPs: "Desligar aqui" num conector e conferir no `/mcp` do terminal ("disabled for this project"); adicionar um MCP de teste e removê-lo; "Gerenciar…" num conector que pede login e entrar (abre o navegador). Skills: criar uma skill de projeto, editar, ver no terminal, excluir (confere na lixeira). Configurações > Conectores > Limpo; criar um projeto novo e abrir um terminal nele: o `/plugin` e o `/mcp` devem vir vazios/desligados. Voltar para Automático e criar outro: vem como sempre.
 - **Pendências (etapas 2 e 3):** não exercitados com conta real: login/logout de conector (abre o navegador), instalar plugin de verdade, atualizar e remover plugin (o remover é destrutivo; só a janela e a confirmação foram vistas); conectores adicionados à conta depois não entram no "limpo" já feito; skills/comandos de **usuário** valem em todo projeto (limite do Claude Code); com uma ação em andamento a tela não aceita outra (mostra "…"); o app não desliga skills de plugin individualmente.
 - **Pendências (etapa 1):** a leitura de skills não conhece skills de MCP nem as embutidas do Claude Code; plugins instalados só em outro projeto não aparecem; o estado dos MCPs de projeto (`.mcp.json`) pendentes de aprovação aparece como "Aguardando aprovação" (conferir com um projeto real); sem controle ainda (etapa 2).
-- **Próximo passo:** a validação foi delegada ao Claude (decisão do usuário, 2026-10-31): teste geral na TASK-032, depois da TASK-031 (auditoria de UI/UX e desempenho) e das TASK-029/030, e antes do teste do instalador (TASK-020). Aprovada a TASK-032, fecha a TASK-013 (VALIDADA EM DEV1).
-
-## Aguardando validação DEV1
-
-_Nenhuma no momento._
-
-## Validadas em DEV1
+- **Próximo passo:** TASK-020 (instalador em Windows limpo) e a promoção para a `main`, quando o usuário pedir.
+- **Validada em:** 2026-10-31 (teste geral da TASK-032 aprovado pelo usuário; login com conta real segue nas Pendências). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-030 — Abas encaixadas na janela do terminal, como no Terminal do Windows (MVP)
 
@@ -340,16 +374,6 @@ _Nenhuma no momento._
 ## Prontas
 
 ## Backlog
-
-### TASK-032 — Teste geral de plugins, MCPs e skills (feito pelo Claude)
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Alta, mas **por último**: depois de TASK-031, TASK-029 e TASK-030, e **antes do teste do instalador** (TASK-020 e a promoção para a `main`) — decisão do usuário, 2026-10-31
-- **Objetivo:** o usuário não vai testar a TASK-013 à mão; o Claude faz o teste geral e completo das telas Plugins, MCPs e Skills e da opção Configurações > Conectores, e só então a TASK-013 pode ser marcada como validada.
-- **O que testar (além dos 33 testes ponta a ponta já feitos):** instalar, atualizar e remover um plugin de verdade (num projeto/escopo de teste, sem tocar nos plugins do usuário); login e logout de um conector; ligar/desligar em todos os escopos; "limpo" em projeto novo contra uma sessão real do Claude Code (comparar ferramentas e skills); fluxo do aviso de reinício com um terminal aberto; mudanças feitas pelo terminal aparecendo no app; casos de erro (CLI ausente, `.claude.json` ilegível, nome inválido, sem rede); desempenho das leituras com muitos itens; depois das mudanças visuais da TASK-031, repetir os testes de tela.
-- **Critérios de aceite:** relatório na tarefa com cada caso e o resultado (passou/falhou/limitação), defeitos corrigidos ou registrados, `.claude.json` e `settings.json` do usuário conferidos intactos no fim, e TASK-013 marcada como VALIDADA EM DEV1.
-- **Próximo passo:** (ao chegar a vez) montar o roteiro a partir dos 33 testes existentes e dos casos acima.
 
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 

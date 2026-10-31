@@ -380,7 +380,7 @@ ipcMain.handle('env:check', () => new Promise((resolve) => {
   });
 }));
 
-const resources = require('./resources')({ findClaude, readJson, cleanEnv, trash: (p) => shell.trashItem(p), reveal: (p) => shell.showItemInFolder(p) });
+const resources = require('./resources')({ findClaude, readJson, cleanEnv, pty, trash: (p) => shell.trashItem(p), reveal: (p) => shell.showItemInFolder(p) });
 ipcMain.handle('scan:resources', (_e, projectPath) => resources.scanFiles(projectPath));
 ipcMain.handle('scan:plugins', (_e, projectPath) => resources.scanPlugins(projectPath));
 ipcMain.handle('scan:mcpstatus', (_e, projectPath) => resources.scanMcpStatus(projectPath));
