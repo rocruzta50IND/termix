@@ -38,6 +38,23 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-031 — Auditoria de UI/UX e desempenho do app inteiro (MVP)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (testada pelo Claude, por decisão do usuário em 2026-10-31)
+- **Prioridade:** Alta (MVP)
+- **Objetivo:** varrer o app inteiro atrás de elementos que não combinam com a estética, consertar e medir o desempenho. Quem testa tudo é o Claude (CDP numa instância isolada, capturando só o conteúdo do app).
+- **Pedido do usuário (2026-10-31):** campos fora de alinhamento, pequenos e não responsivos, com cara dos anos 2000. Casos das capturas: campo numérico do Clear com setinhas nativas; campo "Nome do projeto" minúsculo.
+- **Método:** roteiro automático (instância isolada com 2 terminais) que abre 20 telas e janelas (Terminais, Plugins, Skills, MCPs, Consumo, Integrações, Configurações em 3 trechos, Web, notificações, limites, menu "+", e as janelas Novo projeto, Instalar plugin, Adicionar MCP em duas formas, Nova skill, Gerenciar plugin e Renomear aba) em **3 larguras** (1600×900, 1180×720 e o mínimo 980×620), captura cada uma e varre o DOM atrás de controles nativos, campos estreitos ou baixos, texto transbordando, rolagem horizontal, janela fora da tela e alturas diferentes na mesma linha. Capturas e achados em arquivos do roteiro (fora do repositório).
+- **Achados (antes):** (1) duas regras `.inp` conflitantes (a das Configurações, 72 px, vencia a das janelas: o campo minúsculo); (2) campo numérico nativo (Clear); (3) controle deslizante nativo (opacidade); (4) 7 `select` com aparência nativa nas janelas; (5) janela Adicionar MCP estourava a altura em 980×620 (título e botões fora da tela); (6) alturas de botões, campos e alternadores diferentes entre si (28 a 40 px); (7) barra de ferramentas de Plugins/MCPs/Skills quebrava em três linhas soltas; (8) linhas das Configurações sem quebra em janela estreita e áreas de texto de largura fixa; (9) caixas de marcar nativas (importar conversas); (10) selo do sino cobrindo o ícone; (11) sem anel de foco por teclado; (12) duas definições da barra de rolagem; (13) barra de progresso com raio diferente do resto.
+- **Feito:** padrão único dos controles em `src/renderer/styles.css` (ver `docs/DESIGN.md`): alturas 36/32 px, campo, `select` com seta própria, campo numérico com − e + (`.numf`, com setas do teclado), deslizante e caixa de marcar próprios, foco visível, linhas das Configurações responsivas (consulta de contêiner), janelas com altura limitada e rodapé fixo, selo do sino ajustado, barra de ferramentas reorganizada (busca e filtros numa linha; ações e "Atualizar" na outra). `src/renderer/app.js`: campo numérico do Clear, preenchimento do deslizante, barra de ferramentas.
+- **Resultado (depois):** a varredura não encontra mais controle nativo, campo estreito (fora o do número, de propósito), janela fora da tela nem rolagem horizontal nas 3 larguras; as capturas "antes" e "depois" mostram o alinhamento das linhas, o campo numérico novo, as listas de seleção e a janela de MCP com rodapé fixo.
+- **Desempenho (medido, 3 rodadas alternadas de cada versão, 3 terminais abertos, mediana):** abertura 1,85 s → 1,88 s; CPU do app parado 1,9 % → 2,0 % de um núcleo; memória do app (5 processos) 702 MB → 699 MB (os terminais do Claude à parte: ~650 MB, são processos do Claude Code); trabalho do renderer parado 0,18 % → 0,19 %; desenhar telas 0,2 a 1,9 ms (Plugins 0,27 → 0,22, Skills 0,45 → 0,37, Configurações 0,24 → 0,17, tudo 1,88 → 1,44); trocar de aba 37 ms → 33 ms (pior 61 → 50 ms); trocar de tela 5,6 ms → 5,7 ms. **Conclusão:** as mudanças foram visuais e não pioraram nada; o app já é leve (sem desperdício de renderização; os temporizadores do renderer deduplicam o trabalho). Uma rodada isolada do código antigo mediu 30 s numa troca de aba: foi o Windows limitando temporizadores de uma janela oculta (artefato da medição), não do app.
+- **Arquivos tocados:** `src/renderer/styles.css`, `src/renderer/app.js`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; Configurações (campo numérico com − e +, deslizante, linhas alinhadas, estreitar a janela), as janelas Novo projeto, Adicionar MCP e Nova skill (campos largos, listas escuras, janela baixa com botões sempre visíveis), Plugins/MCPs (barra de ferramentas em duas linhas).
+- **Pendências / ideias (Backlog se o usuário quiser):** os pesquisadores de arquivos de métricas e hooks do processo principal rodam por `setInterval` (300 ms e 1,5 s): trocar por `fs.watch` reduziria o uso parado, mas o ganho medido seria de ~1 % de um núcleo; não medi o app com dezenas de abas nem por horas (vazamento de memória); o visual das abas (TASK-030) e das notificações (TASK-029) ficam nas suas tarefas.
+- **Validada em:** 2026-10-31 (testes e capturas feitos pelo Claude). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-028 — Medir o custo da retomada e novos gatilhos do botão Clear (só no app)
 
 - **Responsável:** DEV1
@@ -278,21 +295,6 @@ _Nenhuma no momento._
 - **Validada em:** 2026-10-29 (o usuário aprovou o resultado). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ## Prontas
-
-### TASK-031 — Auditoria de UI/UX e desempenho do app inteiro (MVP)
-
-- **Responsável:** DEV1
-- **Status:** PRONTA
-- **Prioridade:** Alta (MVP) — **próxima tarefa**, antes de TASK-029 e TASK-030 (decisão do usuário, 2026-10-31)
-- **Objetivo:** varrer o app inteiro atrás de elementos que não combinam com a estética (glassmorphism, escuro, cantos arredondados, azul de destaque), consertar tudo o que achar e medir o desempenho. Quem testa tudo é o Claude (CDP numa instância isolada, capturando só o conteúdo do app), como já vem sendo feito.
-- **Pedido do usuário (2026-10-31):** diversos campos fora de alinhamento; campos pequenos e não responsivos; campos com cara dos anos 2000.
-- **Casos já vistos (capturas do usuário):** (1) campo numérico do Botão Clear (Configurações) com as setinhas brancas nativas do navegador; (2) campo "Nome do projeto" da janela Novo projeto minúsculo (cortava o texto do exemplo). O segundo vinha da regra `.inp{width:72px}` das Configurações vencendo a regra das janelas; já foi corrigido para as janelas na TASK-013 (`.dlg .inp`), mas a auditoria confere de novo e procura o mesmo tipo de conflito em outros lugares.
-- **Escopo da varredura:** todo campo e controle do app — texto, número, seleção (`select`), área de texto, controle deslizante, alternadores, botões, etiquetas, tabelas, barras de rolagem, menus, janelas (modais), a barra de endereço da Web, o renomear de aba, o painel de notificações e as telas de Consumo, Integrações, Configurações, Plugins, MCPs, Skills, Terminais e Web. Em cada um: tamanho, alinhamento, espaçamento, estados (foco, passar o mouse, desabilitado, erro), e uma aparência única para os campos (altura, raio, cor, foco).
-- **Responsividade:** conferir em larguras estreitas (janela pequena, painel lateral recolhido ou aberto) e com texto longo; nada cortado, sobreposto nem com rolagem horizontal.
-- **Desempenho (medir antes e depois, anotar os números):** tempo até a primeira tela, memória e CPU do app parado e com várias abas, custo dos temporizadores (varredura de recursos a cada 4 s, leitura dos hooks a cada 300 ms etc.), redesenho de telas inteiras por `innerHTML`, WebGL do terminal só na aba visível, tempo de trocar de aba, de projeto e de tela, e abrir a tela de Configurações/Skills com muitos itens.
-- **Critérios de aceite (a refinar ao começar):** (1) lista de achados em `docs/DESIGN.md` (padrão dos controles) e na tarefa; (2) nenhum controle com aparência nativa antiga (setinhas de número, select cru, barras de rolagem padrão) nem fora da paleta; (3) alinhamento consistente nas linhas de Configurações e nas janelas; (4) sem corte nem rolagem horizontal em largura estreita; (5) números de desempenho antes e depois, sem regressão e com os ganhos registrados; (6) capturas de cada tela e janela como evidência (feitas pelo Claude).
-- **Base existente:** `src/renderer/styles.css`, `docs/DESIGN.md`, as capturas do usuário e o roteiro de teste CDP já usado nas tarefas anteriores.
-- **Próximo passo:** (ao começar) inventariar os controles de cada tela com um roteiro automático (capturas em 3 larguras), listar os achados por gravidade, propor o padrão visual dos campos e corrigir em lotes, medindo o desempenho no início e no fim.
 
 ## Backlog
 

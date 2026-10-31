@@ -870,8 +870,8 @@ function resPageHTML(kind) {
   const hint = kind === 'MCPs' ? 'inclusive os conectores da sua conta' : kind === 'Plugins' ? 'com o custo estimado em tokens' : 'de usuário, de projeto e de plugins';
   return `<div class="page">${ptitle(kind)}<div class="note">Mostra o mesmo que o Claude Code enxerga neste projeto (${hint}). "Aqui" vale só para este projeto. Tudo o que você muda pela tela pode ser mudado também pelo terminal (e vice-versa), e o app acompanha.</div>
     <div id="resbanner">${resBannerHTML()}</div>
-    <div class="restools"><input id="resq" class="resq" type="text" placeholder="Buscar em ${resNoun(kind, 2)}…" value="${esc(r.q)}">${seg('data-resscope', r.scope, RES_SCOPES[kind].map((s) => [s, s]))}${RES_STATES[kind].length ? seg('data-resst', r.st, RES_STATES[kind]) : ''}<button class="btn sm" data-resrefresh>Atualizar</button></div>
-    <div class="restools">${actions}</div>
+    <div class="restools"><input id="resq" class="resq" type="text" placeholder="Buscar em ${resNoun(kind, 2)}…" value="${esc(r.q)}">${seg('data-resscope', r.scope, RES_SCOPES[kind].map((s) => [s, s]))}${RES_STATES[kind].length ? seg('data-resst', r.st, RES_STATES[kind]) : ''}</div>
+    <div class="restools">${actions}<button class="btn sm resrefresh" data-resrefresh>Atualizar</button></div>
     <div id="resmsg">${resMsgHTML()}</div>
     <div class="rmeta" id="resmeta" style="margin:2px 0 4px">${esc(resMetaText(kind))}</div>
     <div id="reslist">${resListHTML(kind)}</div></div>`;
@@ -1074,7 +1074,7 @@ const yn = (k) => `<div class="seg"><button class="${clearCfg()[k] ? 'sel' : ''}
 function confHTML() {
   const arch = S.projects.filter((p) => p.archived);
   return `<div class="page">${ptitle('Configurações')}<div class="card" style="padding:6px 18px">
-    <div class="row"><div class="grow">Opacidade do terminal<small>Mais baixo = mais vidro, menos legibilidade</small></div><input type="range" min="50" max="100" value="${S.settings.termOp}" id="rngOp"><span id="opv" class="chip">${S.settings.termOp}%</span></div>
+    <div class="row"><div class="grow">Opacidade do terminal<small>Mais baixo = mais vidro, menos legibilidade</small></div><input type="range" min="50" max="100" value="${S.settings.termOp}" id="rngOp" style="--pct:${(S.settings.termOp - 50) * 2}%"><span id="opv" class="chip">${S.settings.termOp}%</span></div>
     <div class="row"><div class="grow">Fundo do app<small>Degradê: o app é o degradê e o resto fica transparente. Ofuscado: o mesmo degradê, mais suave, com o Windows de fundo aparecendo desfocado por trás (Windows 11). Trocar de um para o outro pede para reabrir o app.</small></div>
       <div class="seg"><button class="${bgMode() === 'gradient' ? 'sel' : ''}" data-bg="gradient">Degradê</button><button class="${bgMode() === 'blur' ? 'sel' : ''}" data-bg="blur">Ofuscado</button></div></div>
     <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small>Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip">…</span></div>
@@ -1082,7 +1082,7 @@ function confHTML() {
     <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
     <h5 style="margin:22px 0 8px">Botão Clear (base da janela)</h5>
     <div class="card" style="padding:6px 18px">
-    <div class="row"><div class="grow">Pulsar quando o contexto chegar a<small>% do anel CTX a partir da qual o botão Clear pisca. 0 desliga o aviso. Sugestão: 15 para tarefas pequenas, 35 para tarefas longas.</small></div><input type="number" min="0" max="100" class="inp" id="clrAlert" value="${clearCfg().alert}"><span class="chip">%</span></div>
+    <div class="row"><div class="grow">Pulsar quando o contexto chegar a<small>% do anel CTX a partir da qual o botão Clear pisca. 0 desliga o aviso. Sugestão: 15 para tarefas pequenas, 35 para tarefas longas.</small></div><div class="numf" data-min="0" data-max="100"><button type="button" data-step="-1" aria-label="Diminuir">−</button><input id="clrAlert" type="text" inputmode="numeric" maxlength="3" value="${clearCfg().alert}"><button type="button" data-step="1" aria-label="Aumentar">+</button></div><span class="unit">%</span></div>
     <div class="row"><div class="grow">Usar o fluxo Rocruzta nos projetos que o têm<small>Detecta .claude/fluxo.json e usa pedidos enxutos que seguem o fluxo (papel, validação, TASKS e CHANGELOG, sem abrir os arquivos inteiros)</small></div>${yn('flow')}</div>
     <div class="row"><div class="grow">Commit e push ao fechar a tarefa (projetos do fluxo)<small>Commit "TASK-XXX: ..." e push só na branch do seu papel; nunca promove para a main</small></div>${yn('commit')}</div>
     <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Vazio = automático (fluxo ou genérico, conforme o projeto). Para o app limpar sozinho, o texto deve terminar pedindo que o agente escreva ${CLEAR_MARK}; sem isso o app pergunta antes de limpar.</small></div><textarea class="inp ta" id="clrClose" rows="5" placeholder="Automático">${esc(clearCfg().closePrompt)}</textarea></div>
@@ -1484,6 +1484,11 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
+  if ((el = q('[data-step]'))) { // botões − e + do campo numérico
+    const box = el.closest('.numf'), inp = box.querySelector('input');
+    inp.value = Math.min(+box.dataset.max, Math.max(+box.dataset.min, (parseInt(inp.value, 10) || 0) + (+el.dataset.step)));
+    inp.dispatchEvent(new Event('input', { bubbles: true })); return;
+  }
   if ((el = q('[data-ract]'))) { resAct(el.dataset.ract, el.dataset.rk); return; }
   if ((el = q('[data-resscope]'))) { UI.res.scope = el.dataset.resscope; renderPage(); return; }
   if ((el = q('[data-resst]'))) { UI.res.st = el.dataset.resst; renderPage(); return; }
@@ -1544,17 +1549,26 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && (UI.menu || UI.pop)) { UI.menu = null; UI.pop = false; renderMenu(); renderPop(); }
 });
 
+document.addEventListener('keydown', (e) => {
+  const box = e.target.closest && e.target.closest('.numf');
+  if (!box || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+  e.preventDefault();
+  box.querySelector(`[data-step="${e.key === 'ArrowUp' ? 1 : -1}"]`).click();
+});
+document.addEventListener('focusout', (e) => { if (e.target.id === 'clrAlert') e.target.value = String(clearCfg().alert); });
+
 document.addEventListener('input', (e) => {
   const id = e.target.id;
   if (id === 'resq' && UI.res) { UI.res.q = e.target.value; repaintRes(); return; }
   if (id === 'clrAlert' || id === 'clrClose' || id === 'clrResume') {
     const c = S.settings.clear;
-    if (id === 'clrAlert') c.alert = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
+    if (id === 'clrAlert') { const d = e.target.value.replace(/\D/g, '').slice(0, 3); if (d !== e.target.value) e.target.value = d; c.alert = Math.min(100, Math.max(0, parseInt(d, 10) || 0)); }
     else c[id === 'clrClose' ? 'closePrompt' : 'resumePrompt'] = e.target.value;
     save(); renderRail(); return;
   }
   if (id !== 'rngOp') return;
   S.settings.termOp = +e.target.value;
+  e.target.style.setProperty('--pct', `${(+e.target.value - 50) * 2}%`);
   $('#opv').textContent = `${e.target.value}%`;
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
   for (const r of Object.values(RT)) r.term.options.theme = termTheme();

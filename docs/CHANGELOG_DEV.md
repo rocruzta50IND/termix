@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-031 — auditoria de UI/UX e desempenho feita** (DEV1)
+
+- Roteiro automático abriu 20 telas e janelas em 3 larguras e varreu o DOM. Corrigido: duas regras de campo conflitantes (o campo minúsculo de "Novo projeto"), campo numérico, deslizante, seleções e caixas de marcar nativos, janela Adicionar MCP que estourava a altura em 980×620, alturas de controles diferentes, barra de ferramentas de Plugins/MCPs/Skills em três linhas, linhas das Configurações sem quebra em janela estreita, selo do sino cobrindo o ícone, falta de foco por teclado. Padrão único dos controles registrado em `docs/DESIGN.md`. Desempenho medido antes e depois (3 rodadas alternadas): sem regressão e sem desperdício relevante (abertura ~1,9 s, app parado ~2 % de um núcleo). Testado pelo Claude; validada em DEV1.
+
 **TASK-031 e TASK-032 registradas; nova ordem** (DEV1)
 
 - TASK-031 (PRONTA, Alta, próxima): auditoria de UI/UX e desempenho do app inteiro — campos fora de alinhamento, pequenos e com cara antiga (setinhas do campo numérico, campo estreito do Novo projeto), responsividade e medição de desempenho antes e depois. TASK-032 (BACKLOG, por último, antes do instalador): teste geral de plugins, MCPs e skills feito pelo Claude, que fecha a TASK-013. Ordem: 031, depois 029 e 030, depois 032, depois TASK-020 (instalador em Windows limpo) e a promoção. Sem código nesta etapa.

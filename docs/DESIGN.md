@@ -57,3 +57,14 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - **Aviso de reinício:** faixa âmbar (`.restartnote`) no topo da página, com "Reiniciar a aba ativa" e "Dispensar".
 - **Janelas:** campos ocupam toda a largura (`.dlg .inp`); o editor de skill é mais largo (760 px) com fonte monoespaçada; o formulário de MCP mostra campos de web ou de comando conforme o tipo e, se o Claude Code recusar, reabre com o que foi digitado e o erro.
 - **Configurações > Conectores:** uma linha com alternador Automático / Limpo e a nota dos limites logo abaixo.
+
+## Padrão dos controles (TASK-031)
+- **Alturas:** `--ctl-h` 36 px (botões, campos, alternadores `.seg`, campo numérico) e `--ctl-sm` 32 px (versão compacta `.btn.sm`, `.seg.sm`, busca `.resq`, barra de endereço). Raio dos campos 12 px (`--ctl-r`); botões e buscas em pílula. Nada de controle com aparência nativa do navegador: o app declara `color-scheme: dark`.
+- **Uma só regra de campo:** `.inp` (texto, `select`, `textarea`) em `styles.css`, bloco "padrão único dos controles". Fundo `--field`, borda `--border2`, foco com borda azul e anel (`--ring`), sem contorno nativo. Não criar outra regra `.inp` em outro ponto do arquivo (duas regras conflitantes causaram o campo minúsculo de "Novo projeto").
+- **Seleção (`select.inp`):** sem aparência nativa, seta própria à direita, lista escura.
+- **Número:** campo `.numf` com botões − e + (e setas do teclado), unidade ao lado (`.unit`); nunca `input type=number` (as setinhas brancas nativas).
+- **Deslizante:** trilho fino com preenchimento azul (`--pct`, atualizado ao arrastar) e botão redondo branco.
+- **Caixa de marcar:** quadrado de 18 px arredondado, azul quando marcado.
+- **Linhas das Configurações (`.row`):** rótulo à esquerda (flexível), controle à direita sem encolher; em tela estreita (menos de 560 px de conteúdo) o controle desce para baixo do texto; linhas com área de texto quebram antes (780 px) e a área ocupa a largura toda.
+- **Janelas (`.dlg`):** largura `min(470px, 92vw)`, altura máxima da tela com rolagem e **rodapé fixo** (os botões não saem da tela em janela baixa); o editor de skill é mais largo.
+- **Foco por teclado:** anel azul em todo botão e controle (`:focus-visible`). **Selo do sino:** no canto, com borda escura, sem cobrir o ícone.

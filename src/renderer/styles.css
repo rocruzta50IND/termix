@@ -85,7 +85,7 @@ body.maxed .shadow{filter:none}
 .bar i{display:block;height:100%}
 .g{color:var(--ok)}.y{color:var(--warn)}.r{color:var(--bad)}.d{color:var(--text3)}
 .meta{color:var(--text3);font-size:12px;font-family:var(--sans)}
-.nb{position:absolute;right:1px;top:1px;min-width:16px;height:16px;border-radius:99px;background:#ec4899;color:#fff;font-size:10px;display:grid;place-items:center;padding:0 4px}
+.nb{position:absolute;right:-5px;top:-5px;min-width:17px;height:17px;border-radius:99px;background:#ec4899;color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 4px;border:2px solid #0b0f17;box-sizing:content-box}
 
 /* ---------- barra lateral recolhível ---------- */
 .side{position:absolute;left:0;top:var(--head,46px);bottom:12px;display:flex;flex-direction:column;padding:6px 10px 8px;overflow:hidden auto}
@@ -266,36 +266,27 @@ table.t td{padding:11px 10px;border-top:1px solid var(--border);font-size:13px}
 .na{color:var(--text3);font-style:italic}
 .row{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)}
 .row:first-child{border-top:0}.row .grow{flex:1}.row .grow small{display:block;color:var(--text3)}
-input[type=range]{accent-color:var(--accent);width:200px}
 
 /* modal */
 .modal{position:fixed;inset:0;z-index:300;background:rgba(5,4,14,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center}
-.dlg{width:470px;max-width:92vw;padding:24px;background:rgba(14,19,30,.94);user-select:text}
+.dlg{width:min(470px,92vw);max-height:calc(100vh - 32px);overflow-y:auto;padding:24px;background:rgba(14,19,30,.94);user-select:text}
 .dlg h2{font-size:18px;margin-bottom:14px}
 .dlg p{color:var(--text2);margin-bottom:12px;font-size:13.5px}
 .f{margin-bottom:14px}.f>label{display:block;font-size:12px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
-.inp{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border2);background:rgba(255,255,255,.07);color:var(--text);font:inherit;outline:0}
-.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,157,255,.3)}
 .sw{display:flex;gap:9px;flex-wrap:wrap}
 .sw button{width:26px;height:26px;border-radius:50%;background:var(--c);border:2px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .sw button.sel{border-color:#fff;transform:scale(1.12)}
-.foot2{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap}
+.foot2{display:flex;justify-content:flex-end;gap:10px;margin:20px -24px -24px;padding:14px 24px 24px;flex-wrap:wrap;position:sticky;bottom:-24px;background:linear-gradient(to top,rgba(14,19,30,.98) 72%,rgba(14,19,30,0))}
 .seg{display:flex;padding:3px;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid var(--border);width:fit-content}
 .seg button{padding:6px 16px;border-radius:99px;color:var(--text2);white-space:nowrap}
 .seg button.sel{background:var(--glass2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border2)}
 .lrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border)}
 .lrow:first-child{border-top:0}.lrow .nm{flex:1}.lrow .cdot{width:10px;height:10px;border-radius:50%}
-::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
-
-
-
-
 
 /* lista de conversas ao importar */
 .slist{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto;margin:10px 0}
 .srow{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);cursor:pointer}
 .srow:hover{background:rgba(255,255,255,.08)}
-.srow input{margin-top:3px;accent-color:var(--accent)}
 .sbody{display:flex;flex-direction:column;gap:2px;min-width:0}
 .sbody b{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sbody small{color:var(--muted,#9aa4b5);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -357,14 +348,9 @@ button.cl-row{width:100%;text-align:left;cursor:pointer;color:inherit;font:inher
 /* TASK-024: servidores locais detectados nos terminais */
 .wdet{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(9,7,20,var(--term-op));border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text3);flex-wrap:wrap}
 
-.inp{background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:10px;color:var(--text);font:inherit;padding:7px 10px;width:72px}
-.inp:focus{outline:0;border-color:var(--accent)}
-.inp.ta{width:340px;max-width:50%;resize:vertical;font-size:12px;line-height:1.45;min-height:90px}
 
 /* plugins, skills e MCPs (TASK-013) */
 .restools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
-.resq{flex:1 1 200px;min-width:160px;max-width:320px;padding:7px 14px;border-radius:99px;border:1px solid var(--border2);background:var(--glass);color:var(--text);outline:none}
-.resq:focus{border-color:var(--accent)}
 .seg.sm button{padding:4px 12px;font-size:12.5px}
 .rmeta{font-size:11.5px;color:var(--text3);margin-top:4px}
 .rdesc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-top:6px}
@@ -377,8 +363,73 @@ button.cl-row{width:100%;text-align:left;cursor:pointer;color:inherit;font:inher
 .restartnote{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.45);color:#fde68a}
 .plres{max-height:210px;overflow:auto;margin:-4px 0 10px}
 .plres .cl-row{width:100%}
-textarea.mono{font:12.5px var(--mono);white-space:pre;overflow:auto}
-.dlg .inp{width:100%;max-width:none;padding:10px 12px;border-radius:12px;border:1px solid var(--border2);background:rgba(255,255,255,.07)}
-.dlg .inp.ta{width:100%;max-width:100%}
-.dlg select.inp{appearance:auto}
-.dlg:has(textarea.mono){width:760px}
+
+/* ===== padrão único dos controles (TASK-031) =====
+   Alturas: --ctl-h (36) para botões, campos e alternadores; --ctl-sm (30) para a versão compacta (barras de ferramentas e cartões).
+   Todo campo, seleção, número, deslizante e caixa de marcar do app usa estas regras; nada com aparência nativa do navegador. */
+:root{color-scheme:dark;--ctl-h:36px;--ctl-sm:32px;--ctl-r:12px;--field:rgba(255,255,255,.07);--field-h:rgba(255,255,255,.11);--ring:0 0 0 3px rgba(91,157,255,.28)}
+::placeholder{color:var(--text3);opacity:1}
+:focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 80%,transparent);outline-offset:2px}
+.inp:focus-visible,.resq:focus-visible,.wurl:focus-visible,.numf input:focus-visible{outline:0}
+
+.btn{min-height:var(--ctl-h);padding:0 16px}
+.btn.sm{min-height:var(--ctl-sm);padding:0 13px}
+.btn.icon{min-height:0}
+.seg{height:var(--ctl-h);align-items:stretch}
+.seg button{padding:0 16px;display:inline-flex;align-items:center}
+.seg.sm{height:var(--ctl-sm)}
+.seg.sm button{padding:0 12px}
+.bar{border-radius:99px}
+
+.inp{display:block;width:100%;min-height:var(--ctl-h);padding:8px 12px;border-radius:var(--ctl-r);border:1px solid var(--border2);background:var(--field);color:var(--text);font:inherit;outline:0;transition:border-color .12s,background .12s,box-shadow .12s}
+.inp:hover{background:var(--field-h)}
+.inp:focus{border-color:var(--accent);background:var(--field-h);box-shadow:var(--ring)}
+.inp:disabled{opacity:.5;cursor:default}
+textarea.inp{resize:vertical;line-height:1.45;font-size:13px;min-height:84px}
+textarea.mono{font:12.5px/1.5 var(--mono);white-space:pre;overflow:auto}
+select.inp{appearance:none;-webkit-appearance:none;padding-right:36px;cursor:pointer;background-repeat:no-repeat;background-position:right 13px center;background-size:12px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A9B3C4' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+select.inp option{background:#141b29;color:var(--text)}
+.resq,.wurl{min-height:var(--ctl-sm);height:var(--ctl-sm)}
+.resq{padding:0 14px;border-radius:99px;border:1px solid var(--border2);background:var(--field);color:var(--text);font:inherit;font-size:13px;outline:0;transition:border-color .12s,background .12s,box-shadow .12s}
+.resq:hover{background:var(--field-h)}
+.resq:focus{border-color:var(--accent);background:var(--field-h);box-shadow:var(--ring)}
+
+/* campo numérico com botões − e +, no lugar das setinhas do navegador */
+.numf{display:inline-flex;align-items:stretch;height:var(--ctl-h);border-radius:var(--ctl-r);border:1px solid var(--border2);background:var(--field);overflow:hidden;transition:border-color .12s,box-shadow .12s}
+.numf:hover{background:var(--field-h)}
+.numf:focus-within{border-color:var(--accent);box-shadow:var(--ring)}
+.numf input{width:52px;min-height:0;border:0;background:transparent;color:var(--text);font:inherit;text-align:center;outline:0;padding:0}
+.numf button{width:32px;display:grid;place-items:center;color:var(--text2);font-size:16px;line-height:1}
+.numf button:hover{background:var(--glass2);color:var(--text)}
+.numf button:active{background:rgba(255,255,255,.2)}
+.unit{color:var(--text3);font-size:13px;margin-left:8px;min-width:14px}
+
+/* controle deslizante: trilho fino com preenchimento e botão redondo */
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:24px;width:200px;margin:0;cursor:pointer;--pct:50%}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:linear-gradient(to right,var(--accent) var(--pct),rgba(255,255,255,.18) var(--pct))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 6px rgba(0,0,0,.55),0 0 0 3px rgba(91,157,255,.35);transition:box-shadow .12s}
+input[type=range]:hover::-webkit-slider-thumb{box-shadow:0 1px 6px rgba(0,0,0,.55),0 0 0 5px rgba(91,157,255,.35)}
+input[type=range]:focus-visible{outline:0}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 1px 6px rgba(0,0,0,.55),0 0 0 5px rgba(91,157,255,.55)}
+
+/* caixa de marcar */
+input[type=checkbox]{-webkit-appearance:none;appearance:none;width:18px;height:18px;margin:0;flex:none;border-radius:6px;border:1px solid var(--border2);background:var(--field);display:inline-grid;place-content:center;cursor:pointer;transition:background .12s,border-color .12s}
+input[type=checkbox]:hover{background:var(--field-h)}
+input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:2px solid #06101f;border-bottom:2px solid #06101f;transform:rotate(-45deg) translate(1px,-1px)}
+
+/* linhas das Configurações: rótulo à esquerda, controle à direita, sempre alinhados; em tela estreita o controle desce para baixo do texto */
+.page{container-type:inline-size}
+.row{gap:18px}
+.row .grow{flex:1 1 300px;min-width:0}
+.row>:not(.grow){flex:none}
+.row .inp.ta{flex:1 1 340px;width:auto;max-width:560px;min-width:260px}
+@container (max-width:560px){.row{flex-wrap:wrap}.row .grow{flex-basis:100%}}
+@container (max-width:780px){.row:has(.ta){flex-wrap:wrap}.row:has(.ta) .grow{flex-basis:100%}.row .inp.ta{max-width:none}}
+.dlg .inp.ta{max-width:100%;width:100%}
+.dlg:has(textarea.mono){width:min(760px,94vw)}
+.dlg{width:min(470px,92vw)}
+.pop{width:min(460px,calc(100vw - 40px))}
+.restools .resrefresh{margin-left:auto}
+.restools{align-items:center}
