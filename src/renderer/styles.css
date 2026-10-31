@@ -124,13 +124,6 @@ body.maxed .shadow{filter:none}
 
 /* ---------- área principal ---------- */
 .col{position:absolute;display:flex;flex-direction:column;gap:0;min-height:0;min-width:0;border-radius:14px;overflow:hidden}
-/* enquanto o agente trabalha, só a linha colorida sob as abas pulsa (só opacidade: não pesa) */
-.sess{position:relative}
-.sess::before{content:"";position:absolute;left:0;right:0;top:-2px;height:2px;z-index:3;pointer-events:none;opacity:0;background:var(--tc);
-  box-shadow:0 0 10px 1px color-mix(in srgb,var(--tc) 75%,transparent),0 8px 26px color-mix(in srgb,var(--tc) 35%,transparent)}
-.sess.working::before{animation:linepulse 2.2s ease-in-out infinite}
-@keyframes linepulse{0%,100%{opacity:.15}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.sess.working::before{animation:none;opacity:.7}}
 #page:not(.hide){margin:8px}
 /* rail: cápsula vertical de anéis (contexto, 5 h, 7 d, cache) dentro do terminal, junto à borda direita */
 .rail{position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;width:58px;padding:12px 6px 6px;border-radius:30px;
@@ -170,13 +163,24 @@ body.maxed .shadow{filter:none}
 .btn.sm{padding:5px 12px;font-size:12.5px}
 .btn.bad{border-color:rgba(248,113,113,.55);color:#fecaca}
 
-/* abas ao estilo do Windows Terminal */
-.tabsbar{display:flex;align-items:flex-end;gap:2px;margin-bottom:0;min-height:42px;padding:6px 8px 0 16px;background:rgba(9,7,20,var(--term-op))}
-.tab{position:relative;display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;border-radius:8px 8px 0 0;
-  background:color-mix(in srgb,var(--c) 16%,rgba(10,14,22,.55));border:1px solid color-mix(in srgb,var(--c) 30%,rgba(255,255,255,.10));border-bottom:0;
-  color:var(--text2);overflow:hidden;flex:0 1 190px;min-width:96px}
-.tab:hover{background:color-mix(in srgb,var(--c) 26%,rgba(10,14,22,.5));color:var(--text)}
-.tab.active{background:color-mix(in srgb,var(--c) 46%,rgba(8,12,20,.78));border-color:color-mix(in srgb,var(--c) 70%,rgba(255,255,255,.2));color:#fff}
+/* abas ao estilo do Windows Terminal: a ativa se funde ao terminal (mesma cor, sem linha), com "orelhas" curvas */
+.tabsbar{--bar-a:.4;--tab-a:max(0,calc(1 - (1 - var(--term-op)) / (1 - var(--bar-a))));--tab-bg:rgba(9,7,20,var(--tab-a));
+  display:flex;align-items:flex-end;gap:0;margin-bottom:0;min-height:42px;padding:6px 8px 0 12px;background:rgba(9,7,20,var(--bar-a))}
+.tab{position:relative;display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;border-radius:8px 8px 0 0;background:transparent;border:0;
+  color:var(--text3);flex:0 1 190px;min-width:96px}
+.tab+.tab::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:rgba(255,255,255,.12)}
+.tab.active::before,.tab.active+.tab::before{display:none}
+.tab:not(.active):hover{background:rgba(255,255,255,.07);color:var(--text)}
+.tab:not(.active):hover::before,.tab:not(.active):hover+.tab::before{opacity:0}
+.tab.active{background:var(--tab-bg);color:#fff;z-index:2}
+.tab.active::before,.tab.active::after{content:"";display:block;position:absolute;bottom:0;width:8px;height:8px;pointer-events:none}
+.tab.active::before{left:-8px;background:radial-gradient(circle at 0 0,transparent 7.5px,var(--tab-bg) 8px)}
+.tab.active::after{right:-8px;background:radial-gradient(circle at 100% 0,transparent 7.5px,var(--tab-bg) 8px)}
+.tab .tl{position:absolute;left:0;right:0;top:0;height:2px;border-radius:2px 2px 0 0;background:var(--c);box-shadow:0 0 10px 1px color-mix(in srgb,var(--c) 70%,transparent)}
+/* enquanto o agente trabalha, só a linha colorida da aba ativa pulsa (só opacidade: não pesa) */
+.tabsbar.working .tab .tl{animation:linepulse 2.2s ease-in-out infinite}
+@keyframes linepulse{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.tabsbar.working .tab .tl{animation:none;opacity:.8}}
 .tab .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left;font-size:13px}
 .tab .pw{color:#fca5a5;display:flex}
 .tab .bd{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ok);box-shadow:0 0 0 2px rgba(8,12,20,.7)}
@@ -202,7 +206,7 @@ body.maxed .shadow{filter:none}
 @keyframes pulse{50%{opacity:.5}}@keyframes spin{to{transform:rotate(360deg)}}
 
 /* terminal quadrado, colado nas abas; a linha de cima leva a cor da aba ativa */
-.sess{flex:1;min-height:0;display:flex;flex-direction:column;border-radius:0;overflow:hidden;border:0;border-top:2px solid var(--tc,var(--border2))}
+.sess{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;border-radius:0;overflow:hidden;border:0}
 .term{flex:1;min-height:0;position:relative;background:rgba(9,7,20,var(--term-op))}
 .tview{position:absolute;inset:0;display:none}
 .tview.on{display:block}

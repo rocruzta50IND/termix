@@ -35,7 +35,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-030 — Abas encaixadas na janela do terminal, como no Terminal do Windows (MVP)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO (iniciada em 2026-10-31; etapa atual: ler o CSS e propor o desenho)
+- **Status:** EM ANDAMENTO (implementada e testada pelo Claude; aguardando a validação do usuário)
 - **Prioridade:** Alta (MVP) — pedido do usuário em 2026-10-30
 - **Objetivo:** a aba ativa deve ficar **perfeitamente encaixada** na janela do terminal, como no Terminal do Windows, para dar um visual melhor.
 - **Como está (captura do usuário):** as abas parecem cartões soltos, com cantos arredondados nos quatro lados e um vão entre a base da aba e a linha verde do terminal; a ativa não se funde com o conteúdo.
@@ -43,7 +43,12 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Critérios de aceite (a refinar ao retomar):** sem vão nem linha entre a aba ativa e o terminal; mantém a cor própria de cada aba (linha de cima com a cor da aba ativa, DESIGN.md), o selo de aviso, o estado (ponto) e o fechar; arrastar e soltar para reordenar continua; funciona com abas demais (rolagem/encolhimento) e com a janela estreita; sem perder desempenho.
 - **Adendo — cor (usuário, 2026-10-30):** todo terminal novo abre com a **cor principal do sistema (azul)**, em vez de uma cor diferente por aba; a pessoa ainda pode mudar a cor da aba depois (clique duplo / menu). Hoje a cor inicial sai de uma lista rotativa (`COLORS` em `src/renderer/app.js`). Vale também para as abas importadas e duplicadas; as abas já salvas mantêm a cor que têm.
 - **Base existente:** `renderTabs()` em `src/renderer/app.js` e o estilo das abas em `src/renderer/styles.css`; `docs/DESIGN.md` (abas coladas no terminal, estilo Windows Terminal) e as capturas do usuário (a atual e a do Terminal do Windows).
-- **Próximo passo:** (ao retomar) ler o CSS das abas e do cabeçalho do terminal, propor o desenho ao usuário (de preferência um protótipo em `docs/prototipos/`) e só então mexer.
+- **Feito até agora (2026-10-31):** leitura do CSS (`.tabsbar`, `.tab`, `.sess` com borda de cima na cor da aba) e do `renderTabs`. Protótipo em `docs/prototipos/abas-encaixadas.html`: aba ativa na mesma cor do terminal (sem linha entre os dois), com orelhas curvas e linha de cima na cor da aba; inativas transparentes, com separador fino; versão em janela estreita.
+- **Feito (2026-10-31, desenho aprovado no protótipo):** `src/renderer/styles.css`: aba ativa com a cor do terminal (`--tab-a` calculado a partir de `--term-op` e da barra) e orelhas curvas, sem linha entre as duas; linha de 2 px da cor da aba no topo (`.tl`), que pulsa quando o agente trabalha (saiu o pulso da borda do terminal); inativas transparentes com separador fino; `.sess` sem borda de cima. `src/renderer/app.js`: `renderTabs` com a linha `.tl`, `DEFAULT_COLOR` (azul `#5B9DFF`) para aba nova, importada e duplicada (as salvas mantêm a cor). A aba da Web usa a mesma classe e herda o visual. Testado por CDP em instância isolada (4 abas): cor da ativa 0,80 de alpha sobre a barra, equivalente ao terminal, orelhas e linha presentes, captura conferida; `npm run check` passou.
+- **Arquivos tocados:** `src/renderer/styles.css`, `src/renderer/app.js`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`, `docs/prototipos/abas-encaixadas.html`.
+- **Como validar:** `npm start`; olhar as abas (ativa fundida ao terminal, sem vão, linha de cor no topo), clicar entre abas, arrastar para reordenar, fechar, mudar a cor pelo clique duplo, abrir várias abas e estreitar a janela, deixar o agente trabalhando (a linha do topo pulsa), conferir a aba da Web; criar uma aba nova (nasce azul).
+- **Pendências:** testado só com abas sem terminal vivo (sem sessão real do Claude Code); o contraste entre a barra e o terminal depende do fundo e da opacidade do terminal (Configurações); arrastar, muitas abas e janela estreita não foram exercitados.
+- **Próximo passo:** o usuário testa; com a aprovação, fechar a tarefa (VALIDADA EM DEV1, changelog, commit na dev1) e seguir para a TASK-032.
 
 
 ## Aguardando validação DEV1

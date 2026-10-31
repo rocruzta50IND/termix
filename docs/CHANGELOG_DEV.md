@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-030 — abas encaixadas na janela do terminal** (DEV1)
+
+- Desenho aprovado em protótipo (`docs/prototipos/abas-encaixadas.html`) e aplicado: aba ativa fundida ao terminal (mesma cor, sem linha, orelhas curvas), linha de 2 px da cor da aba no topo (pulsa quando o agente trabalha), inativas discretas com separador fino; aba nova começa no azul do sistema. Testado por CDP em instância isolada; aguarda o teste do usuário.
+
 **TASK-029 — fechada: VALIDADA EM DEV1** (DEV1)
 
 - Aprovada pelo usuário em 2026-10-31 sem teste manual (confiou no teste do Claude em instância isolada). Segue em aberto o teste real do som, da notificação do Windows e do texto da dica com uma sessão real do Claude Code. `npm run check` passou. Próxima: TASK-030 (abas encaixadas), iniciada.

@@ -1,7 +1,8 @@
 'use strict';
 const api = window.termix;
 
-const COLORS = ['#7C8CFF', '#34D399', '#F472B6', '#FBBF24', '#22D3EE', '#FB923C', '#A78BFA', '#F87171', '#84CC16', '#38BDF8'];
+const DEFAULT_COLOR = '#5B9DFF'; // cor principal do sistema (azul): toda aba nova começa com ela
+const COLORS = ['#5B9DFF', '#7C8CFF', '#34D399', '#F472B6', '#FBBF24', '#22D3EE', '#FB923C', '#A78BFA', '#F87171', '#84CC16', '#38BDF8'];
 const GRADS = [['#60a5fa', '#22d3ee'], ['#94a3b8', '#64748b'], ['#38bdf8', '#6366f1'], ['#a5b4fc', '#60a5fa'], ['#67e8f9', '#34d399']];
 const GLOBALS = [['Consumo', 'gauge'], ['Integrações', 'link'], ['Configurações', 'gear']];
 const SUBS = [['Terminais', 'terminal'], ['Plugins', 'plug'], ['Skills', 'sparkles'], ['MCPs', 'network']];
@@ -784,14 +785,15 @@ function renderSide() {
 
 function renderTabs() {
   const p = curProject();
-  if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); return; }
+  if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
   const st = stOf(cur), [sc, sl] = STATES[st];
   if (document.hasFocus() && RT[cur.id]) RT[cur.id].unread = null; // a aba à vista, com o app em foco, já foi vista
   $('#sess').style.setProperty('--tc', cur.color);
   $('#sess').classList.toggle('working', st === 'work');
-  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
+  $('#tabsRow').classList.toggle('working', st === 'work');
+  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor">${t.id === cur.id ? '<i class="tl"></i>' : ''}<i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
     + `<button class="plus" data-newtab="claude|n" title="Novo terminal (Claude Code)">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
     <span class="sp"></span>
     <div class="tctl">
@@ -1387,7 +1389,7 @@ async function importSessionsFlow(p, fromImport = false) {
   const picked = r.value === 'ok' ? list.filter((s) => r.picked.includes(s.id)) : [];
   if (!picked.length) { if (fromImport && !p.tabs.length) createTab(p, 'n'); return; }
   picked.forEach((s, i) => {
-    p.tabs.push({ id: uuid(), sessionId: s.id, agent: 'claude', name: s.title.slice(0, 28), color: COLORS[(p.tabs.length + i) % COLORS.length], perm: r.form.perm === 'd' ? 'd' : 'n', started: true, open: true, live: false, archived: false });
+    p.tabs.push({ id: uuid(), sessionId: s.id, agent: 'claude', name: s.title.slice(0, 28), color: DEFAULT_COLOR, perm: r.form.perm === 'd' ? 'd' : 'n', started: true, open: true, live: false, archived: false });
   });
   p.activeTab = p.tabs[p.tabs.length - 1].id; save();
   UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
@@ -1405,7 +1407,7 @@ function addProject({ name, path, imported, noTab }) {
 // "+" cria direto um terminal com a ferramenta escolhida; nome e cor podem ser mudados depois
 function createTab(p, perm, opts = {}) {
   const n = p.tabs.filter((t) => (t.agent || 'claude') === 'claude').length + 1;
-  const tab = { id: uuid(), sessionId: uuid(), agent: 'claude', name: opts.name || `Claude ${n}`, color: opts.color || COLORS[p.tabs.length % COLORS.length], perm: perm === 'd' ? 'd' : 'n', started: false, open: true, live: false, archived: false };
+  const tab = { id: uuid(), sessionId: uuid(), agent: 'claude', name: opts.name || `Claude ${n}`, color: opts.color || DEFAULT_COLOR, perm: perm === 'd' ? 'd' : 'n', started: false, open: true, live: false, archived: false };
   if (opts.after) { const i = p.tabs.findIndex((t) => t.id === opts.after); p.tabs.splice(i + 1, 0, tab); } else p.tabs.push(tab);
   p.activeTab = tab.id; save();
   UI.cur.page = 'Terminais'; UI.menu = null; renderAll();

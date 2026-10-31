@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Protótipo — abas encaixadas (TASK-030)</title>
+<style>
+:root{--term:rgb(14,17,28);--text:#EEF2F8;--text2:#A9B3C4;--text3:#6F7A8E;--accent:#5B9DFF}
+*{box-sizing:border-box}
+body{margin:0;padding:32px;font:13px "Segoe UI",system-ui,sans-serif;color:var(--text);background:radial-gradient(900px 500px at 20% 0,#27407a,#0b1020 70%);min-height:100vh}
+h2{font-weight:600;font-size:13px;color:var(--text2);margin:28px 0 8px}
+.win{max-width:860px;border-radius:14px;overflow:hidden;background:rgba(8,12,22,.55)}
+/* barra: a ativa e o terminal têm a MESMA cor, sem linha entre os dois */
+.tabsbar{display:flex;align-items:flex-end;gap:0;height:42px;padding:6px 8px 0 12px}
+.tab{position:relative;display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;flex:0 1 190px;min-width:96px;
+  color:var(--text3);border-radius:8px 8px 0 0;background:transparent}
+.tab+.tab:not(.active)::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:rgba(255,255,255,.12)}
+.tab.active+.tab::before,.tab:has(+.tab.active)::before{display:none}
+.tab:not(.active):hover{background:rgba(255,255,255,.07);color:var(--text)}
+.tab .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:#34d399;flex:none}
+.tab .x{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;opacity:0;color:var(--text3)}
+.tab.active .x,.tab:hover .x{opacity:1}
+.tab .x:hover{background:rgba(255,255,255,.16);color:#fff}
+.tab.active{background:var(--term);color:#fff;z-index:2;border-top:2px solid var(--c);padding-top:0}
+/* "orelhas": cantos de baixo curvados para fora, encostando na linha do conteúdo */
+.tab.active::before,.tab.active::after{content:"";position:absolute;bottom:0;width:8px;height:8px;pointer-events:none}
+.tab.active::before{left:-8px;background:radial-gradient(circle at 0 0,transparent 8px,var(--term) 8.5px)}
+.tab.active::after{right:-8px;background:radial-gradient(circle at 100% 0,transparent 8px,var(--term) 8.5px)}
+.plus{width:30px;height:30px;margin:0 0 3px 6px;border-radius:8px;display:grid;place-items:center;color:var(--text2);font-size:18px}
+.plus:hover{background:rgba(255,255,255,.08)}
+.term{height:150px;background:var(--term);padding:14px 18px;font:12.5px Consolas,monospace;color:#c9d4e8}
+.nar{width:300px}
+</style></head><body>
+<h2>Proposta — aba ativa fundida ao terminal (cor própria só na linha de cima), inativas discretas com separador fino</h2>
+<div class="win"><div class="tabsbar">
+  <div class="tab" style="--c:#5B9DFF"><i class="dot"></i><span class="nm">Brain</span><span class="x">×</span></div>
+  <div class="tab active" style="--c:#5B9DFF"><i class="dot"></i><span class="nm">Claude 2</span><span class="x">×</span></div>
+  <div class="tab" style="--c:#5B9DFF"><i class="dot" style="background:#fbbf24"></i><span class="nm">Coder</span><span class="x">×</span></div>
+  <div class="tab" style="--c:#5B9DFF"><i class="dot"></i><span class="nm">Testes</span><span class="x">×</span></div>
+  <span class="plus">+</span>
+</div><div class="term">&gt; claude<br><br>● Pronto. Em que posso ajudar?</div></div>
+
+<h2>Janela estreita — as abas encolhem até 96 px</h2>
+<div class="win nar"><div class="tabsbar">
+  <div class="tab" style="--c:#5B9DFF"><i class="dot"></i><span class="nm">Brain</span></div>
+  <div class="tab active" style="--c:#5B9DFF"><i class="dot"></i><span class="nm">Claude 2</span></div>
+  <div class="tab" style="--c:#5B9DFF"><i class="dot"></i><span class="nm">Coder</span></div>
+  <span class="plus">+</span>
+</div><div class="term">&gt;</div></div>
+</body></html>
