@@ -32,10 +32,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Pendências (etapa 1):** a leitura de skills não conhece skills de MCP nem as embutidas do Claude Code; plugins instalados só em outro projeto não aparecem; o estado dos MCPs de projeto (`.mcp.json`) pendentes de aprovação aparece como "Aguardando aprovação" (conferir com um projeto real); sem controle ainda (etapa 2).
 - **Próximo passo:** a validação foi delegada ao Claude (decisão do usuário, 2026-10-31): teste geral na TASK-032, depois da TASK-031 (auditoria de UI/UX e desempenho) e das TASK-029/030, e antes do teste do instalador (TASK-020). Aprovada a TASK-032, fecha a TASK-013 (VALIDADA EM DEV1).
 
+## Aguardando validação DEV1
+
+_Nenhuma no momento._
+
+## Validadas em DEV1
+
 ### TASK-030 — Abas encaixadas na janela do terminal, como no Terminal do Windows (MVP)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO (implementada e testada pelo Claude; aguardando a validação do usuário)
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-10-31)
 - **Prioridade:** Alta (MVP) — pedido do usuário em 2026-10-30
 - **Objetivo:** a aba ativa deve ficar **perfeitamente encaixada** na janela do terminal, como no Terminal do Windows, para dar um visual melhor.
 - **Como está (captura do usuário):** as abas parecem cartões soltos, com cantos arredondados nos quatro lados e um vão entre a base da aba e a linha verde do terminal; a ativa não se funde com o conteúdo.
@@ -48,14 +54,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Arquivos tocados:** `src/renderer/styles.css`, `src/renderer/app.js`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`, `docs/prototipos/abas-encaixadas.html`.
 - **Como validar:** `npm start`; olhar as abas (ativa fundida ao terminal, sem vão, linha de cor no topo), clicar entre abas, arrastar para reordenar, fechar, mudar a cor pelo clique duplo, abrir várias abas e estreitar a janela, deixar o agente trabalhando (a linha do topo pulsa), conferir a aba da Web; criar uma aba nova (nasce azul).
 - **Pendências:** testado só com abas sem terminal vivo (sem sessão real do Claude Code); o contraste entre a barra e o terminal depende do fundo e da opacidade do terminal (Configurações); arrastar, muitas abas e janela estreita não foram exercitados.
-- **Próximo passo:** o usuário testa; com a aprovação, fechar a tarefa (VALIDADA EM DEV1, changelog, commit na dev1) e seguir para a TASK-032.
-
-
-## Aguardando validação DEV1
-
-_Nenhuma no momento._
-
-## Validadas em DEV1
+- **Próximo passo:** TASK-032 (teste geral de plugins, MCPs e skills, que fecha a TASK-013).
+- **Validada em:** 2026-10-31 (o usuário aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-029 — Notificações bem encaixadas no app, com o cache como função principal (MVP)
 
