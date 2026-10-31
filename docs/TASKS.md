@@ -88,7 +88,9 @@ _Nenhuma no momento._
 - **Arquivos tocados:** `src/renderer/styles.css`, `src/renderer/app.js`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`, `docs/prototipos/abas-encaixadas.html`.
 - **Como validar:** `npm start`; olhar as abas (ativa fundida ao terminal, sem vão, linha de cor no topo), clicar entre abas, arrastar para reordenar, fechar, mudar a cor pelo clique duplo, abrir várias abas e estreitar a janela, deixar o agente trabalhando (a linha do topo pulsa), conferir a aba da Web; criar uma aba nova (nasce azul).
 - **Pendências:** testado só com abas sem terminal vivo (sem sessão real do Claude Code); o contraste entre a barra e o terminal depende do fundo e da opacidade do terminal (Configurações); arrastar, muitas abas e janela estreita não foram exercitados.
-- **Próximo passo:** TASK-032 (teste geral de plugins, MCPs e skills, que fecha a TASK-013).
+- **Ajuste final (usuário, 2026-10-31, com capturas):** a aba ativa ainda parecia solta e o terminal deixava um espaço; pedido: tudo colado e rente, como o Terminal do Windows, com **separação nítida** entre as abas. Feito: barra mais escura que o terminal e aba ativa só com a cor do terminal (fusão sem emenda, formato visível), orelhas corrigidas nas abas que não são a primeira (a orelha esquerda saía do lugar por causa do separador), separador mais nítido e barra com margem esquerda menor; vale para a Web. Testado por CDP (instância isolada) com 4 a 8 abas, nas larguras 1280 e 980, na aba da Web e sem erro de JavaScript; arrastar para reordenar não foi exercitado (o recorte é refeito ao soltar).
+- **Arquivos tocados (ajuste):** `src/renderer/styles.css`, `src/renderer/app.js` (`fuseBar`), `src/renderer/web.js`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Próximo passo:** TASK-020 (instalador em Windows limpo).
 - **Validada em:** 2026-10-31 (o usuário aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-029 — Notificações bem encaixadas no app, com o cache como função principal (MVP)

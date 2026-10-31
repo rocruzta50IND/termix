@@ -189,7 +189,7 @@ function webRender(m) {
   if (on) {
     const p = curProject();
     if (!webOf(p).tabs.length) addWebTab(p, '');
-    $('#wtabs').innerHTML = webTabsHTML(p);
+    $('#wtabs').innerHTML = webTabsHTML(p); fuseBar($('#wtabs'));
     ensureWebBar();
     updateWebBar();
     if (UI.webNew && UI.webNew[p.id]) UI.webNew = { ...UI.webNew, [p.id]: false }; // quem abre a Web viu o aviso
@@ -275,7 +275,7 @@ api.onWebUpdate((m) => {
   f.t.title = m.title || f.t.title;
   WEB[m.id] = { ...(WEB[m.id] || {}), loading: m.loading, canBack: m.canBack, canForward: m.canForward, created: true };
   if (old !== `${f.t.url}|${f.t.title}`) save();
-  if (mode() === 'web' && curProject() === f.p) { $('#wtabs').innerHTML = webTabsHTML(f.p); updateWebBar(); renderWebStart(); }
+  if (mode() === 'web' && curProject() === f.p) { $('#wtabs').innerHTML = webTabsHTML(f.p); fuseBar($('#wtabs')); updateWebBar(); renderWebStart(); }
 });
 api.onWebNewTab(({ from, url }) => {
   const f = findWebTab(from);

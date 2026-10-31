@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-030 — ajuste final das abas: fundidas ao terminal, com separação nítida** (DEV1)
+
+- A barra de abas ficou mais escura que o terminal e a aba ativa, sem o fundo da barra atrás, só com a cor do terminal: o formato dela aparece e ela se funde ao terminal, como no Terminal do Windows; separador entre abas mais nítido; orelha esquerda corrigida nas abas que não são a primeira; vale também para a Web. Testado por CDP em instância isolada. Pedido do usuário, com capturas. `npm run check` passou.
+
 **TASK-032 e TASK-013 — fechadas: VALIDADAS EM DEV1** (DEV1)
 
 - Aprovadas pelo usuário em 2026-10-31. Segue em aberto o login de MCP/conector com conta real. Próxima: TASK-020 (instalador em Windows limpo).

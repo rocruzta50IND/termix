@@ -164,18 +164,26 @@ body.maxed .shadow{filter:none}
 .btn.bad{border-color:rgba(248,113,113,.55);color:#fecaca}
 
 /* abas ao estilo do Windows Terminal: a ativa se funde ao terminal (mesma cor, sem linha), com "orelhas" curvas */
-.tabsbar{--bar-a:.4;--tab-a:max(0,calc(1 - (1 - var(--term-op)) / (1 - var(--bar-a))));--tab-bg:rgba(9,7,20,var(--tab-a));
-  display:flex;align-items:flex-end;gap:0;margin-bottom:0;min-height:42px;padding:6px 8px 0 12px;background:rgba(9,7,20,var(--bar-a))}
+/* a barra é pintada mais escura que o terminal, MENOS atrás da aba ativa: ali fica só a cor do terminal, então a aba se funde a ele e o formato dela aparece.
+   O fundo é um ::before com máscara; os furos (aba e as duas orelhas) vêm de --tl/--tr (aba) e --al/--ar (8 px a mais de cada lado), medidos em fuseBar (app.js) */
+.tabsbar{--bar-bg:rgba(2,3,9,.62);--tab-bg:rgba(9,7,20,var(--term-op));position:relative;isolation:isolate;
+  display:flex;align-items:flex-end;gap:0;margin-bottom:0;min-height:42px;padding:6px 8px 0 8px}
+.tabsbar::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--bar-bg);
+  -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000);mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000);
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-position:0 0,var(--tl,0px) 6px,var(--al,0px) 100%,var(--tr,0px) 100%;mask-position:0 0,var(--tl,0px) 6px,var(--al,0px) 100%,var(--tr,0px) 100%;
+  -webkit-mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) calc(100% - 6px),calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) calc(100% - 6px),calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;
+  -webkit-mask-composite:xor;mask-composite:exclude}
 .tab{position:relative;display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;border-radius:8px 8px 0 0;background:transparent;border:0;
   color:var(--text3);flex:0 1 190px;min-width:96px}
-.tab+.tab::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:rgba(255,255,255,.12)}
+.tab+.tab::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:1px;background:rgba(255,255,255,.3)}
 .tab.active::before,.tab.active+.tab::before{display:none}
 .tab:not(.active):hover{background:rgba(255,255,255,.07);color:var(--text)}
 .tab:not(.active):hover::before,.tab:not(.active):hover+.tab::before{opacity:0}
 .tab.active{background:var(--tab-bg);color:#fff;z-index:2}
-.tab.active::before,.tab.active::after{content:"";display:block;position:absolute;bottom:0;width:8px;height:8px;pointer-events:none}
-.tab.active::before{left:-8px;background:radial-gradient(circle at 0 0,transparent 7.5px,var(--tab-bg) 8px)}
-.tab.active::after{right:-8px;background:radial-gradient(circle at 100% 0,transparent 7.5px,var(--tab-bg) 8px)}
+.tab.active::before,.tab.active::after{content:"";display:block;position:absolute;top:auto;bottom:0;width:8px;height:8px;pointer-events:none}
+.tab.active::before{left:-8px;background:radial-gradient(circle at 0 0,var(--bar-bg) 7.5px,var(--tab-bg) 8px)}
+.tab.active::after{right:-8px;background:radial-gradient(circle at 100% 0,var(--bar-bg) 7.5px,var(--tab-bg) 8px)}
 .tab .tl{position:absolute;left:0;right:0;top:0;height:2px;border-radius:2px 2px 0 0;background:var(--c);box-shadow:0 0 10px 1px color-mix(in srgb,var(--c) 70%,transparent)}
 /* enquanto o agente trabalha, só a linha colorida da aba ativa pulsa (só opacidade: não pesa) */
 .tabsbar.working .tab .tl{animation:linepulse 2.2s ease-in-out infinite}

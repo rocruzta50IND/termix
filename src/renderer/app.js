@@ -783,6 +783,16 @@ function renderSide() {
     ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${ic(i, 17)}</span>${n}</button>`).join('')}`;
 }
 
+// mede a aba ativa e deixa a barra sem o fundo escuro atrás dela (com as duas orelhas), para ela se fundir ao terminal
+function fuseBar(bar) {
+  if (!bar) return;
+  const t = bar.querySelector('.tab.active');
+  if (!t) { for (const k of ['--al', '--ar', '--tl', '--tr']) bar.style.removeProperty(k); return; }
+  const l = t.offsetLeft, r = l + t.offsetWidth;
+  bar.style.setProperty('--tl', l + 'px'); bar.style.setProperty('--tr', r + 'px');
+  bar.style.setProperty('--al', (l - 8) + 'px'); bar.style.setProperty('--ar', (r + 8) + 'px');
+}
+if (typeof ResizeObserver !== 'undefined') window.addEventListener('DOMContentLoaded', () => { for (const id of ['tabsRow', 'wtabs']) { const el = document.getElementById(id); if (el) new ResizeObserver(() => fuseBar(el)).observe(el); } });
 function renderTabs() {
   const p = curProject();
   if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
@@ -801,6 +811,7 @@ function renderTabs() {
       <span class="state"><i class="dot ${sc}"></i>${sl}</span>
       ${st === 'fail' ? `<button class="btn sm" data-newconv="${cur.id}">Nova conversa</button>` : ''}
     </div>`;
+  fuseBar($('#tabsRow'));
 }
 
 function emptyHTML() {
