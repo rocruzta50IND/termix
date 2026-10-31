@@ -79,10 +79,67 @@ const stOf = (tab) => (RT[tab.id] ? RT[tab.id].st : 'end');
 const aliveTabs = () => S.projects.flatMap((p) => p.tabs.filter((t) => RT[t.id] && RT[t.id].alive).map((t) => ({ p, tab: t })));
 
 /* ---------- eventos (notificações) ---------- */
+const NOTIF_DEF = { v: 1, done: true, perm: true, error: true, cache: true, cacheMin: 10, sound: true, toast: true, toastSec: 6, win: true };
+const notifCfg = () => S.settings.notif || NOTIF_DEF;
+const EV_MAX = 60;
+let evSeq = 0;
 function addEvent(ev) {
-  UI.events.unshift({ ts: Date.now(), done: false, acts: [], ...ev });
-  UI.events = UI.events.slice(0, 40);
+  // aberto o painel, o aviso já nasce visto; fechado, conta no selo do sino até a pessoa abrir e fechar o painel
+  UI.events.unshift({ id: ++evSeq, ts: Date.now(), done: false, seen: UI.actOpen, acts: [], ...ev });
+  UI.events = UI.events.slice(0, EV_MAX);
   renderAct(); renderTop();
+}
+function markSeen() { for (const e of UI.events) e.seen = true; }
+
+// som curto gerado na hora (sem arquivo): tom por tipo, volume baixo
+let audioCtx = null;
+function beep(kind) {
+  if (!notifCfg().sound) return;
+  try {
+    audioCtx = audioCtx || new AudioContext();
+    const f = { done: [660, 880], perm: [740, 740, 740], error: [330, 247], cache: [523, 392] }[kind] || [660];
+    const t0 = audioCtx.currentTime;
+    f.forEach((hz, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = hz;
+      g.gain.setValueAtTime(0.0001, t0 + i * 0.13);
+      g.gain.exponentialRampToValueAtTime(0.07, t0 + i * 0.13 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.13 + 0.16);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t0 + i * 0.13); o.stop(t0 + i * 0.13 + 0.18);
+    });
+  } catch { /* sem áudio: segue sem som */ }
+}
+
+// dica animada ao lado esquerdo do sino: mostra rápido o que aconteceu; clicar abre o painel
+let toastEl = null, toastTimer = 0;
+function showToast(ev) {
+  const cfg = notifCfg();
+  if (!cfg.toast || UI.actOpen) return;
+  const bell = document.querySelector('[data-togact]');
+  if (!bell) return;
+  if (!toastEl) {
+    toastEl = document.createElement('div');
+    toastEl.id = 'ntoast';
+    toastEl.addEventListener('click', () => { hideToast(); if (!UI.actOpen) document.querySelector('[data-togact]').click(); });
+    document.body.appendChild(toastEl);
+  }
+  const r = bell.getBoundingClientRect();
+  toastEl.style.right = `${Math.round(window.innerWidth - r.left + 10)}px`;
+  toastEl.style.top = `${Math.round(r.top + r.height / 2)}px`;
+  toastEl.style.setProperty('--c', ev.c || '#8B7BFF');
+  toastEl.innerHTML = `<b>${esc(ev.who)}<small>${esc(KIND_TITLE[ev.kind] || '')}</small></b><span>${esc(ev.msg)}</span>`;
+  toastEl.classList.remove('show'); void toastEl.offsetWidth; toastEl.classList.add('show'); // reinicia a animação
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, Math.max(2, cfg.toastSec) * 1000);
+}
+function hideToast() { clearTimeout(toastTimer); if (toastEl) toastEl.classList.remove('show'); }
+// resumo curto do texto final do agente: a última frase útil, sem marcação
+function lastLine(t) {
+  if (!t) return '';
+  const s = String(t).replace(/```[\s\S]*?```/g, ' ').replace(/[*_`#>]/g, '').split(/\n+/).map((x) => x.trim()).filter(Boolean);
+  const l = s[s.length - 1] || '';
+  return l.length > 160 ? `${l.slice(0, 157)}…` : l;
 }
 function ago(ts) {
   const s = Math.floor((Date.now() - ts) / 1000);
@@ -90,7 +147,7 @@ function ago(ts) {
   if (s < 3600) return `há ${Math.max(1, Math.round(s / 60))} min`;
   return `há ${Math.round(s / 3600)} h`;
 }
-const pending = () => UI.events.filter((e) => !e.done).length;
+const pending = () => UI.events.filter((e) => !e.seen && !e.done).length;
 
 /* ---------- terminais ---------- */
 function termTheme() {
@@ -298,16 +355,37 @@ const tabVisible = (p, tab) => UI.cur.p === p.id && UI.cur.page === 'Terminais' 
 // aviso de uma aba: só quando a pessoa não está olhando para ela (aba oculta ou app em segundo plano).
 // Vai para o painel, ganha selo na aba e, com o app sem foco, vira notificação do Windows.
 const KIND_RANK = { done: 1, perm: 2, error: 3 };
-const KIND_TITLE = { done: 'Terminou', perm: 'Precisa de você', error: 'Erro' };
+const KIND_TITLE = { done: 'Terminou', perm: 'Precisa de você', error: 'Erro', cache: 'Cache esfriando' };
 function notifyTab(p, tab, kind, msg, acts = []) {
+  const cfg = notifCfg();
+  if (cfg[kind] === false) return; // tipo desligado em Configurações > Notificações
   const focused = document.hasFocus();
-  if (focused && tabVisible(p, tab)) return;
-  addEvent({ c: tab.color, who: tab.name, msg, kind, acts: [['Abrir', 'open', tab.id], ...acts] });
-  const r = ensureRT(tab);
-  if (!r.unread || KIND_RANK[kind] >= KIND_RANK[r.unread]) r.unread = kind;
-  if (!focused) api.notify({ tabId: tab.id, title: `${tab.name} · ${KIND_TITLE[kind]}`, body: msg });
+  if (kind !== 'cache' && focused && tabVisible(p, tab)) return;
+  if (stOf(tab) === 'work' && kind !== 'error') return; // terminal trabalhando não notifica
+  const ev = { c: tab.color, who: tab.name, tabId: tab.id, msg, kind, acts: [['Abrir', 'open', tab.id], ...acts] };
+  addEvent(ev);
+  if (kind !== 'cache') { const r = ensureRT(tab); if (!r.unread || KIND_RANK[kind] >= KIND_RANK[r.unread]) r.unread = kind; }
+  if (!focused && cfg.win) api.notify({ tabId: tab.id, title: `${tab.name} · ${KIND_TITLE[kind]}`, body: msg });
+  showToast(ev); beep(kind);
   renderChrome();
 }
+
+// cache esfriando: avisa uma vez por ciclo (cada resposta renova o cache e reabre o ciclo). TTL de 1 h avisa N min antes; o de 5 min, 1 min antes.
+function checkCache() {
+  const cfg = notifCfg();
+  if (cfg.cache === false) return;
+  for (const { p, tab } of aliveTabs()) {
+    const r = RT[tab.id], pc = (MET[tab.id] || {}).prompt_cache;
+    if (!r || !pc || !pc.warm || !pc.expires_at || stOf(tab) !== 'wait') continue;
+    const rem = pc.expires_at - Date.now() / 1000;
+    const lim = (pc.ttl === '1h' ? Math.max(1, cfg.cacheMin) * 60 : 60);
+    if (rem <= 0 || rem > lim || r.cacheWarned === pc.expires_at) continue;
+    r.cacheWarned = pc.expires_at;
+    const left = rem >= 90 ? `${Math.round(rem / 60)} min` : `${Math.max(1, Math.round(rem))} s`;
+    notifyTab(p, tab, 'cache', `O cache esfria em ~${left}.${pc.recache_tokens_if_cold ? ` Depois disso, a próxima mensagem reescreve ${fmtTok(pc.recache_tokens_if_cold)} tokens.` : ' Depois disso, a próxima mensagem reescreve o contexto.'}`);
+  }
+}
+setInterval(checkCache, 10000);
 function openTab(tabId) {
   const f = findTab(tabId);
   if (!f || !f.tab.open) return;
@@ -327,6 +405,7 @@ api.onHook(({ tabId, data }) => {
   switch (data.event) {
     case 'UserPromptSubmit': case 'PostToolUse':
       setSt(tab, 'work');
+      if (data.event === 'UserPromptSubmit' && UI.events.some((e) => e.kind === 'cache' && e.tabId === tab.id)) { UI.events = UI.events.filter((e) => !(e.kind === 'cache' && e.tabId === tab.id)); renderAct(); renderTop(); } // mandou mensagem: o cache foi renovado, o aviso perdeu o sentido
       if (data.event === 'UserPromptSubmit' && r.cost && r.cost.phase === 'cleared') r.cost.phase = 'resumed'; // o pedido de retomada entrou: a base fica congelada
       break;
     case 'SessionStart':
@@ -343,7 +422,7 @@ api.onHook(({ tabId, data }) => {
     case 'Stop':
       setSt(tab, 'wait');
       if (r.cost && r.cost.phase === 'resumed') { r.cost.phase = 'ending'; setTimeout(() => finishCost(tab), 2500); } // dá tempo da status line gravar o fim da resposta
-      notifyTab(p, tab, 'done', 'Terminou · aguarda você');
+      notifyTab(p, tab, 'done', lastLine(data.last) || 'Terminou · aguarda você');
       break;
     case 'Notification':
       setSt(tab, 'wait');
@@ -1071,6 +1150,7 @@ function integHTML() {
 }
 
 const yn = (k) => `<div class="seg"><button class="${clearCfg()[k] ? 'sel' : ''}" data-clrflag="${k}|1">Sim</button><button class="${clearCfg()[k] ? '' : 'sel'}" data-clrflag="${k}|0">Não</button></div>`;
+const ynN = (k) => `<div class="seg"><button class="${notifCfg()[k] ? 'sel' : ''}" data-ntf="${k}|1">Sim</button><button class="${notifCfg()[k] ? '' : 'sel'}" data-ntf="${k}|0">Não</button></div>`;
 function confHTML() {
   const arch = S.projects.filter((p) => p.archived);
   return `<div class="page">${ptitle('Configurações')}<div class="card" style="padding:6px 18px">
@@ -1088,6 +1168,18 @@ function confHTML() {
     <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Vazio = automático (fluxo ou genérico, conforme o projeto). Para o app limpar sozinho, o texto deve terminar pedindo que o agente escreva ${CLEAR_MARK}; sem isso o app pergunta antes de limpar.</small></div><textarea class="inp ta" id="clrClose" rows="5" placeholder="Automático">${esc(clearCfg().closePrompt)}</textarea></div>
     <div class="row" style="align-items:flex-start"><div class="grow">Pedido de retomada<small>Enviado depois do /clear, na conversa nova. Vazio = automático. Pode ser um comando seu, como /retomar.</small></div><textarea class="inp ta" id="clrResume" rows="5" placeholder="Automático">${esc(clearCfg().resumePrompt)}</textarea></div>
     <div class="row"><div class="grow">Restaurar os textos padrão</div><button class="btn sm" data-clrreset>Restaurar</button></div></div>
+    <h5 style="margin:22px 0 8px">Notificações</h5>
+    <div class="card" style="padding:6px 18px">
+    <div class="row"><div class="grow">Terminou<small>Aviso quando um terminal termina a resposta e aguarda você (só se você não estiver olhando para ele)</small></div>${ynN('done')}</div>
+    <div class="row"><div class="grow">Precisa de você<small>Pedido de permissão ou de atenção do agente</small></div>${ynN('perm')}</div>
+    <div class="row"><div class="grow">Erro<small>Falha ao iniciar ou retomar uma conversa</small></div>${ynN('error')}</div>
+    <div class="row"><div class="grow">Cache esfriando<small>Aviso uma vez por resposta, antes de o cache do prompt esfriar (depois disso a próxima mensagem reescreve o contexto, o que gasta mais). Vale para terminais parados; terminal trabalhando não notifica.</small></div>${ynN('cache')}</div>
+    <div class="row"><div class="grow">Avisar quando faltarem<small>Cache de 1 h. O cache de 5 min (créditos extras ou chave de API) avisa 1 minuto antes.</small></div><div class="numf" data-min="1" data-max="55"><button type="button" data-step="-1" aria-label="Diminuir">−</button><input id="ntfCache" type="text" inputmode="numeric" maxlength="2" value="${notifCfg().cacheMin}"><button type="button" data-step="1" aria-label="Aumentar">+</button></div><span class="unit">min</span></div>
+    <div class="row"><div class="grow">Dica ao lado do sino<small>Mostra por alguns segundos o que aconteceu; clicar abre o painel</small></div>${ynN('toast')}</div>
+    <div class="row"><div class="grow">Tempo da dica<small>Quanto tempo a dica fica na tela</small></div><div class="numf" data-min="2" data-max="30"><button type="button" data-step="-1" aria-label="Diminuir">−</button><input id="ntfToast" type="text" inputmode="numeric" maxlength="2" value="${notifCfg().toastSec}"><button type="button" data-step="1" aria-label="Aumentar">+</button></div><span class="unit">s</span></div>
+    <div class="row"><div class="grow">Som<small>Toque curto, diferente para cada tipo</small></div>${ynN('sound')}</div>
+    <div class="row"><div class="grow">Notificação do Windows<small>Com o app em segundo plano, também pisca o ícone na barra de tarefas</small></div>${ynN('win')}</div>
+    <div class="row"><div class="grow">Restaurar os padrões</div><button class="btn sm" data-ntfreset>Restaurar</button></div></div>
     <h5 style="margin:22px 0 8px">Conectores (plugins, skills e MCPs)</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row" style="align-items:flex-start"><div class="grow">Projeto novo criado pelo Termix<small><b>Automático:</b> o projeto nasce como o Claude Code monta por padrão, com os seus plugins, MCPs e conectores já valendo (isso pesa nos tokens de cada sessão). <b>Limpo:</b> o projeto nasce sem nenhum plugin, MCP nem conector; você liga só o que quiser nas telas Plugins, MCPs e Skills.</small></div>
@@ -1152,8 +1244,17 @@ function renderPop() {
 
 function renderAct() {
   const a = $('#act');
-  a.innerHTML = `<h3>Notificações</h3><div class="list">${UI.events.length ? UI.events.map((e, i) => `<div class="ev ${e.done ? 'done' : ''}" style="--c:${e.c || '#8B7BFF'}"><div class="h">${esc(e.who)}<small>${ago(e.ts)}</small></div><p>${esc(e.msg)}</p>
-    ${e.acts.length && !e.done ? `<div class="acts">${e.acts.map(([l, k, id], j) => `<button class="btn sm ${j ? '' : 'pri'}" data-ev="${i}|${k}|${id}">${l}</button>`).join('')}</div>` : ''}</div>`).join('') : '<div class="empty" style="padding:24px;height:auto">Nada por aqui</div>'}</div>`;
+  // agrupado por aba (o grupo com o aviso mais novo vem primeiro); o índice do aviso continua o da lista geral
+  const groups = [];
+  UI.events.forEach((e, i) => {
+    const key = e.tabId || '_sys';
+    let g = groups.find((x) => x.key === key);
+    if (!g) { g = { key, who: e.who, c: e.c, items: [] }; groups.push(g); }
+    g.items.push([e, i]);
+  });
+  const evHTML = ([e, i]) => `<div class="ev ${e.done ? 'done' : ''}" style="--c:${e.c || '#8B7BFF'}"><div class="h">${e.kind ? `<span class="kd kd-${e.kind}">${KIND_TITLE[e.kind]}</span>` : ''}<small>${ago(e.ts)}</small><button class="evx" data-evdel="${i}" title="Excluir este aviso" aria-label="Excluir este aviso">${ic('x', 12)}</button></div><p>${esc(e.msg)}</p>
+    ${e.acts.length && !e.done ? `<div class="acts">${e.acts.map(([l, k, id], j) => `<button class="btn sm ${j ? '' : 'pri'}" data-ev="${i}|${k}|${id}">${l}</button>`).join('')}</div>` : ''}</div>`;
+  a.innerHTML = `<div class="ah"><h3>Notificações</h3>${UI.events.length ? '<button class="btn sm" data-evclr="all">Limpar tudo</button>' : ''}</div><div class="list">${groups.length ? groups.map((g) => `<div class="evg"><div class="eh"><i class="dot" style="background:${g.c || '#8B7BFF'}"></i><span class="nm">${esc(g.who)}</span><small>${g.items.length}</small><button class="evx" data-evclr="${esc(g.key)}" title="Limpar os avisos desta aba" aria-label="Limpar os avisos desta aba">${ic('x', 12)}</button></div>${g.items.map(evHTML).join('')}</div>`).join('') : '<div class="empty" style="padding:24px;height:auto">Nada por aqui</div>'}</div>`;
 }
 
 function renderTabMenu(m) {
@@ -1510,7 +1611,15 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-reopen2]'))) { const p = curProject(); const t = p.tabs.find((x) => x.id === el.dataset.reopen2); if (t) { t.open = true; p.activeTab = t.id; save(); renderAll(); restartTab(p, t); } return; }
   if ((el = q('[data-restart]'))) { UI.menu = null; renderMenu(); const f = findTab(el.dataset.restart); if (f) restartTab(f.p, f.tab); return; }
   if ((el = q('[data-newconv]'))) { const f = findTab(el.dataset.newconv); if (f) newConversation(f.p, f.tab); return; }
-  if (q('[data-togact]')) { UI.actOpen = !UI.actOpen; UI.pop = false; renderTop(); renderPop(); tween('armW', armTarget()); return; }
+  if (q('[data-togact]')) {
+    UI.actOpen = !UI.actOpen; UI.pop = false; hideToast();
+    if (!UI.actOpen) markSeen(); // abriu e fechou: o que estava lá já foi visto, o selo do sino volta a 0
+    renderTop(); renderPop(); tween('armW', armTarget()); return;
+  }
+  if ((el = q('[data-evdel]'))) { UI.events.splice(+el.dataset.evdel, 1); renderAct(); renderTop(); return; }
+  if ((el = q('[data-evclr]'))) { const k = el.dataset.evclr; UI.events = k === 'all' ? [] : UI.events.filter((e) => (e.tabId || '_sys') !== k); renderAct(); renderTop(); return; }
+  if ((el = q('[data-ntf]'))) { const [k, v] = el.dataset.ntf.split('|'); S.settings.notif[k] = v === '1'; save(); renderPage(); return; }
+  if (q('[data-ntfreset]')) { S.settings.notif = { ...NOTIF_DEF }; save(); renderPage(); return; }
   if (q('[data-lim]')) { UI.pop = !UI.pop; renderPop(); return; }
   if ((el = q('[data-ev]'))) {
     const [i, k, id] = el.dataset.ev.split('|');
@@ -1555,7 +1664,11 @@ document.addEventListener('keydown', (e) => {
   e.preventDefault();
   box.querySelector(`[data-step="${e.key === 'ArrowUp' ? 1 : -1}"]`).click();
 });
-document.addEventListener('focusout', (e) => { if (e.target.id === 'clrAlert') e.target.value = String(clearCfg().alert); });
+document.addEventListener('focusout', (e) => {
+  if (e.target.id === 'clrAlert') e.target.value = String(clearCfg().alert);
+  if (e.target.id === 'ntfCache') e.target.value = String(notifCfg().cacheMin);
+  if (e.target.id === 'ntfToast') e.target.value = String(notifCfg().toastSec);
+});
 
 document.addEventListener('input', (e) => {
   const id = e.target.id;
@@ -1565,6 +1678,12 @@ document.addEventListener('input', (e) => {
     if (id === 'clrAlert') { const d = e.target.value.replace(/\D/g, '').slice(0, 3); if (d !== e.target.value) e.target.value = d; c.alert = Math.min(100, Math.max(0, parseInt(d, 10) || 0)); }
     else c[id === 'clrClose' ? 'closePrompt' : 'resumePrompt'] = e.target.value;
     save(); renderRail(); return;
+  }
+  if (id === 'ntfCache' || id === 'ntfToast') {
+    const d = e.target.value.replace(/\D/g, '').slice(0, 2); if (d !== e.target.value) e.target.value = d;
+    const n = parseInt(d, 10);
+    if (id === 'ntfCache') S.settings.notif.cacheMin = Math.min(55, Math.max(1, n || 1)); else S.settings.notif.toastSec = Math.min(30, Math.max(2, n || 2));
+    save(); return;
   }
   if (id !== 'rngOp') return;
   S.settings.termOp = +e.target.value;
@@ -1667,6 +1786,7 @@ async function applyBg() {
   S.settings.clear = { ...CLEAR_DEF, ...(S.settings.clear || {}), v: CLEAR_DEF.v };
   if (S.settings.clear.closePrompt === GENERIC_CLOSE) S.settings.clear.closePrompt = ''; // a versão 1 gravava o texto genérico; agora vazio = automático
   if (S.settings.clear.resumePrompt === GENERIC_RESUME) S.settings.clear.resumePrompt = '';
+  S.settings.notif = { ...NOTIF_DEF, ...(S.settings.notif || {}), v: NOTIF_DEF.v };
   $('#rgear').innerHTML = ic('gear', 16);
   for (const p of S.projects) {
     p.tabs = p.tabs || [];

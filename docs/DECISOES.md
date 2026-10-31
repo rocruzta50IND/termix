@@ -83,6 +83,12 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 ## Estado "trabalhando / aguardando"
 - Vem dos **hooks do Claude Code** (TASK-003): prompt enviado = trabalhando; terminou ou pediu atenção = aguardando. Sem hooks, vale a estimativa antiga (sem saída por 2,5 s); com hooks, 20 s de silêncio cobrem a interrupção com Esc.
 
+## Notificações (TASK-029)
+- Aviso só quando você não está olhando para a aba (aba oculta ou app em segundo plano); **terminal trabalhando não notifica** (só erro passa). Tipos: Terminou, Precisa de você, Erro e **Cache esfriando**; cada um pode ser desligado em Configurações > Notificações.
+- **Cache:** avisa uma vez por resposta, com o terminal parado: cache de 1 h avisa quando faltarem N min (padrão 10, configurável); o de 5 min avisa 1 min antes. Mandar uma mensagem renova o cache e apaga o aviso. O cache avisa mesmo com a aba à vista, pois é útil para quem está parado olhando.
+- **Selo do sino:** conta os avisos novos; abrir e fechar o painel zera (os avisos continuam na lista). Painel agrupado por aba, com texto inteiro, tipo e botões para excluir um aviso, os de uma aba ou tudo (limite de 60 no histórico).
+- **Dica ao lado esquerdo do sino:** aparece por alguns segundos (padrão 6, configurável) com a aba, o tipo e o que aconteceu (última frase do agente, vinda do hook Stop); clicar abre o painel. Som curto gerado no app, diferente por tipo; notificação do Windows só com o app sem foco. Padrões adotados sem objeção do usuário (2026-10-31): cache 10 min antes (1 h) e 1 min antes (5 min), mesmas regras para som e Windows.
+
 ## Dados e ambiente
 - Dados salvos em `%APPDATA%\Termix` (`state.json`, gravado de forma atômica, e `metrics\`). O app se chamava Vitra: na primeira abertura os dados da pasta antiga são copiados.
 - As variáveis de ambiente herdadas de uma sessão do Claude Code (`CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION` etc.) são **removidas** ao abrir terminais; senão o Claude Code desliga a gravação do histórico ("Transcript saving is off").

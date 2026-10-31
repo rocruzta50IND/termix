@@ -8,6 +8,14 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-029 — fechada: VALIDADA EM DEV1** (DEV1)
+
+- Aprovada pelo usuário em 2026-10-31 sem teste manual (confiou no teste do Claude em instância isolada). Segue em aberto o teste real do som, da notificação do Windows e do texto da dica com uma sessão real do Claude Code. `npm run check` passou. Próxima: TASK-030 (abas encaixadas), iniciada.
+
+**TASK-029 — notificações bem encaixadas, com o cache como função principal** (DEV1)
+
+- Selo do sino zera ao abrir e fechar o painel; terminal trabalhando não notifica; nova dica animada ao lado esquerdo do sino com o que aconteceu (última frase do agente, via hook Stop); novo aviso de cache esfriando (1 h: N min antes, padrão 10; 5 min: 1 min antes; um por resposta; some ao mandar mensagem); painel agrupado por aba com tipo, texto inteiro, excluir um/aba/tudo; Configurações > Notificações (tipos, minutos do cache, dica e tempo, som, notificação do Windows). Testado por CDP em instância isolada; aguarda o teste do usuário.
+
 **TASK-031 — auditoria de UI/UX e desempenho feita** (DEV1)
 
 - Roteiro automático abriu 20 telas e janelas em 3 larguras e varreu o DOM. Corrigido: duas regras de campo conflitantes (o campo minúsculo de "Novo projeto"), campo numérico, deslizante, seleções e caixas de marcar nativos, janela Adicionar MCP que estourava a altura em 980×620, alturas de controles diferentes, barra de ferramentas de Plugins/MCPs/Skills em três linhas, linhas das Configurações sem quebra em janela estreita, selo do sino cobrindo o ícone, falta de foco por teclado. Padrão único dos controles registrado em `docs/DESIGN.md`. Desempenho medido antes e depois (3 rodadas alternadas): sem regressão e sem desperdício relevante (abertura ~1,9 s, app parado ~2 % de um núcleo). Testado pelo Claude; validada em DEV1.

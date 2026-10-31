@@ -34,6 +34,9 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 
 - **Botão Clear:** na pílula do alternador, depois de um separador fino, com ícone de borracha e o rótulo "Clear" sempre visível (a dica nativa não aparece nessa vista). Desabilitado (opacidade baixa) sem terminal vivo e aguardando; com o contexto acima do limite configurado pulsa em âmbar (borda e brilho, só `box-shadow`/fundo; sem animação com "reduzir movimento"). Só aparece na tela Terminais.
 
+## Notificações (TASK-029)
+- Dica ao lado esquerdo do sino: cartão escuro 94 %, borda fina, faixa vertical na cor da aba, no máximo 300 px e 2 linhas; entra deslizando da direita (opacity + transform, .28 s; só fade com "reduzir movimento"). Painel: grupos por aba (ponto da cor, nome, contagem, limpar), cartões com etiqueta do tipo (verde terminou, amarelo precisa de você, vermelho erro, azul cache) e × para excluir; "Limpar tudo" no cabeçalho.
+
 ## Marca e ícones
 - **Logo do cabeçalho:** só o prompt `>_`, sem caixa, com brilho; alinhado à altura do nome "Termix".
 - **Ícone do app / barra de tarefas:** quadrado escuro com borda azul luminosa, barra de abas coloridas e `>_` com brilho; versão de traço grosso para 16 e 32 px (`assets/icon.svg`, `assets/icon-small.svg`; gerar com `tools/make-icon.js`).

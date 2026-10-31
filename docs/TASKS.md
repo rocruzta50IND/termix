@@ -32,11 +32,49 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Pendências (etapa 1):** a leitura de skills não conhece skills de MCP nem as embutidas do Claude Code; plugins instalados só em outro projeto não aparecem; o estado dos MCPs de projeto (`.mcp.json`) pendentes de aprovação aparece como "Aguardando aprovação" (conferir com um projeto real); sem controle ainda (etapa 2).
 - **Próximo passo:** a validação foi delegada ao Claude (decisão do usuário, 2026-10-31): teste geral na TASK-032, depois da TASK-031 (auditoria de UI/UX e desempenho) e das TASK-029/030, e antes do teste do instalador (TASK-020). Aprovada a TASK-032, fecha a TASK-013 (VALIDADA EM DEV1).
 
+### TASK-030 — Abas encaixadas na janela do terminal, como no Terminal do Windows (MVP)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (iniciada em 2026-10-31; etapa atual: ler o CSS e propor o desenho)
+- **Prioridade:** Alta (MVP) — pedido do usuário em 2026-10-30
+- **Objetivo:** a aba ativa deve ficar **perfeitamente encaixada** na janela do terminal, como no Terminal do Windows, para dar um visual melhor.
+- **Como está (captura do usuário):** as abas parecem cartões soltos, com cantos arredondados nos quatro lados e um vão entre a base da aba e a linha verde do terminal; a ativa não se funde com o conteúdo.
+- **Como deve ficar (referência: Terminal do Windows):** a aba ativa tem a mesma cor do terminal abaixo e se liga a ele sem emenda (sem linha entre os dois), com cantos de baixo curvados para fora ("orelhas") que encostam na linha do conteúdo; as inativas ficam mais discretas, coladas na barra, com separador fino; botões "+" e de menu alinhados à barra.
+- **Critérios de aceite (a refinar ao retomar):** sem vão nem linha entre a aba ativa e o terminal; mantém a cor própria de cada aba (linha de cima com a cor da aba ativa, DESIGN.md), o selo de aviso, o estado (ponto) e o fechar; arrastar e soltar para reordenar continua; funciona com abas demais (rolagem/encolhimento) e com a janela estreita; sem perder desempenho.
+- **Adendo — cor (usuário, 2026-10-30):** todo terminal novo abre com a **cor principal do sistema (azul)**, em vez de uma cor diferente por aba; a pessoa ainda pode mudar a cor da aba depois (clique duplo / menu). Hoje a cor inicial sai de uma lista rotativa (`COLORS` em `src/renderer/app.js`). Vale também para as abas importadas e duplicadas; as abas já salvas mantêm a cor que têm.
+- **Base existente:** `renderTabs()` em `src/renderer/app.js` e o estilo das abas em `src/renderer/styles.css`; `docs/DESIGN.md` (abas coladas no terminal, estilo Windows Terminal) e as capturas do usuário (a atual e a do Terminal do Windows).
+- **Próximo passo:** (ao retomar) ler o CSS das abas e do cabeçalho do terminal, propor o desenho ao usuário (de preferência um protótipo em `docs/prototipos/`) e só então mexer.
+
+
 ## Aguardando validação DEV1
 
 _Nenhuma no momento._
 
 ## Validadas em DEV1
+
+### TASK-029 — Notificações bem encaixadas no app, com o cache como função principal (MVP)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-10-31 sem teste manual; testada só pelo Claude em instância isolada)
+- **Prioridade:** Alta (MVP) — pedido do usuário em 2026-10-30, para depois da TASK-013
+- **Objetivo:** avaliar e refazer a parte de notificações para ela ser útil de verdade e ficar perfeitamente encaixada no app. Hoje o painel só acumula avisos ("terminou", "precisa de você", "erro") e o contador do sino não zera.
+- **Pedidos do usuário (2026-10-30):**
+  - **Contador:** ao abrir a tela de notificações e fechá-la, o indicador do sino volta a **0 (some)**, porque a pessoa já viu o que havia lá.
+  - **Cache como função principal:** relacionar as notificações com o **cache dos terminais**; quando um terminal chegar a **10 minutos** (do cache esfriar, a confirmar a leitura), a notificação aparece.
+  - **Terminal trabalhando não notifica:** enquanto o terminal está trabalhando, não aparece nada dele.
+  - **Terminal que terminou:** aparece uma **tooltip animada ao lado esquerdo do ícone de notificações**, mostrando rápido a ação daquele momento; para ver mais detalhes, clica no ícone e abre a telinha lateral.
+  - **Controle total:** configurar (o que notificar, tempos, som, tooltip) e excluir (uma, várias, limpar tudo) as notificações.
+- **A avaliar (observado na captura do usuário):** o painel mostra só o nome da aba e "há X min", sem a mensagem do evento (texto cortado nos cartões); 16 avisos seguidos de "Coder"/"Brain" sem dizer o que aconteceu. Pensar em agrupar por aba, tipo (terminou, precisa de você, erro, cache) e limite de histórico.
+- **Perguntas ao retomar:** o aviso de cache é "faltam 10 min para esfriar" ou "esfriou há 10 min"? Vale para o TTL de 1 h e o de 5 min (neste, 10 min não cabe)? O som e a notificação do Windows seguem as mesmas regras? O que continua sendo avisado além do cache?
+- **Base existente:** `notifyTab()` em `src/renderer/app.js` (painel, selo da aba, notificação do Windows, ícone piscando), TASK-004, e o cache do rail (`prompt_cache`, TASK-021).
+- **Critérios de aceite (propostos e aprovados pelo usuário em 2026-10-31, "pode implementar"):** (1) abrir e fechar o painel zera o selo do sino; (2) terminal trabalhando não notifica; (3) terminou: dica animada ao lado esquerdo do sino, clique abre o painel; (4) cache esfriando como tipo principal, um aviso por ciclo; (5) painel agrupado por aba, texto inteiro, tipo e limite de histórico; (6) configuração de tipos, tempos, som, dica e Windows, e exclusão de um, de uma aba ou de todos. As 4 perguntas ficaram sem resposta explícita; usei as recomendações (cache 10 min antes no TTL de 1 h e 1 min antes no de 5 min; mesmas regras para som e Windows; dica só para aba fora de vista).
+- **Feito até agora (2026-10-31):** `src/renderer/app.js`: `notifyTab` com tipos configuráveis, regra de terminal trabalhando, dica (`showToast`), som (`beep`) e aviso de cache (`checkCache`, a cada 10 s, uma vez por `expires_at`; apagado ao enviar mensagem); selo só conta avisos novos (`seen`); painel agrupado com excluir/limpar; Configurações > Notificações (`settings.notif`, v1). `src/hook-wrapper.js` passou a gravar o texto final do agente (`last_assistant_message`, 600 caracteres) para a dica mostrar o que foi feito. `src/renderer/styles.css`. Testado por CDP numa instância isolada (abas falsas em memória): selo 5 → 0 após abrir e fechar, dica com o texto resumido e posição ao lado do sino, terminal trabalhando sem aviso, cache de 1 h (9 min, uma vez só) e de 5 min (só com ≤ 1 min), exclusão de um/de uma aba/de tudo, ajuste dos minutos nas Configurações; capturas conferidas.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/styles.css`, `src/hook-wrapper.js`, `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/TASKS.md`.
+- **Como validar:** `npm start`; abrir dois terminais do Claude Code, pedir algo curto no segundo e ficar no primeiro: ao terminar, a dica aparece à esquerda do sino com o resumo, o selo conta 1, e abrir e fechar o painel zera. Com o terminal parado, o aviso de cache aparece quando faltarem 10 min (para testar rápido, baixe o valor em Configurações > Notificações para 55 logo depois de uma resposta). Terminal trabalhando não gera aviso. Excluir um aviso, os de uma aba e tudo; desligar tipos, dica, som e Windows.
+- **Pendências:** o som e a notificação do Windows não foram ouvidos/vistos de verdade (só a lógica); o texto da dica depende de a versão do Claude Code enviar `last_assistant_message` no hook Stop (senão mostra "Terminou · aguarda você"; não conferido com sessão real); os avisos do painel não persistem ao fechar o app; o cache estimado pelo histórico também avisa.
+- **Próximo passo:** TASK-030.
+- **Validada em:** 2026-10-31 (o usuário aprovou sem testar à mão, confiando no teste do Claude; o teste real de som, notificação do Windows e texto da dica com sessão real do Claude Code segue nas Pendências). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 
 ### TASK-031 — Auditoria de UI/UX e desempenho do app inteiro (MVP)
 
@@ -307,36 +345,6 @@ _Nenhuma no momento._
 - **O que testar (além dos 33 testes ponta a ponta já feitos):** instalar, atualizar e remover um plugin de verdade (num projeto/escopo de teste, sem tocar nos plugins do usuário); login e logout de um conector; ligar/desligar em todos os escopos; "limpo" em projeto novo contra uma sessão real do Claude Code (comparar ferramentas e skills); fluxo do aviso de reinício com um terminal aberto; mudanças feitas pelo terminal aparecendo no app; casos de erro (CLI ausente, `.claude.json` ilegível, nome inválido, sem rede); desempenho das leituras com muitos itens; depois das mudanças visuais da TASK-031, repetir os testes de tela.
 - **Critérios de aceite:** relatório na tarefa com cada caso e o resultado (passou/falhou/limitação), defeitos corrigidos ou registrados, `.claude.json` e `settings.json` do usuário conferidos intactos no fim, e TASK-013 marcada como VALIDADA EM DEV1.
 - **Próximo passo:** (ao chegar a vez) montar o roteiro a partir dos 33 testes existentes e dos casos acima.
-
-### TASK-030 — Abas encaixadas na janela do terminal, como no Terminal do Windows (MVP)
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Alta (MVP) — pedido do usuário em 2026-10-30
-- **Objetivo:** a aba ativa deve ficar **perfeitamente encaixada** na janela do terminal, como no Terminal do Windows, para dar um visual melhor.
-- **Como está (captura do usuário):** as abas parecem cartões soltos, com cantos arredondados nos quatro lados e um vão entre a base da aba e a linha verde do terminal; a ativa não se funde com o conteúdo.
-- **Como deve ficar (referência: Terminal do Windows):** a aba ativa tem a mesma cor do terminal abaixo e se liga a ele sem emenda (sem linha entre os dois), com cantos de baixo curvados para fora ("orelhas") que encostam na linha do conteúdo; as inativas ficam mais discretas, coladas na barra, com separador fino; botões "+" e de menu alinhados à barra.
-- **Critérios de aceite (a refinar ao retomar):** sem vão nem linha entre a aba ativa e o terminal; mantém a cor própria de cada aba (linha de cima com a cor da aba ativa, DESIGN.md), o selo de aviso, o estado (ponto) e o fechar; arrastar e soltar para reordenar continua; funciona com abas demais (rolagem/encolhimento) e com a janela estreita; sem perder desempenho.
-- **Adendo — cor (usuário, 2026-10-30):** todo terminal novo abre com a **cor principal do sistema (azul)**, em vez de uma cor diferente por aba; a pessoa ainda pode mudar a cor da aba depois (clique duplo / menu). Hoje a cor inicial sai de uma lista rotativa (`COLORS` em `src/renderer/app.js`). Vale também para as abas importadas e duplicadas; as abas já salvas mantêm a cor que têm.
-- **Base existente:** `renderTabs()` em `src/renderer/app.js` e o estilo das abas em `src/renderer/styles.css`; `docs/DESIGN.md` (abas coladas no terminal, estilo Windows Terminal) e as capturas do usuário (a atual e a do Terminal do Windows).
-- **Próximo passo:** (ao retomar) ler o CSS das abas e do cabeçalho do terminal, propor o desenho ao usuário (de preferência um protótipo em `docs/prototipos/`) e só então mexer.
-
-### TASK-029 — Notificações bem encaixadas no app, com o cache como função principal (MVP)
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Alta (MVP) — pedido do usuário em 2026-10-30, para depois da TASK-013
-- **Objetivo:** avaliar e refazer a parte de notificações para ela ser útil de verdade e ficar perfeitamente encaixada no app. Hoje o painel só acumula avisos ("terminou", "precisa de você", "erro") e o contador do sino não zera.
-- **Pedidos do usuário (2026-10-30):**
-  - **Contador:** ao abrir a tela de notificações e fechá-la, o indicador do sino volta a **0 (some)**, porque a pessoa já viu o que havia lá.
-  - **Cache como função principal:** relacionar as notificações com o **cache dos terminais**; quando um terminal chegar a **10 minutos** (do cache esfriar, a confirmar a leitura), a notificação aparece.
-  - **Terminal trabalhando não notifica:** enquanto o terminal está trabalhando, não aparece nada dele.
-  - **Terminal que terminou:** aparece uma **tooltip animada ao lado esquerdo do ícone de notificações**, mostrando rápido a ação daquele momento; para ver mais detalhes, clica no ícone e abre a telinha lateral.
-  - **Controle total:** configurar (o que notificar, tempos, som, tooltip) e excluir (uma, várias, limpar tudo) as notificações.
-- **A avaliar (observado na captura do usuário):** o painel mostra só o nome da aba e "há X min", sem a mensagem do evento (texto cortado nos cartões); 16 avisos seguidos de "Coder"/"Brain" sem dizer o que aconteceu. Pensar em agrupar por aba, tipo (terminou, precisa de você, erro, cache) e limite de histórico.
-- **Perguntas ao retomar:** o aviso de cache é "faltam 10 min para esfriar" ou "esfriou há 10 min"? Vale para o TTL de 1 h e o de 5 min (neste, 10 min não cabe)? O som e a notificação do Windows seguem as mesmas regras? O que continua sendo avisado além do cache?
-- **Base existente:** `notifyTab()` em `src/renderer/app.js` (painel, selo da aba, notificação do Windows, ícone piscando), TASK-004, e o cache do rail (`prompt_cache`, TASK-021).
-- **Próximo passo:** (ao retomar) ler `notifyTab`, o painel e as configurações atuais, listar o que fica, o que sai e o que entra, e propor os critérios de aceite ao usuário antes de mexer.
 
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 

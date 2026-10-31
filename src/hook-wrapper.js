@@ -15,7 +15,8 @@ try { raw = fs.readFileSync(0, 'utf8'); } catch { /* sem entrada */ }
     try { j = JSON.parse(raw); } catch { /* entrada inesperada */ }
     const event = j.hook_event_name || process.argv[2];
     fs.mkdirSync(dir, { recursive: true });
-    const out = { t: Date.now(), event, session_id: j.session_id, source: j.source, notification_type: j.notification_type, message: j.message };
+    const out = { t: Date.now(), event, session_id: j.session_id, source: j.source, notification_type: j.notification_type, message: j.message,
+      last: typeof j.last_assistant_message === 'string' ? j.last_assistant_message.slice(0, 600) : undefined }; // texto final do agente (Stop), para o aviso mostrar o que foi feito
     fs.writeFileSync(path.join(dir, `hook-${id}.json`), JSON.stringify(out));
   } catch { /* silencioso */ }
 }
