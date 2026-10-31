@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-10-31
 
+**TASK-030 — 2º ajuste: abas rentes ao container dos terminais** (DEV1)
+
+- Removida a margem de fundo acima das abas (a barra agora toca o topo do container) e reduzida a da esquerda; faixa escura mais discreta. Valido para terminais e Web; pedido do usuário com captura. `npm run check` passou.
+
 **TASK-030 — ajuste final das abas: fundidas ao terminal, com separação nítida** (DEV1)
 
 - A barra de abas ficou mais escura que o terminal e a aba ativa, sem o fundo da barra atrás, só com a cor do terminal: o formato dela aparece e ela se funde ao terminal, como no Terminal do Windows; separador entre abas mais nítido; orelha esquerda corrigida nas abas que não são a primeira; vale também para a Web. Testado por CDP em instância isolada. Pedido do usuário, com capturas. `npm run check` passou.

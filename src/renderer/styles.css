@@ -166,13 +166,13 @@ body.maxed .shadow{filter:none}
 /* abas ao estilo do Windows Terminal: a ativa se funde ao terminal (mesma cor, sem linha), com "orelhas" curvas */
 /* a barra é pintada mais escura que o terminal, MENOS atrás da aba ativa: ali fica só a cor do terminal, então a aba se funde a ele e o formato dela aparece.
    O fundo é um ::before com máscara; os furos (aba e as duas orelhas) vêm de --tl/--tr (aba) e --al/--ar (8 px a mais de cada lado), medidos em fuseBar (app.js) */
-.tabsbar{--bar-bg:rgba(2,3,9,.62);--tab-bg:rgba(9,7,20,var(--term-op));position:relative;isolation:isolate;
-  display:flex;align-items:flex-end;gap:0;margin-bottom:0;min-height:42px;padding:6px 8px 0 8px}
+.tabsbar{--bar-bg:rgba(2,3,9,.45);--tab-bg:rgba(9,7,20,var(--term-op));position:relative;isolation:isolate;
+  display:flex;align-items:flex-end;gap:0;margin-bottom:0;min-height:36px;padding:0 8px 0 10px}
 .tabsbar::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--bar-bg);
   -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000);mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000),linear-gradient(#000,#000);
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  -webkit-mask-position:0 0,var(--tl,0px) 6px,var(--al,0px) 100%,var(--tr,0px) 100%;mask-position:0 0,var(--tl,0px) 6px,var(--al,0px) 100%,var(--tr,0px) 100%;
-  -webkit-mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) calc(100% - 6px),calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) calc(100% - 6px),calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;
+  -webkit-mask-position:0 0,var(--tl,0px) 0,var(--al,0px) 100%,var(--tr,0px) 100%;mask-position:0 0,var(--tl,0px) 0,var(--al,0px) 100%,var(--tr,0px) 100%;
+  -webkit-mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) 100%,calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) 100%,calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;
   -webkit-mask-composite:xor;mask-composite:exclude}
 .tab{position:relative;display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;border-radius:8px 8px 0 0;background:transparent;border:0;
   color:var(--text3);flex:0 1 190px;min-width:96px}
