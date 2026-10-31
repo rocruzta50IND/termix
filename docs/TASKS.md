@@ -8,7 +8,23 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-_Nenhuma no momento._
+### TASK-013 — Gerenciar plugins, skills e MCPs pelo app (MVP)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (etapa 1 a começar)
+- **Prioridade:** Alta (MVP) — foco da etapa atual (decisão do usuário, 2026-10-30)
+- **Objetivo:** as telas **Plugins, MCPs e Skills** mostram tudo o que o Claude Code enxerga no projeto (inclusive os conectores do claude.ai da conta, que não estão em arquivo) e permitem controlar pela tela ou pelo terminal, sem conflito com a organização do Claude Code.
+- **Achados (2026-10-31):** `claude mcp list` traz todos os MCPs com o estado real (conectado, precisa de login, falhou), inclusive os conectores da conta (9 na máquina do usuário; hoje o app mostra 0), mas leva ~10 a 20 s (listar na hora e preencher o status depois); `claude plugin list --json` traz versão, escopo, ativo e avisos; `claude plugin details <nome>` traz o inventário do plugin e o custo estimado em tokens; a CLI tem `plugin enable/disable/install/uninstall/update` e `mcp add/add-json/remove/login/logout`. Não há comando para listar skills: ler os arquivos (usuário, projeto, comandos e pastas dos plugins).
+- **Decisões (usuário, 2026-10-31):** controlar pela tela e também pelo terminal; o app não grava nos arquivos do Claude Code por conta própria, chama a CLI (`claude plugin …`, `claude mcp …`), para não dar conflito; o que for mudado pelo terminal continua aparecendo no app; depois de cada mudança, aviso "reinicie a aba para aplicar" com o botão de reiniciar; confirmação antes de remover.
+- **Plano em etapas (cada uma validada pelo usuário antes da próxima):**
+  1. **Ver tudo (só leitura):** listas completas de plugins (versão, escopo, custo), MCPs (todas as origens: conta, usuário, projeto, local e de plugins, com status real) e skills (todas as origens, com descrição); busca, filtro por escopo e por estado; atualização automática.
+  2. **Controlar plugins e MCPs:** plugins (ligar, desligar, atualizar, remover); MCPs (login, logout, adicionar, remover).
+  3. **Skills e o resto:** criar, editar e excluir skills de usuário e de projeto; ligar/desligar conectores da conta, se der (a confirmar se é um campo gravável).
+- **Adendo — Configurações > "Conectores" (usuário, 2026-10-31):** opção para **habilitar ou desabilitar a aplicação automática de plugins, skills e MCPs** em projetos novos. Ligada: o projeto novo vem como o Claude Code monta por padrão (plugins, MCPs e skills automáticos, o que pesa nos tokens). Desligada: o projeto novo vem **limpo**, sem nenhum plugin, skill ou MCP, e a pessoa personaliza como quiser. **A verificar antes de construir:** plugins, MCPs e skills de escopo Usuário e os conectores da conta valem para todo projeto; "limpo" só se consegue sobrepondo no projeto (por exemplo `enabledPlugins` falso e MCPs desativados em `.claude/settings.json`), e isso precisa ser testado, inclusive para os conectores da conta e para as skills do usuário. Definir também se vale por projeto novo (padrão) e se dá para mudar depois por projeto.
+- **Critérios de aceite:** (1) as três telas mostram o mesmo que o `/mcp`, `/plugin` e as skills do terminal, com status real e sem inventar dado; (2) toda mudança passa pela CLI do Claude Code, com confirmação antes de remover e aviso de reinício; (3) mudar pelo terminal reflete no app; (4) a opção "Conectores" cria projetos novos com ou sem tudo automático, conforme a escolha, testado de verdade com o Claude Code; (5) não mexe em arquivos do Claude Code fora da CLI, sem perder campos que o app não conhece.
+- **Base existente:** `scan:resources` em `src/main.js` e `resPageHTML` em `src/renderer/app.js` (leitura simples dos arquivos); DECISOES.md ("Plugins, Skills e MCPs", hoje somente leitura).
+- **Feito até agora:** análise e plano aprovados; nenhum código.
+- **Próximo passo:** etapa 1 (ver tudo): trocar a leitura de arquivos pela CLI (`claude mcp list`, `claude plugin list --json`, `plugin details`) mais a leitura das skills, com a lista aparecendo na hora e o status preenchido depois.
 
 ## Aguardando validação DEV1
 
@@ -393,14 +409,6 @@ _Nenhuma no momento._
 - **Prioridade:** Média (pré-requisito da promoção para a `main`, junto da TASK-010)
 - **Objetivo:** garantir que o instalador funcione em um computador sem nada do ambiente de desenvolvimento. Ativar o Windows Sandbox (como administrador: `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All`, exige reiniciar) e testar: instalação pelo instalador com janelas, abertura do app, aviso na aba quando não há Claude Code, atalhos e desinstalação (que mantém os dados).
 - **Notas:** o Windows Sandbox não estava ativado em 2026-10-30 (virtualização presente). Fora do Sandbox já foi testado instalando em pasta temporária com PATH sem Node (TASK-010). Windows 10 não foi testado.
-
-### TASK-013 — Gerenciar plugins, skills e MCPs pelo app
-
-- **Responsável:** DEV1
-- **Status:** PRONTA
-- **Prioridade:** Alta (MVP) — foco da próxima etapa (decisão do usuário, 2026-10-30)
-- **Objetivo:** deixar "totalmente redondos" os controladores das telas **Plugins, MCPs e Skills**: hoje a leitura é somente leitura; evoluir para editar e ativar/desativar por escopo, com aviso de "reinicie para aplicar".
-- **Próximo passo:** (ao retomar) ler as três telas atuais, listar o que falta em cada uma e propor os critérios de aceite ao usuário antes de mexer.
 
 ## Concluídas
 
