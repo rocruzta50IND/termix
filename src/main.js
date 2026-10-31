@@ -98,12 +98,6 @@ function readJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
 }
 
-function listDirs(dir) {
-  try {
-    return fs.readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
-  } catch { return []; }
-}
-
 /* ---------- janela ---------- */
 // Modo da janela, definido na abertura: 'none' = transparente (degradê do app); 'acrylic' = vidro fosco do Windows por trás do degradê (modo "Ofuscado").
 // Trocar entre "transparente" e "material" exige reabrir, porque o tipo da janela muda.
@@ -386,41 +380,10 @@ ipcMain.handle('env:check', () => new Promise((resolve) => {
   });
 }));
 
-ipcMain.handle('scan:resources', (_e, projectPath) => {
-  const home = os.homedir();
-  const out = { plugins: [], skills: [], mcps: [] };
-
-  const addPlugins = (file, scope) => {
-    const j = readJson(file);
-    const ep = j && j.enabledPlugins;
-    if (ep && typeof ep === 'object') {
-      for (const [name, on] of Object.entries(ep)) {
-        out.plugins.push({ name, scope, status: on ? 'Habilitado' : 'Desabilitado', kind: on ? 'ok' : 'warn' });
-      }
-    }
-  };
-  addPlugins(path.join(home, '.claude', 'settings.json'), 'Usuário');
-  if (projectPath) {
-    addPlugins(path.join(projectPath, '.claude', 'settings.json'), 'Projeto');
-    addPlugins(path.join(projectPath, '.claude', 'settings.local.json'), 'Local');
-  }
-
-  for (const n of listDirs(path.join(home, '.claude', 'skills'))) out.skills.push({ name: n, scope: 'Usuário', status: 'Detectada', kind: 'ok' });
-  if (projectPath) for (const n of listDirs(path.join(projectPath, '.claude', 'skills'))) out.skills.push({ name: n, scope: 'Projeto', status: 'Detectada', kind: 'ok' });
-
-  const cj = readJson(path.join(home, '.claude.json'));
-  if (cj && cj.mcpServers) for (const n of Object.keys(cj.mcpServers)) out.mcps.push({ name: n, scope: 'Usuário', status: 'Configurado · não testado', kind: 'warn' });
-  if (cj && cj.projects && projectPath) {
-    const key = Object.keys(cj.projects).find(k => path.resolve(k).toLowerCase() === path.resolve(projectPath).toLowerCase());
-    const ms = key && cj.projects[key].mcpServers;
-    if (ms) for (const n of Object.keys(ms)) out.mcps.push({ name: n, scope: 'Local', status: 'Configurado · não testado', kind: 'warn' });
-  }
-  if (projectPath) {
-    const mj = readJson(path.join(projectPath, '.mcp.json'));
-    if (mj && mj.mcpServers) for (const n of Object.keys(mj.mcpServers)) out.mcps.push({ name: n, scope: 'Projeto', status: 'Configurado · não testado', kind: 'warn' });
-  }
-  return out;
-});
+const resources = require('./resources')({ findClaude, readJson, cleanEnv });
+ipcMain.handle('scan:resources', (_e, projectPath) => resources.scanFiles(projectPath));
+ipcMain.handle('scan:plugins', (_e, projectPath) => resources.scanPlugins(projectPath));
+ipcMain.handle('scan:mcpstatus', (_e, projectPath) => resources.scanMcpStatus(projectPath));
 
 /* ---------- métricas vindas da status line ---------- */
 const seen = new Map(); // arquivo -> mtime

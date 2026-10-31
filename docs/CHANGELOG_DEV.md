@@ -10,6 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-013 iniciada — plugins, skills e MCPs pelo app (MVP)** (DEV1)
 
+- **Etapa 1 (ver tudo) feita:** as telas Plugins, Skills e MCPs agora mostram o que o Claude Code enxerga no projeto, lido pela CLI (plugins com versão, escopo e custo em tokens; MCPs com o estado real, inclusive os 9 conectores da conta, que antes não apareciam) e pelos arquivos (skills e comandos de usuário, projeto e plugins). Busca, filtros por escopo e estado, "Atualizar" e atualização automática. Módulo novo `src/resources.js`. Só leitura; aguarda o teste do usuário antes da etapa 2.
 - Tarefa passou a EM ANDAMENTO, com análise e plano em 3 etapas (ver tudo; controlar plugins e MCPs; skills e conectores). Achado: a CLI do Claude Code (`claude mcp list`, `claude plugin list --json`) traz os conectores da conta e o estado real, que o app não mostrava. Toda mudança será feita pela CLI, sem gravar nos arquivos do Claude Code. Adendo: Configurações > "Conectores" para projetos novos virem com ou sem plugins, skills e MCPs automáticos (a viabilidade do "limpo" será testada antes). Sem código nesta etapa.
 
 ## 2026-10-30

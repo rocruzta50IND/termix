@@ -48,3 +48,8 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 
 ## Pós-MVP de design
 - Personalização de cores e tema claro/escuro (TASK-006); animação do fundo (TASK-007).
+
+## Telas Plugins, Skills e MCPs (TASK-013)
+- Cartões da grade padrão (`.cards`/`.card`), uma tela para as três. Acima da lista: busca (pílula), alternador de **escopo** e de **estado** (`.seg.sm`) e botão "Atualizar"; abaixo, uma linha miúda com a contagem e a origem do dado ("estado conferido há 10 s").
+- Etiquetas: escopo (neutra), estado (verde = ok/ligado, amarelo = precisa de login/desligado/aviso, vermelho = falhou). Itens desligados ou com problema ficam esmaecidos (`.card.dim`). Descrição com no máximo 3 linhas (`.rdesc`).
+- A busca e a atualização automática trocam só a lista (`#reslist`), sem recriar a tela, para o campo de busca não perder o foco.

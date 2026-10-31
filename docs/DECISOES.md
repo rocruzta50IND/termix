@@ -69,9 +69,12 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - **Projetos no fluxo Rocruzta** (com `.claude/fluxo.json`): o fluxo e o plugin não são alterados; o app é que se adapta. O Clear usa pedidos próprios que seguem o fluxo (papel e branch de `CLAUDE.local.md`, validação do `fluxo.json`) e leem o mínimo: só as seções ativas do `TASKS.md`, a última entrada do changelog, `DECISOES`/`DESIGN` só se a tarefa pedir. O fechamento faz commit e push só na branch do papel (opção desligável) e nunca promove; o GERENTE (somente leitura) só pode "Só limpar". Motivo: a retomada pelo `/retomar` lendo tudo custava ~21 a 27 mil tokens e cresce com o `TASKS.md`.
 - Os textos dos dois pedidos (fechar e retomar) são editáveis em Configurações e valem só no app; texto vazio = automático (do fluxo ou genérico, conforme o projeto); o que a pessoa escrever vale sempre. Quando o agente termina o fechamento escrevendo `TERMIX-CLEAR-OK`, o app limpa sozinho; sem o aviso, ele pergunta antes.
 
-## Plugins, Skills e MCPs
-- No MVP são **somente leitura**, a partir dos arquivos reais de configuração (escopos User, Project e Local).
-- Gerenciá-los pelo app é uma ideia que o usuário quer, **pós-MVP** (TASK-013).
+## Plugins, Skills e MCPs (TASK-013)
+- As três telas mostram **o mesmo que o Claude Code enxerga no projeto**, não só o que está em arquivo: os **conectores da conta do claude.ai** (que só aparecem pela CLI), os MCPs de usuário, projeto, local e de plugins, os plugins com versão, escopo e custo estimado em tokens, e as skills e comandos de usuário, de projeto e de plugins.
+- **Fonte dos dados:** a CLI do Claude Code (`claude plugin list --json`, `claude plugin details`, `claude mcp list`) para plugins e para o estado real dos MCPs (conectado, precisa de login, falhou); arquivos para as skills e para o escopo/origem dos MCPs. Nunca inventa estado: enquanto a checagem não termina, o MCP aparece como "Verificando…". A checagem de saúde dos MCPs leva alguns segundos e roda por trás (a lista aparece na hora, com o último resultado guardado).
+- **Segurança de tela:** do MCP só aparece o endereço (sem parâmetros) ou o nome do comando, nunca os argumentos (podem ter chaves).
+- **Etapa 1 (atual): só leitura**, com busca, filtro por escopo e por estado e atualização automática (arquivos a cada 4 s, plugins a cada 12 s, MCPs a cada 60 s). Mudanças feitas pelo terminal aparecem sozinhas.
+- **Etapas seguintes (decididas):** controlar pela tela **chamando a CLI do Claude Code** (nunca gravando nos arquivos dele por conta própria, para não dar conflito com os terminais), com confirmação antes de remover e aviso "reinicie a aba para aplicar"; e uma opção em Configurações > "Conectores" para projetos novos virem com ou sem plugins, skills e MCPs automáticos (a viabilidade do "limpo" será testada antes).
 
 ## Estado "trabalhando / aguardando"
 - Vem dos **hooks do Claude Code** (TASK-003): prompt enviado = trabalhando; terminou ou pediu atenção = aguardando. Sem hooks, vale a estimativa antiga (sem saída por 2,5 s); com hooks, 20 s de silêncio cobrem a interrupção com Esc.

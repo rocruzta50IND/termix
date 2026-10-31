@@ -55,7 +55,7 @@ const STATES = {
 };
 
 let S = { projects: [], settings: { termOp: 88, sideCollapsed: false } };
-const UI = { cur: { p: null, page: 'Terminais' }, last: null, actOpen: false, pop: false, menu: null, events: [], scan: null, env: null, limits: null };
+const UI = { cur: { p: null, page: 'Terminais' }, last: null, actOpen: false, pop: false, menu: null, events: [], res: null, env: null, limits: null };
 const RT = {};  // runtime por aba: terminal, estado, processo
 const MET = {}; // métricas por aba vindas da status line
 
@@ -727,15 +727,119 @@ function emptyHTML() {
 }
 const ptitle = (t) => `<div class="ptitle"><span>${UI.cur.p === '_' ? 'Geral' : esc(curProject().name)} ›</span> ${t}</div>`;
 
-function resPageHTML(kind) {
+/* ---------- plugins, skills e MCPs (TASK-013, etapa 1: ver tudo) ---------- */
+const RES_PAGES = ['Plugins', 'Skills', 'MCPs'];
+const RES_SCOPES = { Plugins: ['Usuário', 'Projeto', 'Local', 'Sincronizado'], Skills: ['Usuário', 'Projeto', 'Plugin'], MCPs: ['Conta', 'Usuário', 'Projeto', 'Local', 'Plugin'] };
+const RES_STATES = { Plugins: [['on', 'Ligados'], ['off', 'Desligados']], Skills: [], MCPs: [['ok', 'Conectados'], ['issue', 'Com problema']] };
+const PL_SCOPE = { user: 'Usuário', project: 'Projeto', local: 'Local', synced: 'Sincronizado' };
+const RESC = {}; // por projeto: plugins e estado dos MCPs lidos pela CLI (aparecem na hora e atualizam por trás)
+const safeTarget = (t) => (!t ? '' : /^https?:/i.test(t) ? t.replace(/[?#].*$/, '') : t.split(/\s+/)[0]); // sem argumentos (podem ter chaves)
+const fmtTokPt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.', ',')} mil` : String(n)); // preciso, para somar custos
+const resNoun = (kind, n) => (kind === 'MCPs' ? (n === 1 ? 'MCP' : 'MCPs') : n === 1 ? kind.slice(0, -1).toLowerCase() : kind.toLowerCase());
+const plShort = (id) => String(id || '').split('@')[0];
+
+function resEnsure(kind) {
   const p = curProject();
-  if (!UI.scan || UI.scan.pid !== p.id) {
-    api.scan(p.path).then((data) => { UI.scan = { pid: p.id, json: JSON.stringify(data), data }; if (mode() === 'page' && UI.cur.page === kind) renderPage(); });
-    return `<div class="page">${ptitle(kind)}<div class="empty">Lendo configurações…</div></div>`;
+  if (!UI.res || UI.res.pid !== p.id) UI.res = { pid: p.id, files: null, filesJson: '', q: '', scope: '', st: '' };
+  const r = UI.res;
+  if (!r.files && !r.loadingFiles) { r.loadingFiles = true; api.scan(p.path).then((d) => { r.loadingFiles = false; r.files = d; r.filesJson = JSON.stringify(d); repaintRes(); }); }
+  if (kind === 'Plugins') resLoadPlugins(p, false);
+  if (kind === 'MCPs') resLoadMcp(p, false);
+}
+function resLoadPlugins(p, force) {
+  const c = RESC[p.id] || (RESC[p.id] = {});
+  if (c.plLoading || (c.pl && !force)) return;
+  c.plLoading = true;
+  api.scanPlugins(p.path).then((d) => { c.pl = d; c.plAt = Date.now(); c.plLoading = false; repaintRes(); });
+}
+function resLoadMcp(p, force) {
+  const c = RESC[p.id] || (RESC[p.id] = {});
+  if (c.mcpLoading || (c.mcp && !force)) return;
+  c.mcpLoading = true;
+  api.scanMcpStatus(p.path).then((d) => { c.mcp = d; c.mcpAt = Date.now(); c.mcpLoading = false; repaintRes(); });
+}
+
+// itens de cada tela, já no formato comum { search, scope, st, html }
+function resItems(kind) {
+  const r = UI.res, c = RESC[r.pid] || {};
+  const tag = (txt, k = '') => `<span class="tag ${k}">${esc(txt)}</span>`;
+  const files = r.files || { skills: [], mcps: [] };
+  if (kind === 'Plugins') {
+    if (!c.pl) return null;
+    return c.pl.plugins.map((x) => {
+      const inv = [x.skills.length && `${x.skills.length} skill${x.skills.length > 1 ? 's' : ''}`, x.agents && `${x.agents} agente${x.agents > 1 ? 's' : ''}`, x.hooks.length && `${x.hooks.length} hook${x.hooks.length > 1 ? 's' : ''}`, x.mcps.length && `${x.mcps.length} MCP${x.mcps.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ') || 'sem componentes';
+      return { search: `${x.name} ${x.marketplace} ${x.desc} ${x.skills.join(' ')}`, scope: PL_SCOPE[x.scope] || x.scope, st: x.enabled ? 'on' : 'off',
+        html: `<div class="card${x.enabled ? '' : ' dim'}"><h5>${esc(x.name)}</h5><p class="rmeta">${esc(x.marketplace)} · v${esc(String(x.version).slice(0, 12))}</p>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : ''}<p class="rmeta">${esc(inv)}</p>${x.skills.length ? `<p class="rmeta" title="${esc(x.skills.join(', '))}">Skills: ${esc(x.skills.slice(0, 6).join(', '))}${x.skills.length > 6 ? '…' : ''}</p>` : ''}
+          <div class="tags">${tag('Escopo: ' + (PL_SCOPE[x.scope] || x.scope))}${tag(x.enabled ? 'Ligado' : 'Desligado', x.enabled ? 'ok' : 'warn')}${typeof x.alwaysOn === 'number' ? `<span class="tag" title="Custo estimado, em todo início de sessão, enquanto o plugin estiver ligado">~${fmtTokPt(x.alwaysOn)} tokens/sessão</span>` : ''}${x.notes.length ? `<span class="tag warn" title="${esc(x.notes.join(' '))}">Aviso</span>` : ''}</div></div>` };
+    });
   }
-  const list = UI.scan.data[kind.toLowerCase()];
-  return `<div class="page">${ptitle(kind)}<div class="note">Somente leitura: mostra o que está configurado nos arquivos do Claude Code (escopos Usuário, Projeto e Local). Mudanças feitas pelo terminal aparecem aqui em poucos segundos. Gerenciar pelo app fica para uma próxima fase.</div>
-    ${list.length ? `<div class="cards">${list.map((x) => `<div class="card"><h5>${esc(x.name)}</h5><p>${kind.slice(0, -1)} do Claude Code</p><div class="tags"><span class="tag">Escopo: ${x.scope}</span><span class="tag ${x.kind}">${x.status}</span></div></div>`).join('')}</div>` : `<div class="empty" style="height:auto">Nenhum(a) ${kind.slice(0, -1).toLowerCase()} encontrado(a) para este projeto.</div>`}</div>`;
+  if (kind === 'Skills') {
+    return files.skills.map((x) => {
+      const nm = x.scope === 'Plugin' ? `${plShort(x.origin)}:${x.name}` : x.name;
+      return { search: `${x.name} ${x.desc} ${x.origin}`, scope: x.scope, st: '',
+        html: `<div class="card${x.off ? ' dim' : ''}"><h5>/${esc(nm)}</h5>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : '<p class="rmeta">Sem descrição.</p>'}
+          <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' ? ' · ' + plShort(x.origin) : ''))}${tag(x.kind === 'skill' ? 'Skill' : 'Comando')}${x.off ? tag('Plugin desligado', 'warn') : ''}</div></div>` };
+    });
+  }
+  // MCPs: o estado real (CLI) manda; os arquivos dão o escopo e a origem
+  const live = c.mcp && c.mcp.items;
+  const findCfg = (n) => files.mcps.find((f) => f.name === n || (f.scope === 'Plugin' && n.endsWith(':' + f.name) && n.includes(plShort(f.origin))));
+  const rows = [];
+  for (const it of live || []) {
+    const f = findCfg(it.name);
+    const scope = f ? f.scope : /^claude\.ai /.test(it.name) ? 'Conta' : /^plugin:/.test(it.name) ? 'Plugin' : 'Usuário';
+    rows.push({ name: it.name, scope, origin: f ? f.origin : '', type: f ? f.type : '', target: it.target, kind: it.kind, label: it.label, detail: it.detail });
+  }
+  for (const f of files.mcps) {
+    if (live && rows.some((x) => findCfg(x.name) === f)) continue;
+    rows.push({ name: f.name, scope: f.scope, origin: f.origin, type: f.type, target: f.target, kind: '', label: live ? 'Sem leitura de estado' : 'Verificando…', detail: '' });
+  }
+  return rows.map((x) => ({ search: `${x.name} ${x.origin} ${x.target}`, scope: x.scope, st: x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '',
+    html: `<div class="card${x.kind === 'ok' || !x.kind ? '' : ' dim'}"><h5>${esc(x.name)}</h5>${x.target ? `<p class="rmeta">${esc(safeTarget(x.target))}</p>` : ''}${x.detail ? `<p class="rmeta" title="${esc(x.detail)}">${esc(x.detail.slice(0, 90))}</p>` : ''}
+      <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' && x.origin ? ' · ' + plShort(x.origin) : ''))}${tag(x.label, x.kind)}${x.type ? tag(x.type) : ''}</div></div>` }));
+}
+
+function resListHTML(kind) {
+  const r = UI.res, c = RESC[r.pid] || {};
+  if (!r.files && kind !== 'Plugins') return '<div class="empty" style="height:auto">Lendo configurações…</div>';
+  const items = resItems(kind);
+  if (!items) return `<div class="empty" style="height:auto">${c.pl && c.pl.error ? esc(c.pl.error) : 'Lendo plugins pelo Claude Code…'}</div>`;
+  const q = r.q.trim().toLowerCase();
+  const list = items.filter((x) => (!r.scope || x.scope === r.scope) && (!r.st || x.st === r.st) && (!q || x.search.toLowerCase().includes(q)));
+  const one = kind.slice(0, -1).toLowerCase();
+  if (!list.length) return `<div class="empty" style="height:auto">${items.length ? 'Nada com esse filtro.' : `Nenhum(a) ${one} encontrado(a) para este projeto.`}</div>`;
+  return `<div class="cards">${list.map((x) => x.html).join('')}</div>`;
+}
+function resMetaText(kind) {
+  const r = UI.res, c = RESC[r.pid] || {};
+  const items = (r.files || kind === 'Plugins') ? resItems(kind) : null;
+  const n = items ? items.length : 0;
+  const on = kind === 'Plugins' && c.pl ? c.pl.plugins.filter((x) => x.enabled && typeof x.alwaysOn === 'number') : [];
+  const sum = on.length ? ` · ligados custam ~${fmtTokPt(on.reduce((s, x) => s + x.alwaysOn, 0))} tokens por sessão` : '';
+  const since = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 5 ? 'agora' : s < 60 ? `há ${s} s` : `há ${Math.round(s / 60)} min`; };
+  let st = '';
+  if (kind === 'Plugins') st = c.plLoading ? 'atualizando…' : c.plAt ? `lido pelo Claude Code ${since(c.plAt)}` : '';
+  else if (kind === 'MCPs') st = c.mcpLoading ? 'conferindo o estado de cada conector (leva alguns segundos)…' : c.mcpAt ? `estado conferido ${since(c.mcpAt)}` : '';
+  else st = 'lido dos arquivos do Claude Code';
+  const err = (kind === 'MCPs' && c.mcp && c.mcp.error) ? ` · ${c.mcp.error}` : '';
+  return `${items ? `${n} ${resNoun(kind, n)}${kind === 'Plugins' ? sum : ''}${st ? ' · ' : ''}` : ''}${st}${err}`;
+}
+function repaintRes() {
+  const kind = UI.cur.page;
+  if (!UI.res || !RES_PAGES.includes(kind) || UI.cur.p !== UI.res.pid || mode() !== 'page') return;
+  const l = $('#reslist'), m = $('#resmeta');
+  if (l) l.innerHTML = resListHTML(kind);
+  if (m) m.textContent = resMetaText(kind);
+}
+
+function resPageHTML(kind) {
+  resEnsure(kind);
+  const r = UI.res;
+  const seg = (attr, cur, opts) => `<div class="seg sm">${[['', 'Todos']].concat(opts).map(([v, l]) => `<button ${attr}="${esc(v)}" class="${cur === v ? 'sel' : ''}">${esc(l)}</button>`).join('')}</div>`;
+  return `<div class="page">${ptitle(kind)}<div class="note">Mostra o mesmo que o Claude Code enxerga neste projeto (${kind === 'MCPs' ? 'inclusive os conectores da sua conta' : kind === 'Plugins' ? 'com o custo estimado em tokens' : 'de usuário, de projeto e de plugins'}). Mudanças feitas pelo terminal aparecem aqui sozinhas. Por enquanto só leitura; o controle pela tela vem nas próximas etapas.</div>
+    <div class="restools"><input id="resq" class="resq" type="text" placeholder="Buscar em ${resNoun(kind, 2)}…" value="${esc(r.q)}">${seg('data-resscope', r.scope, RES_SCOPES[kind].map((s) => [s, s]))}${RES_STATES[kind].length ? seg('data-resst', r.st, RES_STATES[kind]) : ''}<button class="btn sm" data-resrefresh>Atualizar</button></div>
+    <div class="rmeta" id="resmeta" style="margin:2px 0 4px">${esc(resMetaText(kind))}</div>
+    <div id="reslist">${resListHTML(kind)}</div></div>`;
 }
 
 function consumoHTML() {
@@ -973,7 +1077,7 @@ async function importSessionsFlow(p, fromImport = false) {
 function addProject({ name, path, imported, noTab }) {
   const p = { id: uuid(), name, path, imported, archived: false, tabs: [], activeTab: null, g: S.projects.length, open: true };
   S.projects.push(p);
-  UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.scan = null;
+  UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.res = null;
   save(); renderAll();
   if (!noTab) createTab(p, 'n');
   return p;
@@ -1070,7 +1174,7 @@ async function projectMenuFlow() {
     disposeProjectViews(p);
     if (r.value === 'archive') p.archived = true; else S.projects = S.projects.filter((x) => x.id !== p.id);
     const next = visibleProjects()[0];
-    UI.cur = { p: next ? next.id : null, page: 'Terminais' }; UI.scan = null;
+    UI.cur = { p: next ? next.id : null, page: 'Terminais' }; UI.res = null;
     save(); sendSummary(); renderAll();
   }
   if (r.value === 'delete') {
@@ -1157,15 +1261,24 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-ph]'))) {
     const p = proj(el.dataset.ph);
     p.open = p.open === false; save();
-    if (UI.cur.p !== p.id) { UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.scan = null; renderAll(); } else renderSide();
+    if (UI.cur.p !== p.id) { UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.res = null; renderAll(); } else renderSide();
     return;
   }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
+  if ((el = q('[data-resscope]'))) { UI.res.scope = el.dataset.resscope; renderPage(); return; }
+  if ((el = q('[data-resst]'))) { UI.res.st = el.dataset.resst; renderPage(); return; }
+  if ((el = q('[data-resrefresh]'))) {
+    const p = curProject(), kind = UI.cur.page;
+    UI.res.files = null; UI.res.loadingFiles = false;
+    if (kind === 'Plugins') resLoadPlugins(p, true);
+    if (kind === 'MCPs') resLoadMcp(p, true);
+    renderPage(); return;
+  }
   if ((el = q('[data-go]'))) {
     const [p, pg] = el.dataset.go.split('|');
     UI.cur = { p, page: pg }; if (p !== '_') UI.last = p;
     UI.pop = false;
-    if (['Plugins', 'Skills', 'MCPs'].includes(pg)) UI.scan = null;
+    if (RES_PAGES.includes(pg)) UI.res = null;
     if (pg === 'Integrações') UI.env = null;
     renderAll(); return;
   }
@@ -1213,6 +1326,7 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('input', (e) => {
   const id = e.target.id;
+  if (id === 'resq' && UI.res) { UI.res.q = e.target.value; repaintRes(); return; }
   if (id === 'clrAlert' || id === 'clrClose' || id === 'clrResume') {
     const c = S.settings.clear;
     if (id === 'clrAlert') c.alert = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
@@ -1230,13 +1344,20 @@ document.addEventListener('input', (e) => {
 new ResizeObserver(() => { if (!tweening) fitActive(); }).observe($('#termHost'));
 window.addEventListener('resize', fitActive);
 
-// detecção de mudanças externas nos recursos (feitas pelo terminal)
+// detecção de mudanças externas nos recursos (feitas pelo terminal): arquivos a cada 4 s, plugins a cada 12 s, MCPs a cada 60 s
+let resTick = 0;
 setInterval(async () => {
   const p = curProject();
-  if (!p || !['Plugins', 'Skills', 'MCPs'].includes(UI.cur.page) || !UI.scan) return;
+  const kind = UI.cur.page;
+  if (!p || UI.cur.p === '_' || mode() !== 'page' || !RES_PAGES.includes(kind) || !UI.res || !UI.res.files) return;
+  resTick++;
   const data = await api.scan(p.path);
   const json = JSON.stringify(data);
-  if (json !== UI.scan.json) { UI.scan = { pid: p.id, json, data }; renderPage(); }
+  const changed = UI.res && json !== UI.res.filesJson;
+  if (changed) { UI.res.files = data; UI.res.filesJson = json; }
+  if (kind === 'Plugins' && resTick % 3 === 0) resLoadPlugins(p, true);
+  if (kind === 'MCPs' && resTick % 15 === 0) resLoadMcp(p, true);
+  if (changed) repaintRes();
 }, 4000);
 
 // dois modos: 'gradient' (Degradê) e 'blur' (Ofuscado); valores antigos 'acrylic'/'mica' contam como Ofuscado
