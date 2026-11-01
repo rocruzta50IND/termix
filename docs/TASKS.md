@@ -91,6 +91,7 @@ _Nenhuma no momento._
 - **Ajuste final (usuário, 2026-10-31, com capturas):** a aba ativa ainda parecia solta e o terminal deixava um espaço; pedido: tudo colado e rente, como o Terminal do Windows, com **separação nítida** entre as abas. Feito: barra mais escura que o terminal e aba ativa só com a cor do terminal (fusão sem emenda, formato visível), orelhas corrigidas nas abas que não são a primeira (a orelha esquerda saía do lugar por causa do separador), separador mais nítido e barra com margem esquerda menor; vale para a Web. Testado por CDP (instância isolada) com 4 a 8 abas, nas larguras 1280 e 980, na aba da Web e sem erro de JavaScript; arrastar para reordenar não foi exercitado (o recorte é refeito ao soltar).
 - **2º ajuste (usuário, 2026-10-31, nova captura):** ainda sobrava uma faixa de fundo acima e ao lado das abas (margem de 6 px no topo e 8 px à esquerda); pedido: as abas rentes ao container (a "tela") dos terminais. Feito: a barra perdeu a margem de cima (altura 36 px, a aba toca o topo do container, que já recorta os cantos), a margem esquerda ficou em 10 px (fora da curva do canto) e a faixa escura ficou mais discreta (45 %). Conferido por CDP nos terminais e na Web.
 - **3º ajuste (usuário, 2026-10-31, nova captura):** a primeira aba começava com a ponta quadrada, 10 px para dentro do canto arredondado. Feito: a barra encosta também na lateral esquerda (sem margem), e o container recorta a aba e a linha colorida do topo pela curva do canto; o texto da primeira aba ganhou 18 px de folga.
+- **4º ajuste (usuário, 2026-11-01, nova captura):** tirar a linha colorida do topo da aba; a cor da aba passa a valer para a **aba inteira, em degradê** (forte no canto de cima, some até a base; na ativa termina exatamente na cor do terminal, então a fusão continua sem emenda; as inativas levam um tom bem leve). Sem a linha, o "agente trabalhando" passou a ser mostrado pelo **ponto de estado da aba ativa pulsando**. O arrastar das abas virou a TASK-033 (crítica).
 - **Arquivos tocados (ajuste):** `src/renderer/styles.css`, `src/renderer/app.js` (`fuseBar`), `src/renderer/web.js`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
 - **Próximo passo:** TASK-020 (instalador em Windows limpo).
 - **Validada em:** 2026-10-31 (o usuário aprovou). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
@@ -376,6 +377,17 @@ _Nenhuma no momento._
 - **Validada em:** 2026-10-29 (o usuário aprovou o resultado). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ## Prontas
+
+### TASK-033 — Arrastar e soltar das abas dos terminais não funciona direito (CRÍTICA)
+
+- **Responsável:** DEV1
+- **Status:** PRONTA
+- **Prioridade:** **Crítica** — pedido do usuário em 2026-11-01 ("não está funcionando direito")
+- **Objetivo:** reordenar as abas dos terminais (e as da Web, que usam a mesma barra) arrastando, de forma fluida e previsível, sem perder aba, sem pular de posição e sem estragar o visual encaixado da TASK-030.
+- **Sintomas:** o usuário não descreveu o defeito exato; **perguntar ou reproduzir ao iniciar** (arrasta mas não solta na posição certa? a aba some? o recorte da aba ativa fica para trás? trava com muitas abas?).
+- **Base existente:** `src/renderer/app.js` (arraste por `mousedown`/`transform` nas abas, `reorderTabs`, classe `dragging`), `src/renderer/styles.css` (`#tabsRow .tab.dragging`). Suspeitas já conhecidas: o recorte da aba ativa (`fuseBar`, TASK-030) fica na posição de antes enquanto a aba ativa é arrastada (só se refaz ao soltar); o limite da barra com muitas abas encolhidas; arrastar com a aba ativa versus uma inativa.
+- **Critérios de aceite (a refinar):** arrastar qualquer aba (ativa ou não) até qualquer posição e soltar sempre deixa a ordem certa, salva e refletida na tela; a aba arrastada acompanha o mouse sem pulos e o visual encaixado se mantém durante o arraste; funciona com 2, 8 e 20 abas e em janela estreita; clique simples e clique duplo continuam funcionando; testado por cliques reais (CDP) e capturas.
+- **Próximo passo:** reproduzir o defeito numa instância isolada com várias abas e corrigir.
 
 ## Backlog
 

@@ -179,17 +179,18 @@ body.maxed .shadow{filter:none}
   color:var(--text3);flex:0 1 190px;min-width:96px}
 .tab+.tab::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:1px;background:rgba(255,255,255,.3)}
 .tab.active::before,.tab.active+.tab::before{display:none}
-.tab:not(.active):hover{background:rgba(255,255,255,.07);color:var(--text)}
+.tab:not(.active):hover{filter:brightness(1.35);color:var(--text)}
 .tab:not(.active):hover::before,.tab:not(.active):hover+.tab::before{opacity:0}
-.tab.active{background:var(--tab-bg);color:#fff;z-index:2}
+.tab.active{color:#fff;z-index:2}
 .tab.active::before,.tab.active::after{content:"";display:block;position:absolute;top:auto;bottom:0;width:8px;height:8px;pointer-events:none}
 .tab.active::before{left:-8px;background:radial-gradient(circle at 0 0,var(--bar-bg) 7.5px,var(--tab-bg) 8px)}
 .tab.active::after{right:-8px;background:radial-gradient(circle at 100% 0,var(--bar-bg) 7.5px,var(--tab-bg) 8px)}
-.tab .tl{position:absolute;left:0;right:0;top:0;height:2px;border-radius:2px 2px 0 0;background:var(--c);box-shadow:0 0 10px 1px color-mix(in srgb,var(--c) 70%,transparent)}
-/* enquanto o agente trabalha, só a linha colorida da aba ativa pulsa (só opacidade: não pesa) */
-.tabsbar.working .tab .tl{animation:linepulse 2.2s ease-in-out infinite}
-@keyframes linepulse{0%,100%{opacity:.25}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.tabsbar.working .tab .tl{animation:none;opacity:.8}}
+/* a cor da aba vale para a aba inteira, em degradê: forte no canto de cima e some até a base, que na ativa termina exatamente na cor do terminal (a fusão continua sem emenda) */
+.tab:not(.active){background:linear-gradient(165deg,color-mix(in srgb,var(--c) 11%,transparent),color-mix(in srgb,var(--c) 3%,transparent) 65%,transparent)}
+.tab.active{background:linear-gradient(165deg,color-mix(in srgb,var(--c) 52%,transparent) 0%,color-mix(in srgb,var(--c) 24%,transparent) 45%,transparent 100%),var(--tab-bg)}
+/* enquanto o agente trabalha, o ponto de estado da aba ativa pulsa (só opacidade: não pesa) */
+.tabsbar.working .tab.active .bd{animation:pulse 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.tabsbar.working .tab.active .bd{animation:none}}
 .tab .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left;font-size:13px}
 .tab .pw{color:#fca5a5;display:flex}
 .tab .bd{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ok);box-shadow:0 0 0 2px rgba(8,12,20,.7)}

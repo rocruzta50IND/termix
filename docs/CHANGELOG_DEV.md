@@ -6,6 +6,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-01
+
+**TASK-033 registrada (crítica) e TASK-030 — 4º ajuste: cor em degradê na aba inteira** (DEV1)
+
+- Nova tarefa crítica: arrastar e soltar das abas não funciona direito (reproduzir e corrigir). Na TASK-030 saiu a linha colorida do topo; a cor da aba vale para a aba inteira, em degradê, e o estado "trabalhando" pulsa no ponto da aba ativa. `npm run check` passou.
+
 ## 2026-10-31
 
 **TASK-030 — 3º ajuste: a primeira aba segue a curva do canto** (DEV1)
