@@ -12,10 +12,14 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
+_Nenhuma no momento._
+
+## Validadas em DEV1
+
 ### TASK-034 — Novo ícone do app: só o `>_` sobre degradê azul (MVP)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-02, com captura da barra de tarefas e do aviso)
 - **Prioridade:** Alta (MVP) — pedido do usuário em 2026-11-02, antes de validar o instalador
 - **Objetivo:** o ícone da barra de tarefas e das notificações do Windows deve ser só o prompt `>_` sobre um quadrado em degradê, como os ícones do próprio Windows, e não o ícone padrão do Electron.
 - **Feito até agora:** `assets/icon.svg` e `assets/icon-small.svg` redesenhados (degradê azul, `>_` branco, sombra suave; sem abas e sem janela desenhada); `assets/icon.ico` e `assets/icon.png` regerados (16 a 256 px). O `Termix.exe` empacotado (`npm run dist`) carrega o ícone novo.
@@ -23,10 +27,9 @@ _Nenhuma no momento._
 - **Decisões:** o ícone do cabeçalho do app (`logo-mark.svg`) não foi alterado.
 - **Arquivos tocados:** `src/main.js`, `assets/icon.svg`, `assets/icon-small.svg`, `assets/icon.ico`, `assets/icon.png`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
 - **Como validar:** conferir o ícone no `Termix.exe` de `dist\win-unpacked` e, ao instalar (TASK-020), na barra de tarefas, no atalho e numa notificação (o nome deve ser "Termix").
-- **Pendências:** a barra de tarefas e a notificação do app instalado ainda não foram vistas (só o `npm start` foi visto pelo usuário).
-- **Próximo passo:** o usuário aprovar o ícone; depois, TASK-033 e TASK-020.
-
-## Validadas em DEV1
+- **Pendências:** o app instalado (nome "Termix", sem "(dev)") só será visto no teste do instalador (TASK-020).
+- **Próximo passo:** TASK-033, depois TASK-020.
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-032 — Teste geral de plugins, MCPs e skills (feito pelo Claude)
 
