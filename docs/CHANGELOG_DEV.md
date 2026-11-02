@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**Versão 0.2.4 — medição das etapas da atualização** (DEV1)
+
+- A janelinha da atualização agora também mede as etapas (app fechado até o instalador começar, instalando, até a janela voltar) e o aviso "atualizado" mostra o resumo, para descobrir de onde vêm os ~3 minutos de espera. TASK-055 e TASK-060 concluídas (o usuário atualizou 0.2.1 → 0.2.2 → 0.2.3). TASK-061 em andamento.
+
 **Promoção dev1 → main (versão 0.2.3)** (DEV1)
 
 - Promovidas as TASK-056 (janelinha "Atualizando…" com o app fechado), 057 (copiar dentro da caixa), 058 (rail igual no chat e no terminal) e 059 (investigação do contexto). A TASK-060 (publicação) e a TASK-055 (validação da 0.2.2) seguem em andamento.

@@ -8,27 +8,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-060 — Publicar a versão 0.2.3
+### TASK-061 — Publicar a 0.2.4 e medir de onde vêm os ~3 minutos da atualização
 
 - **Responsável:** DEV1
 - **Status:** EM ANDAMENTO
-- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("pode seguir e publicar essa nova versão")
-- **Objetivo:** publicar a 0.2.3, que leva a janelinha "Atualizando…" para quando o app está fechado (TASK-056), o botão de copiar dentro da caixa (057), o rail igual no chat e no terminal (058) e a investigação do contexto (059).
-- **Passos:** `package.json` para 0.2.3; promoção dev1 → main; `npm run dist` e conferência do `latest.yml`; `gh release create v0.2.3`; o usuário atualiza o app instalado (0.2.2 → 0.2.3).
-- **Atenção ao teste:** a 0.2.2 instalada **não** tem o auxiliar da TASK-056, então nesta atualização (0.2.2 → 0.2.3) o que se vê é o cartão "Atualizando…" e a notificação (TASK-050), mais o aviso verde ao reabrir. A janelinha com o tempo, durante o app fechado, só aparece na atualização seguinte (0.2.3 → 0.2.4).
-- **Feito até agora:** versão 0.2.3 no `package.json`; promoção dev1 → main (`2c4aaa3`); Release **v0.2.3** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.3) com instalador (sha256 `40e02f23…`, igual ao publicado), blockmap e `latest.yml` (versão, tamanho e sha512 conferidos antes de enviar; o `latest.yml` da tag e o feed já mostram a 0.2.3); os arquivos do auxiliar (`update-helper.ps1` e `.js`) conferidos dentro do pacote. Feito com `npm run dist` + `gh release create`, sem intercorrências.
-- **Situação do teste:** o app instalado do usuário (`D:\Nova pasta\Termix`) está na **0.2.2**. Falta o usuário atualizar (0.2.2 → 0.2.3) e relatar o cartão "Atualizando…", a notificação do Windows e o aviso verde com o tempo. A janelinha da TASK-056 só aparece na atualização seguinte (0.2.3 → 0.2.4).
-
-### TASK-055 — Publicar a versão 0.2.2 e validar a atualização com o novo modelo (cartão Atualizando)
-
-- **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
-- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("publica a 0.2.2, que daí já validamos também o atualizar com o novo modelo de mostrar atualizando")
-- **Objetivo:** publicar a 0.2.2 (leva a TASK-053, menu do projeto com o botão direito, e a TASK-054, botão de copiar a resposta) e, com o app instalado já na 0.2.1, ver **ao vivo** a atualização com o retorno da TASK-050: o cartão "Atualizando o Termix para a versão 0.2.2…", a notificação do Windows e, ao reabrir, o aviso "Termix atualizado para a versão 0.2.2 · levou N min".
-- **Passos:** (1) `package.json` para 0.2.2 e commit; (2) promoção dev1 → main; (3) `npm run dist` e conferir o `latest.yml` (versão, tamanho, sha512); (4) `gh release create v0.2.2` com instalador, blockmap e `latest.yml`; (5) o usuário atualiza o app instalado (0.2.1 → 0.2.2) e relata o que viu.
-- **O usuário precisa ver:** o cartão por cima da janela antes de fechar; a notificação do Windows durante a instalação; o aviso verde no canto inferior direito ao reabrir, com o tempo; e as abas voltando.
-- **Feito até agora:** versão 0.2.2 no `package.json`; promoção dev1 → main (`4f0fa56`); Release **v0.2.2** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.2) com instalador (sha256 `f8a33ca2…`, igual ao publicado), blockmap e `latest.yml` (versão, tamanho e sha512 conferidos antes de enviar; o `latest.yml` da tag e o feed já mostram a 0.2.2), feito com `npm run dist` + `gh release create`. Sem intercorrências desta vez.
-- **Situação do teste:** o app instalado do usuário (`D:Nova pastaTermix`) está na **0.2.1** (em execução desde 19:15), que já tem o retorno da TASK-050. O atualizador consulta 15 s depois de abrir e a cada 4 h; para ver já, fechar e abrir o app instalado. **Falta o usuário atualizar (0.2.1 → 0.2.2) e relatar** o cartão "Atualizando…", a notificação do Windows e o aviso "atualizado" com o tempo.
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("levou mais ou menos 3 minutos… podemos ir para a 0.2.4?")
+- **Objetivo:** (1) publicar a 0.2.4, para o app instalado (0.2.3) ver **ao vivo** a janelinha "Atualizando…" da TASK-056 durante a espera; (2) descobrir **onde o tempo vai**: o auxiliar agora também mede as etapas, e o aviso verde ao reabrir mostra o resumo ("o app ficou fechado por X: A até o instalador começar, B instalando e C até a janela voltar").
+- **Feito até agora:** `src/update-helper.ps1` acompanha os processos do instalador (`installer`, `Au_`, `Un_A`, `Uninstall Termix`) e grava início e fim no registro; `src/update-helper.js` calcula as etapas (`beforeMs`, `installerMs`, `afterMs`); `src/renderer/app.js` mostra o resumo no aviso verde; versão 0.2.4. Testado com um instalador de mentira (um `installer.exe` que roda 8 s entre o fechamento e a volta do app): etapas medidas com ~1 a 2 s de erro.
+- **Hipóteses para a espera (a confirmar com a medição):** o instalador desinstala a versão antiga e instala a nova arquivo por arquivo (o app é empacotado **sem asar**, milhares de arquivos soltos, e o antivírus examina cada um); o instalador é grande (~125 MB, compressão padrão); depois a restauração das abas. Se a maior parte for "instalando", vale testar empacotar com asar (hoje desligado de propósito, ver DECISOES) ou outra compressão; se for "até a janela voltar", o problema é a abertura do app.
+- **Passos:** versão 0.2.4; promoção dev1 → main; `npm run dist`; conferir o `latest.yml`; `gh release create v0.2.4`; o usuário atualiza (0.2.3 → 0.2.4), vê a janelinha e me passa o resumo do aviso verde.
 
 ## Aguardando validação DEV1
 
@@ -136,6 +124,30 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
 
 ## Concluídas
+
+### TASK-055 — Publicar a versão 0.2.2 e validar a atualização com o novo modelo (cartão Atualizando)
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (confirmada pelo usuário em 2026-11-02; versões publicadas e promovidas para a `main`)
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("publica a 0.2.2, que daí já validamos também o atualizar com o novo modelo de mostrar atualizando")
+- **Objetivo:** publicar a 0.2.2 (leva a TASK-053, menu do projeto com o botão direito, e a TASK-054, botão de copiar a resposta) e, com o app instalado já na 0.2.1, ver **ao vivo** a atualização com o retorno da TASK-050: o cartão "Atualizando o Termix para a versão 0.2.2…", a notificação do Windows e, ao reabrir, o aviso "Termix atualizado para a versão 0.2.2 · levou N min".
+- **Passos:** (1) `package.json` para 0.2.2 e commit; (2) promoção dev1 → main; (3) `npm run dist` e conferir o `latest.yml` (versão, tamanho, sha512); (4) `gh release create v0.2.2` com instalador, blockmap e `latest.yml`; (5) o usuário atualiza o app instalado (0.2.1 → 0.2.2) e relata o que viu.
+- **O usuário precisa ver:** o cartão por cima da janela antes de fechar; a notificação do Windows durante a instalação; o aviso verde no canto inferior direito ao reabrir, com o tempo; e as abas voltando.
+- **Feito até agora:** versão 0.2.2 no `package.json`; promoção dev1 → main (`4f0fa56`); Release **v0.2.2** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.2) com instalador (sha256 `f8a33ca2…`, igual ao publicado), blockmap e `latest.yml` (versão, tamanho e sha512 conferidos antes de enviar; o `latest.yml` da tag e o feed já mostram a 0.2.2), feito com `npm run dist` + `gh release create`. Sem intercorrências desta vez.
+- **Situação do teste:** o app instalado do usuário (`D:Nova pastaTermix`) está na **0.2.1** (em execução desde 19:15), que já tem o retorno da TASK-050. O atualizador consulta 15 s depois de abrir e a cada 4 h; para ver já, fechar e abrir o app instalado. **Falta o usuário atualizar (0.2.1 → 0.2.2) e relatar** o cartão "Atualizando…", a notificação do Windows e o aviso "atualizado" com o tempo.
+- **Fechamento:** o usuário atualizou 0.2.1 → 0.2.2 e depois 0.2.2 → 0.2.3 (atualização com o novo modelo de "Atualizando…"); o app volta, com cerca de 3 minutos de espera. O que ainda não foi relatado: a notificação do Windows. A espera longa está na TASK-061.
+
+### TASK-060 — Publicar a versão 0.2.3
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (confirmada pelo usuário em 2026-11-02; versões publicadas e promovidas para a `main`)
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("pode seguir e publicar essa nova versão")
+- **Objetivo:** publicar a 0.2.3, que leva a janelinha "Atualizando…" para quando o app está fechado (TASK-056), o botão de copiar dentro da caixa (057), o rail igual no chat e no terminal (058) e a investigação do contexto (059).
+- **Passos:** `package.json` para 0.2.3; promoção dev1 → main; `npm run dist` e conferência do `latest.yml`; `gh release create v0.2.3`; o usuário atualiza o app instalado (0.2.2 → 0.2.3).
+- **Atenção ao teste:** a 0.2.2 instalada **não** tem o auxiliar da TASK-056, então nesta atualização (0.2.2 → 0.2.3) o que se vê é o cartão "Atualizando…" e a notificação (TASK-050), mais o aviso verde ao reabrir. A janelinha com o tempo, durante o app fechado, só aparece na atualização seguinte (0.2.3 → 0.2.4).
+- **Feito até agora:** versão 0.2.3 no `package.json`; promoção dev1 → main (`2c4aaa3`); Release **v0.2.3** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.3) com instalador (sha256 `40e02f23…`, igual ao publicado), blockmap e `latest.yml` (versão, tamanho e sha512 conferidos antes de enviar; o `latest.yml` da tag e o feed já mostram a 0.2.3); os arquivos do auxiliar (`update-helper.ps1` e `.js`) conferidos dentro do pacote. Feito com `npm run dist` + `gh release create`, sem intercorrências.
+- **Situação do teste:** o app instalado do usuário (`D:\Nova pasta\Termix`) está na **0.2.2**. Falta o usuário atualizar (0.2.2 → 0.2.3) e relatar o cartão "Atualizando…", a notificação do Windows e o aviso verde com o tempo. A janelinha da TASK-056 só aparece na atualização seguinte (0.2.3 → 0.2.4).
+- **Fechamento:** o usuário atualizou o app instalado 0.2.2 → 0.2.3 e confirmou que funcionou; a espera entre o início do "Atualizando…" e o app reabrir foi de **cerca de 3 minutos** (virou a medição por etapas da TASK-061). Nada foi relatado sobre a notificação do Windows ou o aviso verde.
 
 ### TASK-056 — Indicativo na lacuna da atualização: do app fechar até ele abrir de novo
 

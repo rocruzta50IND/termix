@@ -660,7 +660,7 @@ const fmtMs = (ms) => { const s = Math.round(ms / 1000); return s < 60 ? s + ' s
 function showUpdated(j) {
   let el = $('#updok');
   if (!el) { el = document.createElement('div'); el.id = 'updok'; document.body.appendChild(el); el.addEventListener('click', () => el.classList.remove('show')); }
-  el.innerHTML = `<div class="ut"><span class="ui">${ic('check', 18)}</span><div><b>Termix atualizado para a versão ${esc(j.to)}</b><span>Estava na ${esc(j.from)}. Da hora em que você clicou em Atualizar até o app voltar levou ${fmtMs(j.ms)}${j.closedMs ? ` (o app ficou fechado por ${fmtMs(j.closedMs)})` : ''}.</span></div></div>`;
+  el.innerHTML = `<div class="ut"><span class="ui">${ic('check', 18)}</span><div><b>Termix atualizado para a versão ${esc(j.to)}</b><span>Estava na ${esc(j.from)}. Da hora em que você clicou em Atualizar até o app voltar levou ${fmtMs(j.ms)}${j.closedMs ? ` (o app ficou fechado por ${fmtMs(j.closedMs)}${j.installerMs ? `: ${fmtMs(j.beforeMs)} até o instalador começar, ${fmtMs(j.installerMs)} instalando e ${fmtMs(j.afterMs)} até a janela voltar` : ''})` : ''}.</span></div></div>`;
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 14000);
 }

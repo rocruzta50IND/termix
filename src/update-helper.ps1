@@ -122,6 +122,17 @@ $bar.Add_Paint({
   }
 })
 
+# etapas do instalador (para medir de onde vem a espera): o electron-updater roda o installer.exe; o instalador desinstala a versão antiga por uma cópia temporária (Au_, Un_A ou Uninstall Termix)
+$script:instStart = 0; $script:instEnd = 0; $script:instLast = 0; $script:instMiss = 0; $script:instNames = @{}
+function Get-InstallerBusy {
+  try {
+    $found = $false
+    foreach ($n in @('installer', 'Au_', 'Un_A', 'Uninstall Termix')) {
+      if (Get-Process -Name $n -ErrorAction SilentlyContinue) { $found = $true; $script:instNames[$n] = 1 }
+    }
+    return $found
+  } catch { return $false }
+}
 function Get-BackAt {
   try {
     $p = Get-Process -Name $ProcessName -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -gt $t0 -and $_.MainWindowHandle -ne [IntPtr]::Zero }
@@ -150,6 +161,15 @@ $timer.Add_Tick({
   $el = [int]($now - $script:closedAt).TotalSeconds
   if ($el -lt 60) { $time.Text = "Decorrido: $el s" } else { $time.Text = ('Decorrido: {0} min {1:00} s' -f [math]::Floor($el / 60), ($el % 60)) }
   if ($script:tick -eq 36) { Save-Shot '1' }
+  if (-not $script:done) {
+    if (Get-InstallerBusy) {
+      if (-not $script:instStart) { $script:instStart = Get-NowMs }
+      $script:instLast = Get-NowMs; $script:instMiss = 0
+    } elseif ($script:instStart -and -not $script:instEnd) {
+      $script:instMiss++
+      if ($script:instMiss -ge 3) { $script:instEnd = $script:instLast }
+    }
+  }
   if (-not $script:done -and (Get-BackAt)) {
     $script:done = $true; $script:doneAt = $now
     $title.Text = 'Pronto! Abrindo o Termix…'
@@ -157,7 +177,8 @@ $timer.Add_Tick({
     $bar.Invalidate()
     if ($Timeline) {
       try {
-        $o = '{ "closedAt": ' + $script:closedMs + ', "backAt": ' + (Get-NowMs) + ' }'
+        if ($script:instStart -and -not $script:instEnd) { $script:instEnd = $script:instLast }
+        $o = '{ "closedAt": ' + $script:closedMs + ', "backAt": ' + (Get-NowMs) + ', "installerStart": ' + $script:instStart + ', "installerEnd": ' + $script:instEnd + ', "names": "' + (($script:instNames.Keys | Sort-Object) -join ',') + '" }'
         [System.IO.File]::WriteAllText($Timeline, $o)
       } catch { }
     }

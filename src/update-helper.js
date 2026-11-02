@@ -33,7 +33,15 @@ function readHelperTimeline() {
   try {
     const t = JSON.parse(fs.readFileSync(TIMELINE, 'utf8').replace(/^﻿/, ''));
     try { fs.unlinkSync(TIMELINE); } catch { /* ignora */ }
-    if (t && t.closedAt && t.backAt && t.backAt >= t.closedAt) return { closedMs: t.backAt - t.closedAt };
+    if (t && t.closedAt && t.backAt && t.backAt >= t.closedAt) {
+      const out = { closedMs: t.backAt - t.closedAt };
+      if (t.installerStart && t.installerEnd && t.installerStart >= t.closedAt && t.installerEnd >= t.installerStart && t.backAt >= t.installerEnd) {
+        out.beforeMs = t.installerStart - t.closedAt; // do app fechar até o instalador começar
+        out.installerMs = t.installerEnd - t.installerStart; // o instalador (desinstala a versão antiga e instala a nova)
+        out.afterMs = t.backAt - t.installerEnd; // do instalador terminar até a janela do Termix voltar
+      }
+      return out;
+    }
   } catch { /* sem registro */ }
   return null;
 }
