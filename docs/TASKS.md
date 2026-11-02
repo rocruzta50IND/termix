@@ -27,6 +27,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-056 — Indicativo na lacuna da atualização: do app fechar até ele abrir de novo
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, ao ver a 0.2.1 → 0.2.2 (o cartão "Atualizando…" da TASK-050 está "perfeito"): "ele fecha, leva um tempo, atualiza a área de trabalho, leva mais um tempo e aí sim abre o app novamente; isso demora e não tem indicativo de que o app será aberto de novo".
+- **O problema:** depois que o app fecha, não há processo do Termix para mostrar nada. A instalação roda sem janela (`quitAndInstall(true, true)`), há uma pausa, a área de trabalho/atalhos são atualizados e só então o app reabre. Nesse intervalo (da ordem de minutos) a pessoa vê só a janela sumir. A notificação do Windows da TASK-050 ajuda mas some depressa.
+- **Ideias a validar com o usuário:** (1) um **processo auxiliar separado** (que sobrevive ao fechamento do app, por exemplo um script/janelinha mínima sempre no topo) que mostra "Atualizando o Termix… ele abre sozinho" e **some quando o Termix.exe volta** (com um limite de tempo para nunca ficar preso); (2) instalar **sem o modo silencioso** só com a página de progresso do instalador (NSIS) visível, sem pedir cliques; (3) um ícone/aviso persistente na barra de tarefas ou na bandeja do sistema durante a espera; (4) **reduzir a espera**: medir cada etapa (clique → app fecha → instalador termina → atalhos/área de trabalho → app abre → abas restauradas) e ver o que dá para encurtar (por exemplo o que o instalador faz com os atalhos, antivírus, o tamanho do que é reescrito, a restauração das abas); (5) ao reabrir, manter o aviso verde "atualizado" (já existe, TASK-050).
+- **Critérios de aceite (a refinar):** do instante em que o app fecha até a janela voltar há sempre um indicativo visível de que a atualização está em andamento e de que o app vai abrir sozinho; o indicativo some sozinho quando o app abre (ou após um limite de tempo, com um aviso se algo deu errado); medir e registrar o tempo de cada etapa; testado de ponta a ponta com duas versões publicadas; sem deixar processo órfão.
+- **Cuidados:** o auxiliar não pode ser bloqueado pelo SmartScreen/antivírus nem exigir administrador; precisa funcionar com o app instalado por usuário e com o caminho que tiver (por exemplo `D:Nova pastaTermix`); se a atualização falhar, o app antigo precisa continuar abrindo.
+- **Base existente:** `src/updater.js` (`beginInstall`, `INSTALL_DELAY_MS`, `update-pending.json`), `showUpdBusy` e `showUpdated` em `src/renderer/app.js`; `package.json` (`nsis`, `oneClick: false`); TASK-035 e TASK-050.
+
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 
 - **Responsável:** A definir
