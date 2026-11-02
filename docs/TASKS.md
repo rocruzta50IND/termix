@@ -16,7 +16,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** publicar a 0.2.2 (leva a TASK-053, menu do projeto com o botão direito, e a TASK-054, botão de copiar a resposta) e, com o app instalado já na 0.2.1, ver **ao vivo** a atualização com o retorno da TASK-050: o cartão "Atualizando o Termix para a versão 0.2.2…", a notificação do Windows e, ao reabrir, o aviso "Termix atualizado para a versão 0.2.2 · levou N min".
 - **Passos:** (1) `package.json` para 0.2.2 e commit; (2) promoção dev1 → main; (3) `npm run dist` e conferir o `latest.yml` (versão, tamanho, sha512); (4) `gh release create v0.2.2` com instalador, blockmap e `latest.yml`; (5) o usuário atualiza o app instalado (0.2.1 → 0.2.2) e relata o que viu.
 - **O usuário precisa ver:** o cartão por cima da janela antes de fechar; a notificação do Windows durante a instalação; o aviso verde no canto inferior direito ao reabrir, com o tempo; e as abas voltando.
-- **Feito até agora:** versão 0.2.2 no `package.json`.
+- **Feito até agora:** versão 0.2.2 no `package.json`; promoção dev1 → main (`4f0fa56`); Release **v0.2.2** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.2) com instalador (sha256 `f8a33ca2…`, igual ao publicado), blockmap e `latest.yml` (versão, tamanho e sha512 conferidos antes de enviar; o `latest.yml` da tag e o feed já mostram a 0.2.2), feito com `npm run dist` + `gh release create`. Sem intercorrências desta vez.
+- **Situação do teste:** o app instalado do usuário (`D:Nova pastaTermix`) está na **0.2.1** (em execução desde 19:15), que já tem o retorno da TASK-050. O atualizador consulta 15 s depois de abrir e a cada 4 h; para ver já, fechar e abrir o app instalado. **Falta o usuário atualizar (0.2.1 → 0.2.2) e relatar** o cartão "Atualizando…", a notificação do Windows e o aviso "atualizado" com o tempo.
 
 ## Aguardando validação DEV1
 
