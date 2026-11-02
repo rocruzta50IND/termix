@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-037, TASK-038 e TASK-039 encerradas** (DEV1)
+
+- Marcadas como finalizadas a pedido do usuário. Registro: não há implementação delas no código da `dev1`/`main`; foram encerradas por decisão, não por entrega.
+
 **TASK-049 e TASK-050 concluídas** (DEV1)
 
 - Marcadas como prontas pelo usuário depois da publicação das versões 0.2.0 e 0.2.1 (já na `main`). Cartão "Atualizando…" e notificação do Windows ainda não foram vistos numa atualização real (só aparecem a partir da 0.2.1).

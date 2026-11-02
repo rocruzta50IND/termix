@@ -16,27 +16,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
-### TASK-038 — Arrastar para reordenar as abas da Web
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Baixa
-- **Objetivo:** as abas da Web (`#wtabs`, `src/renderer/web.js`) não têm arrastar; reutilizar a lógica das abas dos terminais (TASK-033).
-
-### TASK-039 — Barra de abas com mais de ~25 abas (rolagem horizontal)
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Baixa
-- **Objetivo:** hoje as inativas encolhem até 34 px; acima de ~25 abas a barra estoura de novo. Avaliar rolagem horizontal mantendo o recorte (`fuseBar`) e o arrastar com rolagem automática.
-
-### TASK-037 — Imagem lateral do instalador com a marca do Termix
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Baixa
-- **Objetivo:** o assistente do instalador mostra a imagem lateral padrão do NSIS (laptop com seta e logo genérico). Trocar por uma com a marca do Termix (`installerSidebar`, 164×314 px). Ideia: avaliar assinatura de código para tirar o aviso do SmartScreen.
-
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 
 - **Responsável:** A definir
@@ -135,6 +114,30 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
 
 ## Concluídas
+
+### TASK-039 — Barra de abas com mais de ~25 abas (rolagem horizontal)
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (marcada como finalizada pelo usuário em 2026-11-02)
+- **Prioridade:** Baixa
+- **Objetivo:** hoje as inativas encolhem até 34 px; acima de ~25 abas a barra estoura de novo. Avaliar rolagem horizontal mantendo o recorte (`fuseBar`) e o arrastar com rolagem automática.
+- **Fechamento:** a pedido do usuário. **Registro fiel:** não há implementação desta tarefa no código da `dev1`/`main` (conferido em 2026-11-02); ela foi encerrada por decisão do usuário, não por entrega nesta linha de trabalho. Se for preciso, reabrir como nova tarefa.
+
+### TASK-038 — Arrastar para reordenar as abas da Web
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (marcada como finalizada pelo usuário em 2026-11-02)
+- **Prioridade:** Baixa
+- **Objetivo:** as abas da Web (`#wtabs`, `src/renderer/web.js`) não têm arrastar; reutilizar a lógica das abas dos terminais (TASK-033).
+- **Fechamento:** a pedido do usuário. **Registro fiel:** não há implementação desta tarefa no código da `dev1`/`main` (conferido em 2026-11-02); ela foi encerrada por decisão do usuário, não por entrega nesta linha de trabalho. Se for preciso, reabrir como nova tarefa.
+
+### TASK-037 — Imagem lateral do instalador com a marca do Termix
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (marcada como finalizada pelo usuário em 2026-11-02)
+- **Prioridade:** Baixa
+- **Objetivo:** o assistente do instalador mostra a imagem lateral padrão do NSIS (laptop com seta e logo genérico). Trocar por uma com a marca do Termix (`installerSidebar`, 164×314 px). Ideia: avaliar assinatura de código para tirar o aviso do SmartScreen.
+- **Fechamento:** a pedido do usuário. **Registro fiel:** não há implementação desta tarefa no código da `dev1`/`main` (conferido em 2026-11-02); ela foi encerrada por decisão do usuário, não por entrega nesta linha de trabalho. Se for preciso, reabrir como nova tarefa.
 
 ### TASK-049 — Publicar a versão 0.2.0 e validar a atualização do app instalado
 
