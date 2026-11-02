@@ -621,14 +621,16 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-flow .c-sys{margin:6px auto}
 .c-flow .c-typing{padding-left:22px}
 
-/* imagens coladas no chat (TASK-041): miniaturas fora da barra, coladas no topo dela, contorno só na imagem */
-.c-thumbs{display:none;gap:10px;padding:0;margin-bottom:-1px;position:relative;z-index:1}
-.c-in.has-img{border-top-left-radius:6px}
+/* imagens coladas no chat (TASK-041): a miniatura é uma "aba" da própria barra (mesma cor e borda, emendada no topo esquerdo) */
+.c-thumbs{display:none;gap:0;padding:0;margin-bottom:-1px;position:relative;z-index:1;align-items:flex-end}
 .c-thumbs.on{display:flex}
+.c-in.has-img{border-top-left-radius:0}
 .c-in.drop{border-color:rgba(91,157,255,.9);background:rgba(91,157,255,.14)}
-.c-th{position:relative;width:128px;height:84px;border:1.5px solid rgba(91,157,255,.75);border-bottom:0;border-radius:14px 14px 0 0;overflow:hidden;background:rgba(10,14,28,.9)}
-.c-th img{width:100%;height:100%;object-fit:cover;display:block}
-.c-th button{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:rgba(10,14,28,.85);border:1px solid var(--border2);color:var(--text);font-size:14px;line-height:1;display:grid;place-items:center}
+.c-th{position:relative;padding:10px 10px 11px 10px;background:var(--c-barbg,#0f1426);border:1px solid var(--border2);border-bottom:0;border-radius:18px 18px 0 0;margin-right:-1px}
+.c-th:not(:first-child){border-radius:18px 18px 0 0}
+.c-th img{width:104px;height:70px;object-fit:cover;display:block;border-radius:10px}
+.c-th button{position:absolute;top:14px;right:14px;width:20px;height:20px;border-radius:50%;background:rgba(10,14,28,.85);border:1px solid var(--border2);color:var(--text);font-size:14px;line-height:1;display:grid;place-items:center}
 .c-th button:hover{background:rgba(255,255,255,.25)}
+.c-box:focus-within .c-th{border-color:rgba(91,157,255,.7)}
 .c-imgs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .c-imgs img{max-width:220px;max-height:180px;border-radius:12px;border:1px solid var(--border2);display:block}
