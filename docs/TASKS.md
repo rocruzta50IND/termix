@@ -481,12 +481,16 @@ _Nenhuma no momento._
 ### TASK-044 — Trocar o modo de uma aba aberta (chat ↔ terminal) e o aviso de que a configuração só vale para abas novas
 
 - **Responsável:** DEV1
-- **Status:** BACKLOG
+- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (implementada e testada pelo Claude em 2026-11-02)
 - **Prioridade:** Alta — o usuário trocou Configurações > Chat > Modo das abas novas para Terminal e os chats abertos continuaram chats (comportamento previsto na TASK-040, mas não é o que ele esperava)
 - **Objetivo:** dar um jeito claro de ver uma conversa no outro modo. Chat e terminal usam a **mesma sessão do Claude Code** (`--resume <id>`), então trocar é viável: encerrar o processo da aba, mudar o `kind` e abrir de novo no outro modo, com a mesma conversa.
 - **Opções a validar com o usuário:** (1) item no menu da aba (clique direito): "Abrir como terminal" / "Abrir como chat", só com o agente parado; (2) botão no cabeçalho da aba; (3) em Configurações, um botão "Aplicar a todas as abas abertas" (com confirmação, pois encerra os processos). Deixar o texto de Configurações mais claro ("vale para as abas novas").
 - **Critérios de aceite:** a troca mantém o nome, a cor e o ID da conversa; o histórico aparece no chat (do `.jsonl`) e a conversa continua no terminal (`--resume`); se o agente está trabalhando, pede confirmação; abas não iniciadas (sem histórico) trocam sem erro; testado nos dois sentidos com o Claude Code real; documentar em `docs/DECISOES.md` (Chat).
 - **Base existente:** `tab.kind` (`src/renderer/app.js`, `createTab`), `launch`, `stopProc`, `chatForget`/`chatOpen` em `src/renderer/chat.js`, `renderTabMenu`.
+- **Feito:** opção (1): item "Abrir como terminal" / "Abrir como chat" no menu da aba (`switchMode` em `src/renderer/app.js`); pede confirmação se o agente trabalha; para o processo, troca `tab.kind` e reabre com `--resume` (nome, cor e ID mantidos). Texto de Configurações > Chat deixa claro que vale só para abas novas.
+- **Testado (CDP, instância isolada, Claude Code real):** chat novo → mensagem (BANANA) → trocar para terminal (retoma a mesma sessão) → voltar para chat (histórico de 2 itens volta do `.jsonl`); `npm run check` passou. Não exercitado: troca com agente trabalhando (modal) e o clique no menu pelo mouse.
+- **Arquivos tocados:** `src/renderer/app.js`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; clique direito numa aba > "Abrir como terminal" (e de volta); a conversa continua a mesma.
 
 ### TASK-045 — Menu de comandos "/" no campo de envio do chat
 

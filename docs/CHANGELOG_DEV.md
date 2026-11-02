@@ -8,6 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-044 — Trocar o modo de uma aba aberta (chat ↔ terminal)** (DEV1)
+
+- Menu da aba ganhou "Abrir como terminal" / "Abrir como chat": mesma conversa (`--resume`), mesmo nome e cor; confirma se o agente está trabalhando. Configurações > Chat explica que o modo vale só para abas novas.
+- Testado com o Claude Code real nos dois sentidos.
+
 **TASK-040 — Modo Chat por aba e rodapé do app** (DEV1)
 
 - Nova aba de chat: conversa em bolhas (ou fluxo) com Markdown, ferramentas em cartões, código com Copiar, parar a resposta e histórico ao reabrir, falando com o Claude Code por `claude -p` em stream-json (sem API externa; mesma sessão do Claude Code, retomada pelo ID). Terminais e chats convivem na mesma barra; Configurações > Chat define o modo das abas novas (o "+"), o visual e as permissões (Automático ou Perguntar).

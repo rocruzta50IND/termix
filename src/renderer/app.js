@@ -301,6 +301,23 @@ async function restartTab(p, tab) {
   await launch(p, tab, 'resume');
 }
 
+// troca a aba entre Chat e Terminal mantendo nome, cor e a mesma conversa (--resume <id>)
+async function switchMode(p, tab) {
+  const toChat = tab.kind !== 'chat';
+  const r = RT[tab.id], c = typeof CH !== 'undefined' ? CH[tab.id] : null;
+  if ((r && r.alive && r.st === 'work') || (c && c.busy)) {
+    const ch = await modal({ title: 'O agente está trabalhando', body: `<p>Trocar para ${toChat ? 'Chat' : 'Terminal'} agora interrompe o que ele está fazendo. A conversa continua no novo modo.</p>`, buttons: [['Cancelar', null], ['Interromper e trocar', 'now', 'pri']] });
+    if (!ch.value) return;
+  }
+  await stopProc(tab);
+  if (tab.kind === 'chat') chatForget(tab);
+  if (RT[tab.id]) { if (RT[tab.id].term) { RT[tab.id].term.dispose(); RT[tab.id].el.remove(); } delete RT[tab.id]; }
+  if (toChat) tab.kind = 'chat'; else delete tab.kind;
+  tab.live = false; save();
+  await launch(p, tab, 'resume');
+  sendSummary(); renderAll();
+}
+
 async function newConversation(p, tab) {
   if (tab.kind === 'chat') return chatNew(p, tab);
   await stopProc(tab);
@@ -1233,7 +1250,7 @@ function confHTML() {
     <div class="row"><div class="grow"><small>Esses ajustes também ficam na engrenagem do rodapé.</small></div></div></div>
     <h5 style="margin:22px 0 8px">Chat</h5>
     <div class="card" style="padding:6px 18px">
-    <div class="row" style="align-items:flex-start"><div class="grow">Modo das abas novas<small><b>Chat:</b> conversa em bolhas, sem terminal. <b>Terminal:</b> o Claude Code como sempre. O "+" cria a aba no modo escolhido; o menu ao lado do "+" tem os dois. As abas já abertas mantêm o modo em que foram criadas.</small></div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Modo das abas novas<small><b>Chat:</b> conversa em bolhas, sem terminal. <b>Terminal:</b> o Claude Code como sempre. O "+" cria a aba no modo escolhido; o menu ao lado do "+" tem os dois. Isto vale só para abas <b>novas</b>: para trocar uma aba já aberta, use o menu da aba (clique direito) > "Abrir como terminal/chat"; a conversa é a mesma.</small></div>
       <div class="seg"><button class="${chatCfg().mode === 'chat' ? 'sel' : ''}" data-chatset="mode|chat">Chat</button><button class="${chatCfg().mode === 'term' ? 'sel' : ''}" data-chatset="mode|term">Terminal</button></div></div>
     <div class="row"><div class="grow">Visual do chat<small><b>Bolhas:</b> a sua pergunta à direita e a resposta à esquerda. <b>Fluxo:</b> leitura contínua, com rótulo e régua de cor.</small></div>
       <div class="seg"><button class="${chatCfg().style === 'bubbles' ? 'sel' : ''}" data-chatset="style|bubbles">Bolhas</button><button class="${chatCfg().style === 'flow' ? 'sel' : ''}" data-chatset="style|flow">Fluxo</button></div></div>
@@ -1350,6 +1367,7 @@ function renderTabMenu(m) {
     ${row(`data-rename="${tab.id}"`, 'edit', 'Renomear guia')}
     ${row(`data-dup="${tab.id}"`, 'copy', 'Duplicar guia')}
     ${row(`data-restart="${tab.id}"`, 'refresh', st === 'end' ? 'Retomar conversa' : 'Reiniciar com a conversa atual', '', st === 'restart')}
+    ${row(`data-switchmode="${tab.id}"`, 'refresh', tab.kind === 'chat' ? 'Abrir como terminal' : 'Abrir como chat', '', st === 'restart')}
     <div class="msep"></div>
     ${row(`data-export="${tab.id}"`, 'save', 'Exportar texto…')}
     <div class="msep"></div>
@@ -1703,6 +1721,7 @@ document.addEventListener('click', async (e) => {
     renderAll(); return;
   }
   if ((el = q('[data-reopen2]'))) { const p = curProject(); const t = p.tabs.find((x) => x.id === el.dataset.reopen2); if (t) { t.open = true; p.activeTab = t.id; save(); renderAll(); restartTab(p, t); } return; }
+  if ((el = q('[data-switchmode]'))) { UI.menu = null; renderMenu(); const f = findTab(el.dataset.switchmode); if (f) switchMode(f.p, f.tab); return; }
   if ((el = q('[data-restart]'))) { UI.menu = null; renderMenu(); const f = findTab(el.dataset.restart); if (f) restartTab(f.p, f.tab); return; }
   if ((el = q('[data-newconv]'))) { const f = findTab(el.dataset.newconv); if (f) newConversation(f.p, f.tab); return; }
   if (q('[data-upd]')) { applyUpdate(); return; }
