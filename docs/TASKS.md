@@ -459,6 +459,17 @@ _Nenhuma no momento._
 
 ## Backlog
 
+### TASK-047 — Controles do chat (modo, estilo, permissão) à mão na tela e fim do texto "Aguardando você"
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura do chat
+- **Objetivo:** hoje, para trocar de Chat para Terminal, de Bolhas para Fluxo ou de Automático para Perguntar, é preciso ir a Configurações > Chat (e o modo da aba só pelo menu da aba, TASK-044). Colocar esses controles **em algum canto da própria tela do chat**, à mão.
+- **Pedido adicional (mesma captura):** na barra de cima da aba, tirar o texto **"Aguardando você"** e manter só a **bolinha de estado** (a aba já mostra o mesmo estado com a bolinha); o texto pode virar dica ao passar o mouse.
+- **A decidir com o usuário ao começar:** onde ficam os controles (menu na linha do modelo/permissão abaixo da caixa, no canto direito da barra de abas no lugar do texto de estado, ou na engrenagem do rodapé); quais entram (Chat ↔ Terminal da aba aberta, Bolhas ↔ Fluxo, Automático ↔ Perguntar da aba, talvez o modo das abas novas); se valem para a aba ou para todas.
+- **Critérios de aceite (a refinar):** trocar modo/estilo/permissão sem abrir Configurações; o texto de estado some e a bolinha continua com a dica; vale para terminal e Web (o texto "Aguardando você" aparece nas duas barras); sem quebrar o layout em janela estreita; testado com o Claude Code real; documentar em `docs/DECISOES.md` e `docs/DESIGN.md`.
+- **Base existente:** `switchMode` e `renderTabMenu` (`src/renderer/app.js`), `.state` na barra de abas (`renderTabs`), `chatCfg`/Configurações > Chat, `.c-perm` e `.c-mdl` em `src/renderer/chat.js`, `docs/DESIGN.md`.
+
 ### TASK-046 — Barra superior: sino centralizado e botões da janela mais elegantes
 
 - **Responsável:** DEV1
