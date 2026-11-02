@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-046 — Barra superior: sino centralizado e botões da janela** (DEV1)
+
+- O sino ficava ~1 px fora do centro do círculo (padding global dos botões); corrigido. Minimizar, maximizar e fechar viraram pílulas com realce discreto; o fechar usa vermelho translúcido em vez do bloco vermelho de ponta a ponta. Conferido por captura ampliada.
+
 **TASK-048 — Menu da aba só na aba** (DEV1)
 
 - Corrigido: o clique direito em qualquer parte do chat abria o menu da aba. O container do chat usava o mesmo atributo das abas; agora só a barra de abas abre o menu e o duplo clique que renomeia. Testado por cliques reais em instância isolada.

@@ -12,6 +12,19 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
+### TASK-046 — Barra superior: sino centralizado e botões da janela mais elegantes
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média (visual) — pedido do usuário em 2026-11-02, com duas capturas
+- **Objetivo:** (1) o ícone do **sino** de notificações não está centralizado dentro do botão redondo (o desenho do sino fica deslocado em relação ao círculo); (2) os botões de **minimizar, maximizar e fechar** ficam com um **retângulo cheio** ao passar o mouse, e o de fechar mostra um **quadrado vermelho forte** de ponta a ponta da barra, que destoa do vidro do app.
+- **Base existente:** `src/renderer/styles.css`: `.wc button` (50 px de largura, altura da barra), `.wc button:hover`, `.wc button.close:hover{background:#e5384a}` e `.wc button.close{border-top-right-radius}`; `.tbtn.round` (sino, 30 px) e o desenho do sino em `ICONS` (`src/renderer/app.js`, `data-togact`).
+- **Ideias a validar com o usuário:** botões da janela com realce em **pílula ou círculo** menor (como o sino), com cantos arredondados e margem em volta, em vez do retângulo de ponta a ponta; fechar com um vermelho mais suave (translúcido, ou o vermelho só no ícone com um fundo discreto), mantendo o canto superior direito arredondado da janela; transição curta; foco por teclado visível. Centralizar o sino ajustando o `viewBox`/o caminho do SVG ou o alinhamento do botão (medir o centro real do desenho, não só o do quadro).
+- **Critérios de aceite:** sino com o centro óptico no centro do círculo (conferido por captura ampliada); minimizar, maximizar e fechar sem retângulo cheio, com realce arredondado coerente com o resto do app; fechar continua óbvio e acessível; funciona maximizado, com a janela normal e no modo Ofuscado (cantos do Windows 11); capturas antes e depois; atualizar `docs/DESIGN.md`.
+- **Feito (2026-11-02):** `src/renderer/styles.css`: o sino estava ~1 px à direita porque o `padding: 1px 6px` global dos botões deixava só 16 px para o ícone de 18 px; `.tbtn` ficou sem padding (medido: ícone centrado no círculo). Botões da janela viram pílulas 38×30 com margem, realce discreto, foco por teclado visível e fechar com vermelho translúcido (hover `rgba(229,56,74,.26)`, ícone rosado); saiu o canto arredondado do fechar. `docs/DESIGN.md` atualizado.
+- **Testado (CDP, instância isolada e zerada):** medidas do sino antes e depois e capturas ampliadas (normal e fechar em hover) conferidas. Não testado: janela maximizada e modo Ofuscado (cantos do Windows 11), hover do minimizar/maximizar só pelo mesmo estilo.
+- **Como validar:** `npm start`; olhar o sino e passar o mouse em minimizar, maximizar e fechar, com a janela normal e maximizada.
+
 ### TASK-048 — Menu da aba aparece ao clicar com o botão direito em qualquer parte do chat (defeito)
 
 - **Responsável:** DEV1
@@ -470,16 +483,6 @@ _Nenhuma no momento._
 ## Prontas
 
 ## Backlog
-
-### TASK-046 — Barra superior: sino centralizado e botões da janela mais elegantes
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Média (visual) — pedido do usuário em 2026-11-02, com duas capturas
-- **Objetivo:** (1) o ícone do **sino** de notificações não está centralizado dentro do botão redondo (o desenho do sino fica deslocado em relação ao círculo); (2) os botões de **minimizar, maximizar e fechar** ficam com um **retângulo cheio** ao passar o mouse, e o de fechar mostra um **quadrado vermelho forte** de ponta a ponta da barra, que destoa do vidro do app.
-- **Base existente:** `src/renderer/styles.css`: `.wc button` (50 px de largura, altura da barra), `.wc button:hover`, `.wc button.close:hover{background:#e5384a}` e `.wc button.close{border-top-right-radius}`; `.tbtn.round` (sino, 30 px) e o desenho do sino em `ICONS` (`src/renderer/app.js`, `data-togact`).
-- **Ideias a validar com o usuário:** botões da janela com realce em **pílula ou círculo** menor (como o sino), com cantos arredondados e margem em volta, em vez do retângulo de ponta a ponta; fechar com um vermelho mais suave (translúcido, ou o vermelho só no ícone com um fundo discreto), mantendo o canto superior direito arredondado da janela; transição curta; foco por teclado visível. Centralizar o sino ajustando o `viewBox`/o caminho do SVG ou o alinhamento do botão (medir o centro real do desenho, não só o do quadro).
-- **Critérios de aceite:** sino com o centro óptico no centro do círculo (conferido por captura ampliada); minimizar, maximizar e fechar sem retângulo cheio, com realce arredondado coerente com o resto do app; fechar continua óbvio e acessível; funciona maximizado, com a janela normal e no modo Ofuscado (cantos do Windows 11); capturas antes e depois; atualizar `docs/DESIGN.md`.
 
 ### TASK-043 — Ícone do Claude nas mensagens do chat
 

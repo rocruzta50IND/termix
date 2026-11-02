@@ -61,12 +61,13 @@ body.maxed .shadow{filter:none}
 /* ---------- barra superior: elemento solto, com espaço para os botões da janela à direita ---------- */
 #topbar{position:absolute;left:0;right:0;top:0;height:var(--head,46px);display:flex;align-items:center;gap:14px;padding:0 0 0 20px;-webkit-app-region:drag}
 #topbar button,#topbar .lims{-webkit-app-region:no-drag}
-.wc{display:flex;align-self:stretch;margin-left:6px}
-.wc button{width:50px;display:grid;place-items:center;color:var(--text2)}
-.wc button:hover{background:rgba(255,255,255,.12);color:#fff}
-.wc button.close:hover{background:#e5384a;color:#fff}
-.wc button.close{border-top-right-radius:var(--R,22px)}
-.tbtn{width:34px;height:34px;border-radius:11px;color:var(--text2);display:grid;place-items:center;position:relative}
+.wc{display:flex;align-items:center;gap:2px;margin:0 8px 0 8px}
+.wc button{width:38px;height:30px;padding:0;border-radius:15px;display:grid;place-items:center;color:var(--text2);transition:background .14s,color .14s}
+.wc button:hover{background:rgba(255,255,255,.1);color:#fff}
+.wc button:focus-visible{outline:2px solid rgba(91,157,255,.7);outline-offset:-2px}
+.wc button.close:hover{background:rgba(229,56,74,.26);color:#ff7d8b}
+.wc button.close:active{background:rgba(229,56,74,.4)}
+.tbtn{width:34px;height:34px;padding:0;border-radius:11px;color:var(--text2);display:grid;place-items:center;position:relative}
 .tbtn:hover{background:var(--glass2);color:var(--text)}
 .tbtn.round{border:1px solid var(--border);background:var(--glass);border-radius:50%;width:30px;height:30px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.4px;font-size:17px;line-height:1}
