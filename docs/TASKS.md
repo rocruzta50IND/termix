@@ -513,17 +513,6 @@ _Nenhuma no momento._
 - **Testado (CDP, Claude Code real):** imagem 3000×2000 com a palavra ABACATE colada por evento de colagem: miniatura, envio, o Claude respondeu "ABACATE", e `chatHistory` devolveu a imagem; `npm run check` passou. Defeito achado e corrigido: a política de segurança da tela bloqueava `blob:` (trocado por `createImageBitmap`). Não exercitado: Ctrl+V com print real do Windows, arrastar arquivo, 5+ imagens, WebP/GIF.
 - **Como validar:** `npm start`; num chat, copie um print (Win+Shift+S) e dê Ctrl+V na caixa; escreva "descreva a imagem" e envie.
 
-### TASK-042 — Refatoração de design: telas que não são terminais sem o fundo aparecendo nas bordas
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG (depois da TASK-041)
-- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura de Configurações
-- **Objetivo:** hoje as telas Plugins, Skills, MCPs, Consumo, Integrações e Configurações são um painel arredondado, com borda e margem, flutuando dentro do vidro, e o fundo degradê aparece em volta. Pedido: **qualquer tela que não seja de terminal (nem o chat) deve ser uma coisa só com o app**, sem o fundo aparecendo nos arredores; o fundo/vidro com a moldura fica só para os terminais.
-- **Base existente:** `#page` (`.stage.panel.glass`, `#page:not(.hide){margin:8px}` em `src/renderer/styles.css`), `renderPage` e `mode()` em `src/renderer/app.js`, a moldura em "U" (`framePath`/`layout`, `GEO`), `docs/DESIGN.md` (estrutura da janela e padrão dos controles).
-- **Critérios de aceite (a refinar):** páginas ocupam a área do palco de ponta a ponta, contínuas com a barra lateral e o rodapé, sem margem de 8 px, sem borda dupla nem o degradê vazando nas laterais; o terminal e o chat continuam como estão (fundo de vidro); rolagem, cartões e controles seguem o padrão da TASK-031; funciona nas larguras 1600, 1180 e 980 e nos modos Degradê e Ofuscado; capturas antes e depois; atualizar `docs/DESIGN.md`.
-- **Ideia a validar com o usuário:** como o rodapé de funções fica nessas telas (hoje some fora de terminal/Web) e se a barra lateral também perde o vidro ou só o palco muda.
-- **Próximo passo:** auditar as telas atuais com capturas e propor 2 variações no HTML de protótipo antes de mexer no app.
-
 ### TASK-038 — Arrastar para reordenar as abas da Web
 
 - **Responsável:** DEV1

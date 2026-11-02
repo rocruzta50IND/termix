@@ -1322,6 +1322,7 @@ function renderPage() {
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML }[UI.cur.page]();
   else if (m === 'page') html = resPageHTML(UI.cur.page);
   $('#page').innerHTML = html;
+  layout(); // o recorte do vidro depende do tipo de tela
   if (UI.cur.p === '_' && UI.cur.page === 'Configurações') api.appInfo().then((i) => { const c = $('#rootChip'); if (c) c.textContent = i.root; });
 }
 
@@ -1832,25 +1833,29 @@ const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN
 const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
 
 // anel fechado: contorno externo arredondado + recorte (o terminal) com os quatro cantos suavizados
-function framePath(W, H, S_, A) {
+// telas que não são terminal nem chat (Plugins, Skills, MCPs, Consumo, Integrações, Configurações, sem projeto): sem recorte, contínuas com o vidro do app (TASK-042)
+const flatMode = () => ['page', 'empty'].includes(mode());
+function framePath(W, H, S_, A, flat) {
   const { R, RI, HEAD: h } = FR, b = GEO.bot;
   const outer = `M${R} 0H${W - R}A${R} ${R} 0 0 1 ${W} ${R}V${H - R}A${R} ${R} 0 0 1 ${W - R} ${H}H${R}A${R} ${R} 0 0 1 0 ${H - R}V${R}A${R} ${R} 0 0 1 ${R} 0Z`;
   const hole = `M${S_} ${h + RI}A${RI} ${RI} 0 0 1 ${S_ + RI} ${h}H${W - A - RI}A${RI} ${RI} 0 0 1 ${W - A} ${h + RI}V${H - b - RI}A${RI} ${RI} 0 0 1 ${W - A - RI} ${H - b}H${S_ + RI}A${RI} ${RI} 0 0 1 ${S_} ${H - b - RI}Z`;
-  return outer + hole;
+  return flat ? outer : outer + hole;
 }
 
 function layout() {
   const f = $('#frame');
   const W = f.clientWidth, H = f.clientHeight;
   if (!W || !H) return;
-  const d = framePath(W, H, GEO.sideW, GEO.armW);
+  const flat = flatMode();
+  if (flat !== document.body.classList.contains('flatpage')) { document.body.classList.toggle('flatpage', flat); setTimeout(() => { if (typeof fitActive === 'function') fitActive(); }, 0); } // o palco muda de altura: reajusta o terminal
+  const d = framePath(W, H, GEO.sideW, GEO.armW, flat);
   $('#glass').style.clipPath = `path(evenodd, '${d}')`;
   $('#edgePath').setAttribute('d', d);
   document.documentElement.style.setProperty('--head', `${FR.HEAD}px`);
   $('#side').style.width = `${GEO.sideW}px`;
   $('#arm').style.width = `${GEO.armW}px`;
   $('#arm').classList.toggle('open', UI.actOpen && GEO.armW > 200);
-  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${GEO.bot}px` });
+  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${flat ? 0 : GEO.bot}px` });
   Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: '0px', height: `${GEO.bot}px` }); // rodapé: dentro da base de vidro, sob o palco
 }
 
