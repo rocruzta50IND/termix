@@ -8,7 +8,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-_Nenhuma no momento._
+### TASK-040 — Modo Chat por aba (conversa visual sobre o Claude Code, protótipo)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 (pausa a TASK-036)
+- **Objetivo:** uma visão de chat (bolhas com Markdown, estilo chat web) para falar com o Claude Code sem raspar o terminal: o app sobe `claude -p --input-format stream-json --output-format stream-json --include-partial-messages --verbose` e desenha os eventos. Sem API externa (usa o login do Claude Code).
+- **Decisões (usuário, 2026-11-02):** protótipo com permissões em modo automático/fixo, só para avaliar a renderização e o stream; **antes de entrar no app, mostrar num HTML (`docs/prototipos/chat-mode.html`) como ficaria, clonando o layout atual.**
+- **Formato do stream (conferido com o CLI 2.1.316):** `system/init` (session_id, tools), `stream_event` (message_start, content_block_start/delta/stop com `text_delta` e `input_json_delta`, message_delta/stop), `assistant` (mensagem completa; `text` ou `tool_use`), `user` (`tool_result`), `rate_limit_event`, `result` (custo, uso, `session_id`). Entrada: `{"type":"user","message":{"role":"user","content":"..."}}` por linha; o processo só encerra se a entrada fechar.
+- **Feito até agora:** TASK registrada; formato do stream sondado com o CLI real; leitura do código para onde encaixar (página por projeto em `SUBS`/`renderPage`, IPC no `main.js`/`preload.js`, `findClaude`/`cleanEnv`).
+- **Próximo passo:** montar o HTML do protótipo e mostrar ao usuário; só com a aprovação do visual, implementar no app (`src/chat.js` no processo principal, ponte no preload, tela no renderer).
+
 
 ## Aguardando validação DEV1
 
