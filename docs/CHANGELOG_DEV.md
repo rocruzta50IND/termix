@@ -8,6 +8,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-020 — Teste do instalador em Windows limpo (Sandbox) e da atualização real** (DEV1)
+
+- Testado no Windows Sandbox (sem Node e sem Claude Code), com roteiros automáticos e capturas de tela: instalação silenciosa e pelo assistente com janelas (em português, com o ícone novo), pasta, `Termix.exe`, atalhos (área de trabalho e menu Iniciar), registro de desinstalação, abertura do app, aviso "Claude Code não foi encontrado" com "Tentar de novo", desinstalação que remove programa e atalhos e mantém os dados.
+- Atualização real: publicado o Release **v0.1.1** no GitHub (público, `npm run release`; versão do `package.json` subiu para 0.1.1). Com a 0.1.0 instalada, o aviso "Nova versão 0.1.1 pronta" apareceu sozinho, "Depois" deixou o botão Atualizar no cabeçalho, "Atualizar" instalou a 0.1.1 e o app reabriu sozinho (~25 s).
+- Limitações: Windows 10 e Claude Code instalado dentro do Sandbox não testados; app sem assinatura de código (o SmartScreen pode avisar).
+
 **TASK-035 — Atualização do app com aviso e botão no cabeçalho** (DEV1)
 
 - Novo `src/updater.js` com `electron-updater` e GitHub Releases: aviso com Depois / Atualizar agora e botão Atualizar no cabeçalho; instala ao fechar se ignorado; confirmação com agente trabalhando. Testado só em simulação (`TERMIX_FAKE_UPDATE=1`); falta teste real com duas versões publicadas.

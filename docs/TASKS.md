@@ -27,6 +27,23 @@ _Nenhuma no momento._
 
 ## Validadas em DEV1
 
+### TASK-020 — Testar o instalador em um Windows limpo (Sandbox)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (testada no Sandbox pelo Claude e instalada pelo usuário na própria máquina em 2026-11-02)
+- **Prioridade:** Média (pré-requisito da promoção para a `main`, junto da TASK-010)
+- **Objetivo:** garantir que o instalador funcione em um computador sem nada do ambiente de desenvolvimento. Ativar o Windows Sandbox (como administrador: `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All`, exige reiniciar) e testar: instalação pelo instalador com janelas, abertura do app, aviso na aba quando não há Claude Code, atalhos e desinstalação (que mantém os dados).
+- **Preparo conferido (2026-10-31):** o PC atende (Windows 11 Pro, virtualização ligada, 32 GB de RAM, 16 núcleos, 7,6 GB livres), mas o recurso continua desativado (não existe o WindowsSandbox.exe). **Falta um único reinício, e só depois de ativar** o recurso: PowerShell como administrador, `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All -NoRestart`, e então reiniciar o PC. Reiniciar antes de ativar não adianta.
+- **Notas:** o Windows Sandbox não estava ativado em 2026-10-30 (virtualização presente). Fora do Sandbox já foi testado instalando em pasta temporária com PATH sem Node (TASK-010). Windows 10 não foi testado.
+- **Feito até agora (2026-11-02):** Windows Sandbox funcionando (recurso ativo). Roteiro automático (fora do repositório, pasta da sessão) mapeia o instalador de `dist` no Sandbox, roda tudo e grava o resultado e capturas de tela (CDP) numa pasta compartilhada. Instalador recompilado (`npm run dist`, 0.1.0, com a TASK-035). Resultado em Windows limpo (sem Node e sem Claude Code): instala sem erro (código 0) em `%LOCALAPPDATA%ProgramsTermix`; `Termix.exe`, desinstalador, atalhos da área de trabalho e do menu Iniciar e registro "Termix 0.1.0" criados; app abre (5 processos, vivo depois de 15 s) na tela inicial; criar projeto abre a aba com a mensagem clara "Claude Code não foi encontrado neste computador…" e o botão "Tentar de novo" (estado "Falha ao iniciar"); desinstalar remove pasta e atalhos e **mantém** `%APPDATA%Termix`.
+- **Feito (atualização e assistente, 2026-11-02):** Release **v0.1.1** publicado no GitHub (repositório público; versão do `package.json` agora 0.1.1; ativos: exe, blockmap e `latest.yml`). No Sandbox, com a 0.1.0 instalada: aviso "Nova versão 0.1.1 pronta" apareceu sozinho (~25 s depois de abrir), "Depois" deixou o botão Atualizar no cabeçalho, o clique instalou a 0.1.1 e o app reabriu sozinho (~25 s). O assistente com janelas (clicando por teclado em todas as telas) instalou e abriu o app; telas em português com o ícone novo.
+- **Pendências:** Windows 10 não testado; Claude Code instalado dentro do Sandbox não testado; sem assinatura de código (SmartScreen pode avisar); o Release v0.1.1 já está público (o próximo lançamento deve usar 0.1.2 ou maior).
+- **Decisões:** a atualização foi testada com um Release real (v0.1.1, repositório público); o usuário baixou o instalador do GitHub, instalou e o app abriu, com o atalho criado.
+- **Arquivos tocados:** `package.json` (versão 0.1.1), `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** baixar `Termix-Setup-0.1.1.exe` em https://github.com/rocruzta50IND/termix/releases/latest, instalar e abrir.
+- **Próximo passo:** TASK-036 (README profissional) para poder divulgar o link; depois TASK-033 (arrastar das abas); promoção para a `main` só quando o usuário pedir.
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
+
 ### TASK-034 — Novo ícone do app: só o `>_` sobre degradê azul (MVP)
 
 - **Responsável:** DEV1
@@ -417,6 +434,20 @@ _Nenhuma no momento._
 
 ## Backlog
 
+### TASK-036 — README profissional e página do projeto no GitHub
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Alta (necessária antes de mandar o link para outras pessoas)
+- **Objetivo:** o repositório não tem README. Criar um profissional: o que é o Termix, capturas de tela, como baixar (Releases) e instalar (inclusive o aviso do SmartScreen, pois o app não é assinado), requisito do Claude Code, como atualizar, limites conhecidos e como relatar problema. Depois de aprovado, promover a `dev1` para a `main` (só com pedido do usuário).
+
+### TASK-037 — Imagem lateral do instalador com a marca do Termix
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Baixa
+- **Objetivo:** o assistente do instalador mostra a imagem lateral padrão do NSIS (laptop com seta e logo genérico). Trocar por uma com a marca do Termix (`installerSidebar`, 164×314 px). Ideia: avaliar assinatura de código para tirar o aviso do SmartScreen.
+
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 
 - **Responsável:** A definir
@@ -513,15 +544,6 @@ _Nenhuma no momento._
 - **Status:** BACKLOG
 - **Prioridade:** Média
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
-
-### TASK-020 — Testar o instalador em um Windows limpo (Sandbox)
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Média (pré-requisito da promoção para a `main`, junto da TASK-010)
-- **Objetivo:** garantir que o instalador funcione em um computador sem nada do ambiente de desenvolvimento. Ativar o Windows Sandbox (como administrador: `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All`, exige reiniciar) e testar: instalação pelo instalador com janelas, abertura do app, aviso na aba quando não há Claude Code, atalhos e desinstalação (que mantém os dados).
-- **Preparo conferido (2026-10-31):** o PC atende (Windows 11 Pro, virtualização ligada, 32 GB de RAM, 16 núcleos, 7,6 GB livres), mas o recurso continua desativado (não existe o WindowsSandbox.exe). **Falta um único reinício, e só depois de ativar** o recurso: PowerShell como administrador, `Enable-WindowsOptionalFeature -Online -FeatureName Containers-DisposableClientVM -All -NoRestart`, e então reiniciar o PC. Reiniciar antes de ativar não adianta.
-- **Notas:** o Windows Sandbox não estava ativado em 2026-10-30 (virtualização presente). Fora do Sandbox já foi testado instalando em pasta temporária com PATH sem Node (TASK-010). Windows 10 não foi testado.
 
 ## Concluídas
 
