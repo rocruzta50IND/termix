@@ -16,7 +16,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** publicar a 0.2.3, que leva a janelinha "Atualizando…" para quando o app está fechado (TASK-056), o botão de copiar dentro da caixa (057), o rail igual no chat e no terminal (058) e a investigação do contexto (059).
 - **Passos:** `package.json` para 0.2.3; promoção dev1 → main; `npm run dist` e conferência do `latest.yml`; `gh release create v0.2.3`; o usuário atualiza o app instalado (0.2.2 → 0.2.3).
 - **Atenção ao teste:** a 0.2.2 instalada **não** tem o auxiliar da TASK-056, então nesta atualização (0.2.2 → 0.2.3) o que se vê é o cartão "Atualizando…" e a notificação (TASK-050), mais o aviso verde ao reabrir. A janelinha com o tempo, durante o app fechado, só aparece na atualização seguinte (0.2.3 → 0.2.4).
-- **Feito até agora:** versão 0.2.3 no `package.json`.
+- **Feito até agora:** versão 0.2.3 no `package.json`; promoção dev1 → main (`2c4aaa3`); Release **v0.2.3** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.3) com instalador (sha256 `40e02f23…`, igual ao publicado), blockmap e `latest.yml` (versão, tamanho e sha512 conferidos antes de enviar; o `latest.yml` da tag e o feed já mostram a 0.2.3); os arquivos do auxiliar (`update-helper.ps1` e `.js`) conferidos dentro do pacote. Feito com `npm run dist` + `gh release create`, sem intercorrências.
+- **Situação do teste:** o app instalado do usuário (`D:\Nova pasta\Termix`) está na **0.2.2**. Falta o usuário atualizar (0.2.2 → 0.2.3) e relatar o cartão "Atualizando…", a notificação do Windows e o aviso verde com o tempo. A janelinha da TASK-056 só aparece na atualização seguinte (0.2.3 → 0.2.4).
 
 ### TASK-055 — Publicar a versão 0.2.2 e validar a atualização com o novo modelo (cartão Atualizando)
 
