@@ -223,7 +223,7 @@ function sendDock(m, p) {
     attention: p ? openTabs(p).some((t) => RT[t.id] && RT[t.id].unread) : false,
     webs: p && p.web ? p.web.tabs.filter((t) => t.url).length : 0,
     fresh: !!(p && UI.webNew && UI.webNew[p.id]), // algo novo na Web deste projeto (aberto por um terminal ou servidor detectado)
-    fade: !!railCfg().fade,
+    fade: !!railCfg().footFade,
     clear: clr,
     rect: { x: c.left + (c.width - W) / 2, y: c.bottom - H + 8, width: W, height: H }, // metade dentro da base de vidro, para cobrir pouco do terminal
   };
@@ -250,7 +250,8 @@ function renderFoot(st, p, m) {
   const html = !show ? '' : `<button class="${st.mode === 'term' ? 'on' : ''}" data-fm="term">${ficon('term')}Terminais${st.terms ? `<span class="n ${st.attention ? 'att' : ''}">${st.terms}</span>` : ''}</button>`
     + `<button class="${st.mode === 'web' ? 'on' : ''}" data-fm="web">${ficon('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>`
     + (c ? `<i class="sep"></i><button class="clr ${c.pulse ? 'pulse ' : ''}${c.busy ? 'busy' : ''}" data-fm="clear" ${c.off ? 'disabled' : ''}>${ficon('clear')}Clear</button>`
-      + `<button class="rst ${c.rst.spin ? 'spin' : ''}" data-fm="restart" ${c.rst.off ? 'disabled' : ''} title="${c.rst.tip}" aria-label="${c.rst.tip}">${ficon('refresh')}Reiniciar</button>` : '');
+      + `<button class="rst ${c.rst.spin ? 'spin' : ''}" data-fm="restart" ${c.rst.off ? 'disabled' : ''} title="${c.rst.tip}" aria-label="${c.rst.tip}">${ficon('refresh')}Reiniciar</button>` : '')
+    + `<i class="sep"></i><button class="gear" data-railmenu title="Configurar o rail e o rodapé" aria-label="Configurar o rail e o rodapé">${ic('gear', 15)}</button>`;
   if (html !== lastFoot) { lastFoot = html; $('#fpill').innerHTML = html; }
 }
 

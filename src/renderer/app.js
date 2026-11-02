@@ -650,7 +650,7 @@ function fmtReset(epoch) {
 const liveWin = (d) => d && d.resets * 1000 > Date.now();
 
 /* ---------- rail: informações da sessão ativa (no lugar da status line do terminal) ---------- */
-const RAIL_DEF = { v: 2, on: true, reserve: false, fade: true, meta: false }; // v: versão dos padrões (ao subir, as escolhas salvas voltam ao padrão novo)
+const RAIL_DEF = { v: 2, on: true, reserve: false, fade: true, meta: false, ctx: true, h5: true, d7: true, cache: true, footFade: false }; // v: versão dos padrões (ao subir, as escolhas salvas voltam ao padrão novo)
 const railCfg = () => S.settings.rail || RAIL_DEF;
 function fmtDur(secs) { // 45s, 12m, 4h38m, 5d18h
   secs = Math.max(0, Math.floor(secs));
@@ -717,7 +717,8 @@ function railHTML(p, tab) {
       cache = ring('CACHE', 0, left, `Cache do prompt · ${left}`, `de ${ttl} de validade${pc.estimated ? ' (estimado pelo histórico)' : ''}`, { sm: true, fill: frac, cls: frac > 20 ? 'g' : 'y' });
     }
   }
-  return `${ctx}${win('5H', UI.limits && UI.limits.five, 'Limite de 5 horas')}${win('7D', UI.limits && UI.limits.week, 'Limite semanal')}${cache}`;
+  const rcfg = railCfg(); // cada anel pode ser ligado ou desligado (Configurações ou engrenagem do rodapé)
+  return `${rcfg.ctx !== false ? ctx : ''}${rcfg.h5 !== false ? win('5H', UI.limits && UI.limits.five, 'Limite de 5 horas') : ''}${rcfg.d7 !== false ? win('7D', UI.limits && UI.limits.week, 'Limite semanal') : ''}${rcfg.cache !== false ? cache : ''}`;
 }
 
 function railMetaHTML(p, tab) {
@@ -750,7 +751,7 @@ function renderRail() {
   if (typeof dockRefresh === 'function') dockRefresh();
   const show = mode() === 'term' && !!tab;
   const cfg = railCfg();
-  $('#rail').classList.toggle('hide', !show);
+  $('#rail').classList.toggle('hide', !(show && cfg.on));
   $('#rmeta').classList.toggle('hide', !(show && cfg.on && cfg.meta));
   $('#sess').classList.toggle('reserve', show && cfg.on && cfg.reserve);
   if (!show) { railLast = ''; metaLast = ''; return; }
@@ -759,7 +760,7 @@ function renderRail() {
   rail.classList.toggle('off', !cfg.on);
   rail.classList.toggle('fade', cfg.on && cfg.fade);
   rail.classList.toggle('menuopen', menuOpen);
-  $('#rgear').classList.toggle('on', menuOpen);
+  document.querySelectorAll('[data-railmenu]').forEach((b) => b.classList.toggle('on', menuOpen));
   $('#rinfo').style.display = cfg.on ? '' : 'none';
   const html = cfg.on ? railHTML(p, tab) : '';
   if (html !== railLast) { railLast = html; setHTML($('#rinfo'), html); }
@@ -1226,6 +1227,10 @@ function confHTML() {
     <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small>Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip">…</span></div>
     <div class="row"><div class="grow">Ao fechar o app<small>Encerra os processos, com confirmação. As conversas ficam guardadas.</small></div><span class="chip">Pergunta antes de sair</span></div>
     <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
+    <h5 style="margin:22px 0 8px">Rail e rodapé</h5>
+    <div class="card" style="padding:6px 18px">
+    ${[['on', 'Anéis de métricas', 'Os anéis flutuantes junto à borda direita (contexto, limites e cache)'], ['ctx', 'Contexto', 'Quanto da janela de contexto da conversa já foi usado'], ['h5', 'Limite de 5 horas', 'Uso da conta na janela de 5 horas'], ['d7', 'Limite de 7 dias', 'Uso semanal da conta'], ['cache', 'Cache do prompt', 'Tempo até o cache esfriar (só nos terminais)'], ['fade', 'Esmaecer os anéis quando parado', 'Ficam discretos e voltam ao normal ao passar o mouse'], ['reserve', 'Reservar espaço para os anéis', 'O texto para antes dos anéis, sem passar por baixo'], ['meta', 'Modelo, branch e permissões', 'Etiqueta no canto inferior direito'], ['footFade', 'Esmaecer o rodapé quando parado', 'Terminais · Web · Clear · Reiniciar ficam discretos']].map(([k, t, d]) => `<div class="row"><div class="grow">${t}<small>${d}</small></div><div class="seg"><button class="${railCfg()[k] ? 'sel' : ''}" data-railset="${k}|1">Sim</button><button class="${railCfg()[k] ? '' : 'sel'}" data-railset="${k}|0">Não</button></div></div>`).join('')}
+    <div class="row"><div class="grow"><small>Esses ajustes também ficam na engrenagem do rodapé.</small></div></div></div>
     <h5 style="margin:22px 0 8px">Chat</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row" style="align-items:flex-start"><div class="grow">Modo das abas novas<small><b>Chat:</b> conversa em bolhas, sem terminal. <b>Terminal:</b> o Claude Code como sempre. O "+" cria a aba no modo escolhido; o menu ao lado do "+" tem os dois. As abas já abertas mantêm o modo em que foram criadas.</small></div>
@@ -1360,13 +1365,21 @@ function renderMenu() {
   if (m.type === 'rail') {
     const c = railCfg();
     const row = (k, label, sub) => `<button class="mi" data-rail="${k}"><span class="t"><span class="mchk ${c[k] ? 'on' : ''}">${c[k] ? '✓' : ''}</span>${label}</span><small>${sub}</small></button>`;
-    $('#menuRoot').innerHTML = `<div class="menu" style="right:${m.r}px;bottom:${m.b}px;min-width:320px;max-width:420px">
-      <div class="mlabel">Rail · informações da sessão</div>
-      ${row('on', 'Mostrar informações', 'Contexto, 5 h, 7 d e cache em anéis, junto à borda direita do terminal')}
+    const ringRow = (k, label) => row(k, label, '');
+    $('#menuRoot').innerHTML = `<div class="menu" style="left:${Math.max(8, Math.min(m.x, window.innerWidth - 440))}px;bottom:${m.b}px;min-width:320px;max-width:420px">
+      <div class="mlabel">Rail · anéis de métricas</div>
+      ${row('on', 'Mostrar os anéis', 'Anéis flutuantes junto à borda direita, sem fundo')}
+      ${row('ctx', 'Contexto', 'Quanto da janela de contexto desta conversa já foi usado')}
+      ${row('h5', 'Limite de 5 horas', 'Uso da conta na janela de 5 horas')}
+      ${row('d7', 'Limite de 7 dias', 'Uso semanal da conta')}
+      ${row('cache', 'Cache do prompt', 'Tempo até o cache esfriar (terminais)')}
       <div class="msep"></div>
-      ${row('reserve', 'Reservar espaço no terminal', 'O texto para antes da cápsula, sem passar por baixo dela')}
+      ${row('reserve', 'Reservar espaço no terminal', 'O texto para antes dos anéis, sem passar por baixo deles')}
       ${row('fade', 'Esmaecer quando parado', 'Fica discreta e volta ao normal ao passar o mouse')}
-      ${row('meta', 'Modelo, branch e permissões', 'Etiqueta no canto inferior direito do terminal')}</div>`;
+      ${row('meta', 'Modelo, branch e permissões', 'Etiqueta no canto inferior direito do terminal')}
+      <div class="msep"></div>
+      <div class="mlabel">Rodapé</div>
+      ${row('footFade', 'Esmaecer quando parado', 'Terminais · Web · Clear · Reiniciar ficam discretos e voltam ao normal ao passar o mouse')}</div>`;
     return;
   }
   const p = curProject();
@@ -1645,9 +1658,10 @@ document.addEventListener('click', async (e) => {
   }
   if ((el = q('[data-railmenu]'))) {
     if (UI.menu && UI.menu.type === 'rail') UI.menu = null;
-    else { const r = el.getBoundingClientRect(); UI.menu = { type: 'rail', r: window.innerWidth - r.left + 12, b: Math.max(8, window.innerHeight - r.bottom - 4) }; } // abre ao lado da cápsula, sem cobri-la
+    else { const r = el.getBoundingClientRect(); UI.menu = { type: 'rail', x: r.left - 60, b: Math.max(8, window.innerHeight - r.top + 8) }; } // abre logo acima da engrenagem do rodapé
     renderMenu(); renderRail(); return;
   }
+  if ((el = q('[data-railset]'))) { const [k, v] = el.dataset.railset.split('|'); railCfg()[k] = v === '1'; save(); renderPage(); renderRail(); renderTop(); dockRefresh(); return; }
   if ((el = q('[data-clrflag]'))) { const [k, v] = el.dataset.clrflag.split('|'); S.settings.clear[k] = v === '1'; save(); renderPage(); return; }
   if ((el = q('[data-conn]'))) { S.settings.connectors = { v: 1, newProject: el.dataset.conn }; save(); renderPage(); return; }
   if (q('[data-clrreset]')) { S.settings.clear = { ...CLEAR_DEF }; save(); renderPage(); renderRail(); return; }
@@ -1869,7 +1883,6 @@ async function applyBg() {
   if (S.settings.clear.closePrompt === GENERIC_CLOSE) S.settings.clear.closePrompt = ''; // a versão 1 gravava o texto genérico; agora vazio = automático
   if (S.settings.clear.resumePrompt === GENERIC_RESUME) S.settings.clear.resumePrompt = '';
   S.settings.notif = { ...NOTIF_DEF, ...(S.settings.notif || {}), v: NOTIF_DEF.v };
-  $('#rgear').innerHTML = ic('gear', 16);
   for (const p of S.projects) {
     p.tabs = p.tabs || [];
     if (!(await api.folderExists(p.path))) addEvent({ who: p.name, msg: `A pasta do projeto não foi encontrada: ${p.path}` });

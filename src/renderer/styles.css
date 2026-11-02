@@ -126,17 +126,17 @@ body.maxed .shadow{filter:none}
 .col{position:absolute;display:flex;flex-direction:column;gap:0;min-height:0;min-width:0;border-radius:14px;overflow:hidden}
 #page:not(.hide){margin:8px}
 /* rail: cápsula vertical de anéis (contexto, 5 h, 7 d, cache) dentro do terminal, junto à borda direita */
-.rail{position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;width:58px;padding:12px 6px 6px;border-radius:30px;
-  background:rgba(14,19,30,.82);border:1px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.07);transition:opacity .2s}
+.rail{position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;width:50px;padding:0;background:none;border:0;box-shadow:none;transition:opacity .2s} /* só os anéis flutuando: sem cápsula */
 .rail.fade{opacity:.4}.rail.fade:hover,.rail.fade.menuopen{opacity:1}
 .rail.off{width:auto;padding:4px;border-radius:99px}
 .rinfo{display:flex;flex-direction:column;align-items:center;gap:15px;padding-bottom:4px}
 .ring{position:relative;width:44px;height:44px;margin-bottom:11px}
-.ring svg{width:44px;height:44px;transform:rotate(-90deg)}
+.ring::before{content:"";position:absolute;inset:3px;border-radius:50%;background:rgba(8,10,20,.62);box-shadow:0 4px 14px rgba(0,0,0,.4)} /* disco escuro discreto atrás do número, para ler sobre qualquer texto */
+.ring svg{position:relative;width:44px;height:44px;transform:rotate(-90deg)}
 .ring circle{fill:none;stroke-width:4}
 .ring .t{stroke:rgba(255,255,255,.1)}
 .ring .v{stroke-linecap:round}
-.ring .n{position:absolute;inset:0;display:grid;place-items:center;font:700 11px var(--mono)}
+.ring .n{position:absolute;inset:0;display:grid;place-items:center;font:700 11px var(--mono);z-index:1}
 .ring .n.sm{font-size:10px}
 .ring .n.na{color:var(--text3);font-weight:400}
 .ring small{position:absolute;left:-4px;right:-4px;bottom:-12px;text-align:center;font:600 9px var(--mono);color:var(--text3);letter-spacing:.05em}
@@ -503,6 +503,8 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 #appfoot .n.att{background:var(--warn);color:#1a1408}
 #appfoot .nd{width:8px;height:8px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 3px rgba(74,222,128,.28);animation:nd 1.6s ease-in-out infinite;flex:none}
 @keyframes nd{50%{box-shadow:0 0 0 6px rgba(74,222,128,0)}}
+#appfoot button.gear{width:26px;padding:0;justify-content:center;color:var(--text3)}
+#appfoot button.gear:hover,#appfoot button.gear.on{color:var(--text);background:rgba(255,255,255,.12)}
 #appfoot .sep{width:1px;height:16px;background:rgba(255,255,255,.2);margin:0 5px;flex:none}
 #appfoot button.rst.spin svg{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -528,8 +530,10 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-row{display:flex;gap:12px;align-items:flex-start}
 .c-row.me{flex-direction:row-reverse}
 .c-av{width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:700}
-.c-row.ai .c-av{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff}.c-row.ai .c-av::after{content:"C"}
-.c-row.me .c-av{background:var(--glass2);color:var(--text2)}.c-row.me .c-av::after{content:"EU"}
+.c-row.ai .c-av{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 14px rgba(59,130,246,.35)}
+.c-row.me .c-av{background:var(--glass2);color:var(--text2)}
+.c-av svg{width:18px;height:18px}
+.c-flow .c-av svg{display:none}
 .c-bub{max-width:calc(100% - 44px);min-width:0;padding:11px 15px;border-radius:16px;line-height:1.55;user-select:text;font-size:14px;overflow-wrap:anywhere}
 .c-row.ai .c-bub{background:rgba(255,255,255,.055);border:1px solid var(--border);border-top-left-radius:6px}
 .c-row.me .c-bub{background:linear-gradient(135deg,rgba(91,157,255,.34),rgba(59,110,230,.24));border:1px solid rgba(91,157,255,.4);border-top-right-radius:6px}

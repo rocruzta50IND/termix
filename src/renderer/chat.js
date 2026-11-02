@@ -68,6 +68,8 @@ function chatEnsure(tab) {
   return (RT[tab.id] = { chat: true, term: CHAT_TERM, fit: { fit() {} }, el: document.createElement('div'), opened: true, alive: false, st: 'wait', hooks: true, lastData: 0, lastInput: 0, spawnAt: 0, evidence: true, killing: false, waiter: null });
 }
 
+const CHAT_MARK = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l8 7-8 7"/><path d="M17 24h10"/></svg>'; // marca do Termix (>_)
+const CHAT_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1-3.8 3.6-5.6 7-5.6s6 1.8 7 5.6"/></svg>';
 const CHAT_ICON = {
   send: '<path d="M12 19V5M5 12l7-7 7 7"/>',
   stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>',
@@ -123,9 +125,9 @@ function chatItemEl(it) {
 }
 function chatPaintItem(it) {
   const d = it.el; if (!d) return;
-  if (it.k === 'me') { d.className = 'c-row me'; d.innerHTML = `<div class="c-av"></div><div class="c-bub">${chatMd(it.text)}</div>`; }
+  if (it.k === 'me') { d.className = 'c-row me'; d.innerHTML = `<div class="c-av">${CHAT_USER}</div><div class="c-bub">${chatMd(it.text)}</div>`; }
   else if (it.k === 'ai') {
-    if (!d.firstChild) { d.className = 'c-row ai'; d.innerHTML = '<div class="c-av"></div><div class="c-bub"></div>'; }
+    if (!d.firstChild) { d.className = 'c-row ai'; d.innerHTML = `<div class="c-av">${CHAT_MARK}</div><div class="c-bub"></div>`; }
     d.querySelector('.c-bub').innerHTML = chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : '');
   } else if (it.k === 'sys') { d.className = 'c-sys' + (it.err ? ' err' : ''); d.textContent = it.text; }
   else if (it.k === 'tool') {
