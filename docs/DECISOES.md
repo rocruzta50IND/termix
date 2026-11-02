@@ -99,6 +99,7 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Estado da aba de chat: Trabalhando entre o envio e o resultado; Aguardando você depois; Falha se o processo morre no meio. As notificações (terminou, erro) usam as mesmas regras do terminal. Parar a resposta encerra o processo; a próxima mensagem retoma a conversa.
 - Botões do rodapé no chat: **Clear** = conversa nova (confirma; a antiga continua guardada pelo Claude Code, sem a retomada enxuta do terminal); **Reiniciar** = reinicia o processo (a conversa continua).
 - **Trocar o modo de uma aba aberta (TASK-044):** menu da aba (clique direito) > "Abrir como terminal/chat". Chat e terminal usam a mesma sessão; a troca encerra o processo, muda o modo e retoma com `--resume`. O modo de Configurações vale só para abas novas.
+- **Menu "/" no chat (TASK-045):** só no início do campo; lista skills e comandos de usuário, projeto e plugins (lidos dos arquivos) e o `/clear` do app. Os comandos interativos do terminal não aparecem, porque não funcionam no modo `-p`.
 - Por ora o app mantém os dois modos (Chat e Terminal). Se o chat se mostrar suficiente, o modo Terminal pode sair no futuro (decisão do usuário, 2026-11-02: "depende de como ficar o layout por chat").
 - O contexto (anel CTX) e o modelo vêm do stream (estimativa: tokens da última resposta sobre 200 mil, ou 1 milhão se o modelo for 1M). Limites de 5 h e 7 d e cache do prompt só existem com terminais (vêm da status line).
 

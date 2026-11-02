@@ -86,7 +86,7 @@ function chatView(tab) {
   root.className = 'c-root'; root.dataset.tab = tab.id;
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
     <div class="c-scroll"><div class="c-thread"><div class="c-typing"><i></i><i></i><i></i></div></div></div>
-    <div class="c-comp"><div class="c-box">
+    <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>
       <div class="c-in"><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
         <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
         <button class="c-stop" type="button" title="Parar a resposta" aria-label="Parar">${chatIc('stop')}</button></div>
@@ -98,8 +98,14 @@ function chatView(tab) {
     perm: root.querySelector('.c-perm'), mdl: root.querySelector('.c-mdl'), ring: root.querySelector('.c-ring'),
   });
   const send = () => { const t = c.inp.value; if (!t.trim()) return; c.inp.value = ''; c.inp.style.height = 'auto'; chatSendMsg(tab, t); };
-  c.inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
-  c.inp.addEventListener('input', () => { c.inp.style.height = 'auto'; c.inp.style.height = Math.min(c.inp.scrollHeight, 180) + 'px'; });
+  c.slash = root.querySelector('.c-slash');
+  c.inp.addEventListener('keydown', (e) => {
+    if (chatSlashKey(tab, c, e)) return;
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+  });
+  c.inp.addEventListener('blur', () => setTimeout(() => chatSlashClose(c), 120));
+  c.slash.addEventListener('mousedown', (e) => { const b = e.target.closest('[data-i]'); if (!b) return; e.preventDefault(); chatSlashPick(tab, c, +b.dataset.i); });
+  c.inp.addEventListener('input', () => { c.inp.style.height = 'auto'; c.inp.style.height = Math.min(c.inp.scrollHeight, 180) + 'px'; chatSlashUpdate(tab, c); });
   root.querySelector('.c-send').addEventListener('click', send);
   root.querySelector('.c-stop').addEventListener('click', () => chatInterrupt(tab));
   c.scroll.addEventListener('scroll', () => { c.stick = c.scroll.scrollHeight - c.scroll.scrollTop - c.scroll.clientHeight < 90; });
@@ -109,6 +115,63 @@ function chatView(tab) {
     const b = e.target.closest('.c-copy'); if (b) { const pre = b.closest('.c-code').querySelector('pre'); api.clipWrite(pre.innerText); b.textContent = 'Copiado'; setTimeout(() => { b.textContent = 'Copiar'; }, 1400); }
   });
   return c;
+}
+
+/* ---------- menu de comandos "/" (TASK-045) ---------- */
+// No modo -p só rodam comandos de skill, de plugin e personalizados; os interativos do terminal (/mcp, /model...) não entram na lista.
+const CHAT_CMDS = {}; // por projeto: { at, list }
+function chatDecode(t) { const d = document.createElement('textarea'); d.innerHTML = String(t || ''); return d.value.replace(/\s+/g, ' ').trim(); }
+async function chatCmdList(p) {
+  const k = CHAT_CMDS[p.id];
+  if (k && Date.now() - k.at < 3000) return k.list;
+  let list = [];
+  try {
+    const r = await api.scan(p.path);
+    list = (r.skills || []).filter((x) => !x.off).map((x) => {
+      const plug = x.scope === 'Plugin' ? String(x.origin || '').split('@')[0] : '';
+      return { name: plug ? plug + ':' + x.name : x.name, desc: chatDecode(x.desc), origin: plug ? 'Plugin ' + plug : x.scope, kind: x.kind };
+    });
+  } catch { /* sem leitura: fica só o /clear */ }
+  list.push({ name: 'clear', desc: 'Começa uma conversa nova nesta aba (o mesmo que o botão Clear)', origin: 'Termix', app: 'clear' });
+  const seen = new Set(); list = list.filter((x) => (seen.has(x.name) ? false : seen.add(x.name))).sort((a, b) => a.name.localeCompare(b.name));
+  CHAT_CMDS[p.id] = { at: Date.now(), list };
+  return list;
+}
+function chatSlashClose(c) { c.sl = null; if (c.slash) { c.slash.classList.remove('on'); c.slash.innerHTML = ''; } }
+async function chatSlashUpdate(tab, c) {
+  const m = /^\/([^\s]*)$/.exec(c.inp.value); // só no começo do campo, e só enquanto digita o nome
+  const f = findTab(tab.id);
+  if (!m || !f) return chatSlashClose(c);
+  const q = m[1].toLowerCase();
+  const list = await chatCmdList(f.p);
+  if (!/^\/([^\s]*)$/.test(c.inp.value)) return chatSlashClose(c); // o texto mudou enquanto lia
+  const hit = list.filter((x) => x.name.toLowerCase().includes(q) || x.desc.toLowerCase().includes(q))
+    .sort((a, b) => (b.name.toLowerCase().startsWith(q) - a.name.toLowerCase().startsWith(q)) || (+!!b.name.toLowerCase().includes(q) - +!!a.name.toLowerCase().includes(q))).slice(0, 60);
+  if (!hit.length) return chatSlashClose(c);
+  const keep = c.sl && c.sl.q === q ? c.sl.i : 0;
+  c.sl = { hit, i: Math.min(keep, hit.length - 1), q };
+  chatSlashPaint(c);
+}
+function chatSlashPaint(c) {
+  const { hit, i } = c.sl;
+  c.slash.innerHTML = hit.map((x, j) => `<button type="button" class="${j === i ? 'sel' : ''}" data-i="${j}" role="option"><b>/${esc(x.name)}</b><span>${esc(x.desc || 'Sem descrição')}</span><em>${esc(x.origin)}</em></button>`).join('');
+  c.slash.classList.add('on');
+  const el = c.slash.querySelector('.sel'); if (el) el.scrollIntoView({ block: 'nearest' });
+}
+function chatSlashPick(tab, c, i) {
+  const x = c.sl && c.sl.hit[i]; if (!x) return;
+  chatSlashClose(c);
+  if (x.app === 'clear') { c.inp.value = ''; const f = findTab(tab.id); if (f) chatClearFlow(f.p, tab); return; }
+  c.inp.value = '/' + x.name + ' '; c.inp.focus();
+  c.inp.style.height = 'auto'; c.inp.style.height = Math.min(c.inp.scrollHeight, 180) + 'px';
+}
+function chatSlashKey(tab, c, e) { // devolve true se a tecla foi do menu
+  if (!c.sl) return false;
+  const n = c.sl.hit.length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); c.sl.i = (c.sl.i + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; chatSlashPaint(c); return true; }
+  if ((e.key === 'Enter' && !e.shiftKey && !e.isComposing) || e.key === 'Tab') { e.preventDefault(); chatSlashPick(tab, c, c.sl.i); return true; }
+  if (e.key === 'Escape') { e.preventDefault(); chatSlashClose(c); return true; }
+  return false;
 }
 
 /* ---------- itens da conversa ---------- */

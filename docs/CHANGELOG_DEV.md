@@ -8,6 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-045 — Menu de comandos "/" no chat** (DEV1)
+
+- Digitar "/" no início do campo abre a lista de skills e comandos (usuário, projeto e plugins) com descrição e origem; filtra ao digitar; setas, Enter/Tab e Esc; `/clear` abre a conversa nova.
+- Testado com o Claude Code real: comando de projeto listado, escolhido e executado.
+
 **TASK-044 — Trocar o modo de uma aba aberta (chat ↔ terminal)** (DEV1)
 
 - Menu da aba ganhou "Abrir como terminal" / "Abrir como chat": mesma conversa (`--resume`), mesmo nome e cor; confirma se o agente está trabalhando. Configurações > Chat explica que o modo vale só para abas novas.

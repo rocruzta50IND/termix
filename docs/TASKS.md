@@ -496,12 +496,16 @@ _Nenhuma no momento._
 ### TASK-045 — Menu de comandos "/" no campo de envio do chat
 
 - **Responsável:** DEV1
-- **Status:** BACKLOG
+- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (implementada e testada pelo Claude em 2026-11-02)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-02 (no terminal, digitar "/" abre a lista de comandos; no chat não aparece nada)
 - **Objetivo:** ao digitar "/" no início do campo de envio do chat, abre uma lista (acima da caixa) com os comandos disponíveis, nome e descrição, filtrando enquanto digita; setas e Enter escolhem, Esc fecha, Tab completa; no estilo do app. Referência: a lista do Claude Code no terminal (ex.: `/fluxo:init`, `/fluxo:papel`, com descrição).
 - **De onde vêm os comandos:** o evento `system/init` do stream-json traz `slash_commands` (e `skills`) da sessão; antes da primeira mensagem (processo ainda não criado) usar a leitura de skills e comandos do app (`scan:resources`: usuário, projeto e plugins) ou subir o processo ao focar a caixa. Descrições com entidades HTML (como `-&gt;`) devem ser decodificadas.
 - **Limite importante:** no modo `-p` só funcionam comandos de skill, de plugin e personalizados (viram texto expandido pelo Claude Code); os comandos interativos do terminal (`/clear`, `/mcp`, `/model`, `/resume`…) não rodam. A lista deve mostrar só o que funciona, mapear o que o app já faz (`/clear` → botão Clear/conversa nova) e avisar o resto ("abra uma aba de terminal para este comando").
 - **Critérios de aceite:** "/" abre a lista na hora, filtra por nome, mostra descrição e origem (skill, plugin, projeto); escolher insere o comando no campo; funciona por teclado; enviar um comando de skill de verdade e ver a resposta; sem atrapalhar quem digita "/" no meio do texto (só no início); testado com o Claude Code real.
+- **Feito:** `src/renderer/chat.js` (lista, filtro, teclado, `/clear` mapeado para Nova conversa) e `styles.css` (`.c-slash`). Fonte: `scan:resources` (skills e comandos de usuário, projeto e plugins ligados; leitura em cache por 3 s), nome de plugin como `plugin:nome`, descrição com entidades HTML decodificadas. Só abre quando o "/" está no início do campo.
+- **Testado (CDP, teclas reais, Claude Code real):** "/" abre a lista na hora (21 itens), "/init" filtra, Esc fecha, "texto /meio" não abre; comando de projeto criado (`/ola`) aparece, Enter insere, Enter envia e a resposta (ABACAXI) veio; `npm run check` passou. Observação: `/fluxo:vendas` enviado de verdade foi recusado pelo Claude no modo -p (esperado: dependem do ambiente interativo). Não exercitado: `/clear` pelo menu e clique do mouse na lista.
+- **Pendências:** comandos nativos do terminal (`/mcp`, `/model`…) não aparecem (não funcionam no `-p`); só o `/clear` é mapeado; sem aviso "abra um terminal" ao digitar um comando que não existe.
+- **Como validar:** `npm start`; num chat digite "/" e escolha uma skill; filtre digitando; setas, Enter/Tab e Esc.
 
 ### TASK-041 — Imagens coladas no chat, com miniatura na caixa de prompt
 
