@@ -83,7 +83,7 @@ function chatView(tab) {
   if (c) return c;
   c = CH[tab.id] = { items: [], loaded: false, busy: false, byIdx: {}, seen: new Set(), modelName: '', dirty: new Set(), q: false, lastAi: '' };
   const root = document.createElement('div');
-  root.className = 'c-root'; root.dataset.tab = tab.id;
+  root.className = 'c-root'; root.dataset.chat = tab.id;
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
     <div class="c-scroll"><div class="c-thread"><div class="c-typing"><i></i><i></i><i></i></div></div></div>
     <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>

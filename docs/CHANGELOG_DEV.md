@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-048 — Menu da aba só na aba** (DEV1)
+
+- Corrigido: o clique direito em qualquer parte do chat abria o menu da aba. O container do chat usava o mesmo atributo das abas; agora só a barra de abas abre o menu e o duplo clique que renomeia. Testado por cliques reais em instância isolada.
+
 **TASK-047 — Troca Chat/Terminal no rodapé; Fluxo retirado** (DEV1)
 
 - O rodapé ganhou um botão com ícone que abre a aba como Terminal ou como Chat (mesma conversa), valendo só para o uso atual; Configurações > Chat é só o que o app usa ao abrir. O visual do chat ficou só Bolhas (Fluxo retirado) e a permissão fica só em Configurações. O "Aguardando você" da barra de abas foi mantido. Visto pelo usuário numa instância limpa e aprovado.
