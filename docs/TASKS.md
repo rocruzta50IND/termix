@@ -8,6 +8,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+_Nenhuma no momento._
+
 ## Aguardando validação DEV1
 
 ### TASK-040 — Modo Chat por aba (conversa visual sobre o Claude Code)
