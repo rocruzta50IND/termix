@@ -1931,6 +1931,7 @@ async function applyBg() {
   if (S.settings.clear.closePrompt === GENERIC_CLOSE) S.settings.clear.closePrompt = ''; // a versão 1 gravava o texto genérico; agora vazio = automático
   if (S.settings.clear.resumePrompt === GENERIC_RESUME) S.settings.clear.resumePrompt = '';
   S.settings.notif = { ...NOTIF_DEF, ...(S.settings.notif || {}), v: NOTIF_DEF.v };
+  if (S.lastLimits && !UI.limits) UI.limits = S.lastLimits; // últimos limites de 5 h / 7 d conhecidos (vindos do chat ou de um terminal); janelas já vencidas não aparecem (liveWin)
   for (const p of S.projects) {
     p.tabs = p.tabs || [];
     if (!(await api.folderExists(p.path))) addEvent({ who: p.name, msg: `A pasta do projeto não foi encontrada: ${p.path}` });

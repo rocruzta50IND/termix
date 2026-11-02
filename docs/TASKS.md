@@ -21,6 +21,32 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-057 — Botão de copiar fixo no canto de cima, dentro da caixa da resposta
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura: o botão "Copiar" da TASK-054 ficava a cavalo na borda de cima, para fora do quadro da resposta; "ficaria melhor fixo no topo direito da caixa".
+- **Feito:** `src/renderer/chat.js`: o botão vem antes do texto dentro de um contêiner `.c-cpw` de altura zero e `position: sticky` (não empurra o texto e acompanha a rolagem de respostas longas); agora é só o ícone de copiar (círculo de 26 px) e vira um "✓" verde por 1,4 s; `src/renderer/styles.css`: `.c-cpw`, `.c-copyall` dentro da caixa (canto de cima à direita) e o primeiro bloco ganha 30 px de margem à direita para o botão não cobrir o texto.
+- **Testado (CDP, instância isolada):** bolha curta ("ok") sem espaço sobrando; resposta longa rolada 700 px com o botão continuando no topo visível, dentro da caixa; capturas conferidas. Não testado: bloco de código ou tabela como primeiro item da resposta.
+
+### TASK-058 — Rail igual no chat e no terminal (contexto, 5 h, 7 d e cache)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02, com capturas dos dois modos: "os indicadores não ficam do mesmo jeito dependendo do modo… as funções do rail também não reagem da mesma forma; preciso que em ambos os jeitos tudo funcione da mesma forma".
+- **Causa (medida com o Claude Code 2.1.316):** o terminal recebe os números da status line; o `claude -p` do chat não tem status line, e o chat só aproveitava uma parte do que o stream traz: (1) **contexto**: a janela era *adivinhada* pelo nome do modelo (200 mil, salvo "1m" no nome), mas o Claude Code usa 1 milhão (`result.modelUsage[...].contextWindow = 1000000`): o percentual saía ~5× inflado (14% em vez de 2,9% numa conversa nova) e o tooltip não dizia "29k de 1M tokens"; (2) **cache**: sempre "—" no chat; (3) **5 h e 7 d**: o chat ignorava o `rate_limit_event`, então só atualizavam se houvesse um terminal aberto, e ficavam "—" ao reabrir.
+- **Feito:** `src/renderer/chat.js`: `chatMet` monta as métricas no mesmo formato do terminal; `chatCtxSize` usa a janela real (guardada por modelo em `S.settings.ctxSizes` e corrigida a cada resultado); `chatCtx` agora preenche `total_input_tokens` e, a cada chamada à API, renova o **cache** (`prompt_cache`: validade de 1 h ou 5 min pelo `cache_creation` do usage, ou pela origem da chave quando ainda não há pista; o anel faz a contagem regressiva e vira "frio" sozinho); novo tratamento do `rate_limit_event` (5 h e 7 d, só quando acabaram de chegar, para não sobrescrever dados mais novos de um terminal); os limites são guardados em `S.lastLimits`; `src/renderer/app.js` os restaura ao abrir.
+- **Testado (CDP, instância isolada, Claude Code real):** chat após uma resposta: CTX 3%, tooltip "Contexto · 3% / 29k de 1M tokens", 5H e 7D com os valores da conta, CACHE 59 min em verde; janela real (1 M) guardada; reabrindo o app sem mandar mensagem os anéis 5H/7D já aparecem; geometria, classes e tooltip do rail iguais ao de uma aba de terminal ao lado. Não testado: o anel de cache esfriando até "frio" no chat (só pelo código) e o cache de uma conversa reaberta do histórico (fica "—" até a primeira resposta).
+
+### TASK-059 — Por que o contexto parece alto: é o chat? (investigação)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média — pergunta do usuário em 2026-11-02, com captura do chat em 36% de contexto após o pedido inicial e algumas leituras: "veja se não é por causa do modo chat ou se não tem relação".
+- **Conclusão: não é o modo chat.** (1) O chat acrescenta ao prompt do sistema só a dica do `termix-open` (~380 caracteres, ~90 tokens), a mesma que o terminal já acrescenta (`src/main.js:249`). (2) A mensagem mais simples ("diga apenas: ok") custa **~28 mil tokens** no `claude -p` neste ambiente (32 ferramentas, 9 servidores MCP, 9 plugins, 50 skills, 86 comandos): ~26 mil são o núcleo do Claude Code (instruções do sistema e definições das ferramentas), ~2 mil são skills e comandos, e os **MCPs não pesam** (carregados sob demanda). O terminal carrega o mesmo. (3) O que fazia o chat *parecer* pior era o **percentual inflado ~5×** (janela chutada em 200 mil em vez de 1 milhão, TASK-058): 28 mil eram mostrados como ~14%, quando são 2,9%. (4) O que a pessoa lê ao longo da conversa pesa de verdade: cada leitura de arquivo grande (por exemplo o `docs/TASKS.md` inteiro, ~50 mil tokens) entra e fica; o pedido inicial da captura manda reler vários documentos.
+- **Medição:** `claude -p` com stream-json, mesma configuração do app: padrão = 28.152 tokens; sem MCP = 28.152; sem MCP e sem skills/comandos = 26.032.
+- **O que dá para fazer (não feito, ficam ideias):** (a) mostrar no chat o tamanho da "base" da conversa, como a retomada do terminal já faz; (b) a opção Conectores > Limpo do app já corta plugins e MCPs em projetos novos, mas o grosso é do núcleo; (c) cuidar das leituras grandes (ler por trecho, como o pedido do usuário já pede).
+
 ### TASK-056 — Indicativo na lacuna da atualização: do app fechar até ele abrir de novo
 
 - **Responsável:** DEV1

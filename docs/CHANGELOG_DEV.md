@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-057, TASK-058 e TASK-059 — Copiar dentro da caixa, rail igual nos dois modos e investigação do contexto** (DEV1)
+
+- O botão de copiar ficou fixo no canto de cima, dentro da caixa da resposta. O rail do chat passou a ter contexto (com a janela real de 1 M, antes chutada em 200 mil e ~5× inflada), 5 h e 7 d (pelo `rate_limit_event`, guardados ao reabrir) e cache (contagem regressiva) como o do terminal. Investigado: o modo chat não carrega mais contexto que o terminal (base ~28 mil tokens, ~26 mil do núcleo do Claude Code).
+
 **TASK-056 — Janelinha "Atualizando…" enquanto o app está fechado** (DEV1)
 
 - Um auxiliar separado (PowerShell) mostra uma janelinha com o tempo decorrido do instante em que o Termix fecha até ele abrir de novo, e some sozinho; o aviso "atualizado" passou a informar também quanto tempo o app ficou fechado. Testado por simulação; o teste real exige duas versões seguidas com o auxiliar (0.2.3 → 0.2.4).

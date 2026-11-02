@@ -139,7 +139,7 @@ function chatView(tab) {
     const all = e.target.closest('.c-copyall');
     if (all) { // copia a resposta inteira, no texto original (Markdown), não só o que está na tela
       const row = all.closest('.c-row'), it = c.items.find((x) => x.el === row);
-      if (it && it.text) { api.clipWrite(it.text); all.classList.add('done'); all.innerHTML = chatIc('check', 13) + 'Copiado'; setTimeout(() => { all.classList.remove('done'); all.innerHTML = chatIc('copy', 13) + 'Copiar'; }, 1400); }
+      if (it && it.text) { api.clipWrite(it.text); all.classList.add('done'); all.title = 'Copiado'; all.innerHTML = chatIc('check', 14); setTimeout(() => { all.classList.remove('done'); all.title = 'Copiar a resposta inteira'; all.innerHTML = chatIc('copy', 14); }, 1400); }
       return;
     }
     const b = e.target.closest('.c-copy'); if (b) { const pre = b.closest('.c-code').querySelector('pre'); api.clipWrite(pre.innerText); b.textContent = 'Copiado'; setTimeout(() => { b.textContent = 'Copiar'; }, 1400); }
@@ -253,7 +253,8 @@ function chatPaintItem(it) {
     d.classList.toggle('live', !!it.live);
     if (it.live && it.v == null) it.v = chatVar;
     chatAvatar(d, it.v == null ? null : it.v); // terminou: fica o símbolo que estava animando, parado
-    d.querySelector('.c-bub').innerHTML = chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : it.text ? `<button class="c-copyall" type="button" title="Copiar a resposta inteira" aria-label="Copiar a resposta inteira">${chatIc('copy', 13)}Copiar</button>` : '');
+    // o botão de copiar vem ANTES do texto, grudado (sticky) no canto de cima, à direita, dentro da caixa: acompanha a rolagem de respostas longas
+    d.querySelector('.c-bub').innerHTML = (!it.live && it.text ? `<span class="c-cpw"><button class="c-copyall" type="button" title="Copiar a resposta inteira" aria-label="Copiar a resposta inteira">${chatIc('copy', 14)}</button></span>` : '') + chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : '');
   } else if (it.k === 'sys') { d.className = 'c-sys' + (it.err ? ' err' : ''); d.textContent = it.text; }
   else if (it.k === 'tool') {
     const open = d.open;
@@ -445,21 +446,45 @@ function chatStopLive(c) {
 
 /* ---------- eventos do stream-json ---------- */
 const CHAT_NAME = (id) => { const m = /claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:\b|$)/i.exec(String(id || '')); return m ? `${m[1][0].toUpperCase()}${m[1].slice(1)} ${m[2]}${m[3] ? '.' + m[3] : ''}` : String(id || ''); };
-function chatCtx(tab, c, u) {
+/* Métricas da aba de chat no mesmo formato da status line do terminal, para o rail (contexto, 5 h, 7 d e cache) agir igual nos dois modos (TASK-058).
+   O `claude -p` não tem status line, então tudo vem do stream: usage (contexto e tipo de cache), rate_limit_event (limites) e modelUsage (janela real). */
+const CHAT_CTX_DEFAULT = 200000;
+function chatMet(tab, c, patch) {
+  const { rate_limits, ...rest } = patch;
+  c.met = { ...(c.met || {}), ...rest };
+  const data = { ...c.met, updated: Date.now() / 1000 };
+  if (rate_limits) data.rate_limits = rate_limits; // os limites só vão quando acabaram de chegar: não sobrescrevem os mais novos vindos de um terminal
+  onMetric({ tabId: tab.id, data });
+  if (rate_limits && UI.limits) { S.lastLimits = UI.limits; save(); } // ao reabrir o app os anéis 5 h / 7 d já aparecem (o terminal faz o mesmo pelo arquivo de métricas)
+}
+// tamanho real da janela: o do último resultado, o guardado deste modelo, ou um palpite pelo nome do modelo (só até a primeira resposta terminar)
+function chatCtxSize(c) {
+  const saved = (S.settings.ctxSizes || {})[c.modelId];
+  return c.ctxSize || saved || (/1m/i.test(c.modelId || '') ? 1000000 : CHAT_CTX_DEFAULT);
+}
+function chatCtx(tab, c, u, fresh) {
   if (!u) return;
   const tok = (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0);
-  const size = /1m/i.test(c.modelId || '') ? 1000000 : 200000;
-  onMetric({ tabId: tab.id, data: { model: { id: c.modelId, display_name: c.modelName }, context_window: { used_percentage: Math.min(100, tok / size * 100), context_window_size: size, current_usage: { input_tokens: u.input_tokens || 0, output_tokens: u.output_tokens || 0, cache_creation_input_tokens: u.cache_creation_input_tokens || 0, cache_read_input_tokens: u.cache_read_input_tokens || 0 } }, updated: Date.now() / 1000 } });
+  c.lastUsage = u;
+  const size = chatCtxSize(c);
+  const patch = { model: { id: c.modelId, display_name: c.modelName }, context_window: { used_percentage: Math.min(100, tok / size * 100), context_window_size: size, total_input_tokens: tok, current_usage: { input_tokens: u.input_tokens || 0, output_tokens: u.output_tokens || 0, cache_creation_input_tokens: u.cache_creation_input_tokens || 0, cache_read_input_tokens: u.cache_read_input_tokens || 0 } } };
+  if (fresh && (u.cache_read_input_tokens || u.cache_creation_input_tokens)) { // cada chamada à API renova a validade do cache; o tipo (1 h ou 5 min) vem do usage
+    const cc = u.cache_creation || {};
+    if ((cc.ephemeral_1h_input_tokens || 0) > 0) c.cacheTtl = '1h'; else if ((cc.ephemeral_5m_input_tokens || 0) > 0) c.cacheTtl = '5m';
+    if (!c.cacheTtl) c.cacheTtl = c.apiKeySource === 'none' ? '1h' : '5m'; // assinatura: 1 h; chave de API ou créditos extras: 5 min
+    patch.prompt_cache = { caching_observed: true, warm: true, ttl: c.cacheTtl, expires_at: Date.now() / 1000 + (c.cacheTtl === '1h' ? 3600 : 300), recache_tokens_if_cold: tok };
+  }
+  chatMet(tab, c, patch);
 }
 function chatEvent(f, ev) {
   const { p, tab } = f, c = chatView(tab), r = chatEnsure(tab);
   switch (ev.type) {
     case 'system':
-      if (ev.subtype === 'init') { c.modelId = ev.model || ''; c.modelName = CHAT_NAME(ev.model); }
+      if (ev.subtype === 'init') { c.modelId = ev.model || ''; c.modelName = CHAT_NAME(ev.model); c.apiKeySource = ev.apiKeySource || ''; }
       break;
     case 'stream_event': {
       const e = ev.event || {};
-      if (e.type === 'message_start') { c.curMsg = e.message && e.message.id; c.seen.add(c.curMsg); c.byIdx = {}; chatCtx(tab, c, e.message && e.message.usage); }
+      if (e.type === 'message_start') { c.curMsg = e.message && e.message.id; c.seen.add(c.curMsg); c.byIdx = {}; chatCtx(tab, c, e.message && e.message.usage, true); }
       else if (e.type === 'content_block_start') {
         const b = e.content_block || {};
         if (b.type === 'text') c.byIdx[e.index] = chatAdd(c, { k: 'ai', text: b.text || '', live: true, mid: c.curMsg });
@@ -485,7 +510,7 @@ function chatEvent(f, ev) {
         if (b.type === 'text' && b.text) { chatAdd(c, { k: 'ai', text: b.text, mid: m.id }); c.lastAi = b.text; }
         else if (b.type === 'tool_use') chatAdd(c, { k: 'tool', id: b.id, name: b.name, input: b.input, done: false });
       }
-      chatCtx(tab, c, m.usage);
+      chatCtx(tab, c, m.usage, true);
       break;
     }
     case 'user': { // resultados das ferramentas
@@ -500,8 +525,24 @@ function chatEvent(f, ev) {
       }
       break;
     }
+    case 'rate_limit_event': { // limites de 5 h e 7 d da conta, como a status line do terminal
+      const i = ev.rate_limit_info || {}, w = i.unifiedWindows || {};
+      const conv = (x) => (x && typeof x.utilization === 'number' ? { used_percentage: x.utilization <= 1 ? x.utilization * 100 : x.utilization, resets_at: x.resetsAt } : null);
+      const five = conv(w.five_hour) || (i.rateLimitType === 'five_hour' ? conv(i) : null), week = conv(w.seven_day) || (i.rateLimitType === 'seven_day' ? conv(i) : null);
+      if (five || week) chatMet(tab, c, { rate_limits: { ...(five ? { five_hour: five } : {}), ...(week ? { seven_day: week } : {}) } });
+      break;
+    }
     case 'result': {
       c.busy = false; chatStopLive(c);
+      { // o Claude Code informa a janela de contexto real do modelo: corrige o percentual (o palpite pelo nome errava em 5x com o modelo de 1 M)
+        const mu = ev.modelUsage && (ev.modelUsage[c.modelId] || Object.values(ev.modelUsage)[0]);
+        if (mu && mu.contextWindow && mu.contextWindow !== c.ctxSize) {
+          c.ctxSize = mu.contextWindow;
+          if (!S.settings.ctxSizes) S.settings.ctxSizes = {};
+          if (S.settings.ctxSizes[c.modelId] !== c.ctxSize) { S.settings.ctxSizes[c.modelId] = c.ctxSize; save(); }
+          if (c.lastUsage) chatCtx(tab, c, c.lastUsage);
+        }
+      }
       for (const d of ev.permission_denials || []) chatSys(c, `Negado: ${d.tool_name} ${chatToolArg(d.tool_name, d.tool_input)}. Esta aba está em "Perguntar"; para o Claude executar isso, crie a aba em "Automático" (Configurações > Chat).`, true);
       if (ev.is_error) chatSys(c, `O Claude Code devolveu um erro${ev.result ? ': ' + String(ev.result).slice(0, 300) : '.'}`, true);
       setSt(tab, 'wait');
