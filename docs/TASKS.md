@@ -22,28 +22,30 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+## Validadas em DEV1
+
 ### TASK-052 — Alinhar as bolhas do chat (pergunta, resposta e ferramentas na mesma coluna)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Status:** VALIDADA EM DEV1 (vista e aprovada pelo usuário em 2026-11-02 numa instância limpa)
 - **Prioridade:** Média (visual) — pedido do usuário em 2026-11-02, com captura: a pergunta longa ia de ~158 a ~1058, enquanto a resposta e os cartões de ferramenta iam de ~208 a ~1110; as bordas não coincidiam.
 - **Objetivo:** pergunta, resposta e cartões de ferramenta usam a **mesma faixa**, com as mesmas bordas esquerda e direita; os avatares ficam nas calhas laterais.
 - **Feito:** `src/renderer/styles.css`: `.c-bub` e `.c-tool` com `max-width: calc(100% - 84px)` (calha de 42 px de cada lado: a do avatar da resposta à esquerda e a do avatar da pergunta à direita); comentário no CSS.
 - **Testado (CDP, instância isolada, itens de exemplo):** medidas: pergunta longa 415–1095, resposta longa 415–1095 e cartões 415–1095 (iguais); bolhas curtas continuam encostadas na sua lateral; captura conferida. Não testado: janela estreita (980) e conversa com código largo/tabelas.
 - **Como validar:** `npm start`, abrir um chat com perguntas e respostas longas e cartões de ferramenta: todas as bordas devem coincidir.
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-051 — Mostrar no chat o que o Claude está fazendo enquanto trabalha
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Status:** VALIDADA EM DEV1 (vista e aprovada pelo usuário em 2026-11-02 numa instância limpa)
 - **Prioridade:** Média — pedido do usuário em 2026-11-02, com duas capturas (o chat só com o símbolo girando e o terminal com "✻ Manifesting…" e uma linha embaixo): "fica muito vazio quando ele está fazendo algo e não mostra no chat o que está fazendo".
 - **Objetivo:** abaixo da conversa, enquanto o agente trabalha, uma linha de estado como a do terminal: o símbolo animado, um verbo que muda ("Manifestando…", "Decifrando…"), o tempo decorrido e, embaixo, o que está acontecendo de verdade.
 - **Feito:** `src/renderer/chat.js`: `CHAT_VERBS` (12 verbos, sorteado por mensagem e trocado a cada ~6 s), `CHAT_DOING` (nome da ferramenta em português), `chatStatus` (monta o verbo, o tempo e a linha de baixo) e um relógio de 1 s só para a aba que está trabalhando; a linha de baixo diz "Começando a pensar na sua mensagem", "Executando · <comando>" (ou Lendo, Editando, Buscando…; o argumento vem do stream mesmo antes de a entrada terminar), "Analisando o resultado de <ferramenta>" e "Pensando no próximo passo". Aparece quando o agente está trabalhando e ainda não há texto da resposta chegando (com texto, o próprio texto e o símbolo animado mostram o progresso). `src/renderer/styles.css`: `.c-st`, `.c-st1`, `.c-st2` (verbo no azul do app, tempo discreto, linha de baixo em monoespaçada com "└").
 - **Testado (CDP, instância isolada, Claude Code real):** pedido com três leituras de arquivo e outro com um comando de 7 s: a linha mudou entre começar a pensar, executar (com o caminho ou o comando), analisar o resultado e pensar de novo; o verbo trocou sozinho; ao terminar, o indicador some; captura conferida. Não testado: muitas ferramentas em paralelo (subagentes) e janela estreita.
 - **Ideias que ficaram de fora:** as dicas ("Tip: …") que o terminal mostra; contagem de tokens na linha.
 - **Como validar:** `npm start`, abrir um chat e pedir algo que use ferramentas (por exemplo, ler arquivos e resumir): a linha deve acompanhar o que o Claude faz.
-
-## Validadas em DEV1
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ## Prontas
 
