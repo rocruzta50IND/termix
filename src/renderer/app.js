@@ -877,7 +877,6 @@ function renderTabs() {
     <div class="tctl">
       ${closed ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
       <span class="state"><i class="dot ${sc}"></i>${sl}</span>
-      ${st === 'fail' ? `<button class="btn sm" data-newconv="${cur.id}">Nova conversa</button>` : ''}
     </div>`;
   fuseBar($('#tabsRow'));
 }

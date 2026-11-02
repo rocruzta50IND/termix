@@ -489,7 +489,8 @@ _Nenhuma no momento._
 - **Base existente:** `tab.kind` (`src/renderer/app.js`, `createTab`), `launch`, `stopProc`, `chatForget`/`chatOpen` em `src/renderer/chat.js`, `renderTabMenu`.
 - **Feito:** opção (1): item "Abrir como terminal" / "Abrir como chat" no menu da aba (`switchMode` em `src/renderer/app.js`); pede confirmação se o agente trabalha; para o processo, troca `tab.kind` e reabre com `--resume` (nome, cor e ID mantidos). Texto de Configurações > Chat deixa claro que vale só para abas novas.
 - **Testado (CDP, instância isolada, Claude Code real):** chat novo → mensagem (BANANA) → trocar para terminal (retoma a mesma sessão) → voltar para chat (histórico de 2 itens volta do `.jsonl`); `npm run check` passou. Não exercitado: troca com agente trabalhando (modal) e o clique no menu pelo mouse.
-- **Arquivos tocados:** `src/renderer/app.js`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Ajustes pedidos pelo usuário (2026-11-02):** botão "Nova conversa" do cabeçalho (estado de falha) removido (a seta ao lado do "+" já abre outra aba); engrenagem do rodapé do chat agora fica logo depois de Reiniciar, não mais na ponta direita (`styles.css`). Conferido por captura e CDP.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/styles.css`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
 - **Como validar:** `npm start`; clique direito numa aba > "Abrir como terminal" (e de volta); a conversa continua a mesma.
 
 ### TASK-045 — Menu de comandos "/" no campo de envio do chat
