@@ -503,6 +503,11 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 #appfoot .n.att{background:var(--warn);color:#1a1408}
 #appfoot .nd{width:8px;height:8px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 3px rgba(74,222,128,.28);animation:nd 1.6s ease-in-out infinite;flex:none}
 @keyframes nd{50%{box-shadow:0 0 0 6px rgba(74,222,128,0)}}
+/* aba de chat: as funções ficam na mesma coluna da caixa de prompt (esquerda alinhada com ela, engrenagem na ponta direita) e no mesmo tamanho da linha de baixo do chat */
+#appfoot.c-aligned .fpill{width:100%;max-width:820px;padding:0 28px 0 36px;box-sizing:border-box}
+#appfoot.c-aligned button{height:28px;font-size:12.5px;padding:0 11px 0 9px}
+#appfoot.c-aligned button.gear{margin-left:auto}
+#appfoot.c-aligned .sep.gs{display:none}
 #appfoot button.gear{width:26px;padding:0;justify-content:center;color:var(--text3)}
 #appfoot button.gear:hover,#appfoot button.gear.on{color:var(--text);background:rgba(255,255,255,.12)}
 #appfoot .sep{width:1px;height:16px;background:rgba(255,255,255,.2);margin:0 5px;flex:none}

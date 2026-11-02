@@ -98,6 +98,7 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - **Configurações > Chat:** modo das abas novas (Chat é o padrão; o "+" cria no modo escolhido e o menu ao lado do "+" tem os dois), visual do chat (Bolhas ou Fluxo) e permissões. **Automático** = `--dangerously-skip-permissions` (a aba mostra "⚠ bypass"); **Perguntar** = `--permission-mode acceptEdits`: só edições de arquivo são aceitas, o resto é negado e o chat avisa quais ferramentas foram negadas. Ainda não há cartão de aprovação dentro do chat (o modo `-p` não pergunta); fica como evolução.
 - Estado da aba de chat: Trabalhando entre o envio e o resultado; Aguardando você depois; Falha se o processo morre no meio. As notificações (terminou, erro) usam as mesmas regras do terminal. Parar a resposta encerra o processo; a próxima mensagem retoma a conversa.
 - Botões do rodapé no chat: **Clear** = conversa nova (confirma; a antiga continua guardada pelo Claude Code, sem a retomada enxuta do terminal); **Reiniciar** = reinicia o processo (a conversa continua).
+- Por ora o app mantém os dois modos (Chat e Terminal). Se o chat se mostrar suficiente, o modo Terminal pode sair no futuro (decisão do usuário, 2026-11-02: "depende de como ficar o layout por chat").
 - O contexto (anel CTX) e o modelo vêm do stream (estimativa: tokens da última resposta sobre 200 mil, ou 1 milhão se o modelo for 1M). Limites de 5 h e 7 d e cache do prompt só existem com terminais (vêm da status line).
 
 
