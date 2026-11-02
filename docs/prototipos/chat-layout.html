@@ -42,7 +42,9 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 .item .new{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.4px;color:#06101f;background:var(--accent);padding:1px 7px;border-radius:99px}
 .newproj{border:1px dashed var(--border2);border-radius:12px;padding:8px;color:var(--text2);text-align:center;margin:8px 0 0}
 /* palco */
-.col{position:absolute;left:244px;right:12px;top:46px;bottom:12px}
+.col{position:absolute;left:244px;right:12px;top:46px;bottom:46px}
+#appfoot{position:absolute;left:252px;right:20px;bottom:10px;height:30px;display:flex;align-items:center;justify-content:center;z-index:4}
+#appfoot .cfoot{margin:0}
 .stage{position:absolute;inset:0;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.16);background:var(--term);display:flex;flex-direction:column}
 /* abas encaixadas */
 .tabsbar{position:relative;display:flex;align-items:flex-end;min-height:36px;padding:0 8px 0 0;background:var(--bar-bg);flex:none}
@@ -168,7 +170,27 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 .cfoot .n{min-width:16px;height:16px;border-radius:99px;display:grid;place-items:center;padding:0 4px;font-size:10.5px;font-weight:700;background:var(--warn);color:#1a1408}
 .cfoot .nd{width:8px;height:8px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 3px rgba(74,222,128,.28)}
 .cfoot .rmeta{background:none;border:0;padding:0 4px;font-size:11.5px}
-.note{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:20;font-size:12px;color:var(--text2);background:rgba(8,12,20,.85);border:1px solid var(--border2);padding:6px 14px;border-radius:99px}
+.cin{align-items:center!important;border-radius:28px!important;padding:8px 10px 8px 10px!important;background:rgba(255,255,255,.07)!important}
+.cin textarea{font-size:15px!important}
+.plusb,.mic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--text2);flex:none}
+.plusb:hover,.mic:hover{background:var(--glass2);color:var(--text)}
+.send{border-radius:50%!important}
+.cin:not(.has) .send{display:none}.cin.has .mic{display:none}
+.cmeta2{display:flex;align-items:center;gap:4px;margin-top:8px;padding:0 6px;font-size:12.5px;color:var(--text2)}
+.cmeta2 button{display:flex;align-items:center;gap:7px;height:28px;padding:0 10px;border-radius:99px;color:var(--text2)}
+.cmeta2 button:hover{background:var(--glass2);color:var(--text)}
+.cmeta2 em{font-style:normal;color:var(--text3)}.cmeta2 em.b{color:var(--ok);font-size:11.5px}
+.cmeta2 .perm.w{color:var(--warn)}
+.cring{width:18px;height:18px;border-radius:50%;margin:0 8px 0 4px;background:conic-gradient(var(--accent) 34%,rgba(255,255,255,.14) 0);-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px);mask:radial-gradient(circle,transparent 5px,#000 6px)}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-bottom:30px}
+.mascot{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(91,157,255,.35),rgba(29,78,216,.25));border:1px solid rgba(91,157,255,.4);box-shadow:0 8px 30px rgba(59,130,246,.3);margin-bottom:6px}
+.mascot svg{width:30px;height:30px}
+.envsel{display:flex;align-items:center;gap:8px;width:400px;height:50px;padding:0 16px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:14.5px}
+.envsel svg{margin-left:2px;color:var(--text3)}
+.envbox{width:400px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);padding:4px}
+.envbox button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:10px;font-size:14.5px;text-align:left}
+.envbox button:hover{background:var(--glass2)}
+.note{position:fixed;left:28px;bottom:17px;z-index:20;font-size:11px;color:var(--text3);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 </head>
@@ -200,19 +222,32 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
       <button class="tab active" style="--c:#5B9DFF"><i class="dot"></i><span class="nm">Brain - Termix</span><span class="md">CHAT</span><span class="x">×</span></button>
       <button class="tab" style="--c:#FB923C"><i class="dot"></i><span class="nm">Coder - Termix</span><span class="md">TERM</span></button>
       <button class="tab" style="--c:#A78BFA"><i class="dot"></i><span class="nm">Revisor - Termix</span><span class="md">CHAT</span></button>
+      <button class="tab" style="--c:#8A94A6" id="tabnew"><i class="dot"></i><span class="nm">Nova sessão</span><span class="md">CHAT</span></button>
       <button class="plus">+</button>
       <span class="sp"></span>
       <div class="tctl">
-        <div class="seg" id="styleseg" title="Só do protótipo: compara os dois estilos de chat"><button data-s="a" class="on">Estilo A · bolhas</button><button data-s="b">Estilo B · fluxo</button></div><span class="state"><i class="dot"></i><span id="st">Trabalhando</span></span>
+        <div class="seg" id="styleseg" title="Só do protótipo: compara os dois estilos de chat"><button data-s="a" class="on">A · bolhas</button><button data-s="b">B · fluxo</button></div><span class="state"><i class="dot"></i><span id="st">Trabalhando</span></span>
       </div>
     </div>
 
     <div class="sess" id="sessv">
+      <div class="empty" id="empty" style="display:none">
+        <div class="mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div>
+        <button class="envsel">Escolher ambiente <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="envbox"><button><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Escolha uma pasta para trabalhar</button><button><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>Retomar uma conversa pelo ID</button><button><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l3 2-3 2M13 15h4"/><rect x="3" y="4" width="18" height="16" rx="3"/></svg>Importar 108 conversas do Claude Code</button></div>
+      </div>
       <div class="scroll" id="scroll"><div class="thread" id="thread"></div></div>
       <div class="composer"><div class="cbox">
-        <div class="cin"><textarea id="inp" rows="1" placeholder="Escreva para o Claude…  (Enter envia · Shift+Enter quebra a linha)"></textarea>
-          <button class="send" id="send" title="Enviar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
-        <div class="cfoot"><button class="on"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 10l3 2-3 2M13 15h4"/></svg></span><span id="dklbl">Terminais</span><span class="n att">2</span></button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Web<i class="nd"></i></button><i class="sepd"></i><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>Clear</button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>Reiniciar</button><span class="sp"></span><span class="rmeta"><span class="m">Sonnet 5.5</span> · Termix · <span class="b">dev1</span> · <span class="w" title="Protótipo: sem pedir permissão. Depois: cartão de aprovação no próprio chat">⚠ bypass</span> · 0,06 US$</span></div>
+        <div class="cin"><button class="plusb" title="Anexar arquivo ou escolher ferramenta"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><textarea id="inp" rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
+          <button class="mic" title="Ditar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><button class="send" id="send" title="Enviar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>
+        <div class="cmeta2">
+          <button class="env" title="Onde o Claude roda"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 20h20"/></svg>Este computador</button>
+          <button class="env" title="Pasta do projeto"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Termix<em class="b">dev1</em></button>
+          <span class="sp"></span>
+          <button class="mdl" title="Modelo">Sonnet 5.5 <em>Médio</em></button>
+          <button class="perm w" title="Permissões do chat (protótipo: automático)">Automático</button>
+          <span class="cring" title="Contexto 34%"></span>
+        </div>
       </div></div>
       <aside class="rail">
         <div class="ring" style="--v:34;--rc:#5B9DFF"><b>34%</b></div><div class="rl">CTX</div>
@@ -223,7 +258,8 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
     </div>
   </div></section>
 </div>
-<div class="note">Protótipo (TASK-040) — compare os estilos A e B no canto das abas</div>
+<footer id="appfoot"><div class="cfoot"><button class="on"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 10l3 2-3 2M13 15h4"/></svg></span><span id="dklbl">Terminais</span><span class="n att">2</span></button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Web<i class="nd"></i></button><i class="sepd"></i><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>Clear</button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>Reiniciar</button></div></footer>
+<div class="note">Protótipo (TASK-040): clique nas abas e compare A/B</div>
 
 <script>
 /* ---- Markdown mínimo e seguro (escapa o HTML antes de tudo; o mesmo renderizador iria para o app) ---- */
@@ -345,12 +381,23 @@ async function reply() {
   for (const ch of REPLY) { acc += ch; b.innerHTML = md(acc) + '<span class="caret"></span>'; if (Math.random() < .5) bottom(); await new Promise((r) => setTimeout(r, 12)); }
   b.innerHTML = md(acc); bottom(); setBusy(false);
 }
-function submit() { const t = inp.value.trim(); if (!t || busy) return; inp.value = ''; inp.style.height = 'auto'; addMe(t); reply(); }
+function submit() { const t = inp.value.trim(); if (!t || busy) return; inp.value = ''; inp.style.height = 'auto'; inp.parentNode.classList.remove('has'); addMe(t); reply(); }
 btn.onclick = submit;
 inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
-inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 160) + 'px'; });
+inp.addEventListener('input', () => { inp.parentNode.classList.toggle('has', !!inp.value.trim()); inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 160) + 'px'; });
 const sessv = document.getElementById('sessv');
 document.getElementById('styleseg').addEventListener('click', (e) => { const x = e.target.closest('button'); if (!x) return; sessv.classList.toggle('sb', x.dataset.s === 'b'); document.querySelectorAll('#styleseg button').forEach((k) => k.classList.toggle('on', k === x)); bottom(); });
+const tabEls = [...document.querySelectorAll('.tabsbar .tab')], emptyEl = document.getElementById('empty'), comp = sessv.querySelector('.composer');
+function view(i) {
+  tabEls.forEach((t, k) => t.classList.toggle('active', k === i));
+  const nw = i === 3, term = i === 1;
+  emptyEl.style.display = nw ? 'flex' : 'none'; document.getElementById('scroll').style.display = (!nw && !term) ? '' : 'none';
+  let ft = sessv.querySelector('.fterm'); if (ft) ft.remove();
+  if (term) sessv.insertAdjacentHTML('afterbegin', '<div class="fterm">Claude Code v2.1.316\n\n> (esta aba é um terminal, como hoje)\n\n  ? for shortcuts</div>');
+  comp.style.display = term ? 'none' : '';
+  sessv.style.setProperty('--tc', tabEls[i].style.getPropertyValue('--c')); bottom();
+}
+tabEls.forEach((t, k) => t.addEventListener('click', () => view(k)));
 setBusy(false); bottom();
 </script>
 </body>
