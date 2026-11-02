@@ -12,7 +12,19 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
-_Nenhuma no momento._
+### TASK-034 — Novo ícone do app: só o `>_` sobre degradê azul (MVP)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Alta (MVP) — pedido do usuário em 2026-11-02, antes de validar o instalador
+- **Objetivo:** o ícone da barra de tarefas e das notificações do Windows deve ser só o prompt `>_` sobre um quadrado em degradê, como os ícones do próprio Windows, e não o ícone padrão do Electron.
+- **Feito até agora:** `assets/icon.svg` e `assets/icon-small.svg` redesenhados (degradê azul, `>_` branco, sombra suave; sem abas e sem janela desenhada); `assets/icon.ico` e `assets/icon.png` regerados (16 a 256 px). O `Termix.exe` empacotado (`npm run dist`) carrega o ícone novo.
+- **Ajuste (usuário, 2026-11-02, "ainda está do mesmo jeito" no `npm start`):** em desenvolvimento o processo é o `electron.exe`, então o Windows mostrava o nome e o átomo do Electron. `src/main.js`: fora do app instalado, cria o atalho `Termix (dev)` no menu Iniciar com ID próprio (`com.termix.app.dev`) e o ícone novo; o instalado segue com `com.termix.app` e o atalho do instalador. Conferido: o atalho é criado com o alvo e o ícone certos; **o efeito na barra de tarefas e no aviso não pôde ser visto pelo Claude** (precisa reiniciar o app e ver).
+- **Decisões:** o ícone do cabeçalho do app (`logo-mark.svg`) não foi alterado.
+- **Arquivos tocados:** `src/main.js`, `assets/icon.svg`, `assets/icon-small.svg`, `assets/icon.ico`, `assets/icon.png`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** conferir o ícone no `Termix.exe` de `dist\win-unpacked` e, ao instalar (TASK-020), na barra de tarefas, no atalho e numa notificação (o nome deve ser "Termix").
+- **Pendências:** a barra de tarefas e a notificação do app instalado ainda não foram vistas (só o `npm start` foi visto pelo usuário).
+- **Próximo passo:** o usuário aprovar o ícone; depois, TASK-033 e TASK-020.
 
 ## Validadas em DEV1
 

@@ -39,7 +39,7 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 
 ## Marca e ícones
 - **Logo do cabeçalho:** só o prompt `>_`, sem caixa, com brilho; alinhado à altura do nome "Termix".
-- **Ícone do app / barra de tarefas:** quadrado escuro com borda azul luminosa, barra de abas coloridas e `>_` com brilho; versão de traço grosso para 16 e 32 px (`assets/icon.svg`, `assets/icon-small.svg`; gerar com `tools/make-icon.js`).
+- **Ícone do app / barra de tarefas:** quadrado em degradê azul (estilo Windows 11) com só o `>_` branco, sem abas nem janela desenhada (TASK-034); versão de traço grosso e sem brilhos para 16 e 32 px (`assets/icon.svg`, `assets/icon-small.svg`; gerar com `tools/make-icon.js`).
 - **Ícone "Terminais" na barra lateral:** janelas em cascata (diferente da logo). Os demais ícones são de traço fino (1,7 px).
 - Avatares dos projetos na barra recolhida: letra inicial em quadrado de cor.
 

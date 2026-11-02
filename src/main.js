@@ -448,7 +448,20 @@ ipcMain.handle('git:branch', (_e, cwd) => new Promise((resolve) => {
 
 /* ---------- ciclo de vida ---------- */
 if (!RUN_MODE) {
-  app.setAppUserModelId('com.termix.app');
+  if (app.isPackaged) app.setAppUserModelId('com.termix.app');
+  else {
+    // em desenvolvimento (npm start) o processo é o electron.exe: o Windows mostraria o nome e o átomo do Electron na barra de tarefas e nos avisos.
+    // Um atalho no menu Iniciar com este ID dá ao Windows o nome e o ícone do Termix (o instalado já traz o seu atalho).
+    const devId = 'com.termix.app.dev';
+    app.setAppUserModelId(devId);
+    try {
+      const lnk = path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Termix (dev).lnk');
+      shell.writeShortcutLink(lnk, fs.existsSync(lnk) ? 'replace' : 'create', {
+        target: process.execPath, args: `"${app.getAppPath()}"`, cwd: app.getAppPath(),
+        icon: path.join(__dirname, '..', 'assets', 'icon.ico'), iconIndex: 0, appUserModelId: devId, description: 'Termix (desenvolvimento)',
+      });
+    } catch {}
+  }
   // uma instância só: abrir de novo (atalho, menu Iniciar) traz a janela que já existe, em vez de duas escrevendo no mesmo estado
   if (!app.requestSingleInstanceLock()) app.quit();
   else {

@@ -6,6 +6,13 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-02
+
+**TASK-034 — Novo ícone do app: só o `>_` sobre degradê azul** (DEV1)
+
+- Ícone redesenhado para a barra de tarefas, notificações do Windows e atalhos: quadrado em degradê azul (estilo Windows 11) com o prompt `>_` branco; sem abas coloridas nem janela desenhada. Versão de 16 e 32 px sem brilhos. Gerado com `tools/make-icon.js`; conferido o ícone embutido no `Termix.exe` empacotado.
+- No `npm start` o Windows mostrava "Electron" (nome e átomo) porque o processo é o `electron.exe`. Em desenvolvimento o app agora cria o atalho `Termix (dev)` no menu Iniciar com ID próprio e o ícone novo; o instalado usa o atalho do instalador. Efeito visual a confirmar pelo usuário depois de reiniciar o app.
+
 ## 2026-11-01
 
 **TASK-033 registrada (crítica) e TASK-030 — 4º ajuste: cor em degradê na aba inteira** (DEV1)

@@ -1,55 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- ícone do app (TASK-034): só o prompt >_ sobre um quadrado em degradê azul, no estilo dos ícones do Windows 11 -->
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1d2c5c"/>
-      <stop offset=".5" stop-color="#0c1329"/>
-      <stop offset="1" stop-color="#04060e"/>
+      <stop offset="0" stop-color="#6aa8ff"/>
+      <stop offset=".55" stop-color="#3b5cf0"/>
+      <stop offset="1" stop-color="#2a1fa8"/>
     </linearGradient>
-    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="64" cy="236" r="170">
-      <stop offset="0" stop-color="#3b6cff" stop-opacity=".5"/>
-      <stop offset="1" stop-color="#3b6cff" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="glow2" gradientUnits="userSpaceOnUse" cx="226" cy="20" r="120">
-      <stop offset="0" stop-color="#22d3ee" stop-opacity=".22"/>
+    <radialGradient id="glow" gradientUnits="userSpaceOnUse" cx="214" cy="236" r="150">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity=".55"/>
       <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="rim" gradientUnits="userSpaceOnUse" x1="10" y1="10" x2="246" y2="246">
-      <stop offset="0" stop-color="#9cc8ff" stop-opacity=".95"/>
-      <stop offset=".45" stop-color="#4b7bff" stop-opacity=".3"/>
-      <stop offset="1" stop-color="#22d3ee" stop-opacity=".55"/>
-    </linearGradient>
     <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".16"/>
+      <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
       <stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="prompt" gradientUnits="userSpaceOnUse" x1="70" y1="104" x2="202" y2="204">
+    <linearGradient id="prompt" gradientUnits="userSpaceOnUse" x1="70" y1="76" x2="200" y2="184">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#7dd3fc"/>
+      <stop offset="1" stop-color="#d9f3ff"/>
     </linearGradient>
-    <filter id="blur" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="shadow" filterUnits="userSpaceOnUse" x="0" y="0" width="256" height="256"><feGaussianBlur stdDeviation="7"/></filter>
   </defs>
 
   <rect x="10" y="10" width="236" height="236" rx="60" fill="url(#tile)"/>
   <rect x="10" y="10" width="236" height="236" rx="60" fill="url(#glow)"/>
-  <rect x="10" y="10" width="236" height="236" rx="60" fill="url(#glow2)"/>
-
-  <!-- tela do terminal -->
-  <rect x="34" y="34" width="188" height="188" rx="38" fill="#070c1c" fill-opacity=".55" stroke="#8fb4ff" stroke-opacity=".14" stroke-width="1.5"/>
-
-  <!-- abas -->
-  <rect x="54" y="48" width="38" height="11" rx="5.5" fill="#60a5fa"/>
-  <rect x="98" y="48" width="38" height="11" rx="5.5" fill="#22d3ee" fill-opacity=".6"/>
-  <rect x="142" y="48" width="38" height="11" rx="5.5" fill="#a78bfa" fill-opacity=".6"/>
-  <path d="M54 72H202" stroke="#60a5fa" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>
-
-  <!-- prompt com brilho -->
-  <g filter="url(#blur)" opacity=".8">
-    <path d="M78 112l52 38-52 38" fill="none" stroke="#38bdf8" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M146 192h50" fill="none" stroke="#38bdf8" stroke-width="22" stroke-linecap="round"/>
-  </g>
-  <path d="M78 112l52 38-52 38" fill="none" stroke="url(#prompt)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M146 192h50" fill="none" stroke="url(#prompt)" stroke-width="20" stroke-linecap="round"/>
-
   <path d="M10 76a60 60 0 0 1 60-66h116a60 60 0 0 1 60 66v8C196 112 60 112 10 84z" fill="url(#gloss)"/>
-  <rect x="11" y="11" width="234" height="234" rx="59" fill="none" stroke="url(#rim)" stroke-width="2.5"/>
+
+  <!-- sombra suave do prompt -->
+  <g filter="url(#shadow)" opacity=".45" transform="translate(0 8)">
+    <path d="M74 80l60 48-60 48" fill="none" stroke="#10196b" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M148 178h52" fill="none" stroke="#10196b" stroke-width="28" stroke-linecap="round"/>
+  </g>
+  <path d="M74 80l60 48-60 48" fill="none" stroke="url(#prompt)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M148 178h52" fill="none" stroke="url(#prompt)" stroke-width="26" stroke-linecap="round"/>
 </svg>
