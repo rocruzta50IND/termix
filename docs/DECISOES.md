@@ -22,6 +22,7 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 ## Projetos
 - **Criar:** o app cria a pasta a partir do nome em `Documentos\Termix`.
 - **Importar:** registra a pasta **onde ela está**, sem copiar nem mover. Ao importar, o app lista as conversas do Claude Code que já existem naquela pasta e abre abas só para as que o usuário marcar (retoma pelo ID exato). Abrir a mesma conversa em dois terminais ao mesmo tempo mistura o histórico, então o app avisa quando ela parece estar em uso.
+- **Menu do projeto:** pelo botão "⋯" da barra aberta ou com o **clique direito** no projeto, tanto no nome (barra aberta) quanto no avatar (barra recolhida) (TASK-053). O clique direito na aba abre o menu da aba.
 - **Arquivar** e **remover do app** não tocam nos arquivos. **Excluir a pasta** só manda para a Lixeira do Windows, exige digitar o nome do projeto e **não é oferecido para projetos importados**.
 - **Renomear** não muda o caminho da pasta.
 - Vários agentes na **mesma pasta**: sem proteção no MVP; só há o indicador "trabalhando / aguardando".

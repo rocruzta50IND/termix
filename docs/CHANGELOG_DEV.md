@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-053 — Menu do projeto com o botão direito** (DEV1)
+
+- Com a barra lateral recolhida (só os avatares) agora dá para clicar com o botão direito no projeto e abrir o menu de renomear, arquivar, remover e excluir; o mesmo vale para o nome do projeto na barra aberta. Testado por cliques reais em instância isolada.
+
 **TASK-037, TASK-038 e TASK-039 encerradas** (DEV1)
 
 - Marcadas como finalizadas a pedido do usuário. Registro: não há implementação delas no código da `dev1`/`main`; foram encerradas por decisão, não por entrega.

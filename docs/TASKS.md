@@ -10,6 +10,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-053 — Menu do projeto com o botão direito (barra lateral recolhida e aberta)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura da barra recolhida (só os avatares N, P, T): com a barra recolhida não havia como renomear, arquivar, remover ou excluir um projeto, porque o menu só abria pelo botão "⋯" da barra aberta.
+- **Objetivo:** clique direito no projeto abre o mesmo menu do "⋯" (Abrir pasta, Renomear, Arquivar, Remover do app e, só em pasta criada pelo app, Excluir pasta…), também com a barra recolhida.
+- **Feito:** `src/renderer/app.js`: o ouvinte de `contextmenu` reconhece o avatar do projeto (`.av[data-go]`, barra recolhida) e o nome do projeto (`[data-ph]`, barra aberta), troca para esse projeto como o "⋯" já faz e chama `projectMenuFlow()`. O menu da aba (clique direito na aba) segue como estava.
+- **Testado (CDP, cliques reais, instância isolada com 2 projetos):** barra recolhida: clique direito no avatar abre o menu do projeto certo (Beta e depois Alfa); clique esquerdo continua só navegando, sem abrir menu; barra aberta: clique direito no nome abre o menu; captura conferida. Não testado: confirmar Arquivar/Remover/Excluir a partir desse menu (usa o fluxo que já existia).
+- **Como validar:** `npm start`, recolher a barra lateral e clicar com o botão direito num projeto; escolher Renomear.
+
 ## Validadas em DEV1
 
 ## Prontas

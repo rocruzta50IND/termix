@@ -1769,6 +1769,16 @@ document.addEventListener('click', async (e) => {
 });
 
 document.addEventListener('contextmenu', (e) => {
+  // clique direito num projeto (avatar da barra recolhida ou nome na barra aberta) = o mesmo menu do botão "⋯" (TASK-053)
+  const pj = e.target.closest('.av[data-go], [data-ph]');
+  if (pj) {
+    const pid = pj.dataset.ph || String(pj.dataset.go || '').split('|')[0];
+    if (pid && proj(pid)) {
+      e.preventDefault(); UI.pop = false;
+      UI.cur = { p: pid, page: UI.cur.p === pid ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow();
+      return;
+    }
+  }
   const el = e.target.closest('[data-tab]');
   if (!el) { if (UI.menu) { UI.menu = null; renderMenu(); } return; }
   e.preventDefault();
