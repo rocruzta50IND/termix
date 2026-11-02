@@ -3,7 +3,7 @@
 /* Modo Chat (TASK-040): a conversa com o Claude Code em bolhas, sem terminal. O processo (`claude -p` em stream-json) vive em src/chat.js;
    aqui ficam a tela, os eventos do stream e o histórico. Usa o estado do app.js (S, RT, MET, UI) e é carregado depois dele. */
 const CH = {}; // por aba de chat: { items, root, thread, busy, ... }
-const CHAT_DEF = { mode: 'chat', style: 'bubbles', perm: 'auto' };
+const CHAT_DEF = { mode: 'chat', perm: 'auto' };
 const chatCfg = () => ({ ...CHAT_DEF, ...(S.settings.chat || {}) });
 const chatPermFor = () => (chatCfg().perm === 'ask' ? 'n' : 'd'); // Automático = como a aba "Dangerously"; Perguntar = só edições de arquivo
 const chatNewKey = () => (chatCfg().mode === 'chat' ? 'chat|auto' : 'claude|n'); // o que o "+" cria
@@ -280,7 +280,6 @@ function showChat(tab) {
   const c = chatView(tab), f = findTab(tab.id);
   chatEnsure(tab);
   $('#termHost').classList.add('hide'); $('#chatHost').classList.remove('hide'); $('#sess').classList.add('chatmode');
-  $('#chatHost').classList.toggle('c-flow', chatCfg().style === 'flow');
   $('#chatHost').querySelectorAll('.c-root').forEach((el) => el.classList.toggle('on', el === c.root));
   if (!c.loaded) {
     c.loaded = true;

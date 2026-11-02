@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-047 — Troca Chat/Terminal no rodapé; Fluxo retirado** (DEV1)
+
+- O rodapé ganhou um botão com ícone que abre a aba como Terminal ou como Chat (mesma conversa), valendo só para o uso atual; Configurações > Chat é só o que o app usa ao abrir. O visual do chat ficou só Bolhas (Fluxo retirado) e a permissão fica só em Configurações. O "Aguardando você" da barra de abas foi mantido. Visto pelo usuário numa instância limpa e aprovado.
+
 Validadas em DEV1 (aprovadas pelo usuário): TASK-041 (imagens coladas no chat), TASK-044 (trocar o modo da aba) e TASK-045 (menu "/" no chat).
 
 **TASK-041 — Imagens coladas no chat** (DEV1)

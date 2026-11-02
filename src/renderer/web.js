@@ -234,6 +234,7 @@ function sendDock(m, p) {
 }
 
 const FICON = {
+  chat: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5z"/><path d="M8.5 9.5h7M8.5 12.5h4"/>',
   term: '<path d="M7.5 4.5h10a3.5 3.5 0 0 1 3.5 3.5v8"/><rect x="3" y="8" width="15" height="12" rx="3"/><path d="M7 12.4l2.4 1.9L7 16.2M11.6 16.4h3"/>',
   clear: '<circle cx="12" cy="12" r="8.5"/><path d="M9 9l6 6M15 9l-6 6"/>',
   refresh: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4.5H15"/>',
@@ -241,6 +242,13 @@ const FICON = {
 };
 const ficon = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${FICON[n]}</svg>`;
 let lastFoot = '';
+// troca Chat/Terminal da aba aberta (TASK-047): vale só para o uso atual; Configurações > Chat guarda o que o app usa ao abrir
+function footChatCtl(p, m) {
+  const t = m === 'term' && p ? curTab(p) : null;
+  if (!t) return '';
+  const chat = t.kind === 'chat', to = chat ? 'Terminal' : 'Chat';
+  return `<button class="swm" data-fm="swmode" title="Abrir esta aba como ${to} (a mesma conversa)" aria-label="Abrir como ${to}">${ficon(chat ? 'term' : 'chat')}${to}</button>`;
+}
 function renderFoot(st, p, m) {
   const foot = $('#appfoot');
   const show = !!p && (m === 'term' || m === 'noterm' || m === 'web') && !$('#splash');
@@ -251,6 +259,7 @@ function renderFoot(st, p, m) {
     + `<button class="${st.mode === 'web' ? 'on' : ''}" data-fm="web">${ficon('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>`
     + (c ? `<i class="sep"></i><button class="clr ${c.pulse ? 'pulse ' : ''}${c.busy ? 'busy' : ''}" data-fm="clear" ${c.off ? 'disabled' : ''}>${ficon('clear')}Clear</button>`
       + `<button class="rst ${c.rst.spin ? 'spin' : ''}" data-fm="restart" ${c.rst.off ? 'disabled' : ''} title="${c.rst.tip}" aria-label="${c.rst.tip}">${ficon('refresh')}Reiniciar</button>` : '')
+    + footChatCtl(p, m)
     + `<i class="sep gs"></i><button class="gear" data-railmenu title="Configurar o rail e o rodapé" aria-label="Configurar o rail e o rodapé">${ic('gear', 15)}</button>`;
   if (html !== lastFoot) { lastFoot = html; $('#fpill').innerHTML = html; }
 }
@@ -329,9 +338,10 @@ api.onWebOpen(({ tabId, url }) => {
 });
 api.onWebToggle(toggleSurface);
 api.onWebFocusUrl(() => { if (mode() === 'web') { const i = $('#wurl'); if (i) i.focus(); } });
-const dockAction = (m) => { if (m === 'clear') clearFlow(); else if (m === 'restart') dockRestart(); else setSurface(m === 'web' ? 'web' : 'term'); };
+const dockAction = (m) => { if (m === 'swmode') { const p = curProject(), t = p && curTab(p); if (t) switchMode(p, t); } else if (m === 'clear') clearFlow(); else if (m === 'restart') dockRestart(); else setSurface(m === 'web' ? 'web' : 'term'); };
 api.onDockAction(dockAction);
-$('#fpill').addEventListener('click', (e) => { const b = e.target.closest('[data-fm]'); if (b && !b.disabled) dockAction(b.dataset.fm); });
+$('#fpill').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-fm]'); if (b && !b.disabled) dockAction(b.dataset.fm); });
 
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && !e.altKey && !e.shiftKey && e.key === '`') { e.preventDefault(); e.stopPropagation(); toggleSurface(); }

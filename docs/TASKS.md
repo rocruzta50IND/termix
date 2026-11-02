@@ -12,8 +12,6 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
-## Validadas em DEV1
-
 ### TASK-040 — Modo Chat por aba (conversa visual sobre o Claude Code)
 
 - **Responsável:** DEV1
@@ -469,18 +467,6 @@ _Nenhuma no momento._
 - **Correção prevista:** restringir os ouvintes de `contextmenu` e `dblclick` às abas da barra (por exemplo `.tab[data-tab]` ou `#tabsRow [data-tab]`) ou renomear o atributo do container do chat (`data-chat`) e ajustar o que o usa (`querySelector('[data-tab]')`, CSS). No clique direito em outra área, não abrir nenhum menu (ou, no campo de texto, deixar o menu padrão de recortar/copiar/colar).
 - **Critérios de aceite:** clique direito na conversa, na caixa de texto, no rail e no rodapé não abre o menu da aba; clique direito na aba (terminal, chat e Web) continua abrindo; clique duplo na aba continua renomeando e clique duplo no chat não faz nada; testado por cliques reais (CDP).
 - **Base existente:** `document.addEventListener('contextmenu'…)` e `'dblclick'` em `src/renderer/app.js`; `chatView` em `src/renderer/chat.js`.
-
-### TASK-047 — Controles do chat (modo, estilo, permissão) à mão na tela e fim do texto "Aguardando você"
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura do chat
-- **Objetivo:** hoje, para trocar de Chat para Terminal, de Bolhas para Fluxo ou de Automático para Perguntar, é preciso ir a Configurações > Chat (e o modo da aba só pelo menu da aba, TASK-044). Colocar esses controles **em algum canto da própria tela do chat**, à mão.
-- **Pedido adicional (mesma captura):** na barra de cima da aba, tirar o texto **"Aguardando você"** e manter só a **bolinha de estado** (a aba já mostra o mesmo estado com a bolinha); o texto pode virar dica ao passar o mouse.
-- **Decisão do usuário (2026-11-02): papel de Configurações.** As opções de Chat/Terminal (e as demais de Configurações > Chat) são **de inicialização**: definem o que o app usa **ao abrir**, e o app mantém o configurado a cada abertura. O que a pessoa mudar nos controles da tela (Chat ↔ Terminal, Bolhas ↔ Fluxo, permissão) vale **só para o uso atual** e **não regrava** a configuração de Configurações. Ajustar o texto de Configurações > Chat ("Ao abrir o app…") e `docs/DECISOES.md`. A definir: se "o que fica na tela" (modo de cada aba) continua salvo com a aba ao reabrir o app ou volta ao padrão de Configurações.
-- **A decidir com o usuário ao começar:** onde ficam os controles (menu na linha do modelo/permissão abaixo da caixa, no canto direito da barra de abas no lugar do texto de estado, ou na engrenagem do rodapé); quais entram (Chat ↔ Terminal da aba aberta, Bolhas ↔ Fluxo, Automático ↔ Perguntar da aba, talvez o modo das abas novas); se valem para a aba ou para todas.
-- **Critérios de aceite (a refinar):** trocar modo/estilo/permissão sem abrir Configurações; o texto de estado some e a bolinha continua com a dica; vale para terminal e Web (o texto "Aguardando você" aparece nas duas barras); sem quebrar o layout em janela estreita; testado com o Claude Code real; documentar em `docs/DECISOES.md` e `docs/DESIGN.md`.
-- **Base existente:** `switchMode` e `renderTabMenu` (`src/renderer/app.js`), `.state` na barra de abas (`renderTabs`), `chatCfg`/Configurações > Chat, `.c-perm` e `.c-mdl` em `src/renderer/chat.js`, `docs/DESIGN.md`.
 
 ### TASK-046 — Barra superior: sino centralizado e botões da janela mais elegantes
 
