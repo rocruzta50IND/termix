@@ -457,6 +457,27 @@ _Nenhuma no momento._
 
 ## Backlog
 
+### TASK-041 — Imagens coladas no chat, com miniatura na caixa de prompt
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG (próxima, depois de fechar a TASK-040)
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02, com wireframe e a captura do Claude como referência
+- **Objetivo:** ao colar uma imagem (Ctrl+V) no campo de envio do chat, ela aparece como **miniatura dentro da caixa de prompt, acima do texto**, com contorno só em volta da imagem (como no Claude); a imagem segue junto com a mensagem. Wireframe do usuário: quadrado da miniatura em cima, à esquerda, e a barra de texto embaixo.
+- **Critérios de aceite (a refinar ao começar):** colar imagem da área de transferência (print, cópia de imagem) mostra a miniatura com um "x" para remover; várias imagens lado a lado; arrastar arquivo de imagem para a caixa também funciona (se couber); enviar manda texto e imagens juntos e a bolha da pergunta mostra as miniaturas; o histórico reaberto (do `.jsonl`) também mostra as imagens; limite de tamanho/quantidade com aviso claro; sem quebrar a colagem de texto; testado com o Claude Code real (ele precisa "ver" a imagem e descrevê-la).
+- **Notas técnicas:** o `stream-json` de entrada aceita `message.content` como lista de blocos, inclusive `{type:"image", source:{type:"base64", media_type, data}}`; hoje `chat:send` só manda texto (`src/chat.js`, `chatSendMsg` em `src/renderer/chat.js`). A colagem pode vir do evento `paste` do textarea (`clipboardData.items`) ou de um `clipboard.readImage()` no processo principal (hoje só existe `clip:read` de texto). Reduzir imagens grandes antes de enviar (custo em tokens). Atualizar o `history()` para devolver blocos de imagem.
+- **Próximo passo:** começar pela colagem e pela miniatura; depois o envio e o histórico.
+
+### TASK-042 — Refatoração de design: telas que não são terminais sem o fundo aparecendo nas bordas
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG (depois da TASK-041)
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura de Configurações
+- **Objetivo:** hoje as telas Plugins, Skills, MCPs, Consumo, Integrações e Configurações são um painel arredondado, com borda e margem, flutuando dentro do vidro, e o fundo degradê aparece em volta. Pedido: **qualquer tela que não seja de terminal (nem o chat) deve ser uma coisa só com o app**, sem o fundo aparecendo nos arredores; o fundo/vidro com a moldura fica só para os terminais.
+- **Base existente:** `#page` (`.stage.panel.glass`, `#page:not(.hide){margin:8px}` em `src/renderer/styles.css`), `renderPage` e `mode()` em `src/renderer/app.js`, a moldura em "U" (`framePath`/`layout`, `GEO`), `docs/DESIGN.md` (estrutura da janela e padrão dos controles).
+- **Critérios de aceite (a refinar):** páginas ocupam a área do palco de ponta a ponta, contínuas com a barra lateral e o rodapé, sem margem de 8 px, sem borda dupla nem o degradê vazando nas laterais; o terminal e o chat continuam como estão (fundo de vidro); rolagem, cartões e controles seguem o padrão da TASK-031; funciona nas larguras 1600, 1180 e 980 e nos modos Degradê e Ofuscado; capturas antes e depois; atualizar `docs/DESIGN.md`.
+- **Ideia a validar com o usuário:** como o rodapé de funções fica nessas telas (hoje some fora de terminal/Web) e se a barra lateral também perde o vidro ou só o palco muda.
+- **Próximo passo:** auditar as telas atuais com capturas e propor 2 variações no HTML de protótipo antes de mexer no app.
+
 ### TASK-038 — Arrastar para reordenar as abas da Web
 
 - **Responsável:** DEV1
