@@ -28,7 +28,7 @@ _Nenhuma no momento._
 - **Ajustes pedidos pelo usuário (2026-11-02, após ver o app):** avatar "C" trocado pela marca do Termix (e silhueta na pergunta); engrenagem do rail movida para o rodapé; rail sem fundo, só os anéis flutuando; configuração de cada anel e do rodapé na engrenagem e em Configurações > Rail e rodapé.
 - **Pendências / limitações:** não há cartão de aprovação no chat (em Perguntar o `-p` só nega e avisa); o "+" de anexo e o microfone do desenho do Claude não existem; sem seletor de modelo/esforço (o modelo mostrado é o da sessão); sem limites 5 h/7 d nem cache no rail com só chats (vêm da status line do terminal); o custo da conversa não é mostrado; imagens e colagem de arquivos não testadas; uma aba não troca de modo depois de aberta; testado sem projeto no fluxo Rocruzta; o aviso de fechar o app conta chats com processo vivo; muitas abas continuam apertando os nomes (TASK-039).
 - **Ajustes finais (2026-11-02):** rodapé do chat alinhado à coluna da caixa de prompt (funções à esquerda, engrenagem na ponta direita); decisão de manter os dois modos por ora (o Terminal pode sair no futuro).
-- **Próximo passo:** próximas tarefas pedidas pelo usuário, no Backlog: TASK-044 (trocar o modo de uma aba aberta) e TASK-045 (menu "/" no chat), as de maior impacto no uso; depois TASK-041 (imagens coladas), TASK-042 (telas sem o fundo nas bordas), TASK-043 (ícone do Claude), TASK-046 (barra superior), TASK-033 já validada, TASK-036 (README).
+- **Próximo passo:** TASK-044, TASK-045 e TASK-041 já validadas; seguem no Backlog TASK-042 (telas sem o fundo nas bordas), TASK-043 (ícone do Claude), TASK-046 (barra superior) e TASK-036 (README).
 - **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir (e só com a versão consolidada e o instalador testado).
 
 ### TASK-033 — Arrastar e soltar das abas dos terminais não funciona direito (CRÍTICA)
@@ -481,7 +481,7 @@ _Nenhuma no momento._
 ### TASK-044 — Trocar o modo de uma aba aberta (chat ↔ terminal) e o aviso de que a configuração só vale para abas novas
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (implementada e testada pelo Claude em 2026-11-02)
+- **Status:** VALIDADA EM DEV1 (Aprovada pelo usuário em 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.)
 - **Prioridade:** Alta — o usuário trocou Configurações > Chat > Modo das abas novas para Terminal e os chats abertos continuaram chats (comportamento previsto na TASK-040, mas não é o que ele esperava)
 - **Objetivo:** dar um jeito claro de ver uma conversa no outro modo. Chat e terminal usam a **mesma sessão do Claude Code** (`--resume <id>`), então trocar é viável: encerrar o processo da aba, mudar o `kind` e abrir de novo no outro modo, com a mesma conversa.
 - **Opções a validar com o usuário:** (1) item no menu da aba (clique direito): "Abrir como terminal" / "Abrir como chat", só com o agente parado; (2) botão no cabeçalho da aba; (3) em Configurações, um botão "Aplicar a todas as abas abertas" (com confirmação, pois encerra os processos). Deixar o texto de Configurações mais claro ("vale para as abas novas").
@@ -496,7 +496,7 @@ _Nenhuma no momento._
 ### TASK-045 — Menu de comandos "/" no campo de envio do chat
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (implementada e testada pelo Claude em 2026-11-02)
+- **Status:** VALIDADA EM DEV1 (Aprovada pelo usuário em 2026-11-02 (o ajuste da barra de rolagem do chat entrou junto). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-02 (no terminal, digitar "/" abre a lista de comandos; no chat não aparece nada)
 - **Objetivo:** ao digitar "/" no início do campo de envio do chat, abre uma lista (acima da caixa) com os comandos disponíveis, nome e descrição, filtrando enquanto digita; setas e Enter escolhem, Esc fecha, Tab completa; no estilo do app. Referência: a lista do Claude Code no terminal (ex.: `/fluxo:init`, `/fluxo:papel`, com descrição).
 - **De onde vêm os comandos:** o evento `system/init` do stream-json traz `slash_commands` (e `skills`) da sessão; antes da primeira mensagem (processo ainda não criado) usar a leitura de skills e comandos do app (`scan:resources`: usuário, projeto e plugins) ou subir o processo ao focar a caixa. Descrições com entidades HTML (como `-&gt;`) devem ser decodificadas.
@@ -511,7 +511,7 @@ _Nenhuma no momento._
 ### TASK-041 — Imagens coladas no chat, com miniatura na caixa de prompt
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (implementada e testada pelo Claude em 2026-11-02)
+- **Status:** VALIDADA EM DEV1 (Aprovada pelo usuário em 2026-11-02 (layout do Claude Desktop, até 20 imagens). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-02, com wireframe e a captura do Claude como referência
 - **Objetivo:** ao colar uma imagem (Ctrl+V) no campo de envio do chat, ela aparece como **miniatura dentro da caixa de prompt, acima do texto**, com contorno só em volta da imagem (como no Claude); a imagem segue junto com a mensagem. Wireframe do usuário: quadrado da miniatura em cima, à esquerda, e a barra de texto embaixo.
 - **Critérios de aceite (a refinar ao começar):** colar imagem da área de transferência (print, cópia de imagem) mostra a miniatura com um "x" para remover; várias imagens lado a lado; arrastar arquivo de imagem para a caixa também funciona (se couber); enviar manda texto e imagens juntos e a bolha da pergunta mostra as miniaturas; o histórico reaberto (do `.jsonl`) também mostra as imagens; limite de tamanho/quantidade com aviso claro; sem quebrar a colagem de texto; testado com o Claude Code real (ele precisa "ver" a imagem e descrevê-la).

@@ -8,6 +8,8 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+Validadas em DEV1 (aprovadas pelo usuário): TASK-041 (imagens coladas no chat), TASK-044 (trocar o modo da aba) e TASK-045 (menu "/" no chat).
+
 **TASK-041 — Imagens coladas no chat** (DEV1)
 
 - Colar ou arrastar imagem mostra a miniatura na caixa (com "x"); vai junto da mensagem para o Claude; aparece na bolha e no histórico reaberto. Até 5 imagens, reduzidas antes de enviar.
