@@ -87,8 +87,7 @@ function chatView(tab) {
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
     <div class="c-scroll"><div class="c-thread"><div class="c-typing"><i></i><i></i><i></i></div></div></div>
     <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>
-      <div class="c-thumbs"></div>
-      <div class="c-in"><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
+      <div class="c-in"><div class="c-thumbs"></div><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
         <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
         <button class="c-stop" type="button" title="Parar a resposta" aria-label="Parar">${chatIc('stop')}</button></div>
       <div class="c-meta"><span class="c-env">${chatIc('laptop', 15)}Este computador</span><span class="c-env c-folder">${chatIc('folder', 15)}<span></span><em></em></span><span class="sp"></span><span class="c-mdl"></span><span class="c-perm"></span><span class="c-ring" title="Contexto"></span></div>
@@ -128,7 +127,6 @@ function chatView(tab) {
 const CHAT_IMG_MAX = 5, CHAT_IMG_SIDE = 1568, CHAT_IMG_BYTES = 3.5 * 1024 * 1024; // a API aceita ~5 MB por imagem; reduz antes de enviar (custo em tokens)
 function chatThumbs(c) {
   c.thumbs.innerHTML = c.imgs.map((m, i) => `<div class="c-th"><img src="${m.url}" alt="Imagem ${i + 1}"><button type="button" data-rm="${i}" title="Remover" aria-label="Remover imagem">×</button></div>`).join('');
-  c.thumbs.classList.toggle('on', c.imgs.length > 0);
   c.root.querySelector('.c-in').classList.toggle('has-img', c.imgs.length > 0);
 }
 async function chatReadImage(file) { // createImageBitmap: a política de segurança da tela não deixa usar blob: em <img>
