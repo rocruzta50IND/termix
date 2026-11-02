@@ -621,16 +621,14 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-flow .c-sys{margin:6px auto}
 .c-flow .c-typing{padding-left:22px}
 
-/* imagens coladas no chat (TASK-041) */
-.c-in{flex-wrap:wrap}
-.c-thumbs{display:none;flex:0 0 100%;gap:10px;flex-wrap:wrap;padding:6px 12px 4px 0}
-.c-in.has-img .c-thumbs{display:flex}
-.c-in.has-img{padding-top:12px}
+/* imagens coladas no chat (TASK-041): miniaturas fora da barra, coladas no topo dela, contorno só na imagem */
+.c-thumbs{display:none;gap:10px;padding:0;margin-bottom:-1px;position:relative;z-index:1}
+.c-in.has-img{border-top-left-radius:6px}
+.c-thumbs.on{display:flex}
 .c-in.drop{border-color:rgba(91,157,255,.9);background:rgba(91,157,255,.14)}
-.c-in textarea{min-width:0}
-.c-th{position:relative;width:72px;height:72px;border-radius:12px;border:1px solid var(--border2)}
-.c-th img{width:100%;height:100%;object-fit:cover;border-radius:11px;display:block}
-.c-th button{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;background:rgba(20,24,40,.96);border:1px solid var(--border2);color:var(--text);font-size:14px;line-height:1;display:grid;place-items:center}
-.c-th button:hover{background:rgba(255,255,255,.2)}
+.c-th{position:relative;width:128px;height:84px;border:1.5px solid rgba(91,157,255,.75);border-bottom:0;border-radius:14px 14px 0 0;overflow:hidden;background:rgba(10,14,28,.9)}
+.c-th img{width:100%;height:100%;object-fit:cover;display:block}
+.c-th button{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:rgba(10,14,28,.85);border:1px solid var(--border2);color:var(--text);font-size:14px;line-height:1;display:grid;place-items:center}
+.c-th button:hover{background:rgba(255,255,255,.25)}
 .c-imgs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .c-imgs img{max-width:220px;max-height:180px;border-radius:12px;border:1px solid var(--border2);display:block}
