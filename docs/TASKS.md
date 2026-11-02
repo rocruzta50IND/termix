@@ -527,13 +527,6 @@ _Nenhuma no momento._
 - **Prioridade:** Baixa
 - **Objetivo:** hoje as inativas encolhem até 34 px; acima de ~25 abas a barra estoura de novo. Avaliar rolagem horizontal mantendo o recorte (`fuseBar`) e o arrastar com rolagem automática.
 
-### TASK-036 — README profissional e página do projeto no GitHub
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Alta (necessária antes de mandar o link para outras pessoas)
-- **Objetivo:** o repositório não tem README. Criar um profissional: o que é o Termix, capturas de tela, como baixar (Releases) e instalar (inclusive o aviso do SmartScreen, pois o app não é assinado), requisito do Claude Code, como atualizar, limites conhecidos e como relatar problema. Depois de aprovado, promover a `dev1` para a `main` (só com pedido do usuário).
-
 ### TASK-037 — Imagem lateral do instalador com a marca do Termix
 
 - **Responsável:** DEV1

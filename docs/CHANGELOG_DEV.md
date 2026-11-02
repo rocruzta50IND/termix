@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-036 — README do projeto** (DEV1)
+
+- Novo `README.md` em português (o que é, recursos, instalação com o aviso do SmartScreen, atualização, primeiros passos, limites conhecidos, como relatar problema e como rodar o código) e a captura `docs/img/chat.png`, feita numa instância zerada com um projeto de demonstração, sem dados pessoais. Sem seção de licença (o app não será comercializado). O instalador foi testado pelo usuário e funciona. Aprovada; a promoção para a `main` aguarda o pedido do usuário.
+
 **TASK-042 — Telas que não são terminal viram parte do app** (DEV1)
 
 - Plugins, Skills, MCPs, Consumo, Integrações, Configurações e a tela sem projeto perderam o recorte escuro do palco, a borda, o painel e a margem: ficam direto sobre o vidro do app, contínuas com a barra lateral, e rolam até a base da janela. Terminal, chat e Web mantêm o recorte, o rodapé e o rail. Testado por CDP em instância isolada; aprovada pelo usuário. Não testados: Ofuscado, maximizada e larguras 1180/980.
