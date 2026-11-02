@@ -10,27 +10,29 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+## Validadas em DEV1
+
 ### TASK-054 — Botão de copiar a resposta inteira no chat
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-02)
 - **Prioridade:** Média — pedido do usuário em 2026-11-02, com duas capturas (uma resposta longa e um bloco de código com o botão "Copiar" no cabeçalho): "qualquer resposta eu consiga copiar com um botão de copiar, mas manter quando é caixa assim".
 - **Objetivo:** qualquer resposta do Claude pode ser copiada inteira com um botão; os blocos de código continuam com o "Copiar" no cabeçalho do bloco.
 - **Feito:** `src/renderer/chat.js`: botão `.c-copyall` ("Copiar", ícone de cópia) em toda resposta pronta (não aparece durante o streaming nem em resposta vazia); copia o **texto original em Markdown** (títulos, listas e blocos de código intactos, e não só o que está desenhado) pela mesma ponte `api.clipWrite`; mostra "Copiado" por 1,4 s; ícones `copy` e `check` em `CHAT_ICON`. `src/renderer/styles.css`: pílula pequena que fica a cavalo na borda de cima da bolha, no canto direito, visível ao passar o mouse na resposta (ou com o foco do teclado).
 - **Testado (CDP, cliques reais, instância isolada):** invisível sem o mouse e visível com o mouse; o clique copiou a resposta inteira (confirmado lendo a área de transferência do Windows, que foi restaurada depois); "Copiado" volta a "Copiar" sozinho; o botão do bloco de código continua separado. Não testado: respostas muito longas com rolagem e janela estreita. Perguntas do usuário ficaram sem o botão (fácil de incluir).
 - **Como validar:** `npm start`, abrir um chat, passar o mouse numa resposta e clicar em Copiar; colar em outro lugar.
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-053 — Menu do projeto com o botão direito (barra lateral recolhida e aberta)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-02)
 - **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura da barra recolhida (só os avatares N, P, T): com a barra recolhida não havia como renomear, arquivar, remover ou excluir um projeto, porque o menu só abria pelo botão "⋯" da barra aberta.
 - **Objetivo:** clique direito no projeto abre o mesmo menu do "⋯" (Abrir pasta, Renomear, Arquivar, Remover do app e, só em pasta criada pelo app, Excluir pasta…), também com a barra recolhida.
 - **Feito:** `src/renderer/app.js`: o ouvinte de `contextmenu` reconhece o avatar do projeto (`.av[data-go]`, barra recolhida) e o nome do projeto (`[data-ph]`, barra aberta), troca para esse projeto como o "⋯" já faz e chama `projectMenuFlow()`. O menu da aba (clique direito na aba) segue como estava.
 - **Testado (CDP, cliques reais, instância isolada com 2 projetos):** barra recolhida: clique direito no avatar abre o menu do projeto certo (Beta e depois Alfa); clique esquerdo continua só navegando, sem abrir menu; barra aberta: clique direito no nome abre o menu; captura conferida. Não testado: confirmar Arquivar/Remover/Excluir a partir desse menu (usa o fluxo que já existia).
 - **Como validar:** `npm start`, recolher a barra lateral e clicar com o botão direito num projeto; escolher Renomear.
-
-## Validadas em DEV1
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ## Prontas
 

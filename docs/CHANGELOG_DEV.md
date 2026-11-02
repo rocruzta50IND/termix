@@ -8,11 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
-**TASK-054 — Botão de copiar a resposta inteira** (DEV1)
+**TASK-054 — Botão de copiar a resposta inteira** (DEV1, validada em DEV1 — aprovada pelo usuário)
 
 - Toda resposta do chat ganhou um botão "Copiar" (ao passar o mouse) que copia o texto original em Markdown; o botão dos blocos de código continua no cabeçalho do bloco. Testado por clique real, lendo a área de transferência.
 
-**TASK-053 — Menu do projeto com o botão direito** (DEV1)
+**TASK-053 — Menu do projeto com o botão direito** (DEV1, validada em DEV1 — aprovada pelo usuário)
 
 - Com a barra lateral recolhida (só os avatares) agora dá para clicar com o botão direito no projeto e abrir o menu de renomear, arquivar, remover e excluir; o mesmo vale para o nome do projeto na barra aberta. Testado por cliques reais em instância isolada.
 
