@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Termix — layout B (proposta)</title>
+<style>
+/* Proposta B (TASK-040): em vez de abas horizontais + rail + barra flutuante, os agentes viram uma LISTA na barra lateral (com contexto e estado de cada um),
+   o centro é uma GRADE de painéis (1, 2 ou 4 agentes à vista, cada um em Terminal ou Chat), os limites vão para o cabeçalho,
+   o "inspetor" (contexto, cache, eventos) é uma gaveta à direita e as ações (Web, Clear, Reiniciar) ficam numa barra de status embaixo. */
+:root{--text:#EEF2F8;--text2:#A9B3C4;--text3:#6F7A8E;--accent:#5B9DFF;--ok:#4ADE80;--warn:#FBBF24;--bad:#F87171;
+  --glass:rgba(255,255,255,.07);--glass2:rgba(255,255,255,.13);--border:rgba(255,255,255,.13);--border2:rgba(255,255,255,.22);--term:#0a0a17;
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,monospace;--sans:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:#05070b;color:var(--text);font:14px/1.45 var(--sans);overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+svg{flex:none}
+.bg{position:fixed;inset:8px;border-radius:22px;overflow:hidden;background:linear-gradient(160deg,#080b11,#04060a 60%,#06090e)}
+.bg i{position:absolute;border-radius:50%}
+.b1{width:860px;height:760px;left:-260px;top:-240px;background:radial-gradient(closest-side,rgba(37,99,235,.42),rgba(37,99,235,.21) 55%,transparent)}
+.b2{width:820px;height:820px;right:-300px;top:-4%;background:radial-gradient(closest-side,rgba(100,116,139,.38),rgba(100,116,139,.19) 55%,transparent)}
+.b3{width:900px;height:700px;left:20%;bottom:-340px;background:radial-gradient(closest-side,rgba(14,116,144,.36),rgba(14,116,144,.18) 55%,transparent)}
+.bg::after{content:"";position:absolute;inset:0;background:rgba(3,4,8,.3)}
+#frame{position:absolute;inset:8px;border-radius:22px;border:1px solid rgba(255,255,255,.2);overflow:hidden;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:46px 1fr 34px;
+  background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.04) 46%,rgba(255,255,255,.08));box-shadow:0 26px 60px rgba(0,0,0,.55)}
+/* cabeçalho */
+#top{grid-column:1/4;display:flex;align-items:center;gap:14px;padding:0 0 0 20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:16px;width:208px}
+.brand svg{width:26px;height:26px}
+.search{flex:0 1 380px;display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-radius:99px;border:1px solid var(--border);background:var(--glass);color:var(--text3);font-size:12.5px}
+.search kbd{margin-left:auto;font:11px var(--mono);padding:0 6px;border-radius:6px;background:rgba(255,255,255,.08);color:var(--text2)}
+.sp{flex:1}
+.lims{display:flex;align-items:center;border-radius:99px;border:1px solid var(--border);background:var(--glass);overflow:hidden;font-size:12px}
+.lim{display:flex;align-items:center;gap:7px;padding:5px 12px}.lim+.lim{border-left:1px solid var(--border)}
+.lim b{color:var(--text2);font-weight:600}.lim .bar{width:46px;height:5px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}.lim .bar i{display:block;height:100%;border-radius:9px;background:var(--c)}
+.lim em{font-style:normal;color:var(--text3);font-size:11px}
+.ibtn{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--glass);display:grid;place-items:center;color:var(--text2)}
+.ibtn.on{background:rgba(91,157,255,.22);border-color:rgba(91,157,255,.55);color:#fff}
+.wc{display:flex}.wc span{width:50px;display:grid;place-items:center;color:var(--text2)}
+/* barra lateral: agentes como lista */
+.side{width:244px;padding:4px 10px 8px;display:flex;flex-direction:column;overflow:hidden}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:10px 10px 6px;display:flex;justify-content:space-between;align-items:center}
+.label button{color:var(--text3);font-size:15px;line-height:1}
+.proj{display:flex;align-items:center;gap:8px;padding:6px 10px;font-weight:600;color:var(--text)}
+.proj small{margin-left:auto;font-weight:400;color:var(--text3);font-size:11px}
+.sess{display:flex;align-items:center;gap:9px;width:100%;padding:7px 10px 7px 12px;border-radius:11px;color:var(--text2);text-align:left;position:relative}
+.sess:hover{background:var(--glass)}
+.sess.on{background:var(--glass2);box-shadow:inset 0 0 0 1px var(--border2);color:var(--text)}
+.sess::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--c)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex:none}.dot.work{background:var(--ok);animation:pulse 1.4s ease-in-out infinite}.dot.wait{background:var(--warn)}.dot.idle{background:var(--text3)}
+@keyframes pulse{50%{opacity:.35}}
+.sess .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.sess .mode{font-size:10px;font-weight:700;letter-spacing:.3px;padding:0 6px;border-radius:99px;background:rgba(255,255,255,.09);color:var(--text3)}
+.sess .cx{width:30px;height:4px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}.sess .cx i{display:block;height:100%;background:var(--ok)}
+.sess .cx.hi i{background:var(--warn)}
+.addrow{margin:2px 0 4px 12px;color:var(--text3);font-size:12.5px;padding:5px 10px;border-radius:9px;text-align:left}.addrow:hover{background:var(--glass);color:var(--text)}
+.res{display:flex;gap:6px;padding:4px 6px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;border:1px solid var(--border);background:var(--glass);font-size:12px;color:var(--text2)}
+.chip svg{width:14px;height:14px}
+.geral .item{display:flex;align-items:center;gap:10px;width:100%;padding:7px 12px;border-radius:11px;color:var(--text2);font-size:13px}.geral .item:hover{background:var(--glass);color:var(--text)}
+/* centro */
+.main{min-width:0;min-height:0;display:flex;flex-direction:column;padding:0 0 0 0}
+.tool{display:flex;align-items:center;gap:10px;height:40px;padding:0 4px 0 2px;flex:none}
+.tool h3{font-size:14px;font-weight:650}.tool .meta{color:var(--text3);font-size:12px}
+.lay{display:flex;padding:3px;border-radius:99px;border:1px solid var(--border);background:var(--glass)}
+.lay button{width:34px;height:26px;border-radius:99px;display:grid;place-items:center;color:var(--text3)}
+.lay button.on{background:var(--glass2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border2)}
+.grid{flex:1;min-height:0;display:grid;gap:8px;padding:0 0 8px}
+.grid.l1{grid-template-columns:1fr;grid-template-rows:1fr}
+.grid.l2{grid-template-columns:1fr 1fr;grid-template-rows:1fr}
+.grid.l4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.pane{min-width:0;min-height:0;display:flex;flex-direction:column;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.16);background:var(--term);position:relative}
+.pane.focus{border-color:color-mix(in srgb,var(--c) 70%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent),0 0 24px color-mix(in srgb,var(--c) 22%,transparent)}
+.ph{display:flex;align-items:center;gap:9px;height:34px;padding:0 6px 0 12px;flex:none;font-size:12.5px;background:linear-gradient(165deg,color-mix(in srgb,var(--c) 38%,transparent),color-mix(in srgb,var(--c) 10%,transparent) 55%,transparent)}
+.ph .nm{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph .st{color:var(--text2);font-size:11.5px}
+.seg{display:flex;padding:2px;border-radius:99px;border:1px solid var(--border);background:rgba(0,0,0,.25)}
+.seg button{padding:1px 10px;border-radius:99px;font-size:11px;color:var(--text3)}.seg button.on{background:var(--glass2);color:var(--text)}
+.ring{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:8.5px;background:conic-gradient(var(--rc) calc(var(--v)*1%),rgba(255,255,255,.1) 0);color:var(--text2)}
+.ring b{width:18px;height:18px;border-radius:50%;background:#0b0c19;display:grid;place-items:center;font-weight:600}
+.x{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--text3)}.x:hover{background:rgba(255,255,255,.14);color:#fff}
+.body{flex:1;min-height:0;overflow:hidden;position:relative}
+.term{padding:12px 16px;font:12.5px/1.5 var(--mono);color:#d6dbe6;white-space:pre-wrap}
+.term .a{color:#7cc4ff}.term .g{color:#86e0a6}.term .y{color:#fbbf24}.term .d{color:#6F7A8E}.term .p{color:#c4a7ff}
+.cur{display:inline-block;width:8px;height:15px;background:#d6dbe6;vertical-align:-3px;animation:blink 1s steps(2) infinite}@keyframes blink{50%{opacity:0}}
+.chat{padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:13px}
+.msg{max-width:88%;padding:8px 12px;border-radius:14px;line-height:1.5}
+.msg.ai{background:rgba(255,255,255,.055);border:1px solid var(--border);border-top-left-radius:5px;align-self:flex-start}
+.msg.me{background:linear-gradient(135deg,rgba(91,157,255,.34),rgba(59,110,230,.24));border:1px solid rgba(91,157,255,.4);border-top-right-radius:5px;align-self:flex-end}
+.msg code{font:11.5px var(--mono);background:rgba(255,255,255,.1);padding:0 5px;border-radius:5px}
+.tcard{align-self:flex-start;display:flex;gap:8px;align-items:center;border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;color:var(--text2);background:rgba(255,255,255,.035)}
+.tcard b{color:var(--text)}.tcard i{font-style:normal;color:var(--ok)}
+.cin{position:absolute;left:10px;right:10px;bottom:10px;display:flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:14px;border:1px solid var(--border2);background:rgba(255,255,255,.06);color:var(--text3);font-size:12.5px}
+.cin span{flex:1}.cin b{width:28px;height:28px;border-radius:9px;background:var(--accent);color:#06101f;display:grid;place-items:center}
+/* gaveta (inspetor) */
+.insp{width:0;overflow:hidden;transition:width .22s ease;padding:0}
+.insp.open{width:272px;padding:0 0 8px 8px}
+.insp .in{width:264px;height:100%;border-radius:16px;border:1px solid var(--border);background:rgba(8,12,20,.5);padding:14px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.insp h4{font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:var(--text3);font-weight:600;margin-bottom:8px}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text2);padding:2px 0}.kv b{color:var(--text);font-weight:600}
+.big{display:flex;align-items:center;gap:14px}.big .ring{width:56px;height:56px;font-size:12px}.big .ring b{width:44px;height:44px;font-size:12px}
+.ev{display:flex;gap:9px;font-size:12px;color:var(--text2);padding:4px 0}.ev time{color:var(--text3);font:11px var(--mono);flex:none;width:38px}.ev i{width:6px;height:6px;border-radius:50%;margin-top:6px;flex:none}
+/* barra de status */
+#status{grid-column:1/4;display:flex;align-items:center;gap:6px;padding:0 14px 0 14px;font-size:12px;color:var(--text3);border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18)}
+#status button{display:flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:99px;color:var(--text2);font-size:12px}
+#status button:hover{background:var(--glass2);color:var(--text)}
+#status button.on{background:rgba(91,157,255,.22);color:#fff;box-shadow:inset 0 0 0 1px rgba(91,157,255,.55)}
+#status svg{width:14px;height:14px}
+#status .n{min-width:16px;height:16px;border-radius:99px;background:var(--warn);color:#1a1408;font-size:10.5px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+#status .sep{width:1px;height:14px;background:rgba(255,255,255,.18);margin:0 4px}
+#status .m{color:#5fd0c4}#status .b{color:var(--ok)}#status .w{color:var(--warn)}
+.note{position:fixed;left:50%;bottom:11px;transform:translateX(-50%);z-index:20;font-size:11.5px;color:var(--text3);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+<div id="frame">
+  <header id="top">
+    <div class="brand"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg>Termix</div>
+    <div class="search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Ir para agente, projeto ou comando…<kbd>Ctrl K</kbd></div>
+    <span class="sp"></span>
+    <div class="lims"><div class="lim" style="--c:#FBBF24"><b>5h</b><span class="bar"><i style="width:62%"></i></span><em>62% · 1h40</em></div><div class="lim" style="--c:#4ADE80"><b>7d</b><span class="bar"><i style="width:18%"></i></span><em>18%</em></div></div>
+    <button class="ibtn" id="tgl" title="Inspetor (contexto, cache e eventos)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></svg></button>
+    <button class="ibtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>
+    <span class="wc"><span>—</span><span>▢</span><span>✕</span></span>
+  </header>
+
+  <aside class="side">
+    <div class="label">Projetos<button title="Novo projeto">+</button></div>
+    <div class="proj">⌄ Termix<small>3 agentes</small></div>
+    <div id="list"></div>
+    <button class="addrow">+ Novo agente</button>
+    <div class="proj" style="color:var(--text2)">› new-rocruzta-page<small>2</small></div>
+    <div class="label">Recursos</div>
+    <div class="res"><span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg>Plugins</span><span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>Skills</span><span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 8l3.5 8M16.5 8L13 16"/></svg>MCPs</span></div>
+    <span class="sp"></span>
+    <div class="geral"><div class="label">Geral</div><button class="item">Consumo</button><button class="item">Integrações</button><button class="item">Configurações</button></div>
+  </aside>
+
+  <section class="main">
+    <div class="tool"><h3 id="ttl">Termix</h3><span class="meta" id="mt">3 agentes · 1 trabalhando</span><span class="sp"></span>
+      <div class="lay" id="lay" title="Quantos agentes ficam à vista"><button data-l="1" title="1 painel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2.5"/></svg></button><button data-l="2" class="on" title="2 painéis"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M12 5v14"/></svg></button><button data-l="4" title="4 painéis"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M12 5v14M4 12h16"/></svg></button></div>
+    </div>
+    <div class="grid l2" id="grid"></div>
+  </section>
+
+  <aside class="insp" id="insp"><div class="in" id="inin"></div></aside>
+
+  <footer id="status">
+    <button class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 10l3 2-3 2M13 15h4"/></svg>Agentes<span class="n">2</span></button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Web <i style="width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block"></i></button>
+    <span class="sep"></span>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>Clear</button>
+    <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>Reiniciar</button>
+    <span style="flex:1"></span>
+    <span id="sb"></span>
+  </footer>
+</div>
+<div class="note">Proposta B — clique nos agentes, em 1/2/4 painéis e no ícone do inspetor</div>
+
+<script>
+const AG = [
+  { id: 'brain', name: 'Brain', c: '#5B9DFF', mode: 'chat', st: 'work', ctx: 34, cache: '41m', model: 'Sonnet 5.5', branch: 'dev1', bypass: true },
+  { id: 'coder', name: 'Coder', c: '#FB923C', mode: 'term', st: 'wait', ctx: 71, cache: '12m', model: 'Opus 5.5', branch: 'dev1', bypass: false },
+  { id: 'rev', name: 'Revisor', c: '#A78BFA', mode: 'term', st: 'idle', ctx: 12, cache: '—', model: 'Sonnet 5.5', branch: 'dev1', bypass: false },
+  { id: 'docs', name: 'Docs', c: '#34D399', mode: 'chat', st: 'idle', ctx: 8, cache: '55m', model: 'Haiku 5.5', branch: 'main', bypass: false },
+];
+const ST = { work: 'Trabalhando', wait: 'Precisa de você', idle: 'Aguardando' };
+let layout = 2, focus = 'brain', shown = ['brain', 'coder', 'rev', 'docs'];
+const $ = (s) => document.querySelector(s), ag = (id) => AG.find((a) => a.id === id);
+const ringH = (v, col) => `<span class="ring" style="--v:${v};--rc:${col}"><b>${v}</b></span>`;
+const ctxCol = (v) => (v >= 70 ? 'var(--warn)' : 'var(--accent)');
+const termBody = (a) => a.id === 'coder'
+  ? `<div class="term"><span class="d">Claude Code v2.1.316 · ${a.model}</span>\n\n<span class="p">></span> corrija o arrastar das abas\n\n<span class="a">●</span> Vou ler o <span class="g">app.js</span> e testar com cliques reais.\n<span class="d">  ⎿ Read src/renderer/app.js (1.930 linhas)</span>\n<span class="y">  ⚠ Permitir editar src/renderer/app.js?</span>\n  <span class="g">1. Sim</span>   2. Sim, sempre   3. Não\n<span class="cur"></span></div>`
+  : `<div class="term"><span class="d">Claude Code v2.1.316 · ${a.model}</span>\n\n<span class="p">></span> revise a TASK-033\n\n<span class="a">●</span> A ordem sai certa; o recorte da aba ativa ficava parado.\n<span class="d">  ⎿ npm run check ✓</span>\n\n<span class="p">></span> <span class="cur"></span></div>`;
+const chatBody = (a) => a.id === 'brain'
+  ? `<div class="chat"><div class="msg me">Leia o <code>package.json</code> e diga a versão.</div><div class="tcard"><b>Read</b> package.json <i>✓</i></div><div class="msg ai">A versão atual é <b>0.1.1</b>. O próximo lançamento deve usar <b>0.1.2</b> ou maior.<span class="cur" style="width:6px;height:13px;vertical-align:-2px"></span></div></div><div class="cin"><span>Escreva para o Claude…</span><b>↑</b></div>`
+  : `<div class="chat"><div class="msg ai">Pronto para atualizar o README quando você mandar.</div></div><div class="cin"><span>Escreva para o Claude…</span><b>↑</b></div>`;
+function paneHTML(a) {
+  return `<div class="pane ${a.id === focus ? 'focus' : ''}" style="--c:${a.c}" data-p="${a.id}">
+    <div class="ph"><i class="dot ${a.st}"></i><span class="nm">${a.name} - Termix</span><span class="st">${ST[a.st]}</span>
+      <div class="seg" data-m="${a.id}"><button data-mode="term" class="${a.mode === 'term' ? 'on' : ''}">Terminal</button><button data-mode="chat" class="${a.mode === 'chat' ? 'on' : ''}">Chat</button></div>
+      ${ringH(a.ctx, ctxCol(a.ctx))}<button class="x" title="Fechar">×</button></div>
+    <div class="body">${a.mode === 'chat' ? chatBody(a) : termBody(a)}</div></div>`;
+}
+function renderList() {
+  $('#list').innerHTML = AG.slice(0, 3).map((a) => `<button class="sess ${a.id === focus ? 'on' : ''}" style="--c:${a.c}" data-s="${a.id}"><i class="dot ${a.st}"></i><span class="nm">${a.name}</span><span class="mode">${a.mode === 'chat' ? 'CHAT' : 'TERM'}</span><span class="cx ${a.ctx >= 70 ? 'hi' : ''}"><i style="width:${a.ctx}%"></i></span></button>`).join('');
+}
+function renderGrid() {
+  const n = layout, ids = [focus, ...shown.filter((x) => x !== focus)].slice(0, n);
+  $('#grid').className = 'grid l' + n; $('#grid').innerHTML = ids.map((id) => paneHTML(ag(id))).join('');
+}
+function renderInsp() {
+  const a = ag(focus);
+  $('#inin').innerHTML = `<div><h4>Agente</h4><div class="big">${ringH(a.ctx, ctxCol(a.ctx))}<div><b>${a.name} - Termix</b><div class="kv" style="padding:0">${ST[a.st]}</div></div></div></div>
+    <div><h4>Contexto e cache</h4><div class="kv">Contexto<b>${a.ctx}%</b></div><div class="kv">Cache esfria em<b>${a.cache}</b></div><div class="kv">Custo da conversa<b>0,06 US$</b></div></div>
+    <div><h4>Sessão</h4><div class="kv">Modelo<b>${a.model}</b></div><div class="kv">Branch<b style="color:var(--ok)">${a.branch}</b></div><div class="kv">Permissões<b style="color:${a.bypass ? 'var(--warn)' : 'var(--text)'}">${a.bypass ? '⚠ bypass' : 'normais'}</b></div></div>
+    <div><h4>Eventos</h4><div class="ev"><time>14:32</time><i style="background:var(--ok)"></i>Terminou: README atualizado</div><div class="ev"><time>14:20</time><i style="background:var(--warn)"></i>Precisa de você (editar app.js)</div><div class="ev"><time>14:05</time><i style="background:var(--accent)"></i>Retomada custou ~5 mil tokens</div><div class="ev"><time>13:58</time><i style="background:var(--bad)"></i>Erro: npm run check falhou</div></div>`;
+}
+function renderStatus() { const a = ag(focus); $('#sb').innerHTML = `<span class="m">${a.model}</span> · Termix · <span class="b">${a.branch}</span> · ${a.bypass ? '<span class="w">⚠ bypass</span>' : 'permissões normais'}`; $('#ttl').textContent = 'Termix · ' + a.name; }
+const all = () => { renderList(); renderGrid(); renderInsp(); renderStatus(); };
+document.addEventListener('click', (e) => {
+  let el;
+  if ((el = e.target.closest('[data-s]'))) { focus = el.dataset.s; all(); }
+  else if ((el = e.target.closest('[data-mode]'))) { const a = ag(el.closest('[data-m]').dataset.m); a.mode = el.dataset.mode; all(); }
+  else if ((el = e.target.closest('[data-p]'))) { focus = el.dataset.p; all(); }
+  else if ((el = e.target.closest('#lay [data-l]'))) { layout = +el.dataset.l; document.querySelectorAll('#lay button').forEach((b) => b.classList.toggle('on', b === el)); all(); }
+  else if (e.target.closest('#tgl')) { $('#insp').classList.toggle('open'); $('#tgl').classList.toggle('on'); }
+});
+all();
+</script>
+</body>
+</html>
