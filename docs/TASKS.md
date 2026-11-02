@@ -459,6 +459,17 @@ _Nenhuma no momento._
 
 ## Backlog
 
+### TASK-048 — Menu da aba aparece ao clicar com o botão direito em qualquer parte do chat (defeito)
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Alta (defeito visível, reportado pelo usuário em 2026-11-02 com captura) — pequeno, bom candidato a ser a próxima tarefa
+- **Sintoma:** na aba de chat, o clique direito em qualquer ponto da conversa abre o menu da aba (cor da guia, renomear, duplicar, reiniciar, abrir como terminal, exportar, fechar guias…), que só deveria abrir no clique direito **na própria aba** da barra.
+- **Causa provável (lida no código, ainda não corrigida):** o container de cada chat tem `root.dataset.tab = tab.id` (`chatView` em `src/renderer/chat.js`) e o ouvinte `contextmenu` de `src/renderer/app.js` usa `e.target.closest('[data-tab]')`, então qualquer clique dentro do chat casa com o container. O mesmo atributo pode afetar o duplo clique (`dblclick`, que também usa `[data-tab]`).
+- **Correção prevista:** restringir os ouvintes de `contextmenu` e `dblclick` às abas da barra (por exemplo `.tab[data-tab]` ou `#tabsRow [data-tab]`) ou renomear o atributo do container do chat (`data-chat`) e ajustar o que o usa (`querySelector('[data-tab]')`, CSS). No clique direito em outra área, não abrir nenhum menu (ou, no campo de texto, deixar o menu padrão de recortar/copiar/colar).
+- **Critérios de aceite:** clique direito na conversa, na caixa de texto, no rail e no rodapé não abre o menu da aba; clique direito na aba (terminal, chat e Web) continua abrindo; clique duplo na aba continua renomeando e clique duplo no chat não faz nada; testado por cliques reais (CDP).
+- **Base existente:** `document.addEventListener('contextmenu'…)` e `'dblclick'` em `src/renderer/app.js`; `chatView` em `src/renderer/chat.js`.
+
 ### TASK-047 — Controles do chat (modo, estilo, permissão) à mão na tela e fim do texto "Aguardando você"
 
 - **Responsável:** DEV1
