@@ -466,7 +466,7 @@ if (!RUN_MODE) {
   if (!app.requestSingleInstanceLock()) app.quit();
   else {
     app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-    app.whenReady().then(() => { createWindow(); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
+    app.whenReady().then(() => { createWindow(); require('./updater').setupUpdater(() => win); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
   }
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
 }

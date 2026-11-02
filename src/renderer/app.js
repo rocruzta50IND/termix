@@ -43,6 +43,7 @@ const ICONS = {
   copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5A2 2 0 0 0 13.5 4.5h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
   arrowl: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
   arrowr: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  download: '<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 19.5h14"/>',
   save: '<path d="M5 4.5h11l3 3v12H5z"/><path d="M8 4.5v5h7v-5M8 19.5v-6h8v6"/>',
 };
 const ic = (name, size = 18) => `<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -589,6 +590,41 @@ function modal({ title, body = '', buttons = [['Cancelar', null], ['OK', 'ok', '
   });
 }
 
+/* ---------- atualização do app (TASK-035) ---------- */
+// O app baixa a versão nova em segundo plano. Pronta: aparece este aviso; "Depois" o guarda no botão "Atualizar" do cabeçalho.
+let UPD = { state: 'idle' };
+let updCard = null, updShownFor = '';
+function hideUpdCard() { if (updCard) updCard.classList.remove('show'); }
+function showUpdCard() {
+  if (!updCard) {
+    updCard = document.createElement('div');
+    updCard.id = 'updcard';
+    updCard.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-updc]'); if (!b) return;
+      hideUpdCard();
+      if (b.dataset.updc === 'go') applyUpdate();
+    });
+    document.body.appendChild(updCard);
+  }
+  updCard.innerHTML = `<div class="ut"><span class="ui">${ic('download', 18)}</span><div><b>Nova versão ${esc(UPD.version || '')} pronta</b><span>O Termix fecha, atualiza e abre de novo. Os terminais voltam sozinhos.</span></div></div>
+    <div class="ua"><button class="btn sm" data-updc="later">Depois</button><button class="btn sm pri" data-updc="go">Atualizar agora</button></div>`;
+  updCard.classList.remove('show'); void updCard.offsetWidth; updCard.classList.add('show');
+}
+async function applyUpdate() {
+  const working = aliveTabs().filter((x) => stOf(x.tab) === 'work').length;
+  if (working) {
+    const r = await modal({ title: 'Há agente trabalhando', body: `<p class="hint">${working === 1 ? '1 terminal está' : `${working} terminais estão`} trabalhando. Atualizar agora interrompe ${working === 1 ? 'ele' : 'eles'}. Quer atualizar mesmo assim?</p>`, buttons: [['Esperar', null], ['Atualizar mesmo assim', 'ok', 'pri']] });
+    if (r.value !== 'ok') return;
+  }
+  api.updateInstall();
+}
+function onUpdateState(s) {
+  UPD = s || { state: 'idle' };
+  if (UPD.state === 'ready' && updShownFor !== UPD.version) { updShownFor = UPD.version; showUpdCard(); }
+  if (UPD.state !== 'ready') hideUpdCard();
+  renderTop();
+}
+
 /* ---------- peças de renderização ---------- */
 function barHTML(pct, w) {
   const c = pct >= 90 ? 'var(--bad)' : pct >= 70 ? 'var(--warn)' : 'var(--ok)';
@@ -741,6 +777,7 @@ function renderTop() {
   $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix</div><span class="sp"></span>
     ${railCfg().on ? '' : `<div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>`}
     <span class="sp"></span>
+    ${UPD.state === 'ready' ? `<button class="updbtn" data-upd="go" title="Nova versão ${esc(UPD.version || '')} pronta: atualizar e reabrir o Termix">${ic('download', 15)}Atualizar</button>` : ''}
     <button class="tbtn round ${UI.actOpen ? 'on' : ''}" data-togact title="Notificações">${ic('bell', 18)}${pending() ? `<span class="nb">${pending()}</span>` : ''}</button>
     <div class="wc">
       <button data-win="min" title="Minimizar">${ic('minus', 16)}</button>
@@ -1627,6 +1664,7 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-reopen2]'))) { const p = curProject(); const t = p.tabs.find((x) => x.id === el.dataset.reopen2); if (t) { t.open = true; p.activeTab = t.id; save(); renderAll(); restartTab(p, t); } return; }
   if ((el = q('[data-restart]'))) { UI.menu = null; renderMenu(); const f = findTab(el.dataset.restart); if (f) restartTab(f.p, f.tab); return; }
   if ((el = q('[data-newconv]'))) { const f = findTab(el.dataset.newconv); if (f) newConversation(f.p, f.tab); return; }
+  if (q('[data-upd]')) { applyUpdate(); return; }
   if (q('[data-togact]')) {
     UI.actOpen = !UI.actOpen; UI.pop = false; hideToast();
     if (!UI.actOpen) markSeen(); // abriu e fechou: o que estava lá já foi visto, o selo do sino volta a 0
@@ -1816,6 +1854,8 @@ async function applyBg() {
   applyWinShape();
   api.onWinState(({ maximized }) => { UI.maxed = maximized; applyWinShape(); renderTop(); setTimeout(layout, 50); layout(); });
   GEO.sideW = sideTarget(); GEO.armW = armTarget();
+  api.onUpdate(onUpdateState);
+  api.updateGet().then(onUpdateState).catch(() => {});
   renderAll();
   layout();
   (await api.allMetrics()).forEach(onMetric);

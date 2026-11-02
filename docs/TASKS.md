@@ -12,7 +12,18 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
-_Nenhuma no momento._
+### TASK-035 — Atualização do app com aviso no cabeçalho (MVP)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (código pronto e testado em simulação; falta o teste real com duas versões publicadas)
+- **Prioridade:** Alta (MVP) — pedido do usuário em 2026-11-02
+- **Objetivo:** avisar quem tem o app instalado que há versão nova; ao clicar, atualiza e pede/faz o reinício; se a pessoa não quiser agora, o botão **Atualizar** fica no cabeçalho.
+- **Decisões (usuário, 2026-11-02):** botão no cabeçalho do app quando a pessoa adia o aviso; hospedagem no **GitHub** com o repositório público (sem token no app).
+- **Feito até agora:** `src/updater.js` (novo, `electron-updater`; consulta 15 s depois de abrir e a cada 4 h, baixa em segundo plano, instala ao fechar se ignorado; desligado em `npm start`; `TERMIX_FAKE_UPDATE=1` simula); `src/main.js` e `src/preload.js` (ponte `update:*`); `src/renderer/app.js` (aviso com Depois/Atualizar agora, botão no cabeçalho, confirmação se houver agente trabalhando) e `styles.css`; `package.json` (`publish` do GitHub, script `release`, dependência). Testado por CDP em instância isolada com a simulação: o aviso aparece, "Depois" o fecha e o botão fica no cabeçalho; capturas conferidas; `npm run check` passou.
+- **Arquivos tocados:** `src/updater.js`, `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `src/renderer/styles.css`, `package.json`, `package-lock.json`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `TERMIX_FAKE_UPDATE=1 npm start` (aviso depois de ~6 s; Depois; botão no cabeçalho). Real: instalar a 0.1.0, publicar a 0.1.1 com `npm run release`, abrir a 0.1.0 e esperar o aviso.
+- **Pendências:** **não testado com um Release real** (precisa o repositório público, o `GH_TOKEN` e duas versões); a instalação silenciosa e a reabertura do app só serão vistas assim; o clique em "Atualizar agora" na simulação não instala nada.
+- **Próximo passo:** o usuário confirmar que o repositório ficará público; depois TASK-033 e TASK-020 (que passa a incluir 0.1.0 → 0.1.1).
 
 ## Validadas em DEV1
 

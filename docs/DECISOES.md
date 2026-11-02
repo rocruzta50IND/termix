@@ -104,6 +104,13 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Empacotado **sem `asar`** (módulo nativo do terminal e scripts chamados por fora ficam como arquivos normais; mais simples e seguro).
 - O instalador **não é assinado**: o Windows SmartScreen avisa "editor desconhecido" (Mais informações → Executar assim mesmo). Assinatura exige certificado pago; fica para depois.
 
+## Atualização do app (TASK-035)
+- O app instalado consulta o **GitHub Releases** (`rocruzta50IND/termix`, que precisa ser **público**, sem token) 15 s depois de abrir e a cada 4 h, baixa a versão nova em segundo plano e, quando está pronta, mostra um aviso no canto do cabeçalho com **Atualizar agora** e **Depois**. Com **Depois**, o botão **Atualizar** (azul, ao lado do sino) fica no cabeçalho para clicar quando quiser. Ignorando tudo, a versão baixada é instalada quando a pessoa fecha o app.
+- Atualizar fecha o app, instala em modo silencioso e reabre; os terminais voltam pela restauração automática (TASK-019). Com agente trabalhando, pede confirmação antes.
+- Sem rede, servidor fora do ar ou erro: não mostra nada e tenta no próximo ciclo. Em `npm start` o atualizador fica desligado (`TERMIX_FAKE_UPDATE=1` simula o aviso).
+- **Publicar uma versão:** subir `version` no `package.json`, definir `GH_TOKEN` (token do GitHub com permissão de escrever no repositório) e rodar `npm run release` (gera o instalador e o `latest.yml` e cria o Release). Só versões publicadas e promovidas, depois do teste do instalador.
+- Quem instalou uma versão sem o atualizador (antes da 0.1.0 com TASK-035) precisa instalar uma vez à mão.
+
 ## Janela e fundo
 - Dois modos: **Degradê** (janela transparente, o app é o degradê) e **Ofuscado** (o mesmo degradê, mais leve, sobre o vidro fosco do Windows 11).
 - Trocar entre os dois **reabre o app**, porque o tipo da janela só é definido na criação e os terminais fecham (melhoria: TASK-008).

@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-035 — Atualização do app com aviso e botão no cabeçalho** (DEV1)
+
+- Novo `src/updater.js` com `electron-updater` e GitHub Releases: aviso com Depois / Atualizar agora e botão Atualizar no cabeçalho; instala ao fechar se ignorado; confirmação com agente trabalhando. Testado só em simulação (`TERMIX_FAKE_UPDATE=1`); falta teste real com duas versões publicadas.
+
 **TASK-034 — Novo ícone do app: só o `>_` sobre degradê azul** (DEV1)
 
 - Ícone redesenhado para a barra de tarefas, notificações do Windows e atalhos: quadrado em degradê azul (estilo Windows 11) com o prompt `>_` branco; sem abas coloridas nem janela desenhada. Versão de 16 e 32 px sem brilhos. Gerado com `tools/make-icon.js`; conferido o ícone embutido no `Termix.exe` empacotado.
