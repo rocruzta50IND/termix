@@ -1,0 +1,41 @@
+// Lança o auxiliar da atualização (TASK-056): uma janelinha separada (src/update-helper.ps1) que sobrevive ao fechamento do app e
+// mostra "Atualizando o Termix…" até ele abrir de novo. Se qualquer coisa falhar, a atualização segue normalmente, só sem a janelinha.
+const { spawn } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
+const SCRIPT_SRC = path.join(__dirname, 'update-helper.ps1');
+const SCRIPT_TMP = path.join(os.tmpdir(), 'termix-updating.ps1'); // roda de uma cópia: o instalador vai trocar os arquivos da pasta do app
+const TIMELINE = path.join(os.tmpdir(), 'termix-updating.json'); // o auxiliar grava aqui quando o app fechou e quando voltou
+
+function startUpdateHelper({ version = '', parentPid = process.pid, processName = path.basename(process.execPath, '.exe'), timeoutSec = 600, shot = '' } = {}) {
+  if (process.platform !== 'win32') return false;
+  try {
+    try { fs.unlinkSync(TIMELINE); } catch { /* sem registro anterior */ }
+    // o PowerShell 5.1 só lê acentos certos se o arquivo tiver BOM
+    fs.writeFileSync(SCRIPT_TMP, '﻿' + fs.readFileSync(SCRIPT_SRC, 'utf8').replace(/^﻿/, ''), 'utf8');
+    const args = ['-NoProfile', '-NonInteractive', '-STA', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', SCRIPT_TMP,
+      '-ParentPid', String(parentPid), '-Version', String(version), '-ProcessName', processName, '-TimeoutSec', String(timeoutSec), '-Timeline', TIMELINE];
+    if (shot) args.push('-Shot', shot);
+    // sem `detached`: no Windows o filho não morre com o pai, e com `detached` o PowerShell perde o console e sai na hora, sem janela
+    const child = spawn('powershell.exe', args, { stdio: 'ignore', windowsHide: true });
+    child.on('error', () => { /* sem PowerShell: segue sem a janelinha */ });
+    child.unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// quanto tempo o app ficou fechado (do último instante dele até a janela voltar), medido pelo auxiliar; null se não houver registro
+function readHelperTimeline() {
+  try {
+    const t = JSON.parse(fs.readFileSync(TIMELINE, 'utf8').replace(/^﻿/, ''));
+    try { fs.unlinkSync(TIMELINE); } catch { /* ignora */ }
+    if (t && t.closedAt && t.backAt && t.backAt >= t.closedAt) return { closedMs: t.backAt - t.closedAt };
+  } catch { /* sem registro */ }
+  return null;
+}
+
+module.exports = { startUpdateHelper, readHelperTimeline };

@@ -4,6 +4,7 @@
 const { app, ipcMain, Notification } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const { startUpdateHelper, readHelperTimeline } = require('./update-helper');
 
 const FIRST_CHECK_MS = 15 * 1000;
 const EVERY_MS = 4 * 60 * 60 * 1000;
@@ -11,6 +12,7 @@ const EVERY_MS = 4 * 60 * 60 * 1000;
 // TASK-050: retorno durante a atualização. Ao clicar em Atualizar: a interface mostra um cartão "Atualizando…" e o main avisa por
 // notificação do Windows (que continua na tela enquanto o instalador roda sem janela); grava update-pending.json com a hora do clique;
 // ao abrir na versão nova, a interface mostra "Termix atualizado para a X" com o tempo que levou.
+// TASK-056: com o app fechado, um auxiliar separado (update-helper.ps1) mostra "Atualizando…" até o Termix abrir de novo.
 const INSTALL_DELAY_MS = 2500; // dá tempo de a interface mostrar o cartão antes de o app fechar
 const pendingFile = () => path.join(app.getPath('userData'), 'update-pending.json');
 
@@ -19,10 +21,11 @@ function setupUpdater(getWin) {
   try {
     const p = JSON.parse(fs.readFileSync(pendingFile(), 'utf8'));
     fs.unlinkSync(pendingFile());
-    if (p && p.to === app.getVersion()) just = { from: p.from, to: p.to, ms: Date.now() - p.t0 };
+    if (p && p.to === app.getVersion()) just = { from: p.from, to: p.to, ms: Date.now() - p.t0, ...(readHelperTimeline() || {}) }; // closedMs: quanto o app ficou fechado
   } catch { /* sem atualização pendente */ }
   ipcMain.handle('update:just', () => { const j = just; just = null; return j; });
   const beginInstall = (version, write) => {
+    if (write) startUpdateHelper({ version }); // TASK-056: janelinha separada que cobre o tempo em que o app está fechado
     try { if (write) fs.writeFileSync(pendingFile(), JSON.stringify({ from: app.getVersion(), to: version, t0: Date.now() })); } catch { /* o aviso de "atualizado" é só um extra */ }
     try { if (Notification.isSupported()) new Notification({ title: 'O Termix está atualizando', body: `Para a versão ${version}. Ele reabre sozinho em instantes; não precisa fazer nada.` }).show(); } catch { /* sem notificação */ }
   };

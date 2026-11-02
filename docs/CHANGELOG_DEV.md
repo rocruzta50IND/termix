@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-056 — Janelinha "Atualizando…" enquanto o app está fechado** (DEV1)
+
+- Um auxiliar separado (PowerShell) mostra uma janelinha com o tempo decorrido do instante em que o Termix fecha até ele abrir de novo, e some sozinho; o aviso "atualizado" passou a informar também quanto tempo o app ficou fechado. Testado por simulação; o teste real exige duas versões seguidas com o auxiliar (0.2.3 → 0.2.4).
+
 **Promoção dev1 → main (versão 0.2.2)** (DEV1)
 
 - Promovidas as TASK-053 (menu do projeto com o botão direito) e TASK-054 (botão de copiar a resposta), mais os registros de encerramento das TASK-037, 038, 039, 049 e 050. Versão do app: 0.2.2. A TASK-055 (publicação e validação da atualização ao vivo) está em andamento.
