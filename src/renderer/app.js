@@ -865,13 +865,12 @@ function renderTabs() {
   if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
-  const mixed = openTabs(p).some((t) => t.kind === 'chat'); // só mostra CHAT/TERM nas abas se o projeto tem chats
   const st = stOf(cur), [sc, sl] = STATES[st];
   if (document.hasFocus() && RT[cur.id]) RT[cur.id].unread = null; // a aba à vista, com o app em foco, já foi vista
   $('#sess').style.setProperty('--tc', cur.color);
   $('#sess').classList.toggle('working', st === 'work');
   $('#tabsRow').classList.toggle('working', st === 'work');
-  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${mixed ? `<span class="md" title="${t.kind === 'chat' ? 'Aba de chat' : 'Aba de terminal'}">${ic(t.kind === 'chat' ? 'chat' : 'terminal', 12)}<b>${t.kind === 'chat' ? 'CHAT' : 'TERM'}</b></span>` : ''}${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
+  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
     + `<button class="plus" data-newtab="${chatNewKey()}" title="${chatCfg().mode === 'chat' ? 'Novo chat (Claude Code)' : 'Novo terminal (Claude Code)'}">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
     <span class="sp"></span>
     <div class="tctl">

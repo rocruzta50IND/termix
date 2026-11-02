@@ -471,15 +471,6 @@ _Nenhuma no momento._
 
 ## Backlog
 
-### TASK-043 — Ícone do Claude nas mensagens do chat
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Baixa (visual) — pedido do usuário em 2026-11-02, com captura do avatar atual
-- **Objetivo:** o avatar da resposta no chat hoje é a marca do Termix (`>_` em quadrado azul). O usuário quer **o ícone do próprio Claude** nas mensagens (a pergunta continua com o ícone de pessoa).
-- **A decidir ao começar:** qual ícone (o mascote pixelado laranja que o Claude Code mostra no terminal, ou o brilho/estrela do Claude) e como desenhar: um SVG simples próprio, em `src/renderer/chat.js` (`CHAT_MARK`) e `styles.css` (`.c-av`). Lembrar que é uma marca de terceiros; para uso pessoal tudo bem, mas não entra em material de divulgação (TASK-036) sem checar. No visual Fluxo os rótulos de texto continuam.
-- **Critérios de aceite:** avatar da resposta com o ícone escolhido, nítido em 30 px; cor de fundo coerente com o tema; sem quebrar o visual Fluxo; captura antes e depois.
-
 ### TASK-044 — Trocar o modo de uma aba aberta (chat ↔ terminal) e o aviso de que a configuração só vale para abas novas
 
 - **Responsável:** DEV1

@@ -516,9 +516,6 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 @media (prefers-reduced-motion:reduce){#appfoot .nd,#appfoot button.rst.spin svg,#appfoot button.clr.pulse{animation:none}}
 
 /* ---------- aba: etiqueta do modo (só quando o projeto tem chats) ---------- */
-.tab .md{display:flex;align-items:center;font-size:9.5px;letter-spacing:.3px;padding:2px 6px;border-radius:99px;background:rgba(255,255,255,.09);color:var(--text2);flex:none}
-.tab .md b{display:none} /* só o ícone: o texto CHAT/TERM fica na dica, para o nome da aba ter espaço */
-.tab.active .md{background:color-mix(in srgb,var(--c) 40%,transparent);color:#fff}
 
 /* ---------- Chat (TASK-040): a conversa no lugar do terminal ---------- */
 .chatv{flex:1;min-height:0;position:relative;background:rgba(9,7,20,var(--term-op))}
@@ -537,10 +534,10 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-row{display:flex;gap:12px;align-items:flex-start}
 .c-row.me{flex-direction:row-reverse}
 .c-av{width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:700}
-.c-row.ai .c-av{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;box-shadow:0 4px 14px rgba(59,130,246,.35)}
+.c-row.ai .c-av,.c-typing .c-av{background:none;box-shadow:none;color:var(--accent)}
+.c-row.ai .c-av svg,.c-typing .c-av svg{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 55%,transparent))}
 .c-row.me .c-av{background:var(--glass2);color:var(--text2)}
-.c-av svg{width:18px;height:18px}
-.c-flow .c-av svg{display:none}
+.c-av svg{width:18px;height:18px}.c-row.ai .c-av svg,.c-typing .c-av svg{width:24px;height:24px}
 .c-bub{max-width:calc(100% - 44px);min-width:0;padding:11px 15px;border-radius:16px;line-height:1.55;user-select:text;font-size:14px;overflow-wrap:anywhere}
 .c-row.ai .c-bub{background:rgba(255,255,255,.055);border:1px solid var(--border);border-top-left-radius:6px}
 .c-row.me .c-bub{background:linear-gradient(135deg,rgba(91,157,255,.34),rgba(59,110,230,.24));border:1px solid rgba(91,157,255,.4);border-top-right-radius:6px}
@@ -572,12 +569,22 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-tool .tb{padding:8px 12px 10px;border-top:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--text2);white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;user-select:text}
 .c-sys{align-self:center;max-width:90%;text-align:center;font-size:12px;color:var(--text3);background:var(--glass);border:1px solid var(--border);border-radius:14px;padding:4px 14px}
 .c-sys.err{color:#fca5a5;border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08)}
-.c-typing{display:none;align-items:center;gap:5px;padding:2px 0 2px 42px}
+.c-typing{display:none;align-items:center;gap:5px;padding:2px 0}
 .c-typing.on{display:flex}
-.c-typing i{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:ctyp 1.2s ease-in-out infinite}
-.c-typing i:nth-child(2){animation-delay:.15s}.c-typing i:nth-child(3){animation-delay:.3s}
-@keyframes ctyp{0%,60%,100%{opacity:.25;transform:none}30%{opacity:1;transform:translateY(-3px)}}
-@media (prefers-reduced-motion:reduce){.c-caret,.c-typing i{animation:none}}
+/* símbolos do Claude animados enquanto ele trabalha (resposta em andamento e "pensando"); um é sorteado por mensagem */
+:is(.c-row.live,.c-typing) .wk .ray{transform-origin:16px 16px;animation:cray 1.3s ease-in-out infinite;animation-delay:calc(var(--i)*-.108s)}
+@keyframes cray{0%,100%{transform:scale(.7);opacity:.45}50%{transform:scale(1.1);opacity:1}}
+:is(.c-row.live,.c-typing) .wk .dt{transform-origin:center;transform-box:fill-box;animation:cdot 1.2s ease-in-out infinite;animation-delay:calc(var(--i)*-.15s)}
+@keyframes cdot{0%,100%{transform:scale(.45);opacity:.3}40%{transform:scale(1.15);opacity:1}}
+:is(.c-row.live,.c-typing) .wk .rp{transform-origin:16px 16px;animation:crip 1.8s ease-out infinite;animation-delay:calc(var(--i)*-.9s)}
+@keyframes crip{0%{transform:scale(.2);opacity:1}100%{transform:scale(1);opacity:0}}
+:is(.c-row.live,.c-typing) .wk .bar{transform-origin:16px 16px;animation:cbar 1s ease-in-out infinite;animation-delay:calc(var(--i)*-.17s)}
+@keyframes cbar{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1.15)}}
+:is(.c-row.live,.c-typing) .wk .cur{animation:ccur 1s steps(1) infinite}
+@keyframes ccur{50%{opacity:0}}
+:is(.c-row.live,.c-typing) .wk .ch{animation:cch 1s ease-in-out infinite}
+@keyframes cch{0%,100%{transform:translateX(0)}50%{transform:translateX(2.5px)}}
+@media (prefers-reduced-motion:reduce){.c-caret,.wk *{animation:none!important}}
 /* início da conversa (sem mensagens) */
 .c-empty{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding-bottom:40px;text-align:center}
 .c-root.c-new .c-empty{display:flex}
@@ -611,17 +618,6 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-perm.w{color:var(--warn)}
 .c-ring{width:18px;height:18px;border-radius:50%;margin:0 6px 0 4px;background:conic-gradient(var(--accent) calc(var(--v,0)*1%),rgba(255,255,255,.14) 0);-webkit-mask:radial-gradient(circle,transparent 5px,#000 6px);mask:radial-gradient(circle,transparent 5px,#000 6px)}
 /* visual "Fluxo": sem bolhas, leitura contínua com régua de cor */
-.c-flow .c-thread{max-width:860px;gap:0}
-.c-flow .c-row{flex-direction:column;gap:5px;align-items:stretch;padding:18px 0 18px 20px;border-left:2px solid transparent}
-.c-flow .c-row.me{border-left-color:var(--tc,#5B9DFF);background:linear-gradient(90deg,color-mix(in srgb,var(--tc,#5B9DFF) 16%,transparent),transparent 78%)}
-.c-flow .c-row.ai{border-left-color:var(--border)}
-.c-flow .c-av{width:auto;height:auto;background:none!important;border-radius:0;display:block;font-size:11px;letter-spacing:.9px;text-transform:uppercase;font-weight:650;color:var(--text3)!important}
-.c-flow .c-row.me .c-av{color:var(--tc,#5B9DFF)!important}
-.c-flow .c-row.ai .c-av::after{content:"Claude"}.c-flow .c-row.me .c-av::after{content:"Você"}
-.c-flow .c-bub{max-width:100%;background:none!important;border:0!important;border-radius:0;padding:0;font-size:14.5px;line-height:1.68}
-.c-flow .c-tool{margin:0 0 0 22px;max-width:calc(100% - 22px);border:0;border-left:2px solid var(--border2);border-radius:0;background:none}
-.c-flow .c-sys{margin:6px auto}
-.c-flow .c-typing{padding-left:22px}
 
 /* imagens coladas no chat (TASK-041) */
 .c-in{flex-wrap:wrap}

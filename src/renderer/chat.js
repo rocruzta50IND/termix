@@ -68,7 +68,23 @@ function chatEnsure(tab) {
   return (RT[tab.id] = { chat: true, term: CHAT_TERM, fit: { fit() {} }, el: document.createElement('div'), opened: true, alive: false, st: 'wait', hooks: true, lastData: 0, lastInput: 0, spawnAt: 0, evidence: true, killing: false, waiter: null });
 }
 
-const CHAT_MARK = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l8 7-8 7"/><path d="M17 24h10"/></svg>'; // marca do Termix (>_)
+const CHAT_MARK = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l8 7-8 7"/><path d="M17 24h10"/></svg>'; // marca do Termix (>_), parada
+const CHAT_SPARK = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path class="ray" style="--i:0" d="M16.0 12.0L16.0 2.0"/><path class="ray" style="--i:1" d="M18.0 12.5L21.3 6.9"/><path class="ray" style="--i:2" d="M19.5 14.0L27.7 9.3"/><path class="ray" style="--i:3" d="M20.0 16.0L26.0 16.0"/><path class="ray" style="--i:4" d="M19.5 18.0L28.6 23.3"/><path class="ray" style="--i:5" d="M18.0 19.5L21.5 25.5"/><path class="ray" style="--i:6" d="M16.0 20.0L16.0 29.0"/><path class="ray" style="--i:7" d="M14.0 19.5L11.0 24.7"/><path class="ray" style="--i:8" d="M12.5 18.0L3.9 23.0"/><path class="ray" style="--i:9" d="M12.0 16.0L5.5 16.0"/><path class="ray" style="--i:10" d="M12.5 14.0L4.3 9.2"/><path class="ray" style="--i:11" d="M14.0 12.5L10.5 6.5"/></svg>'; // brilho em raios, usado só animado
+// símbolos animados de "trabalhando" (todos no azul do app): um por mensagem, em rodízio; a resposta pronta fica com o símbolo que rodou, parado (respostas do histórico, sem símbolo, usam o >_)
+const CHAT_WORK = [
+  CHAT_SPARK.replace('<svg ', '<svg class="wk spark" '),
+  '<svg class="wk orbit" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle class="dt" style="--i:0" cx="16.0" cy="5.0" r="2.3" fill="currentColor" stroke="none"/><circle class="dt" style="--i:1" cx="23.8" cy="8.2" r="2.3" fill="currentColor" stroke="none"/><circle class="dt" style="--i:2" cx="27.0" cy="16.0" r="2.3" fill="currentColor" stroke="none"/><circle class="dt" style="--i:3" cx="23.8" cy="23.8" r="2.3" fill="currentColor" stroke="none"/><circle class="dt" style="--i:4" cx="16.0" cy="27.0" r="2.3" fill="currentColor" stroke="none"/><circle class="dt" style="--i:5" cx="8.2" cy="23.8" r="2.3" fill="currentColor" stroke="none"/><circle class="dt" style="--i:6" cx="5.0" cy="16.0" r="2.3" fill="currentColor" stroke="none"/><circle class="dt" style="--i:7" cx="8.2" cy="8.2" r="2.3" fill="currentColor" stroke="none"/></svg>',
+  '<svg class="wk ripple" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="16" cy="16" r="2.6" fill="currentColor" stroke="none"/><circle class="rp" style="--i:0" cx="16" cy="16" r="12"/><circle class="rp" style="--i:1" cx="16" cy="16" r="12"/></svg>',
+  '<svg class="wk bars" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path class="bar" style="--i:0" d="M6 9V23"/><path class="bar" style="--i:1" d="M11 9V23"/><path class="bar" style="--i:2" d="M16 9V23"/><path class="bar" style="--i:3" d="M21 9V23"/><path class="bar" style="--i:4" d="M26 9V23"/></svg>',
+  '<svg class="wk prompt" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path class="ch" d="M6 9l8 7-8 7"/><path class="cur" d="M17 24h10"/></svg>',
+];
+let chatVar = 0; // símbolo da vez
+function chatAvatar(el, v) { // troca o avatar da resposta entre o brilho parado (v = null) e o símbolo animado v
+  const a = el.querySelector('.c-av'); if (!a) return;
+  const key = v == null ? 's' : String(v);
+  if (a.dataset.v === key) return;
+  a.dataset.v = key; a.innerHTML = v == null ? CHAT_MARK : CHAT_WORK[v];
+}
 const CHAT_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1-3.8 3.6-5.6 7-5.6s6 1.8 7 5.6"/></svg>';
 const CHAT_ICON = {
   send: '<path d="M12 19V5M5 12l7-7 7 7"/>',
@@ -85,7 +101,7 @@ function chatView(tab) {
   const root = document.createElement('div');
   root.className = 'c-root'; root.dataset.chat = tab.id;
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
-    <div class="c-scroll"><div class="c-thread"><div class="c-typing"><i></i><i></i><i></i></div></div></div>
+    <div class="c-scroll"><div class="c-thread"><div class="c-typing"><span class="c-av">${CHAT_MARK}</span></div></div></div>
     <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>
       <div class="c-in"><div class="c-thumbs"></div><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
         <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
@@ -226,6 +242,9 @@ function chatPaintItem(it) {
   if (it.k === 'me') { d.className = 'c-row me'; d.innerHTML = `<div class="c-av">${CHAT_USER}</div><div class="c-bub">${(it.imgs || []).length ? `<div class="c-imgs">${it.imgs.map((u) => `<img src="${u}" alt="Imagem enviada">`).join('')}</div>` : ''}${it.text ? chatMd(it.text) : ''}</div>`; }
   else if (it.k === 'ai') {
     if (!d.firstChild) { d.className = 'c-row ai'; d.innerHTML = `<div class="c-av">${CHAT_MARK}</div><div class="c-bub"></div>`; }
+    d.classList.toggle('live', !!it.live);
+    if (it.live && it.v == null) it.v = chatVar;
+    chatAvatar(d, it.v == null ? null : it.v); // terminou: fica o símbolo que estava animando, parado
     d.querySelector('.c-bub').innerHTML = chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : '');
   } else if (it.k === 'sys') { d.className = 'c-sys' + (it.err ? ' err' : ''); d.textContent = it.text; }
   else if (it.k === 'tool') {
@@ -262,7 +281,9 @@ function chatUi(tab) {
   const p = f.p, last = c.items[c.items.length - 1];
   c.root.classList.toggle('busy', c.busy);
   c.root.classList.toggle('c-new', !c.items.length); // (não usar a classe 'empty': o app.js já tem uma com outro desenho)
-  c.typing.classList.toggle('on', c.busy && !(last && last.k === 'ai' && last.live));
+  const think = c.busy && !(last && last.k === 'ai' && last.live);
+  c.typing.classList.toggle('on', think);
+  if (think) chatAvatar(c.typing, c.v == null ? chatVar : c.v);
   c.root.querySelector('.c-empty h2').textContent = `Nova conversa em ${p.name}`;
   c.root.querySelector('.c-empty p').textContent = p.path;
   c.root.querySelector('.c-folder span').textContent = p.name;
@@ -331,6 +352,7 @@ async function chatSendMsg(tab, text, imgs = []) {
   UI.events = UI.events.filter((e) => !(e.kind === 'cache' && e.tabId === tab.id)); // mandou mensagem: o cache foi renovado
   chatAdd(c, { k: 'me', text: text.trim(), imgs: imgs.map((m) => m.url) });
   c.busy = true; c.stick = true; c.lastAi = '';
+  chatVar = c.v = (chatVar + 1) % CHAT_WORK.length; // rodízio: cada mensagem usa o próximo símbolo
   setSt(tab, 'work'); chatUi(tab);
   const res = await api.chatSend(tab.id, text.trim(), imgs.map((m) => ({ mt: m.mt, data: m.data })));
   if (!res.ok) { c.busy = false; chatSys(c, 'Não consegui enviar: o processo do Claude Code não está ativo. Envie de novo para reiniciá-lo.', true); r.alive = false; setSt(tab, 'wait'); chatUi(tab); return; }

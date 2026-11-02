@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-043 — Avatar do chat: símbolo azul do app, animado quando trabalha** (DEV1)
+
+- O avatar da resposta virou só o símbolo, sem fundo, no azul do app com brilho suave (`>_` parado; silhueta na pergunta). Enquanto o Claude pensa e responde, o símbolo anima, em rodízio entre 5 (brilho em raios, órbita de pontos, ondas, barras e prompt com cursor piscando); ao terminar a resposta guarda o símbolo que rodou, parado. Saiu o ícone Chat/Terminal das abas e o visual Fluxo já tinha saído. Testado com o Claude Code real. Aprovada pelo usuário.
+
 **TASK-046 — Barra superior: sino centralizado e botões da janela** (DEV1)
 
 - O sino ficava ~1 px fora do centro do círculo (padding global dos botões); corrigido. Minimizar, maximizar e fechar viraram pílulas com realce discreto; o fechar usa vermelho translúcido em vez do bloco vermelho de ponta a ponta; o sino ficou só o ícone, com o círculo no hover. Aprovada pelo usuário.
