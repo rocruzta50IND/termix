@@ -12,10 +12,12 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
+## Validadas em DEV1
+
 ### TASK-040 — Modo Chat por aba (conversa visual sobre o Claude Code)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (implementado e testado pelo Claude com o Claude Code real; falta o usuário usar)
+- **Status:** VALIDADA EM DEV1 (testada pelo usuário na janela de demonstração e aprovada em 2026-11-02; ajustes de visual feitos durante a revisão)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-02 (pausa a TASK-036)
 - **Objetivo:** uma aba de chat (bolhas com Markdown) no lugar do terminal, falando com o Claude Code por `claude -p` em stream-json, sem API externa; as abas de terminal e de chat convivem; o modo vem de Configurações; as funções (Terminais, Web, Clear, Reiniciar) moram num rodapé do app.
 - **Decisões (usuário, 2026-11-02):** layout aprovado em `docs/prototipos/chat-layout.html` (app como está, só a área do terminal vira chat; compositor no desenho do Claude; funções no rodapé do app; modo e visual do chat nas Configurações); ideia das baias e o layout B (app inteiro) descartados; permissões em Automático no protótipo.
@@ -25,9 +27,9 @@ _Nenhuma no momento._
 - **Como validar:** `npm start`; o "+" já cria um Chat (Configurações > Chat muda para Terminal; o menu ao lado do "+" tem os dois). Mande uma mensagem que use uma ferramenta, pare uma resposta longa, feche e reabra o app (o histórico volta), use Clear e Reiniciar no rodapé, troque Bolhas/Fluxo e Automático/Perguntar nas Configurações.
 - **Ajustes pedidos pelo usuário (2026-11-02, após ver o app):** avatar "C" trocado pela marca do Termix (e silhueta na pergunta); engrenagem do rail movida para o rodapé; rail sem fundo, só os anéis flutuando; configuração de cada anel e do rodapé na engrenagem e em Configurações > Rail e rodapé.
 - **Pendências / limitações:** não há cartão de aprovação no chat (em Perguntar o `-p` só nega e avisa); o "+" de anexo e o microfone do desenho do Claude não existem; sem seletor de modelo/esforço (o modelo mostrado é o da sessão); sem limites 5 h/7 d nem cache no rail com só chats (vêm da status line do terminal); o custo da conversa não é mostrado; imagens e colagem de arquivos não testadas; uma aba não troca de modo depois de aberta; testado sem projeto no fluxo Rocruzta; o aviso de fechar o app conta chats com processo vivo; muitas abas continuam apertando os nomes (TASK-039).
-- **Próximo passo:** o usuário testar; com a aprovação, fechar a tarefa e voltar à TASK-036 (README). Candidatas: cartão de aprovação no chat (Perguntar de verdade), seletor de modelo/esforço, anexos, limites e cache no rail do chat.
-
-## Validadas em DEV1
+- **Ajustes finais (2026-11-02):** rodapé do chat alinhado à coluna da caixa de prompt (funções à esquerda, engrenagem na ponta direita); decisão de manter os dois modos por ora (o Terminal pode sair no futuro).
+- **Próximo passo:** próximas tarefas pedidas pelo usuário, no Backlog: TASK-044 (trocar o modo de uma aba aberta) e TASK-045 (menu "/" no chat), as de maior impacto no uso; depois TASK-041 (imagens coladas), TASK-042 (telas sem o fundo nas bordas), TASK-043 (ícone do Claude), TASK-046 (barra superior), TASK-033 já validada, TASK-036 (README).
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir (e só com a versão consolidada e o instalador testado).
 
 ### TASK-033 — Arrastar e soltar das abas dos terminais não funciona direito (CRÍTICA)
 

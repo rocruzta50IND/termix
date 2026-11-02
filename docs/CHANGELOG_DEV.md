@@ -13,6 +13,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Nova aba de chat: conversa em bolhas (ou fluxo) com Markdown, ferramentas em cartões, código com Copiar, parar a resposta e histórico ao reabrir, falando com o Claude Code por `claude -p` em stream-json (sem API externa; mesma sessão do Claude Code, retomada pelo ID). Terminais e chats convivem na mesma barra; Configurações > Chat define o modo das abas novas (o "+"), o visual e as permissões (Automático ou Perguntar).
 - As funções Terminais · Web | Clear · Reiniciar saíram da janelinha flutuante e foram para um rodapé dentro da base de vidro do app (vale para terminais, Web e chat).
 - Testado com o Claude Code real em instância isolada, inclusive o terminal de sempre. Limitações e candidatas na TASK-040 do TASKS.md.
+- Ajustes depois da revisão do usuário: avatar do Claude com a marca do Termix, rail sem fundo (só os anéis) com cada anel configurável, engrenagem do rail no rodapé (e Configurações > Rail e rodapé), rodapé do chat alinhado à coluna da caixa de prompt. Aprovada em 2026-11-02. Novas tarefas no Backlog: 041 a 046.
 
 **TASK-033 — Arrastar e soltar das abas** (DEV1)
 
