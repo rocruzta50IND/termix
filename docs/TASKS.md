@@ -22,6 +22,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-052 — Alinhar as bolhas do chat (pergunta, resposta e ferramentas na mesma coluna)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média (visual) — pedido do usuário em 2026-11-02, com captura: a pergunta longa ia de ~158 a ~1058, enquanto a resposta e os cartões de ferramenta iam de ~208 a ~1110; as bordas não coincidiam.
+- **Objetivo:** pergunta, resposta e cartões de ferramenta usam a **mesma faixa**, com as mesmas bordas esquerda e direita; os avatares ficam nas calhas laterais.
+- **Feito:** `src/renderer/styles.css`: `.c-bub` e `.c-tool` com `max-width: calc(100% - 84px)` (calha de 42 px de cada lado: a do avatar da resposta à esquerda e a do avatar da pergunta à direita); comentário no CSS.
+- **Testado (CDP, instância isolada, itens de exemplo):** medidas: pergunta longa 415–1095, resposta longa 415–1095 e cartões 415–1095 (iguais); bolhas curtas continuam encostadas na sua lateral; captura conferida. Não testado: janela estreita (980) e conversa com código largo/tabelas.
+- **Como validar:** `npm start`, abrir um chat com perguntas e respostas longas e cartões de ferramenta: todas as bordas devem coincidir.
+
 ### TASK-051 — Mostrar no chat o que o Claude está fazendo enquanto trabalha
 
 - **Responsável:** DEV1

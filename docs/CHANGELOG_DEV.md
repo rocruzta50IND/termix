@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-052 — Bolhas do chat alinhadas** (DEV1)
+
+- Pergunta, resposta e cartões de ferramenta passaram a usar a mesma coluna (mesmas bordas esquerda e direita), com os avatares nas calhas laterais. Medido por CDP em instância isolada.
+
 **TASK-051 — O chat mostra o que o Claude está fazendo** (DEV1)
 
 - Enquanto o agente trabalha, o chat mostra o símbolo animado, um verbo que muda, o tempo e uma linha com a ação do momento (executando um comando, lendo um arquivo, analisando o resultado), como o "Manifesting…" do terminal. Testado com o Claude Code real.

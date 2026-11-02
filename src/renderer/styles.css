@@ -541,7 +541,8 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-row.ai .c-av svg,.c-typing .c-av svg{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--accent) 55%,transparent))}
 .c-row.me .c-av{background:var(--glass2);color:var(--text2)}
 .c-av svg{width:18px;height:18px}.c-row.ai .c-av svg,.c-typing .c-av svg{width:24px;height:24px}
-.c-bub{max-width:calc(100% - 44px);min-width:0;padding:11px 15px;border-radius:16px;line-height:1.55;user-select:text;font-size:14px;overflow-wrap:anywhere}
+/* coluna única: os avatares ficam nas calhas de 42 px (a da resposta à esquerda, a da pergunta à direita); bolhas e cartões usam a mesma faixa, com as mesmas bordas */
+.c-bub{max-width:calc(100% - 84px);min-width:0;padding:11px 15px;border-radius:16px;line-height:1.55;user-select:text;font-size:14px;overflow-wrap:anywhere}
 .c-row.ai .c-bub{background:rgba(255,255,255,.055);border:1px solid var(--border);border-top-left-radius:6px}
 .c-row.me .c-bub{background:linear-gradient(135deg,rgba(91,157,255,.34),rgba(59,110,230,.24));border:1px solid rgba(91,157,255,.4);border-top-right-radius:6px}
 .c-bub>:first-child{margin-top:0}.c-bub>:last-child{margin-bottom:0}
@@ -561,7 +562,7 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-bub code .k-k,.k-k{color:#c4a7ff}.k-s{color:#86e0a6}.k-c{color:#6F7A8E}.k-f{color:#7cc4ff}
 .c-caret{display:inline-block;width:7px;height:15px;margin-left:2px;vertical-align:-2px;background:var(--accent);border-radius:2px;animation:cblink 1s steps(2) infinite}
 @keyframes cblink{50%{opacity:0}}
-.c-tool{margin:-4px 0 0 42px;max-width:calc(100% - 42px);border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.035);overflow:hidden;font-size:13px}
+.c-tool{margin:-4px 0 0 42px;max-width:calc(100% - 84px);border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.035);overflow:hidden;font-size:13px}
 .c-tool summary{list-style:none;display:flex;align-items:center;gap:10px;padding:7px 12px;cursor:pointer;color:var(--text2)}
 .c-tool summary::-webkit-details-marker{display:none}
 .c-tool .ti{width:22px;height:22px;border-radius:7px;background:rgba(91,157,255,.18);color:var(--accent);display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
