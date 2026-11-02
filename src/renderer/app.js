@@ -23,6 +23,7 @@ function gearPath() {
 const ICONS = {
   panel: '<rect x="3" y="4.5" width="18" height="15" rx="3.5"/><path d="M9.5 4.5v15"/>',
   bell: '<path d="M6 10a6 6 0 0 1 12 0c0 4.6 1.8 6 1.8 6H4.2S6 14.6 6 10z"/><path d="M10 19.2a2.2 2.2 0 0 0 4 0"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
   terminal: '<path d="M7.5 4.5h10a3.5 3.5 0 0 1 3.5 3.5v8"/><rect x="3" y="8" width="15" height="12" rx="3"/><path d="M7 12.4l2.4 1.9L7 16.2M11.6 16.4h3"/>',
   plug: '<path d="M9 3.5v4M15 3.5v4"/><path d="M6.5 7.5h11v3.2a5.5 5.5 0 0 1-11 0V7.5z"/><path d="M12 16.2v4.3"/>',
   sparkles: '<path d="M11 4l1.7 4.6L17.3 10l-4.6 1.4L11 16l-1.7-4.6L4.7 10l4.6-1.4L11 4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"/>',
@@ -77,7 +78,7 @@ function findTab(tabId) {
   for (const p of S.projects) { const tab = p.tabs.find((t) => t.id === tabId); if (tab) return { p, tab }; }
   return null;
 }
-const stOf = (tab) => (RT[tab.id] ? RT[tab.id].st : 'end');
+const stOf = (tab) => (RT[tab.id] ? RT[tab.id].st : tab.kind === 'chat' ? 'wait' : 'end');
 const aliveTabs = () => S.projects.flatMap((p) => p.tabs.filter((t) => RT[t.id] && RT[t.id].alive).map((t) => ({ p, tab: t })));
 
 /* ---------- eventos (notificações) ---------- */
@@ -158,6 +159,7 @@ function termTheme() {
 
 function ensureRT(tab) {
   if (RT[tab.id]) return RT[tab.id];
+  if (tab.kind === 'chat') return chatEnsure(tab); // aba de chat (chat.js): sem terminal
   const term = new Terminal({
     fontFamily: '"Cascadia Mono","Cascadia Code",Consolas,monospace',
     fontSize: 13, cursorBlink: true, allowTransparency: true, scrollback: 5000, theme: termTheme(),
@@ -202,6 +204,7 @@ function setGL(r, on) {
 
 function showTab(tab) {
   const r = ensureRT(tab);
+  $('#termHost').classList.remove('hide'); $('#chatHost').classList.add('hide'); $('#sess').classList.remove('chatmode');
   for (const o of Object.values(RT)) if (o !== r) setGL(o, false);
   document.querySelectorAll('.tview').forEach((el) => el.classList.remove('on'));
   r.el.classList.add('on');
@@ -237,6 +240,7 @@ function sendSummary() {
 }
 
 async function launch(p, tab, mode) {
+  if (tab.kind === 'chat') return chatOpen(p, tab, mode);
   const r = ensureRT(tab);
   // aba criada mas nunca usada: não há histórico para retomar (o Claude diria "No conversation found"); abre a mesma conversa vazia
   if (mode === 'resume' && !(await api.sessionExists(p.path, tab.sessionId))) mode = 'new';
@@ -271,12 +275,13 @@ function stopProc(tab) {
   if (!r || !r.alive) return Promise.resolve();
   return new Promise((resolve) => {
     r.killing = true; r.waiter = resolve;
-    api.kill(tab.id);
+    if (tab.kind === 'chat') api.chatStop(tab.id); else api.kill(tab.id);
     setTimeout(() => { if (r.waiter) { r.waiter = null; r.alive = false; resolve(); } }, 3000);
   });
 }
 
 async function restartTab(p, tab) {
+  if (tab.kind === 'chat') return chatRestart(p, tab);
   const r = RT[tab.id];
   if (r && r.alive) {
     if (r.st === 'work') {
@@ -297,6 +302,7 @@ async function restartTab(p, tab) {
 }
 
 async function newConversation(p, tab) {
+  if (tab.kind === 'chat') return chatNew(p, tab);
   await stopProc(tab);
   tab.sessionId = uuid(); tab.started = false;
   save();
@@ -500,6 +506,10 @@ function markCount(term) { // quantas vezes o aviso final aparece no texto do te
 function clearDockState(p) {
   const tab = p && curTab(p), r = tab && RT[tab.id];
   if (!tab || !openTabs(p).length) return null;
+  if (tab.kind === 'chat') { // chat: Clear = conversa nova; Reiniciar = reinicia o processo (a conversa continua)
+    const c = CH[tab.id], busy = !!(c && c.busy);
+    return { off: busy || !(tab.started || (c && c.items.length)), busy: false, pulse: false, rst: { spin: false, off: busy, tip: 'Reiniciar o processo (a conversa continua)' } };
+  }
   const cp = ((MET[tab.id] || {}).context_window || {}).used_percentage;
   const ready = !!(r && r.alive && r.st === 'wait' && !r.flow);
   const a = +clearCfg().alert;
@@ -510,6 +520,7 @@ function clearDockState(p) {
 function dockRestart() { const p = curProject(), tab = p && curTab(p); if (tab) restartTab(p, tab); }
 async function clearFlow() {
   const p = curProject(), tab = p && curTab(p), r = tab && RT[tab.id];
+  if (tab && tab.kind === 'chat') return chatClearFlow(p, tab);
   if (!r || !r.alive || r.st !== 'wait' || r.flow) return;
   const pr = await clearPrompts(p);
   if (!r.alive || r.st !== 'wait' || r.flow) return;
@@ -836,13 +847,14 @@ function renderTabs() {
   if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
+  const mixed = openTabs(p).some((t) => t.kind === 'chat'); // só mostra CHAT/TERM nas abas se o projeto tem chats
   const st = stOf(cur), [sc, sl] = STATES[st];
   if (document.hasFocus() && RT[cur.id]) RT[cur.id].unread = null; // a aba à vista, com o app em foco, já foi vista
   $('#sess').style.setProperty('--tc', cur.color);
   $('#sess').classList.toggle('working', st === 'work');
   $('#tabsRow').classList.toggle('working', st === 'work');
-  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
-    + `<button class="plus" data-newtab="claude|n" title="Novo terminal (Claude Code)">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
+  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${mixed ? `<span class="md" title="${t.kind === 'chat' ? 'Aba de chat' : 'Aba de terminal'}">${ic(t.kind === 'chat' ? 'chat' : 'terminal', 12)}<b>${t.kind === 'chat' ? 'CHAT' : 'TERM'}</b></span>` : ''}${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
+    + `<button class="plus" data-newtab="${chatNewKey()}" title="${chatCfg().mode === 'chat' ? 'Novo chat (Claude Code)' : 'Novo terminal (Claude Code)'}">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
     <span class="sp"></span>
     <div class="tctl">
       ${closed ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
@@ -1214,6 +1226,14 @@ function confHTML() {
     <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small>Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip">…</span></div>
     <div class="row"><div class="grow">Ao fechar o app<small>Encerra os processos, com confirmação. As conversas ficam guardadas.</small></div><span class="chip">Pergunta antes de sair</span></div>
     <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
+    <h5 style="margin:22px 0 8px">Chat</h5>
+    <div class="card" style="padding:6px 18px">
+    <div class="row" style="align-items:flex-start"><div class="grow">Modo das abas novas<small><b>Chat:</b> conversa em bolhas, sem terminal. <b>Terminal:</b> o Claude Code como sempre. O "+" cria a aba no modo escolhido; o menu ao lado do "+" tem os dois. As abas já abertas mantêm o modo em que foram criadas.</small></div>
+      <div class="seg"><button class="${chatCfg().mode === 'chat' ? 'sel' : ''}" data-chatset="mode|chat">Chat</button><button class="${chatCfg().mode === 'term' ? 'sel' : ''}" data-chatset="mode|term">Terminal</button></div></div>
+    <div class="row"><div class="grow">Visual do chat<small><b>Bolhas:</b> a sua pergunta à direita e a resposta à esquerda. <b>Fluxo:</b> leitura contínua, com rótulo e régua de cor.</small></div>
+      <div class="seg"><button class="${chatCfg().style === 'bubbles' ? 'sel' : ''}" data-chatset="style|bubbles">Bolhas</button><button class="${chatCfg().style === 'flow' ? 'sel' : ''}" data-chatset="style|flow">Fluxo</button></div></div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Permissões no chat<small><b>Automático:</b> o Claude executa sem perguntar (como a aba Dangerously, sem isolamento do sistema). <b>Perguntar:</b> só edições de arquivo são aceitas; o resto é negado e o chat avisa. Vale para os chats criados depois.</small></div>
+      <div class="seg"><button class="${chatCfg().perm === 'auto' ? 'sel' : ''}" data-chatset="perm|auto">Automático</button><button class="${chatCfg().perm === 'ask' ? 'sel' : ''}" data-chatset="perm|ask">Perguntar</button></div></div></div>
     <h5 style="margin:22px 0 8px">Botão Clear (base da janela)</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row"><div class="grow">Pulsar quando o contexto chegar a<small>% do anel CTX a partir da qual o botão Clear pisca. 0 desliga o aviso. Sugestão: 15 para tarefas pequenas, 35 para tarefas longas.</small></div><div class="numf" data-min="0" data-max="100"><button type="button" data-step="-1" aria-label="Diminuir">−</button><input id="clrAlert" type="text" inputmode="numeric" maxlength="3" value="${clearCfg().alert}"><button type="button" data-step="1" aria-label="Aumentar">+</button></div><span class="unit">%</span></div>
@@ -1273,7 +1293,7 @@ function noTermHTML(p) {
   const list = shown.length
     ? `<div class="cl-wrap"><div class="cl-h">Mais recente</div>${row(shown[0], true)}${shown.length > 1 ? `<div class="cl-h">Abertos antes neste projeto</div>${shown.slice(1).map((r) => row(r, false)).join('')}` : ''}${rest > 0 ? `<button class="cl-more" data-closedlist>e mais ${rest}…</button>` : ''}</div>`
     : '<p>Abra um terminal do Claude Code neste projeto.</p>';
-  return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}<div class="row2"><button class="btn pri" data-newtab="claude|n">+ Terminal</button></div></div>`;
+  return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}<div class="row2"><button class="btn pri" data-newtab="${chatNewKey()}">${chatCfg().mode === 'chat' ? '+ Chat' : '+ Terminal'}</button></div></div>`;
 }
 
 function renderPage() {
@@ -1352,8 +1372,10 @@ function renderMenu() {
   const p = curProject();
   const closed = p ? p.tabs.filter((t) => !t.open && !t.archived).length : 0;
   $('#menuRoot').innerHTML = `<div class="menu" style="left:${Math.max(8, Math.min(m.x, window.innerWidth - 320))}px;top:${m.y}px">
-    <button class="mi" data-newtab="claude|n"><span class="t">${ic('sparkles', 16)} Claude Code</span><small>Permissões normais</small></button>
-    <button class="mi warn" data-newtab="claude|d"><span class="t">${ic('alert', 16)} Claude Code · Dangerously</span><small>Ignora as verificações de permissão. Sem isolamento do sistema.</small></button>
+    <button class="mi" data-newtab="chat|auto"><span class="t">${ic('sparkles', 16)} Chat · Claude Code</span><small>Conversa em bolhas, sem terminal (permissão: ${chatCfg().perm === 'ask' ? 'perguntar' : 'automático'}, em Configurações)</small></button>
+    <div class="msep"></div>
+    <button class="mi" data-newtab="claude|n"><span class="t">${ic('terminal', 16)} Terminal · Claude Code</span><small>Permissões normais</small></button>
+    <button class="mi warn" data-newtab="claude|d"><span class="t">${ic('alert', 16)} Terminal · Claude Code · Dangerously</span><small>Ignora as verificações de permissão. Sem isolamento do sistema.</small></button>
     <div class="msep"></div>
     <button class="mi" disabled><span class="t">${ic('terminal', 16)} Codex</span><small>Em breve</small></button>
     <div class="msep"></div>
@@ -1372,7 +1394,7 @@ function renderAll() {
   $('#page').classList.toggle('hide', m === 'term' || m === 'web');
   if (window.webRender) webRender(m);
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
-  if (m === 'term') showTab(curTab(curProject()));
+  if (m === 'term') { const t = curTab(curProject()); if (t.kind === 'chat') showChat(t); else showTab(t); }
 }
 
 /* ---------- ações de projeto e abas ---------- */
@@ -1458,8 +1480,9 @@ function addProject({ name, path, imported, noTab }) {
 
 // "+" cria direto um terminal com a ferramenta escolhida; nome e cor podem ser mudados depois
 function createTab(p, perm, opts = {}) {
-  const n = p.tabs.filter((t) => (t.agent || 'claude') === 'claude').length + 1;
-  const tab = { id: uuid(), sessionId: uuid(), agent: 'claude', name: opts.name || `Claude ${n}`, color: opts.color || DEFAULT_COLOR, perm: perm === 'd' ? 'd' : 'n', started: false, open: true, live: false, archived: false };
+  const isChat = opts.kind === 'chat';
+  const n = p.tabs.filter((t) => (t.agent || 'claude') === 'claude' && (t.kind === 'chat') === isChat).length + 1;
+  const tab = { id: uuid(), sessionId: uuid(), agent: 'claude', name: opts.name || `${isChat ? 'Chat' : 'Claude'} ${n}`, color: opts.color || DEFAULT_COLOR, perm: perm === 'd' ? 'd' : 'n', started: false, open: true, live: false, archived: false, ...(isChat ? { kind: 'chat' } : {}) };
   if (opts.after) { const i = p.tabs.findIndex((t) => t.id === opts.after); p.tabs.splice(i + 1, 0, tab); } else p.tabs.push(tab);
   p.activeTab = tab.id; save();
   UI.cur.page = 'Terminais'; UI.menu = null; renderAll();
@@ -1494,6 +1517,7 @@ async function closeTab(p, tab) {
   tab.open = false; tab.live = false; tab.closedAt = Date.now();
   if (UI.sessInfoAt) UI.sessInfoAt[p.id] = 0; // a data da conversa pode ter mudado
   if (RT[tab.id]) { RT[tab.id].term.dispose(); RT[tab.id].el.remove(); delete RT[tab.id]; }
+  if (tab.kind === 'chat') chatForget(tab);
   if (p.activeTab === tab.id) p.activeTab = (openTabs(p)[0] || {}).id || null;
   save(); sendSummary(); renderAll();
 }
@@ -1581,6 +1605,7 @@ function reorderTabs(p, from, to) {
   save(); renderAll();
 }
 async function exportText(tab) {
+  if (tab.kind === 'chat') return chatExport(tab);
   const r = RT[tab.id];
   if (!r) return;
   const buf = r.term.buffer.active;
@@ -1612,7 +1637,8 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-closeright]'))) { const f = findTab(el.dataset.closeright); UI.menu = null; renderMenu(); if (f) { const o = openTabs(f.p); closeMany(f.p, o.slice(o.findIndex((t) => t.id === f.tab.id) + 1)); } return; }
   if ((el = q('[data-x]'))) { UI.menu = null; renderMenu(); e.stopPropagation(); const f = findTab(el.dataset.x); if (f) closeTab(f.p, f.tab); return; }
   if ((el = q('[data-tab]'))) { if (UI.justDragged) return; const p = curProject(); p.activeTab = el.dataset.tab; save(); renderAll(); return; }
-  if ((el = q('[data-newtab]'))) { const p = curProject(); if (!p) return; const [, perm] = el.dataset.newtab.split('|'); UI.menu = null; renderMenu(); createTab(p, perm); return; }
+  if ((el = q('[data-newtab]'))) { const p = curProject(); if (!p) return; const [kind, perm] = el.dataset.newtab.split('|'); UI.menu = null; renderMenu(); if (kind === 'chat') createTab(p, chatPermFor(), { kind: 'chat' }); else createTab(p, perm); return; }
+  if ((el = q('[data-chatset]'))) { const [k, v] = el.dataset.chatset.split('|'); S.settings.chat = { ...chatCfg(), [k]: v }; save(); renderAll(); return; }
   if ((el = q('[data-menu]'))) {
     if (UI.menu) { UI.menu = null; renderMenu(); return; }
     const r = el.getBoundingClientRect(); UI.menu = { type: 'new', x: r.left, y: r.bottom + 6 }; renderMenu(); return;
@@ -1771,7 +1797,7 @@ setInterval(async () => {
 // dois modos: 'gradient' (Degradê) e 'blur' (Ofuscado); valores antigos 'acrylic'/'mica' contam como Ofuscado
 const bgMode = () => (['blur', 'acrylic', 'mica'].includes(S.settings.bg) ? 'blur' : 'gradient');
 /* ---------- moldura em "U": geometria do vidro ---------- */
-const FR = { R: 22, RI: 14, HEAD: 46, BOT: 12, SIDE_OPEN: 252, SIDE_MINI: 70, ARM_OPEN: 346, ARM_CLOSED: 12 };
+const FR = { R: 22, RI: 14, HEAD: 46, BOT: 38, SIDE_OPEN: 252, SIDE_MINI: 70, ARM_OPEN: 346, ARM_CLOSED: 12 };
 const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base de vidro não engrossa
 const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN);
 const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
@@ -1796,6 +1822,7 @@ function layout() {
   $('#arm').style.width = `${GEO.armW}px`;
   $('#arm').classList.toggle('open', UI.actOpen && GEO.armW > 200);
   Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${GEO.bot}px` });
+  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: '0px', height: `${GEO.bot}px` }); // rodapé: dentro da base de vidro, sob o palco
 }
 
 let tweening = 0; // durante a animação: sem sombra pesada e sem refazer o tamanho do terminal a cada quadro

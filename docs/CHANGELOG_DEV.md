@@ -8,6 +8,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-040 — Modo Chat por aba e rodapé do app** (DEV1)
+
+- Nova aba de chat: conversa em bolhas (ou fluxo) com Markdown, ferramentas em cartões, código com Copiar, parar a resposta e histórico ao reabrir, falando com o Claude Code por `claude -p` em stream-json (sem API externa; mesma sessão do Claude Code, retomada pelo ID). Terminais e chats convivem na mesma barra; Configurações > Chat define o modo das abas novas (o "+"), o visual e as permissões (Automático ou Perguntar).
+- As funções Terminais · Web | Clear · Reiniciar saíram da janelinha flutuante e foram para um rodapé dentro da base de vidro do app (vale para terminais, Web e chat).
+- Testado com o Claude Code real em instância isolada, inclusive o terminal de sempre. Limitações e candidatas na TASK-040 do TASKS.md.
+
 **TASK-033 — Arrastar e soltar das abas** (DEV1)
 
 - Corrigido: o recorte escuro da barra acompanha a aba ativa durante o arraste; redesenhos no meio do arraste não soltam mais a aba; aba arrastada opaca; última posição alcançável com abas de larguras diferentes. Com muitas abas a barra estourava (20 abas, 2041 px em 1000): inativas agora encolhem até mostrar só o ponto e a ativa fica com 120 px no mínimo. Testado por cliques reais (CDP) com 8 e 20 abas e janela 980×620. Abas da Web não têm arrastar (TASK-038) e acima de ~25 abas a barra estoura (TASK-039), ambas no Backlog. Aprovada pelo usuário em 2026-11-02.

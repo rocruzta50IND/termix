@@ -29,6 +29,13 @@ contextBridge.exposeInMainWorld('termix', {
   allMetrics: () => ipcRenderer.invoke('metrics:all'),
   gitBranch: (cwd) => ipcRenderer.invoke('git:branch', cwd),
 
+  chatStart: (o) => ipcRenderer.invoke('chat:start', o),
+  chatSend: (tabId, text) => ipcRenderer.invoke('chat:send', { tabId, text }),
+  chatStop: (tabId) => ipcRenderer.send('chat:stop', { tabId }),
+  chatHistory: (cwd, sessionId) => ipcRenderer.invoke('chat:history', { cwd, sessionId }),
+  onChatEvents: (fn) => ipcRenderer.on('chat:events', (_e, m) => fn(m)),
+  onChatExit: (fn) => ipcRenderer.on('chat:exit', (_e, m) => fn(m)),
+
   createProject: (name) => ipcRenderer.invoke('project:create', name),
   pickFolder: () => ipcRenderer.invoke('project:pick'),
   scanSessions: (p) => ipcRenderer.invoke('sessions:scan', p),

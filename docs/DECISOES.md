@@ -90,6 +90,17 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - **Selo do sino:** conta os avisos novos; abrir e fechar o painel zera (os avisos continuam na lista). Painel agrupado por aba, com texto inteiro, tipo e botões para excluir um aviso, os de uma aba ou tudo (limite de 60 no histórico).
 - **Dica ao lado esquerdo do sino:** aparece por alguns segundos (padrão 6, configurável) com a aba, o tipo e o que aconteceu (última frase do agente, vinda do hook Stop); clicar abre o painel. Som curto gerado no app, diferente por tipo; notificação do Windows só com o app sem foco. Padrões adotados sem objeção do usuário (2026-10-31): cache 10 min antes (1 h) e 1 min antes (5 min), mesmas regras para som e Windows.
 
+## Chat (TASK-040)
+
+- O app tem dois modos de aba: **Terminal** (o Claude Code como sempre, num PTY) e **Chat** (conversa em bolhas, sem terminal). As abas dos dois tipos convivem na mesma barra; a etiqueta (ícone) só aparece quando o projeto tem pelo menos um chat.
+- O Chat sobe `claude -p --input-format stream-json --output-format stream-json --include-partial-messages --verbose` (um processo por aba, criado na primeira mensagem, sem API externa: usa o login do Claude Code). A tela desenha os eventos do stream (texto aos pedaços, ferramentas, resultado). Nada de raspar a tela do terminal.
+- A conversa é a mesma do Claude Code: `--session-id` na primeira vez e `--resume` depois. Ao reabrir o app, a aba lê o histórico do `.jsonl` da sessão (até 300 itens) e a próxima mensagem retoma a conversa. Uma conversa de chat também pode ser aberta no terminal pelo ID (e vice-versa), mas o app não troca o modo de uma aba aberta.
+- **Configurações > Chat:** modo das abas novas (Chat é o padrão; o "+" cria no modo escolhido e o menu ao lado do "+" tem os dois), visual do chat (Bolhas ou Fluxo) e permissões. **Automático** = `--dangerously-skip-permissions` (a aba mostra "⚠ bypass"); **Perguntar** = `--permission-mode acceptEdits`: só edições de arquivo são aceitas, o resto é negado e o chat avisa quais ferramentas foram negadas. Ainda não há cartão de aprovação dentro do chat (o modo `-p` não pergunta); fica como evolução.
+- Estado da aba de chat: Trabalhando entre o envio e o resultado; Aguardando você depois; Falha se o processo morre no meio. As notificações (terminou, erro) usam as mesmas regras do terminal. Parar a resposta encerra o processo; a próxima mensagem retoma a conversa.
+- Botões do rodapé no chat: **Clear** = conversa nova (confirma; a antiga continua guardada pelo Claude Code, sem a retomada enxuta do terminal); **Reiniciar** = reinicia o processo (a conversa continua).
+- O contexto (anel CTX) e o modelo vêm do stream (estimativa: tokens da última resposta sobre 200 mil, ou 1 milhão se o modelo for 1M). Limites de 5 h e 7 d e cache do prompt só existem com terminais (vêm da status line).
+
+
 ## Dados e ambiente
 - Dados salvos em `%APPDATA%\Termix` (`state.json`, gravado de forma atômica, e `metrics\`). O app se chamava Vitra: na primeira abertura os dados da pasta antiga são copiados.
 - As variáveis de ambiente herdadas de uma sessão do Claude Code (`CLAUDECODE`, `CLAUDE_CODE_CHILD_SESSION` etc.) são **removidas** ao abrir terminais; senão o Claude Code desliga a gravação do histórico ("Transcript saving is off").

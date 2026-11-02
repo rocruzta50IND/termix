@@ -34,6 +34,15 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 
 - **Botão Clear:** na pílula do alternador, depois de um separador fino, com ícone de borracha e o rótulo "Clear" sempre visível (a dica nativa não aparece nessa vista). Desabilitado (opacidade baixa) sem terminal vivo e aguardando; com o contexto acima do limite configurado pulsa em âmbar (borda e brilho, só `box-shadow`/fundo; sem animação com "reduzir movimento"). Só aparece na tela Terminais.
 
+## Rodapé do app e Chat (TASK-040)
+
+- **Rodapé:** a base de vidro da janela ficou mais alta (38 px) e guarda o antigo alternador flutuante: **Terminais (n) · Web | Clear · Reiniciar**, centralizado sob o palco, com o mesmo desenho de antes (cápsula azul no item ativo, selo de contagem, ponto verde de novidade na Web, Clear que pulsa com o contexto alto, Reiniciar que gira). Esmaece quando parado (a mesma opção do rail). A janelinha nativa de antes não aparece mais.
+- **Aba:** quando o projeto tem chats, cada aba ganha um ícone pequeno (balão = chat, prompt = terminal); a palavra fica na dica.
+- **Chat, estilo Bolhas:** pergunta à direita (azul), resposta à esquerda (vidro), avatar "EU"/"C"; ferramentas em cartões recolhíveis (nome, argumento, estado); código com cabeçalho e botão Copiar; tabelas, listas, citações e links (abrem no navegador). **Estilo Fluxo:** sem bolhas, rótulo VOCÊ (na cor da aba) e CLAUDE, régua de cor na lateral, texto na largura toda.
+- **Campo de envio (no desenho do Claude):** barra bem arredondada com botão redondo (enviar; vira parar enquanto responde); embaixo, "Este computador", a pasta do projeto com a branch, e à direita modelo, permissão (⚠ bypass em amarelo) e um anel de contexto. Início da conversa: marca do Termix, "Nova conversa em <projeto>" e o caminho. O + de anexo e o microfone do Claude não foram copiados porque ainda não funcionam.
+- Protótipos de apoio: `docs/prototipos/chat-layout.html` (aprovado), `chat-mode.html` (baias, descartado) e `layout-b.html` (app inteiro, descartado).
+
+
 ## Notificações (TASK-029)
 - Dica ao lado esquerdo do sino: cartão escuro 94 %, borda fina, faixa vertical na cor da aba, no máximo 300 px e 2 linhas; entra deslizando da direita (opacity + transform, .28 s; só fade com "reduzir movimento"). Painel: grupos por aba (ponto da cor, nome, contagem, limpar), cartões com etiqueta do tipo (verde terminou, amarelo precisa de você, vermelho erro, azul cache) e × para excluir; "Limpar tudo" no cabeçalho.
 

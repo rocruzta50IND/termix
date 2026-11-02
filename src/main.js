@@ -158,6 +158,7 @@ function createWindow() {
 function killAll() {
   for (const p of procs.values()) { try { p.kill(); } catch { /* já encerrado */ } }
   procs.clear();
+  try { chat.stopAll(); } catch { /* ainda não iniciado */ }
 }
 
 /* ---------- IPC: estado ---------- */
@@ -284,6 +285,20 @@ ipcMain.on('pty:resize', (_e, { tabId, cols, rows }) => {
   if (p && cols > 0 && rows > 0) { try { p.resize(cols, rows); } catch { /* ignora */ } }
 });
 ipcMain.on('pty:kill', (_e, { tabId }) => { const p = procs.get(tabId); if (p) { try { p.kill(); } catch { /* ignora */ } } });
+
+/* ---------- IPC: modo Chat (claude -p em stream-json, sem terminal) ---------- */
+const chat = require('./chat')({
+  findClaude, sessionEnv, hint: OPEN_HINT,
+  emit: (channel, msg) => { if (!quitting && win && !win.isDestroyed()) win.webContents.send(channel, msg); },
+});
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+ipcMain.handle('chat:start', (_e, a) => {
+  if (!a || typeof a.tabId !== 'string' || !UUID_RE.test(String(a.sessionId)) || typeof a.cwd !== 'string') return { ok: false, error: 'Pedido inválido.' };
+  return chat.start({ tabId: a.tabId, cwd: a.cwd, sessionId: a.sessionId, resume: !!a.resume, perm: a.perm === 'd' ? 'd' : 'n' });
+});
+ipcMain.handle('chat:send', (_e, a) => (a && typeof a.tabId === 'string' && typeof a.text === 'string' ? chat.send(a) : { ok: false }));
+ipcMain.on('chat:stop', (_e, a) => { if (a && typeof a.tabId === 'string') chat.stop(a.tabId); });
+ipcMain.handle('chat:history', (_e, a) => (a && typeof a.cwd === 'string' ? chat.history(a) : { items: [], model: '', usage: null }));
 
 /* ---------- IPC: projetos ---------- */
 ipcMain.handle('project:create', (_e, name) => {

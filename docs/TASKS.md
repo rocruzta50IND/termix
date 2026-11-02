@@ -8,19 +8,21 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-040 — Modo Chat por aba (conversa visual sobre o Claude Code, protótipo)
+## Aguardando validação DEV1
+
+### TASK-040 — Modo Chat por aba (conversa visual sobre o Claude Code)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (implementado e testado pelo Claude com o Claude Code real; falta o usuário usar)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-02 (pausa a TASK-036)
-- **Objetivo:** uma visão de chat (bolhas com Markdown, estilo chat web) para falar com o Claude Code sem raspar o terminal: o app sobe `claude -p --input-format stream-json --output-format stream-json --include-partial-messages --verbose` e desenha os eventos. Sem API externa (usa o login do Claude Code).
-- **Decisões (usuário, 2026-11-02):** protótipo com permissões em modo automático/fixo, só para avaliar a renderização e o stream; **antes de entrar no app, mostrar num HTML (`docs/prototipos/chat-mode.html`) como ficaria, clonando o layout atual.**
-- **Formato do stream (conferido com o CLI 2.1.316):** `system/init` (session_id, tools), `stream_event` (message_start, content_block_start/delta/stop com `text_delta` e `input_json_delta`, message_delta/stop), `assistant` (mensagem completa; `text` ou `tool_use`), `user` (`tool_result`), `rate_limit_event`, `result` (custo, uso, `session_id`). Entrada: `{"type":"user","message":{"role":"user","content":"..."}}` por linha; o processo só encerra se a entrada fechar.
-- **Feito até agora:** TASK registrada; formato do stream sondado com o CLI real; leitura do código para onde encaixar (página por projeto em `SUBS`/`renderPage`, IPC no `main.js`/`preload.js`, `findClaude`/`cleanEnv`).
-- **Próximo passo:** montar o HTML do protótipo e mostrar ao usuário; só com a aprovação do visual, implementar no app (`src/chat.js` no processo principal, ponte no preload, tela no renderer).
-
-
-## Aguardando validação DEV1
+- **Objetivo:** uma aba de chat (bolhas com Markdown) no lugar do terminal, falando com o Claude Code por `claude -p` em stream-json, sem API externa; as abas de terminal e de chat convivem; o modo vem de Configurações; as funções (Terminais, Web, Clear, Reiniciar) moram num rodapé do app.
+- **Decisões (usuário, 2026-11-02):** layout aprovado em `docs/prototipos/chat-layout.html` (app como está, só a área do terminal vira chat; compositor no desenho do Claude; funções no rodapé do app; modo e visual do chat nas Configurações); ideia das baias e o layout B (app inteiro) descartados; permissões em Automático no protótipo.
+- **Feito:** `src/chat.js` (processo principal: sobe `claude -p` por aba, lotes de eventos, parar, histórico do `.jsonl`), ponte no `src/preload.js` e IPC `chat:*` no `src/main.js` (encerra tudo ao fechar o app); `src/renderer/chat.js` (tela, Markdown seguro, eventos do stream, ciclo de vida, Clear/Reiniciar/exportar); `src/renderer/app.js` (aba `kind: "chat"`, "+" e menu, Configurações > Chat, etiqueta nas abas, rodapé com a base de vidro de 38 px); `src/renderer/web.js` (rodapé no lugar da janelinha flutuante); `styles.css`, `index.html`, `package.json` (check).
+- **Testado (CDP, instância isolada, Claude Code real 2.1.316):** criar chat pelo "+"; mensagem com título, lista, código e leitura de arquivo (ferramenta Read ✓, texto em stream, modelo e contexto 16 %); reabrir o app com o histórico e a próxima mensagem retomando a conversa (respondeu o conteúdo do arquivo lido antes); estado Trabalhando → Aguardando você; Parar no meio (e responder de novo depois); Clear (conversa nova, nova sessão); Reiniciar; modo Perguntar negando um Bash e avisando; Fluxo e Bolhas; Configurações > Chat; aba de terminal real (Claude Code abre normalmente, rodapé igual); sem erro de JavaScript; `npm run check` passou. Defeitos achados e corrigidos: erro de ordem de carga (chat.js antes do app.js), classe `empty` colidindo com a do app, realce de código quebrando as marcas, etiquetas das abas comendo o nome.
+- **Arquivos tocados:** `src/chat.js`, `src/main.js`, `src/preload.js`, `src/renderer/chat.js`, `src/renderer/app.js`, `src/renderer/web.js`, `src/renderer/index.html`, `src/renderer/styles.css`, `package.json`, `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`, `docs/prototipos/*`.
+- **Como validar:** `npm start`; o "+" já cria um Chat (Configurações > Chat muda para Terminal; o menu ao lado do "+" tem os dois). Mande uma mensagem que use uma ferramenta, pare uma resposta longa, feche e reabra o app (o histórico volta), use Clear e Reiniciar no rodapé, troque Bolhas/Fluxo e Automático/Perguntar nas Configurações.
+- **Pendências / limitações:** não há cartão de aprovação no chat (em Perguntar o `-p` só nega e avisa); o "+" de anexo e o microfone do desenho do Claude não existem; sem seletor de modelo/esforço (o modelo mostrado é o da sessão); sem limites 5 h/7 d nem cache no rail com só chats (vêm da status line do terminal); o custo da conversa não é mostrado; imagens e colagem de arquivos não testadas; uma aba não troca de modo depois de aberta; testado sem projeto no fluxo Rocruzta; o aviso de fechar o app conta chats com processo vivo; muitas abas continuam apertando os nomes (TASK-039).
+- **Próximo passo:** o usuário testar; com a aprovação, fechar a tarefa e voltar à TASK-036 (README). Candidatas: cartão de aprovação no chat (Perguntar de verdade), seletor de modelo/esforço, anexos, limites e cache no rail do chat.
 
 ## Validadas em DEV1
 
