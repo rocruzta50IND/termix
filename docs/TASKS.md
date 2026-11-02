@@ -457,6 +457,35 @@ _Nenhuma no momento._
 
 ## Backlog
 
+### TASK-043 — Ícone do Claude nas mensagens do chat
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Baixa (visual) — pedido do usuário em 2026-11-02, com captura do avatar atual
+- **Objetivo:** o avatar da resposta no chat hoje é a marca do Termix (`>_` em quadrado azul). O usuário quer **o ícone do próprio Claude** nas mensagens (a pergunta continua com o ícone de pessoa).
+- **A decidir ao começar:** qual ícone (o mascote pixelado laranja que o Claude Code mostra no terminal, ou o brilho/estrela do Claude) e como desenhar: um SVG simples próprio, em `src/renderer/chat.js` (`CHAT_MARK`) e `styles.css` (`.c-av`). Lembrar que é uma marca de terceiros; para uso pessoal tudo bem, mas não entra em material de divulgação (TASK-036) sem checar. No visual Fluxo os rótulos de texto continuam.
+- **Critérios de aceite:** avatar da resposta com o ícone escolhido, nítido em 30 px; cor de fundo coerente com o tema; sem quebrar o visual Fluxo; captura antes e depois.
+
+### TASK-044 — Trocar o modo de uma aba aberta (chat ↔ terminal) e o aviso de que a configuração só vale para abas novas
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Alta — o usuário trocou Configurações > Chat > Modo das abas novas para Terminal e os chats abertos continuaram chats (comportamento previsto na TASK-040, mas não é o que ele esperava)
+- **Objetivo:** dar um jeito claro de ver uma conversa no outro modo. Chat e terminal usam a **mesma sessão do Claude Code** (`--resume <id>`), então trocar é viável: encerrar o processo da aba, mudar o `kind` e abrir de novo no outro modo, com a mesma conversa.
+- **Opções a validar com o usuário:** (1) item no menu da aba (clique direito): "Abrir como terminal" / "Abrir como chat", só com o agente parado; (2) botão no cabeçalho da aba; (3) em Configurações, um botão "Aplicar a todas as abas abertas" (com confirmação, pois encerra os processos). Deixar o texto de Configurações mais claro ("vale para as abas novas").
+- **Critérios de aceite:** a troca mantém o nome, a cor e o ID da conversa; o histórico aparece no chat (do `.jsonl`) e a conversa continua no terminal (`--resume`); se o agente está trabalhando, pede confirmação; abas não iniciadas (sem histórico) trocam sem erro; testado nos dois sentidos com o Claude Code real; documentar em `docs/DECISOES.md` (Chat).
+- **Base existente:** `tab.kind` (`src/renderer/app.js`, `createTab`), `launch`, `stopProc`, `chatForget`/`chatOpen` em `src/renderer/chat.js`, `renderTabMenu`.
+
+### TASK-045 — Menu de comandos "/" no campo de envio do chat
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 (no terminal, digitar "/" abre a lista de comandos; no chat não aparece nada)
+- **Objetivo:** ao digitar "/" no início do campo de envio do chat, abre uma lista (acima da caixa) com os comandos disponíveis, nome e descrição, filtrando enquanto digita; setas e Enter escolhem, Esc fecha, Tab completa; no estilo do app. Referência: a lista do Claude Code no terminal (ex.: `/fluxo:init`, `/fluxo:papel`, com descrição).
+- **De onde vêm os comandos:** o evento `system/init` do stream-json traz `slash_commands` (e `skills`) da sessão; antes da primeira mensagem (processo ainda não criado) usar a leitura de skills e comandos do app (`scan:resources`: usuário, projeto e plugins) ou subir o processo ao focar a caixa. Descrições com entidades HTML (como `-&gt;`) devem ser decodificadas.
+- **Limite importante:** no modo `-p` só funcionam comandos de skill, de plugin e personalizados (viram texto expandido pelo Claude Code); os comandos interativos do terminal (`/clear`, `/mcp`, `/model`, `/resume`…) não rodam. A lista deve mostrar só o que funciona, mapear o que o app já faz (`/clear` → botão Clear/conversa nova) e avisar o resto ("abra uma aba de terminal para este comando").
+- **Critérios de aceite:** "/" abre a lista na hora, filtra por nome, mostra descrição e origem (skill, plugin, projeto); escolher insere o comando no campo; funciona por teclado; enviar um comando de skill de verdade e ver a resposta; sem atrapalhar quem digita "/" no meio do texto (só no início); testado com o Claude Code real.
+
 ### TASK-041 — Imagens coladas no chat, com miniatura na caixa de prompt
 
 - **Responsável:** DEV1
