@@ -31,7 +31,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 .bell{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--glass);display:grid;place-items:center;color:var(--text2)}
 .wc{display:flex}.wc span{width:50px;display:grid;place-items:center;color:var(--text2);font-size:14px}
 /* barra lateral */
-.side{position:absolute;left:0;top:46px;bottom:12px;width:244px;display:flex;flex-direction:column;padding:6px 10px 8px}
+.side{position:absolute;left:0;top:46px;bottom:38px;width:244px;display:flex;flex-direction:column;padding:6px 10px 8px}
 .label{font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:10px 10px 6px}
 .ph{display:flex;align-items:center;gap:8px;padding:7px 10px;font-weight:600;color:var(--text2)}
 .item{display:flex;align-items:center;gap:10px;width:100%;padding:7px 12px;border-radius:11px;color:var(--text2);text-align:left}
@@ -42,9 +42,11 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
 .item .new{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.4px;color:#06101f;background:var(--accent);padding:1px 7px;border-radius:99px}
 .newproj{border:1px dashed var(--border2);border-radius:12px;padding:8px;color:var(--text2);text-align:center;margin:8px 0 0}
 /* palco */
-.col{position:absolute;left:244px;right:12px;top:46px;bottom:46px}
-#appfoot{position:absolute;left:252px;right:20px;bottom:10px;height:30px;display:flex;align-items:center;justify-content:center;z-index:4}
-#appfoot .cfoot{margin:0}
+.col{position:absolute;left:244px;right:12px;top:46px;bottom:42px}
+#appfoot{position:absolute;left:0;right:0;bottom:0;height:32px;display:flex;align-items:center;justify-content:center;padding:0 12px 0 244px;z-index:4;background:rgba(2,4,9,.62);border-top:1px solid rgba(255,255,255,.16);box-shadow:0 -8px 18px rgba(0,0,0,.28)}
+#appfoot .cfoot{margin:0;gap:1px}
+#appfoot .cfoot button{height:24px;padding:0 9px;font-size:11.5px}
+#appfoot .cfoot svg{width:13px;height:13px}
 .stage{position:absolute;inset:0;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.16);background:var(--term);display:flex;flex-direction:column}
 /* abas encaixadas */
 .tabsbar{position:relative;display:flex;align-items:flex-end;min-height:36px;padding:0 8px 0 0;background:var(--bar-bg);flex:none}
@@ -226,7 +228,7 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
       <button class="plus">+</button>
       <span class="sp"></span>
       <div class="tctl">
-        <div class="seg" id="styleseg" title="Só do protótipo: compara os dois estilos de chat"><button data-s="a" class="on">A · bolhas</button><button data-s="b">B · fluxo</button></div><span class="state"><i class="dot"></i><span id="st">Trabalhando</span></span>
+        <span class="state"><i class="dot"></i><span id="st">Trabalhando</span></span>
       </div>
     </div>
 
@@ -259,7 +261,6 @@ button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
   </div></section>
 </div>
 <footer id="appfoot"><div class="cfoot"><button class="on"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 10l3 2-3 2M13 15h4"/></svg></span><span id="dklbl">Terminais</span><span class="n att">2</span></button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Web<i class="nd"></i></button><i class="sepd"></i><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>Clear</button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>Reiniciar</button></div></footer>
-<div class="note">Protótipo (TASK-040): clique nas abas e compare A/B</div>
 
 <script>
 /* ---- Markdown mínimo e seguro (escapa o HTML antes de tudo; o mesmo renderizador iria para o app) ---- */
@@ -386,7 +387,29 @@ btn.onclick = submit;
 inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } });
 inp.addEventListener('input', () => { inp.parentNode.classList.toggle('has', !!inp.value.trim()); inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 160) + 'px'; });
 const sessv = document.getElementById('sessv');
-document.getElementById('styleseg').addEventListener('click', (e) => { const x = e.target.closest('button'); if (!x) return; sessv.classList.toggle('sb', x.dataset.s === 'b'); document.querySelectorAll('#styleseg button').forEach((k) => k.classList.toggle('on', k === x)); bottom(); });
+const stageEl = document.querySelector('.stage'), tabsbarEl = stageEl.querySelector('.tabsbar');
+let VIEW = 'sess', MODE = 'chat', STYLE = 'a';
+const seg = (id, opts, cur) => '<div class="seg" id="' + id + '">' + opts.map(([v, t]) => '<button data-v="' + v + '" class="' + (v === cur ? 'on' : '') + '">' + t + '</button>').join('') + '</div>';
+const confHTML = () => '<div class="conf"><h2>Configurações</h2><div class="sub">Preferências do app</div>'
+  + '<div class="crow"><div><b>Modo das abas novas</b><span class="d">Chat: conversa sem terminal. Terminal: o Claude Code como hoje. As abas já abertas mantêm o modo em que foram criadas.</span></div>' + seg('sg-mode', [['chat', 'Chat'], ['term', 'Terminal']], MODE) + '</div>'
+  + '<div class="crow"><div><b>Visual do chat</b><span class="d">Bolhas: pergunta à direita e resposta à esquerda. Fluxo: leitura contínua, com rótulo e régua de cor.</span></div>' + seg('sg-style', [['a', 'Bolhas'], ['b', 'Fluxo']], STYLE) + '</div>'
+  + '<div class="crow"><div><b>Permissões no chat</b><span class="d">Protótipo: automático. Depois: cartão de aprovação no próprio chat.</span></div>' + seg('sg-perm', [['auto', 'Automático'], ['ask', 'Perguntar']], 'auto') + '</div></div>';
+function paint() {
+  document.getElementById('navchat').classList.toggle('active', VIEW === 'sess');
+  document.getElementById('navconf').classList.toggle('active', VIEW === 'conf');
+  sessv.classList.toggle('sb', STYLE === 'b');
+  document.getElementById('tabnew').querySelector('.md').textContent = MODE === 'chat' ? 'CHAT' : 'TERM';
+  const c = stageEl.querySelector('.conf'); if (c) c.remove();
+  tabsbarEl.style.display = sessv.style.display = VIEW === 'sess' ? '' : 'none';
+  if (VIEW === 'conf') stageEl.insertAdjacentHTML('beforeend', confHTML()); else bottom();
+}
+document.getElementById('navchat').onclick = () => { VIEW = 'sess'; paint(); };
+document.getElementById('navconf').onclick = () => { VIEW = 'conf'; paint(); };
+stageEl.addEventListener('click', (e) => {
+  const b = e.target.closest('.seg button'); if (!b) return;
+  const g = b.parentNode.id; if (g === 'sg-mode') MODE = b.dataset.v; else if (g === 'sg-style') STYLE = b.dataset.v; else if (g !== 'sg-perm') return;
+  b.parentNode.querySelectorAll('button').forEach((k) => k.classList.toggle('on', k === b)); paint();
+});
 const tabEls = [...document.querySelectorAll('.tabsbar .tab')], emptyEl = document.getElementById('empty'), comp = sessv.querySelector('.composer');
 function view(i) {
   tabEls.forEach((t, k) => t.classList.toggle('active', k === i));
