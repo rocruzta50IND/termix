@@ -1,12 +1,31 @@
 // Atualização do app (TASK-035): consulta a última versão publicada no GitHub Releases, baixa em segundo plano
 // e avisa a interface quando está pronta. Só roda no app instalado; em desenvolvimento fica desligado
 // (use TERMIX_FAKE_UPDATE=1 para ver o aviso sem uma versão real).
-const { app, ipcMain } = require('electron');
+const { app, ipcMain, Notification } = require('electron');
+const fs = require('fs');
+const path = require('path');
 
 const FIRST_CHECK_MS = 15 * 1000;
 const EVERY_MS = 4 * 60 * 60 * 1000;
 
+// TASK-050: retorno durante a atualização. Ao clicar em Atualizar: a interface mostra um cartão "Atualizando…" e o main avisa por
+// notificação do Windows (que continua na tela enquanto o instalador roda sem janela); grava update-pending.json com a hora do clique;
+// ao abrir na versão nova, a interface mostra "Termix atualizado para a X" com o tempo que levou.
+const INSTALL_DELAY_MS = 2500; // dá tempo de a interface mostrar o cartão antes de o app fechar
+const pendingFile = () => path.join(app.getPath('userData'), 'update-pending.json');
+
 function setupUpdater(getWin) {
+  let just = null; // { from, to, ms } quando este início é o primeiro depois de uma atualização
+  try {
+    const p = JSON.parse(fs.readFileSync(pendingFile(), 'utf8'));
+    fs.unlinkSync(pendingFile());
+    if (p && p.to === app.getVersion()) just = { from: p.from, to: p.to, ms: Date.now() - p.t0 };
+  } catch { /* sem atualização pendente */ }
+  ipcMain.handle('update:just', () => { const j = just; just = null; return j; });
+  const beginInstall = (version, write) => {
+    try { if (write) fs.writeFileSync(pendingFile(), JSON.stringify({ from: app.getVersion(), to: version, t0: Date.now() })); } catch { /* o aviso de "atualizado" é só um extra */ }
+    try { if (Notification.isSupported()) new Notification({ title: 'O Termix está atualizando', body: `Para a versão ${version}. Ele reabre sozinho em instantes; não precisa fazer nada.` }).show(); } catch { /* sem notificação */ }
+  };
   let state = { state: 'idle' }; // idle | downloading | ready | error
   const push = (patch) => {
     state = { ...state, ...patch };
@@ -23,7 +42,7 @@ function setupUpdater(getWin) {
   }
 
   if (fake) {
-    ipcMain.handle('update:install', () => { push({ state: 'idle' }); return true; });
+    ipcMain.handle('update:install', () => { beginInstall(state.version || '9.9.9', false); push({ state: 'idle' }); return true; });
     ipcMain.handle('update:check', () => state);
     setTimeout(() => push({ state: 'downloading', version: '9.9.9', percent: 40 }), 3000);
     setTimeout(() => push({ state: 'ready', version: '9.9.9', percent: 100 }), 6000);
@@ -44,7 +63,7 @@ function setupUpdater(getWin) {
   const check = () => { if (state.state === 'ready') return state; autoUpdater.checkForUpdates().catch(() => {}); return state; };
   ipcMain.handle('update:check', () => check());
   // silencioso (sem o assistente do instalador) e reabre o app já na versão nova
-  ipcMain.handle('update:install', () => { if (state.state !== 'ready') return false; setImmediate(() => autoUpdater.quitAndInstall(true, true)); return true; });
+  ipcMain.handle('update:install', () => { if (state.state !== 'ready') return false; beginInstall(state.version, true); setTimeout(() => autoUpdater.quitAndInstall(true, true), INSTALL_DELAY_MS); return true; });
   setTimeout(check, FIRST_CHECK_MS);
   setInterval(check, EVERY_MS);
 }

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('termix', {
   summary: (s) => ipcRenderer.send('sessions:summary', s),
   updateGet: () => ipcRenderer.invoke('update:get'),
   updateInstall: () => ipcRenderer.invoke('update:install'),
+  updateJust: () => ipcRenderer.invoke('update:just'),
   onUpdate: (fn) => ipcRenderer.on('update:state', (_e, m) => fn(m)),
   setMaterial: (kind) => ipcRenderer.invoke('win:material', kind),
   winCtl: (kind) => ipcRenderer.send('win:ctl', kind),

@@ -22,6 +22,7 @@ function gearPath() {
 // ícones de traço, todos no mesmo estilo
 const ICONS = {
   panel: '<rect x="3" y="4.5" width="18" height="15" rx="3.5"/><path d="M9.5 4.5v15"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
   bell: '<path d="M6 10a6 6 0 0 1 12 0c0 4.6 1.8 6 1.8 6H4.2S6 14.6 6 10z"/><path d="M10 19.2a2.2 2.2 0 0 0 4 0"/>',
   chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
   terminal: '<path d="M7.5 4.5h10a3.5 3.5 0 0 1 3.5 3.5v8"/><rect x="3" y="8" width="15" height="12" rx="3"/><path d="M7 12.4l2.4 1.9L7 16.2M11.6 16.4h3"/>',
@@ -644,7 +645,24 @@ async function applyUpdate() {
     const r = await modal({ title: 'Há agente trabalhando', body: `<p class="hint">${working === 1 ? '1 terminal está' : `${working} terminais estão`} trabalhando. Atualizar agora interrompe ${working === 1 ? 'ele' : 'eles'}. Quer atualizar mesmo assim?</p>`, buttons: [['Esperar', null], ['Atualizar mesmo assim', 'ok', 'pri']] });
     if (r.value !== 'ok') return;
   }
+  showUpdBusy(UPD.version);
   api.updateInstall();
+}
+
+// TASK-050: cartão por cima da janela entre o clique em Atualizar e o fechamento do app (o main espera ~2,5 s)
+function showUpdBusy(v) {
+  let el = $('#updbusy');
+  if (!el) { el = document.createElement('div'); el.id = 'updbusy'; document.body.appendChild(el); }
+  el.innerHTML = `<div class="ub"><i class="spin"></i><b>Atualizando o Termix${v ? ' para a versão ' + esc(v) : ''}…</b><span>O app vai fechar e abrir de novo sozinho. Pode levar alguns minutos, e durante esse tempo não aparece nenhuma janela: não abra o Termix de novo, ele volta sozinho.</span><span>Suas conversas ficam guardadas e as abas voltam sozinhas.</span></div>`;
+  el.classList.add('show');
+}
+const fmtMs = (ms) => { const s = Math.round(ms / 1000); return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s'; };
+function showUpdated(j) {
+  let el = $('#updok');
+  if (!el) { el = document.createElement('div'); el.id = 'updok'; document.body.appendChild(el); el.addEventListener('click', () => el.classList.remove('show')); }
+  el.innerHTML = `<div class="ut"><span class="ui">${ic('check', 18)}</span><div><b>Termix atualizado para a versão ${esc(j.to)}</b><span>Estava na ${esc(j.from)}. Da hora em que você clicou em Atualizar até o app voltar levou ${fmtMs(j.ms)}.</span></div></div>`;
+  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 14000);
 }
 function onUpdateState(s) {
   UPD = s || { state: 'idle' };
@@ -1917,6 +1935,7 @@ async function applyBg() {
   GEO.sideW = sideTarget(); GEO.armW = armTarget();
   api.onUpdate(onUpdateState);
   api.updateGet().then(onUpdateState).catch(() => {});
+  api.updateJust().then((j) => { if (j) setTimeout(() => showUpdated(j), 1500); }).catch(() => {});
   renderAll();
   layout();
   (await api.allMetrics()).forEach(onMetric);

@@ -492,6 +492,20 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 #updcard .ui{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#4f8dff,#2563eb)}
 #updcard .ut b{display:block;font-size:13.5px;margin-bottom:3px}
 #updcard .ut span:not(.ui){display:block;color:var(--text2);font-size:12.5px;line-height:1.4}
+#updbusy{position:fixed;inset:0;z-index:90;display:grid;place-items:center;background:rgba(7,9,16,.86);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .25s}
+#updbusy.show{opacity:1;pointer-events:auto}
+#updbusy .ub{width:min(440px,86vw);padding:26px 28px;border-radius:20px;background:rgba(18,22,34,.97);border:1px solid var(--border2);box-shadow:0 18px 60px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+#updbusy .ub b{font-size:16px}
+#updbusy .ub span{color:var(--text2);font-size:13px;line-height:1.5}
+#updbusy .spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(91,157,255,.25);border-top-color:var(--accent);animation:updspin .9s linear infinite;margin-bottom:4px}
+@keyframes updspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#updbusy .spin{animation-duration:2.4s}}
+#updok{position:fixed;bottom:56px;right:18px;z-index:60;width:340px;padding:14px;border-radius:16px;background:rgba(18,22,34,.96);border:1px solid var(--border2);box-shadow:0 12px 36px rgba(0,0,0,.5);opacity:0;pointer-events:none;transform:translateY(8px);cursor:pointer}
+#updok.show{opacity:1;pointer-events:auto;transform:none;transition:opacity .22s ease,transform .28s cubic-bezier(.2,.9,.3,1.2)}
+#updok .ut{display:flex;gap:12px;align-items:flex-start}
+#updok .ui{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#34d399,#059669)}
+#updok .ut b{display:block;font-size:13.5px;margin-bottom:3px}
+#updok .ut span:not(.ui){display:block;color:var(--text2);font-size:12.5px;line-height:1.4}
 #updcard .ua{display:flex;justify-content:flex-end;gap:8px}
 @media (prefers-reduced-motion:reduce){#updcard.show{transition:opacity .15s}}
 

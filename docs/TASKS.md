@@ -22,6 +22,22 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-050 — Indicativo de que o app está atualizando (do clique em Atualizar até o app reabrir)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média — observado pelo usuário em 2026-11-02 no teste da 0.2.0: ao clicar em **Atualizar agora** a janela fecha e o app demora para reabrir (cerca de 4 minutos entre o clique e o processo novo, com a atualização em modo silencioso), **sem nenhum sinal na tela** de que está atualizando; a pessoa pode achar que o app travou ou fechou.
+- **Objetivo:** dar retorno claro durante a atualização, sem a pessoa ter de adivinhar.
+- **Ideias a validar com o usuário:** (1) antes de fechar, um cartão curto "Atualizando para a 0.2.0… o Termix reabre sozinho" com a janela ainda visível por 1 a 2 s; (2) uma janelinha de progresso pequena, separada do app, que fica na tela durante a instalação silenciosa e some quando o Termix reabre (o instalador roda com `quitAndInstall(true, true)`, sem assistente); (3) notificação do Windows "Termix atualizando… reabre em instantes" e outra quando voltar; (4) ao reabrir, um aviso "Termix atualizado para a 0.2.0" com um resumo do que mudou (a partir do CHANGELOG).
+- **Critérios de aceite (a refinar):** do clique em Atualizar agora até o app reabrir há sempre algum indicativo na tela ou na barra de tarefas; ao reabrir, a pessoa vê que a versão mudou; não atrapalha a restauração das abas; testado de ponta a ponta com duas versões publicadas (como na TASK-020/049), medindo e registrando o tempo do clique até a janela voltar.
+- **Base existente:** `src/updater.js` (`update:install` chama `autoUpdater.quitAndInstall(true, true)`), `applyUpdate`, `showUpdCard` e o botão `.updbtn` em `src/renderer/app.js`; `docs/DECISOES.md` ("Atualização do app").
+- **Decisão (2026-11-02, o usuário pediu para seguir):** combinar três partes: (1) ao clicar em **Atualizar agora**, um cartão por cima da janela ("Atualizando o Termix para a versão X… pode levar alguns minutos… não abra o Termix de novo, ele volta sozinho"), e o app só fecha ~2,5 s depois; (2) uma **notificação do Windows** ("O Termix está atualizando… reabre em instantes") que continua na tela durante a instalação silenciosa; (3) ao abrir na versão nova, um aviso no canto inferior direito, "Termix atualizado para a versão X · levou N min S s" (tempo do clique até o app voltar, que também mede o problema).
+- **Feito:** `src/updater.js` (`beginInstall`: grava `update-pending.json` com versão de origem, destino e hora; notificação; `INSTALL_DELAY_MS`; `update:just` entrega o resultado uma vez e apaga o arquivo), `src/preload.js` (`updateJust`), `src/renderer/app.js` (`showUpdBusy`, `showUpdated`, `fmtMs`, ícone `check`), `src/renderer/styles.css` (`#updbusy`, `#updok`); versão **0.2.1** no `package.json`.
+- **Testado (CDP, instância isolada):** com `TERMIX_FAKE_UPDATE=1`: cartão "Atualizando…" aparece ao chamar `applyUpdate`; com um `update-pending.json` de 3 min 05 s: o aviso "atualizado para a 0.2.0 … 3 min 06 s" aparece ~1,5 s depois de abrir e o arquivo é apagado; capturas conferidas. **Não testado de verdade:** a notificação do Windows (só pelo código, sem erro) e o fluxo real com instalador.
+- **Limite importante do teste real:** o cartão "Atualizando…" e a notificação rodam no app **antigo** (o que está instalado na hora do clique). Instalado o 0.2.0 → 0.2.1, só o aviso "atualizado" aparece (a 0.2.1 já o traz). Para ver o cartão e a notificação de verdade é preciso uma **segunda atualização**, 0.2.1 → 0.2.2.
+- **Como validar:** publicar a 0.2.1; no app instalado (0.2.0) clicar em Atualizar agora e, ao voltar, conferir o aviso "atualizado para a 0.2.1" com o tempo; depois publicar a 0.2.2 e repetir para ver o cartão e a notificação.
+
+
 ## Validadas em DEV1
 
 ### TASK-052 — Alinhar as bolhas do chat (pergunta, resposta e ferramentas na mesma coluna)
@@ -50,16 +66,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ## Prontas
 
 ## Backlog
-
-### TASK-050 — Indicativo de que o app está atualizando (do clique em Atualizar até o app reabrir)
-
-- **Responsável:** DEV1
-- **Status:** BACKLOG
-- **Prioridade:** Média — observado pelo usuário em 2026-11-02 no teste da 0.2.0: ao clicar em **Atualizar agora** a janela fecha e o app demora para reabrir (cerca de 4 minutos entre o clique e o processo novo, com a atualização em modo silencioso), **sem nenhum sinal na tela** de que está atualizando; a pessoa pode achar que o app travou ou fechou.
-- **Objetivo:** dar retorno claro durante a atualização, sem a pessoa ter de adivinhar.
-- **Ideias a validar com o usuário:** (1) antes de fechar, um cartão curto "Atualizando para a 0.2.0… o Termix reabre sozinho" com a janela ainda visível por 1 a 2 s; (2) uma janelinha de progresso pequena, separada do app, que fica na tela durante a instalação silenciosa e some quando o Termix reabre (o instalador roda com `quitAndInstall(true, true)`, sem assistente); (3) notificação do Windows "Termix atualizando… reabre em instantes" e outra quando voltar; (4) ao reabrir, um aviso "Termix atualizado para a 0.2.0" com um resumo do que mudou (a partir do CHANGELOG).
-- **Critérios de aceite (a refinar):** do clique em Atualizar agora até o app reabrir há sempre algum indicativo na tela ou na barra de tarefas; ao reabrir, a pessoa vê que a versão mudou; não atrapalha a restauração das abas; testado de ponta a ponta com duas versões publicadas (como na TASK-020/049), medindo e registrando o tempo do clique até a janela voltar.
-- **Base existente:** `src/updater.js` (`update:install` chama `autoUpdater.quitAndInstall(true, true)`), `applyUpdate`, `showUpdCard` e o botão `.updbtn` em `src/renderer/app.js`; `docs/DECISOES.md` ("Atualização do app").
 
 ### TASK-038 — Arrastar para reordenar as abas da Web
 

@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-050 — Retorno durante a atualização do app (versão 0.2.1)** (DEV1)
+
+- Ao clicar em Atualizar agora aparece um cartão "Atualizando o Termix…" e uma notificação do Windows; ao reabrir na versão nova, o aviso "Termix atualizado para a X · levou N min" mede o tempo do clique até o app voltar. Versão do app: 0.2.1. Testado por CDP com simulação; o fluxo real exige duas atualizações seguidas.
+
 **TASK-052 — Bolhas do chat alinhadas** (DEV1, validada em DEV1 — aprovada pelo usuário)
 
 - Pergunta, resposta e cartões de ferramenta passaram a usar a mesma coluna (mesmas bordas esquerda e direita), com os avatares nas calhas laterais. Medido por CDP em instância isolada.
