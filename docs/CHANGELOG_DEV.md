@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-049 e TASK-050 concluídas** (DEV1)
+
+- Marcadas como prontas pelo usuário depois da publicação das versões 0.2.0 e 0.2.1 (já na `main`). Cartão "Atualizando…" e notificação do Windows ainda não foram vistos numa atualização real (só aparecem a partir da 0.2.1).
+
 **Promoção dev1 → main (versão 0.2.1)** (DEV1)
 
 - Promovidas as TASK-051 e 052 (validadas) e as demais já listadas. A TASK-050 (retorno durante a atualização) foi junto a pedido do usuário, para ser testada na atualização real; segue **aguardando validação** (na dev1). A TASK-049 continua em andamento.
