@@ -12,20 +12,38 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
+### TASK-033 — Arrastar e soltar das abas dos terminais não funciona direito (CRÍTICA)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (corrigida e testada por cliques reais no Claude; falta o usuário usar no app)
+- **Prioridade:** **Crítica** — pedido do usuário em 2026-11-01 ("não está funcionando direito")
+- **Objetivo:** reordenar as abas dos terminais (e as da Web, que usam a mesma barra) arrastando, de forma fluida e previsível, sem perder aba, sem pular de posição e sem estragar o visual encaixado da TASK-030.
+- **Sintomas:** o usuário não descreveu o defeito exato; **perguntar ou reproduzir ao iniciar** (arrasta mas não solta na posição certa? a aba some? o recorte da aba ativa fica para trás? trava com muitas abas?).
+- **Base existente:** `src/renderer/app.js` (arraste por `mousedown`/`transform` nas abas, `reorderTabs`, classe `dragging`), `src/renderer/styles.css` (`#tabsRow .tab.dragging`). Suspeitas já conhecidas: o recorte da aba ativa (`fuseBar`, TASK-030) fica na posição de antes enquanto a aba ativa é arrastada (só se refaz ao soltar); o limite da barra com muitas abas encolhidas; arrastar com a aba ativa versus uma inativa.
+- **Critérios de aceite (a refinar):** arrastar qualquer aba (ativa ou não) até qualquer posição e soltar sempre deixa a ordem certa, salva e refletida na tela; a aba arrastada acompanha o mouse sem pulos e o visual encaixado se mantém durante o arraste; funciona com 2, 8 e 20 abas e em janela estreita; clique simples e clique duplo continuam funcionando; testado por cliques reais (CDP) e capturas.
+- **Reproduzido (2026-11-02, instância isolada com CDP e cliques reais):** a ordem final saía certa com poucas abas; os defeitos eram (1) com a aba ativa arrastada, o recorte escuro da barra ficava parado no lugar antigo (buraco na barra e aba sem a fusão com o terminal); (2) qualquer redesenho das abas no meio do arraste (aviso, estado do agente) soltava a aba do mouse; (3) a aba arrastada era translúcida e o nome da aba de baixo aparecia através; (4) **com muitas abas a barra estourava** (20 abas: 2041 px numa barra de 1000; abas além da borda inalcançáveis e botões "+" fora da tela); (5) com abas de larguras diferentes não dava para chegar à última posição (o limite do trilho usava a largura da aba arrastada).
+- **Feito:** `src/renderer/app.js`: o recorte (`fuseBar(bar, dx)`) acompanha a aba ativa durante o arraste (colado ao mouse se ela é a arrastada; deslizando junto se ela abre espaço); `renderTabs` adia o redesenho enquanto arrasta (`UI.tabDragging`) e refaz ao soltar; a posição de soltar usa o centro sem o limite do trilho. `src/renderer/styles.css`: aba arrastada opaca; inativas encolhem até 34 px (só o ponto de estado) e a ativa fica com no mínimo 120 px; transição do recorte só durante o arraste.
+- **Testado (CDP, cliques reais, instância isolada):** 8 abas (ativa e inativa, redesenho forçado no meio) e 20 abas (primeira→última, última→primeira, ativa, inativa), ordem certa, salva e igual à tela; clique simples ativa a aba; janela 980×620 sem estouro; capturas conferidas; `npm run check` passou. Não exercitado: clique duplo logo após arrastar, 30+ abas (a barra voltaria a estourar), abas da Web.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/styles.css`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm start`; abra 6 ou mais terminais, arraste a aba ativa e uma inativa para o começo, o meio e o fim; abra 15 a 20 abas e confira que todas cabem (inativas só com o ponto); clique e clique duplo continuam funcionando.
+- **Pendências:** as abas da **Web** (`#wtabs`) nunca tiveram arrastar (só os terminais); com mais de ~25 abas a barra estoura de novo (rolagem horizontal seria o próximo passo). Ambas vão para o Backlog se o usuário quiser.
+- **Próximo passo:** o usuário testar; com a aprovação, TASK-036 (README).
+
+## Validadas em DEV1
+
 ### TASK-035 — Atualização do app com aviso no cabeçalho (MVP)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (código pronto e testado em simulação; falta o teste real com duas versões publicadas)
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-02; o teste real com duas versões publicadas foi feito na TASK-020: Release v0.1.1, aviso, botão no cabeçalho, instalação e reabertura)
 - **Prioridade:** Alta (MVP) — pedido do usuário em 2026-11-02
 - **Objetivo:** avisar quem tem o app instalado que há versão nova; ao clicar, atualiza e pede/faz o reinício; se a pessoa não quiser agora, o botão **Atualizar** fica no cabeçalho.
 - **Decisões (usuário, 2026-11-02):** botão no cabeçalho do app quando a pessoa adia o aviso; hospedagem no **GitHub** com o repositório público (sem token no app).
 - **Feito até agora:** `src/updater.js` (novo, `electron-updater`; consulta 15 s depois de abrir e a cada 4 h, baixa em segundo plano, instala ao fechar se ignorado; desligado em `npm start`; `TERMIX_FAKE_UPDATE=1` simula); `src/main.js` e `src/preload.js` (ponte `update:*`); `src/renderer/app.js` (aviso com Depois/Atualizar agora, botão no cabeçalho, confirmação se houver agente trabalhando) e `styles.css`; `package.json` (`publish` do GitHub, script `release`, dependência). Testado por CDP em instância isolada com a simulação: o aviso aparece, "Depois" o fecha e o botão fica no cabeçalho; capturas conferidas; `npm run check` passou.
 - **Arquivos tocados:** `src/updater.js`, `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `src/renderer/styles.css`, `package.json`, `package-lock.json`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
 - **Como validar:** `TERMIX_FAKE_UPDATE=1 npm start` (aviso depois de ~6 s; Depois; botão no cabeçalho). Real: instalar a 0.1.0, publicar a 0.1.1 com `npm run release`, abrir a 0.1.0 e esperar o aviso.
-- **Pendências:** **não testado com um Release real** (precisa o repositório público, o `GH_TOKEN` e duas versões); a instalação silenciosa e a reabertura do app só serão vistas assim; o clique em "Atualizar agora" na simulação não instala nada.
-- **Próximo passo:** o usuário confirmar que o repositório ficará público; depois TASK-033 e TASK-020 (que passa a incluir 0.1.0 → 0.1.1).
-
-## Validadas em DEV1
+- **Pendências:** nenhuma da atualização; sem assinatura de código (SmartScreen pode avisar).
+- **Próximo passo:** próximos lançamentos usam versão 0.1.2 ou maior (`npm run release`).
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-020 — Testar o instalador em um Windows limpo (Sandbox)
 
@@ -420,17 +438,6 @@ _Nenhuma no momento._
 - **Validada em:** 2026-10-29 (o usuário aprovou o resultado). Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ## Prontas
-
-### TASK-033 — Arrastar e soltar das abas dos terminais não funciona direito (CRÍTICA)
-
-- **Responsável:** DEV1
-- **Status:** PRONTA
-- **Prioridade:** **Crítica** — pedido do usuário em 2026-11-01 ("não está funcionando direito")
-- **Objetivo:** reordenar as abas dos terminais (e as da Web, que usam a mesma barra) arrastando, de forma fluida e previsível, sem perder aba, sem pular de posição e sem estragar o visual encaixado da TASK-030.
-- **Sintomas:** o usuário não descreveu o defeito exato; **perguntar ou reproduzir ao iniciar** (arrasta mas não solta na posição certa? a aba some? o recorte da aba ativa fica para trás? trava com muitas abas?).
-- **Base existente:** `src/renderer/app.js` (arraste por `mousedown`/`transform` nas abas, `reorderTabs`, classe `dragging`), `src/renderer/styles.css` (`#tabsRow .tab.dragging`). Suspeitas já conhecidas: o recorte da aba ativa (`fuseBar`, TASK-030) fica na posição de antes enquanto a aba ativa é arrastada (só se refaz ao soltar); o limite da barra com muitas abas encolhidas; arrastar com a aba ativa versus uma inativa.
-- **Critérios de aceite (a refinar):** arrastar qualquer aba (ativa ou não) até qualquer posição e soltar sempre deixa a ordem certa, salva e refletida na tela; a aba arrastada acompanha o mouse sem pulos e o visual encaixado se mantém durante o arraste; funciona com 2, 8 e 20 abas e em janela estreita; clique simples e clique duplo continuam funcionando; testado por cliques reais (CDP) e capturas.
-- **Próximo passo:** reproduzir o defeito numa instância isolada com várias abas e corrigir.
 
 ## Backlog
 

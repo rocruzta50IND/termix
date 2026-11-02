@@ -175,8 +175,14 @@ body.maxed .shadow{filter:none}
   -webkit-mask-position:0 0,var(--tl,0px) 0,var(--al,0px) 100%,var(--tr,0px) 100%;mask-position:0 0,var(--tl,0px) 0,var(--al,0px) 100%,var(--tr,0px) 100%;
   -webkit-mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) 100%,calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;mask-size:100% 100%,calc(var(--tr,0px) - var(--tl,0px)) 100%,calc(var(--tl,0px) - var(--al,0px)) 8px,calc(var(--ar,0px) - var(--tr,0px)) 8px;
   -webkit-mask-composite:xor;mask-composite:exclude}
+/* durante o arraste o recorte desliza junto com as abas que abrem espaço; colado ao mouse quando a ativa é a arrastada */
+#tabsRow.tabdrag::before{transition:-webkit-mask-position .16s ease,mask-position .16s ease}
+#tabsRow.tabdrag.tabdrag-follow::before{transition:none}
 .tab{position:relative;display:flex;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;border-radius:8px 8px 0 0;background:transparent;border:0;
-  color:var(--text3);flex:0 1 190px;min-width:96px}
+  color:var(--text3);flex:0 1 190px;min-width:34px}
+/* com muitas abas as inativas encolhem até mostrar só o ponto de estado; a ativa não passa de 120 px (nome legível) e as orelhas dela ficam fora do recorte */
+.tab:not(.active){overflow:hidden}
+.tab.active{min-width:120px}
 .tab+.tab::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:1px;background:rgba(255,255,255,.3)}
 .tab.active::before,.tab.active+.tab::before{display:none}
 .tab:not(.active):hover{filter:brightness(1.35);color:var(--text)}
@@ -333,7 +339,7 @@ table.t td{padding:11px 10px;border-top:1px solid var(--border);font-size:13px}
 
 /* aba sendo arrastada */
 #tabsRow .tab{transition:transform .16s ease,background .15s}
-#tabsRow .tab.dragging{transition:none;z-index:6;cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.5);filter:brightness(1.12)}
+#tabsRow .tab.dragging{background-color:#0d0f1e;transition:none;z-index:6;cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,.5);filter:brightness(1.12)}
 
 /* botão de reiniciar: só o ícone, discreto */
 .btn.icon{width:30px;height:30px;padding:0;border-radius:50%;background:transparent;border-color:transparent;color:var(--text3)}

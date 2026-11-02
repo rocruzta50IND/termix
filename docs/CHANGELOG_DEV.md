@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-033 — Arrastar e soltar das abas** (DEV1)
+
+- Corrigido: o recorte escuro da barra acompanha a aba ativa durante o arraste; redesenhos no meio do arraste não soltam mais a aba; aba arrastada opaca; última posição alcançável com abas de larguras diferentes. Com muitas abas a barra estourava (20 abas, 2041 px em 1000): inativas agora encolhem até mostrar só o ponto e a ativa fica com 120 px no mínimo. Testado por cliques reais (CDP) com 8 e 20 abas e janela 980×620. Abas da Web não têm arrastar (fora do escopo).
+
 **TASK-020 — Teste do instalador em Windows limpo (Sandbox) e da atualização real** (DEV1)
 
 - Testado no Windows Sandbox (sem Node e sem Claude Code), com roteiros automáticos e capturas de tela: instalação silenciosa e pelo assistente com janelas (em português, com o ícone novo), pasta, `Termix.exe`, atalhos (área de trabalho e menu Iniciar), registro de desinstalação, abertura do app, aviso "Claude Code não foi encontrado" com "Tentar de novo", desinstalação que remove programa e atalhos e mantém os dados.

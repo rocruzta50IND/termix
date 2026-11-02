@@ -821,16 +821,17 @@ function renderSide() {
 }
 
 // mede a aba ativa e deixa a barra sem o fundo escuro atrás dela (com as duas orelhas), para ela se fundir ao terminal
-function fuseBar(bar) {
+function fuseBar(bar, dx = 0) {
   if (!bar) return;
   const t = bar.querySelector('.tab.active');
   if (!t) { for (const k of ['--al', '--ar', '--tl', '--tr']) bar.style.removeProperty(k); return; }
-  const l = t.offsetLeft, r = l + t.offsetWidth;
+  const l = t.offsetLeft + dx, r = l + t.offsetWidth;
   bar.style.setProperty('--tl', l + 'px'); bar.style.setProperty('--tr', r + 'px');
   bar.style.setProperty('--al', (l - 8) + 'px'); bar.style.setProperty('--ar', (r + 8) + 'px');
 }
 if (typeof ResizeObserver !== 'undefined') window.addEventListener('DOMContentLoaded', () => { for (const id of ['tabsRow', 'wtabs']) { const el = document.getElementById(id); if (el) new ResizeObserver(() => fuseBar(el)).observe(el); } });
 function renderTabs() {
+  if (UI.tabDragging) return; // redesenhar no meio do arraste soltaria a aba do mouse; o soltar refaz
   const p = curProject();
   if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
@@ -1896,30 +1897,41 @@ document.addEventListener('pointermove', (e) => {
   const dx = e.clientX - d.startX;
   if (!d.on) {
     if (Math.abs(dx) < 6) return;
-    d.on = true;
+    d.on = true; UI.tabDragging = true; document.getElementById('tabsRow').classList.add('tabdrag');
     try { d.el.setPointerCapture(d.pid); } catch { /* sem captura: segue assim mesmo */ }
     d.el.classList.add('dragging');
   }
   const r0 = d.rects[d.from], last = d.rects[d.rects.length - 1];
   const cdx = Math.max(d.rects[0].left - r0.left, Math.min(last.right - r0.right, dx)); // não sai do trilho das abas
   d.el.style.transform = `translateX(${cdx}px)`;
-  const center = r0.left + r0.width / 2 + cdx;
+  const center = r0.left + r0.width / 2 + dx; // sem o limite do trilho: com abas de larguras diferentes, o limite impediria chegar à última posição
   let to = 0;
   d.rects.forEach((r, k) => { if (k !== d.from && r.left + r.width / 2 <= center + 1) to++; });
   d.to = to;
   const shift = r0.width + 2;
-  d.els.forEach((x, k) => {
-    if (k === d.from) return;
-    x.style.transform = d.from < to && k > d.from && k <= to ? `translateX(${-shift}px)` : d.from > to && k >= to && k < d.from ? `translateX(${shift}px)` : '';
+  const offs = d.els.map((x, k) => {
+    if (k === d.from) return cdx;
+    const o = d.from < to && k > d.from && k <= to ? -shift : d.from > to && k >= to && k < d.from ? shift : 0;
+    x.style.transform = o ? `translateX(${o}px)` : '';
+    return o;
   });
+  // o recorte escuro da barra acompanha a aba ativa (colada no mouse se é ela que é arrastada; com a mesma animação das vizinhas se ela abre espaço)
+  const bar = document.getElementById('tabsRow'), ai = d.els.findIndex((x) => x.classList.contains('active'));
+  if (ai >= 0) {
+    bar.classList.toggle('tabdrag-follow', ai === d.from);
+    fuseBar(bar, offs[ai]);
+  }
 });
 function endTabDrag() {
   const d = tabDrag;
   tabDrag = null;
   if (!d || !d.on) return;
+  UI.tabDragging = false;
+  document.getElementById('tabsRow').classList.remove('tabdrag', 'tabdrag-follow');
   d.els.forEach((x) => { x.style.transform = ''; x.classList.remove('dragging'); });
   UI.justDragged = true; setTimeout(() => { UI.justDragged = false; }, 60); // evita que o clique do soltar selecione/abra a aba
   if (d.to !== d.from) reorderTabs(curProject(), d.from, d.to);
+  else renderTabs(); // refaz o que ficou adiado durante o arraste e devolve o recorte ao lugar
 }
 document.addEventListener('pointerup', endTabDrag);
 document.addEventListener('pointercancel', endTabDrag);
