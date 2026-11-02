@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-049 — Versão 0.2.0** (DEV1)
+
+- Versão do app subiu de 0.1.1 para 0.2.0 (modo Chat com símbolos animados, rodapé com a troca Chat/Terminal, telas contínuas com o app, sino e botões da janela redesenhados, README). Publicação do Release e validação da atualização do app instalado em andamento.
+
 **TASK-036 — README do projeto** (DEV1)
 
 - Novo `README.md` em português (o que é, recursos, instalação com o aviso do SmartScreen, atualização, primeiros passos, limites conhecidos, como relatar problema e como rodar o código) e a captura `docs/img/chat.png`, feita numa instância zerada com um projeto de demonstração, sem dados pessoais. Sem seção de licença (o app não será comercializado). O instalador foi testado pelo usuário e funciona. Aprovada; a promoção para a `main` aguarda o pedido do usuário.

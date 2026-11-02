@@ -8,7 +8,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-_Nenhuma no momento._
+### TASK-049 — Publicar a versão 0.2.0 e validar a atualização do app instalado
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("considerar uma nova versão e subir")
+- **Objetivo:** publicar a versão **0.2.0** (a dev1 tem 100+ commits desde a 0.1.1: modo Chat, rodapé, telas contínuas, ícones animados, README) e validar, no app **instalado** na máquina do usuário, que o aviso de atualização aparece ao abrir, que o download/instalação funciona e que as sessões dos terminais abertos voltam depois (a atualização fecha o app e a restauração automática retoma as conversas pelo ID; os processos em andamento são encerrados, com confirmação se houver agente trabalhando).
+- **Decisões (usuário, 2026-11-02):** versão **0.2.0**; promover a dev1 para a main junto (para o README aparecer no GitHub). A 037 (imagem lateral do instalador) e a 038 (arrastar abas da Web) **não estão no código da dev1** e ficam no Backlog; o ícone novo da barra de tarefas é da TASK-034 (já validada). 009, 011 e 026 ficam para bem depois; 039 também.
+- **Passos:** (1) `package.json` para 0.2.0, registro e commit na dev1; (2) `/fluxo:promover` (fast-forward da main); (3) `npm run release` (instalador, `latest.yml` e Release v0.2.0 no GitHub); (4) usuário abre o Termix instalado (0.1.1) e confere o aviso, atualiza e vê as abas voltarem.
+- **Feito até agora:** versão 0.2.0 no `package.json`.
+- **Próximo passo:** promover, publicar e conferir os ativos do Release.
+
 
 ## Aguardando validação DEV1
 
