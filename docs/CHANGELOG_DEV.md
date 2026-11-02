@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**Promoção dev1 → main** (DEV1)
+
+- Promovidas (fast-forward, 103 commits): TASK-002 a 005, 010 a 025, 027 a 036 e 040 a 048 (todas validadas em DEV1). Na mesma passada, o `TASKS.md` foi corrigido: um erro de edição tinha apagado do registro os fechamentos das TASK-036, 042, 043, 046 e 047; foram recompostos a partir do histórico do git. A TASK-049 (publicar a 0.2.0) segue em andamento até o usuário validar a atualização no app instalado.
+
 **TASK-049 — Versão 0.2.0** (DEV1)
 
 - Versão do app subiu de 0.1.1 para 0.2.0 (modo Chat com símbolos animados, rodapé com a troca Chat/Terminal, telas contínuas com o app, sino e botões da janela redesenhados, README). Publicação do Release e validação da atualização do app instalado em andamento.
