@@ -101,7 +101,7 @@ function chatView(tab) {
   const root = document.createElement('div');
   root.className = 'c-root'; root.dataset.chat = tab.id;
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
-    <div class="c-scroll"><div class="c-thread"><div class="c-typing"><span class="c-av">${CHAT_MARK}</span></div></div></div>
+    <div class="c-scroll"><div class="c-thread"><div class="c-typing"><span class="c-av">${CHAT_MARK}</span><div class="c-st"><div class="c-st1"><b class="v"></b><span class="t"></span></div><div class="c-st2"></div></div></div></div></div>
     <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>
       <div class="c-in"><div class="c-thumbs"></div><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
         <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
@@ -274,6 +274,33 @@ function chatRenderAll(c) {
   c.stick = true; chatScroll(c);
 }
 
+/* ---------- "o que o Claude está fazendo", abaixo da conversa, como o "Manifesting…" do terminal ---------- */
+const CHAT_VERBS = ['Pensando', 'Analisando', 'Tecendo', 'Conjurando', 'Cozinhando', 'Manifestando', 'Decifrando', 'Montando', 'Destilando', 'Explorando', 'Costurando', 'Calculando'];
+const CHAT_DOING = { Read: 'Lendo', Bash: 'Executando', Edit: 'Editando', Write: 'Escrevendo', MultiEdit: 'Editando', Grep: 'Buscando em arquivos', Glob: 'Procurando arquivos', WebFetch: 'Abrindo uma página', WebSearch: 'Pesquisando na web', Task: 'Delegando a um subagente', Agent: 'Delegando a um subagente', TodoWrite: 'Atualizando a lista de tarefas', NotebookEdit: 'Editando o notebook' };
+function chatElapsed(ms) { const s = Math.max(0, Math.floor(ms / 1000)); return s < 60 ? s + 's' : Math.floor(s / 60) + 'min ' + String(s % 60).padStart(2, '0') + 's'; }
+function chatStatus(c) {
+  if (!c.busy || !c.typing) return;
+  const el = Date.now() - (c.t0 || Date.now());
+  const run = [...c.items].reverse().find((it) => it.k === 'tool' && !it.done);
+  const last = c.items[c.items.length - 1];
+  let sub;
+  if (run) { let arg = chatToolArg(run.name, run.input);
+    if (!arg && run.json) { // a entrada ainda chegando pelo stream: pega o primeiro campo conhecido
+      const m = /"(?:file_path|command|pattern|path|url|query|description)"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(run.json);
+      if (m) arg = m[1].replace(/\\n/g, ' ').slice(0, 120);
+    }
+    sub = (CHAT_DOING[run.name] || 'Usando ' + (run.name || 'uma ferramenta')) + (arg ? ' · ' + arg : '');
+  }
+  else if (last && last.k === 'tool') sub = 'Analisando o resultado de ' + (last.name || 'ferramenta');
+  else if (last && last.k === 'me') sub = 'Começando a pensar na sua mensagem';
+  else sub = 'Pensando no próximo passo';
+  const q = c.typing;
+  q.querySelector('.v').textContent = CHAT_VERBS[((c.verbI || 0) + Math.floor(el / 6000)) % CHAT_VERBS.length] + '…';
+  q.querySelector('.t').textContent = chatElapsed(el);
+  q.querySelector('.c-st2').textContent = sub;
+}
+setInterval(() => { for (const id in CH) { const c = CH[id]; if (c.busy && c.typing && c.typing.classList.contains('on')) chatStatus(c); } }, 1000);
+
 /* ---------- interface da aba (estado, modelo, contexto, permissão) ---------- */
 function chatUi(tab) {
   const c = CH[tab.id], f = findTab(tab.id);
@@ -284,6 +311,7 @@ function chatUi(tab) {
   const think = c.busy && !(last && last.k === 'ai' && last.live);
   c.typing.classList.toggle('on', think);
   if (think) chatAvatar(c.typing, c.v == null ? chatVar : c.v);
+  if (think) chatStatus(c);
   c.root.querySelector('.c-empty h2').textContent = `Nova conversa em ${p.name}`;
   c.root.querySelector('.c-empty p').textContent = p.path;
   c.root.querySelector('.c-folder span').textContent = p.name;
@@ -352,6 +380,7 @@ async function chatSendMsg(tab, text, imgs = []) {
   UI.events = UI.events.filter((e) => !(e.kind === 'cache' && e.tabId === tab.id)); // mandou mensagem: o cache foi renovado
   chatAdd(c, { k: 'me', text: text.trim(), imgs: imgs.map((m) => m.url) });
   c.busy = true; c.stick = true; c.lastAi = '';
+  c.t0 = Date.now(); c.verbI = Math.floor(Math.random() * CHAT_VERBS.length);
   chatVar = c.v = (chatVar + 1) % CHAT_WORK.length; // rodízio: cada mensagem usa o próximo símbolo
   setSt(tab, 'work'); chatUi(tab);
   const res = await api.chatSend(tab.id, text.trim(), imgs.map((m) => ({ mt: m.mt, data: m.data })));

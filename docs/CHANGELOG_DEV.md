@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-051 — O chat mostra o que o Claude está fazendo** (DEV1)
+
+- Enquanto o agente trabalha, o chat mostra o símbolo animado, um verbo que muda, o tempo e uma linha com a ação do momento (executando um comando, lendo um arquivo, analisando o resultado), como o "Manifesting…" do terminal. Testado com o Claude Code real.
+
 **Promoção dev1 → main** (DEV1)
 
 - Promovidas (fast-forward, 103 commits): TASK-002 a 005, 010 a 025, 027 a 036 e 040 a 048 (todas validadas em DEV1). Na mesma passada, o `TASKS.md` foi corrigido: um erro de edição tinha apagado do registro os fechamentos das TASK-036, 042, 043, 046 e 047; foram recompostos a partir do histórico do git. A TASK-049 (publicar a 0.2.0) segue em andamento até o usuário validar a atualização no app instalado.
