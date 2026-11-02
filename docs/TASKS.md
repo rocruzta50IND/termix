@@ -8,31 +8,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-055 — Publicar a versão 0.2.2 e validar a atualização com o novo modelo (cartão Atualizando)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("publica a 0.2.2, que daí já validamos também o atualizar com o novo modelo de mostrar atualizando")
+- **Objetivo:** publicar a 0.2.2 (leva a TASK-053, menu do projeto com o botão direito, e a TASK-054, botão de copiar a resposta) e, com o app instalado já na 0.2.1, ver **ao vivo** a atualização com o retorno da TASK-050: o cartão "Atualizando o Termix para a versão 0.2.2…", a notificação do Windows e, ao reabrir, o aviso "Termix atualizado para a versão 0.2.2 · levou N min".
+- **Passos:** (1) `package.json` para 0.2.2 e commit; (2) promoção dev1 → main; (3) `npm run dist` e conferir o `latest.yml` (versão, tamanho, sha512); (4) `gh release create v0.2.2` com instalador, blockmap e `latest.yml`; (5) o usuário atualiza o app instalado (0.2.1 → 0.2.2) e relata o que viu.
+- **O usuário precisa ver:** o cartão por cima da janela antes de fechar; a notificação do Windows durante a instalação; o aviso verde no canto inferior direito ao reabrir, com o tempo; e as abas voltando.
+- **Feito até agora:** versão 0.2.2 no `package.json`.
+
 ## Aguardando validação DEV1
 
 ## Validadas em DEV1
-
-### TASK-054 — Botão de copiar a resposta inteira no chat
-
-- **Responsável:** DEV1
-- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-02)
-- **Prioridade:** Média — pedido do usuário em 2026-11-02, com duas capturas (uma resposta longa e um bloco de código com o botão "Copiar" no cabeçalho): "qualquer resposta eu consiga copiar com um botão de copiar, mas manter quando é caixa assim".
-- **Objetivo:** qualquer resposta do Claude pode ser copiada inteira com um botão; os blocos de código continuam com o "Copiar" no cabeçalho do bloco.
-- **Feito:** `src/renderer/chat.js`: botão `.c-copyall` ("Copiar", ícone de cópia) em toda resposta pronta (não aparece durante o streaming nem em resposta vazia); copia o **texto original em Markdown** (títulos, listas e blocos de código intactos, e não só o que está desenhado) pela mesma ponte `api.clipWrite`; mostra "Copiado" por 1,4 s; ícones `copy` e `check` em `CHAT_ICON`. `src/renderer/styles.css`: pílula pequena que fica a cavalo na borda de cima da bolha, no canto direito, visível ao passar o mouse na resposta (ou com o foco do teclado).
-- **Testado (CDP, cliques reais, instância isolada):** invisível sem o mouse e visível com o mouse; o clique copiou a resposta inteira (confirmado lendo a área de transferência do Windows, que foi restaurada depois); "Copiado" volta a "Copiar" sozinho; o botão do bloco de código continua separado. Não testado: respostas muito longas com rolagem e janela estreita. Perguntas do usuário ficaram sem o botão (fácil de incluir).
-- **Como validar:** `npm start`, abrir um chat, passar o mouse numa resposta e clicar em Copiar; colar em outro lugar.
-- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
-
-### TASK-053 — Menu do projeto com o botão direito (barra lateral recolhida e aberta)
-
-- **Responsável:** DEV1
-- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-02)
-- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura da barra recolhida (só os avatares N, P, T): com a barra recolhida não havia como renomear, arquivar, remover ou excluir um projeto, porque o menu só abria pelo botão "⋯" da barra aberta.
-- **Objetivo:** clique direito no projeto abre o mesmo menu do "⋯" (Abrir pasta, Renomear, Arquivar, Remover do app e, só em pasta criada pelo app, Excluir pasta…), também com a barra recolhida.
-- **Feito:** `src/renderer/app.js`: o ouvinte de `contextmenu` reconhece o avatar do projeto (`.av[data-go]`, barra recolhida) e o nome do projeto (`[data-ph]`, barra aberta), troca para esse projeto como o "⋯" já faz e chama `projectMenuFlow()`. O menu da aba (clique direito na aba) segue como estava.
-- **Testado (CDP, cliques reais, instância isolada com 2 projetos):** barra recolhida: clique direito no avatar abre o menu do projeto certo (Beta e depois Alfa); clique esquerdo continua só navegando, sem abrir menu; barra aberta: clique direito no nome abre o menu; captura conferida. Não testado: confirmar Arquivar/Remover/Excluir a partir desse menu (usa o fluxo que já existia).
-- **Como validar:** `npm start`, recolher a barra lateral e clicar com o botão direito num projeto; escolher Renomear.
-- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ## Prontas
 
@@ -136,6 +124,28 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
 
 ## Concluídas
+
+### TASK-053 — Menu do projeto com o botão direito (barra lateral recolhida e aberta)
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (validada em DEV1 — aprovada pelo usuário em 2026-11-02; promovida para a `main` em 2026-11-02, versão 0.2.2)
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura da barra recolhida (só os avatares N, P, T): com a barra recolhida não havia como renomear, arquivar, remover ou excluir um projeto, porque o menu só abria pelo botão "⋯" da barra aberta.
+- **Objetivo:** clique direito no projeto abre o mesmo menu do "⋯" (Abrir pasta, Renomear, Arquivar, Remover do app e, só em pasta criada pelo app, Excluir pasta…), também com a barra recolhida.
+- **Feito:** `src/renderer/app.js`: o ouvinte de `contextmenu` reconhece o avatar do projeto (`.av[data-go]`, barra recolhida) e o nome do projeto (`[data-ph]`, barra aberta), troca para esse projeto como o "⋯" já faz e chama `projectMenuFlow()`. O menu da aba (clique direito na aba) segue como estava.
+- **Testado (CDP, cliques reais, instância isolada com 2 projetos):** barra recolhida: clique direito no avatar abre o menu do projeto certo (Beta e depois Alfa); clique esquerdo continua só navegando, sem abrir menu; barra aberta: clique direito no nome abre o menu; captura conferida. Não testado: confirmar Arquivar/Remover/Excluir a partir desse menu (usa o fluxo que já existia).
+- **Como validar:** `npm start`, recolher a barra lateral e clicar com o botão direito num projeto; escolher Renomear.
+- **Validada em:** 2026-11-02. Promovida para a `main` em 2026-11-02.
+
+### TASK-054 — Botão de copiar a resposta inteira no chat
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (validada em DEV1 — aprovada pelo usuário em 2026-11-02; promovida para a `main` em 2026-11-02, versão 0.2.2)
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com duas capturas (uma resposta longa e um bloco de código com o botão "Copiar" no cabeçalho): "qualquer resposta eu consiga copiar com um botão de copiar, mas manter quando é caixa assim".
+- **Objetivo:** qualquer resposta do Claude pode ser copiada inteira com um botão; os blocos de código continuam com o "Copiar" no cabeçalho do bloco.
+- **Feito:** `src/renderer/chat.js`: botão `.c-copyall` ("Copiar", ícone de cópia) em toda resposta pronta (não aparece durante o streaming nem em resposta vazia); copia o **texto original em Markdown** (títulos, listas e blocos de código intactos, e não só o que está desenhado) pela mesma ponte `api.clipWrite`; mostra "Copiado" por 1,4 s; ícones `copy` e `check` em `CHAT_ICON`. `src/renderer/styles.css`: pílula pequena que fica a cavalo na borda de cima da bolha, no canto direito, visível ao passar o mouse na resposta (ou com o foco do teclado).
+- **Testado (CDP, cliques reais, instância isolada):** invisível sem o mouse e visível com o mouse; o clique copiou a resposta inteira (confirmado lendo a área de transferência do Windows, que foi restaurada depois); "Copiado" volta a "Copiar" sozinho; o botão do bloco de código continua separado. Não testado: respostas muito longas com rolagem e janela estreita. Perguntas do usuário ficaram sem o botão (fácil de incluir).
+- **Como validar:** `npm start`, abrir um chat, passar o mouse numa resposta e clicar em Copiar; colar em outro lugar.
+- **Validada em:** 2026-11-02. Promovida para a `main` em 2026-11-02.
 
 ### TASK-039 — Barra de abas com mais de ~25 abas (rolagem horizontal)
 

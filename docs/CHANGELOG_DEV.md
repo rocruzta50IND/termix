@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**Promoção dev1 → main (versão 0.2.2)** (DEV1)
+
+- Promovidas as TASK-053 (menu do projeto com o botão direito) e TASK-054 (botão de copiar a resposta), mais os registros de encerramento das TASK-037, 038, 039, 049 e 050. Versão do app: 0.2.2. A TASK-055 (publicação e validação da atualização ao vivo) está em andamento.
+
 **TASK-054 — Botão de copiar a resposta inteira** (DEV1, validada em DEV1 — aprovada pelo usuário)
 
 - Toda resposta do chat ganhou um botão "Copiar" (ao passar o mouse) que copia o texto original em Markdown; o botão dos blocos de código continua no cabeçalho do bloco. Testado por clique real, lendo a área de transferência.
