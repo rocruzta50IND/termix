@@ -37,7 +37,7 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 ## Rodapé do app e Chat (TASK-040)
 
 - **Rail (ajuste de 2026-11-02):** sem cápsula nem fundo: só os anéis (contexto, 5 h, 7 d, cache) flutuando junto à borda direita, cada um com um disco escuro discreto atrás do número, para ler sobre qualquer texto. A engrenagem saiu do rail e foi para o fim do rodapé: ela abre o menu "Rail · anéis de métricas" (ligar cada anel, reservar espaço, esmaecer, etiqueta de modelo) e a opção do rodapé (esmaecer quando parado). Os mesmos ajustes estão em Configurações > Rail e rodapé. O rodapé não esmaece por padrão.
-- **Rodapé no chat:** na aba de chat, as funções (Terminais · Web | Clear · Reiniciar) seguem a mesma coluna da caixa de prompt: a primeira começa alinhada com ela, a engrenagem fica na ponta direita e o tamanho do texto é o da linha de baixo do chat. Nos terminais e na Web continuam centralizadas.
+- **Rodapé no chat:** igual ao do terminal, centralizado na base de vidro, com a engrenagem logo depois de Reiniciar (decisão do usuário, 2026-11-02; o alinhamento à coluna da caixa de prompt foi desfeito).
 - **Avatares do chat:** marca do Termix (>_) em quadrado azul na resposta e silhueta na pergunta (no visual Fluxo viram os rótulos CLAUDE e VOCÊ).
 
 - **Rodapé:** a base de vidro da janela ficou mais alta (38 px) e guarda o antigo alternador flutuante: **Terminais (n) · Web | Clear · Reiniciar**, centralizado sob o palco, com o mesmo desenho de antes (cápsula azul no item ativo, selo de contagem, ponto verde de novidade na Web, Clear que pulsa com o contexto alto, Reiniciar que gira). Esmaece quando parado (a mesma opção do rail). A janelinha nativa de antes não aparece mais.
