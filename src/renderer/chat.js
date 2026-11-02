@@ -124,9 +124,9 @@ function chatView(tab) {
 }
 
 /* ---------- imagens coladas (TASK-041) ---------- */
-const CHAT_IMG_MAX = 5, CHAT_IMG_SIDE = 1568, CHAT_IMG_BYTES = 3.5 * 1024 * 1024; // a API aceita ~5 MB por imagem; reduz antes de enviar (custo em tokens)
+const CHAT_IMG_MAX = 20, CHAT_IMG_SIDE = 1568, CHAT_IMG_BYTES = 3.5 * 1024 * 1024; // a API aceita ~5 MB por imagem; reduz antes de enviar (custo em tokens)
 function chatThumbs(c) {
-  c.thumbs.innerHTML = c.imgs.map((m, i) => `<div class="c-th"><img src="${m.url}" alt="Imagem ${i + 1}"><button type="button" data-rm="${i}" title="Remover" aria-label="Remover imagem">×</button></div>`).join('');
+  c.thumbs.innerHTML = c.imgs.map((m, i) => `<div class="c-th"><img src="${m.url}" alt="Imagem ${i + 1}"><button type="button" data-rm="${i}" title="Remover" aria-label="Remover imagem"><svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button></div>`).join('');
   c.root.querySelector('.c-in').classList.toggle('has-img', c.imgs.length > 0);
 }
 async function chatReadImage(file) { // createImageBitmap: a política de segurança da tela não deixa usar blob: em <img>
@@ -147,7 +147,10 @@ async function chatAddImages(c, files) {
   }
   chatThumbs(c);
 }
-function chatWarn(c, msg) { chatSys(c, msg, true); }
+function chatWarn(c, msg) { // aviso rápido sobre a caixa (some sozinho; não vira linha da conversa)
+  let w = c.root.querySelector('.c-warn'); if (!w) { w = document.createElement('div'); w.className = 'c-warn'; c.root.querySelector('.c-box').prepend(w); }
+  w.textContent = msg; clearTimeout(c.warnT); c.warnT = setTimeout(() => w.remove(), 3500);
+}
 
 /* ---------- menu de comandos "/" (TASK-045) ---------- */
 // No modo -p só rodam comandos de skill, de plugin e personalizados; os interativos do terminal (/mcp, /model...) não entram na lista.

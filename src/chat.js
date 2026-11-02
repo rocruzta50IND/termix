@@ -54,7 +54,7 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
   function send({ tabId, text, images }) {
     const rec = procs.get(tabId);
     if (!rec || !rec.child.stdin.writable) return { ok: false };
-    const imgs = (Array.isArray(images) ? images : []).filter((m) => m && /^image\/(png|jpeg|webp|gif)$/.test(m.mt) && typeof m.data === 'string' && /^[A-Za-z0-9+/=]+$/.test(m.data)).slice(0, 5);
+    const imgs = (Array.isArray(images) ? images : []).filter((m) => m && /^image\/(png|jpeg|webp|gif)$/.test(m.mt) && typeof m.data === 'string' && /^[A-Za-z0-9+/=]+$/.test(m.data)).slice(0, 20);
     const content = imgs.length
       ? [...imgs.map((m) => ({ type: 'image', source: { type: 'base64', media_type: m.mt, data: m.data } })), ...(String(text).trim() ? [{ type: 'text', text: String(text) }] : [])]
       : String(text);
