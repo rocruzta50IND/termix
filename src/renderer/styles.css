@@ -69,7 +69,8 @@ body.maxed .shadow{filter:none}
 .wc button.close:active{background:rgba(229,56,74,.4)}
 .tbtn{width:34px;height:34px;padding:0;border-radius:11px;color:var(--text2);display:grid;place-items:center;position:relative}
 .tbtn:hover{background:var(--glass2);color:var(--text)}
-.tbtn.round{border:1px solid var(--border);background:var(--glass);border-radius:50%;width:30px;height:30px}
+.tbtn.round{border:0;background:none;border-radius:50%;width:30px;height:30px;transition:background .14s,color .14s}
+.tbtn.round:hover,.tbtn.round.on{background:rgba(255,255,255,.1);color:var(--text)}
 .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.4px;font-size:17px;line-height:1}
 .logo{height:21px;width:auto;display:block;transform:translateY(1px);filter:drop-shadow(0 1px 6px rgba(59,130,246,.45))}
 .lims{display:flex;align-items:center;gap:0;padding:0;border-radius:99px;cursor:pointer;border:1px solid var(--border);background:var(--glass);overflow:hidden}

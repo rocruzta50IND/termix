@@ -10,7 +10,7 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 ## Estrutura da janela
 - **Moldura em "U" fechada**: cabeçalho fino (46 px) + barra lateral + braço direito de notificações formam **uma peça de vidro só**, recortada por `clip-path`; o terminal fica no recorte. A base é uma faixa fina arredondada.
 - O sino abre e fecha o **braço direito** (notificações); a barra lateral recolhe para só ícones por um botão dentro dela.
-- Os botões da janela (minimizar, maximizar, fechar) são desenhados dentro do cabeçalho, em **pílulas** de 38×30 px (realce de 10 % de branco ao passar o mouse), com margem em volta; o de fechar fica com vermelho translúcido e ícone rosado (sem bloco vermelho de ponta a ponta). O ícone do sino fica no centro óptico do círculo (o `.tbtn` não tem padding, para o ícone de 18 px não ser empurrado).
+- Os botões da janela (minimizar, maximizar, fechar) são desenhados dentro do cabeçalho, em **pílulas** de 38×30 px (realce de 10 % de branco ao passar o mouse), com margem em volta; o de fechar fica com vermelho translúcido e ícone rosado (sem bloco vermelho de ponta a ponta). O sino é só o ícone, sem círculo de fundo (o círculo de 10 % de branco aparece ao passar o mouse e com o painel aberto), exatamente no centro (o `.tbtn` não tem padding, para o ícone de 18 px não ser empurrado).
 - Cabeçalho: logo + nome à esquerda, cápsula de limites 5 h / 7 d no centro, sino e controles à direita.
 
 ## Terminal e abas
