@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-033 — Arrastar e soltar das abas** (DEV1)
 
-- Corrigido: o recorte escuro da barra acompanha a aba ativa durante o arraste; redesenhos no meio do arraste não soltam mais a aba; aba arrastada opaca; última posição alcançável com abas de larguras diferentes. Com muitas abas a barra estourava (20 abas, 2041 px em 1000): inativas agora encolhem até mostrar só o ponto e a ativa fica com 120 px no mínimo. Testado por cliques reais (CDP) com 8 e 20 abas e janela 980×620. Abas da Web não têm arrastar (fora do escopo).
+- Corrigido: o recorte escuro da barra acompanha a aba ativa durante o arraste; redesenhos no meio do arraste não soltam mais a aba; aba arrastada opaca; última posição alcançável com abas de larguras diferentes. Com muitas abas a barra estourava (20 abas, 2041 px em 1000): inativas agora encolhem até mostrar só o ponto e a ativa fica com 120 px no mínimo. Testado por cliques reais (CDP) com 8 e 20 abas e janela 980×620. Abas da Web não têm arrastar (TASK-038) e acima de ~25 abas a barra estoura (TASK-039), ambas no Backlog. Aprovada pelo usuário em 2026-11-02.
 
 **TASK-020 — Teste do instalador em Windows limpo (Sandbox) e da atualização real** (DEV1)
 

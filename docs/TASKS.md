@@ -12,10 +12,12 @@ _Nenhuma no momento._
 
 ## Aguardando validação DEV1
 
+## Validadas em DEV1
+
 ### TASK-033 — Arrastar e soltar das abas dos terminais não funciona direito (CRÍTICA)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (corrigida e testada por cliques reais no Claude; falta o usuário usar no app)
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-02)
 - **Prioridade:** **Crítica** — pedido do usuário em 2026-11-01 ("não está funcionando direito")
 - **Objetivo:** reordenar as abas dos terminais (e as da Web, que usam a mesma barra) arrastando, de forma fluida e previsível, sem perder aba, sem pular de posição e sem estragar o visual encaixado da TASK-030.
 - **Sintomas:** o usuário não descreveu o defeito exato; **perguntar ou reproduzir ao iniciar** (arrasta mas não solta na posição certa? a aba some? o recorte da aba ativa fica para trás? trava com muitas abas?).
@@ -27,9 +29,8 @@ _Nenhuma no momento._
 - **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/styles.css`, `docs/DESIGN.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
 - **Como validar:** `npm start`; abra 6 ou mais terminais, arraste a aba ativa e uma inativa para o começo, o meio e o fim; abra 15 a 20 abas e confira que todas cabem (inativas só com o ponto); clique e clique duplo continuam funcionando.
 - **Pendências:** as abas da **Web** (`#wtabs`) nunca tiveram arrastar (só os terminais); com mais de ~25 abas a barra estoura de novo (rolagem horizontal seria o próximo passo). Ambas vão para o Backlog se o usuário quiser.
-- **Próximo passo:** o usuário testar; com a aprovação, TASK-036 (README).
-
-## Validadas em DEV1
+- **Próximo passo:** TASK-036 (README).
+- **Validada em:** 2026-11-02. Falta promover para a `main` com `/fluxo:promover`, quando o usuário pedir.
 
 ### TASK-035 — Atualização do app com aviso no cabeçalho (MVP)
 
@@ -440,6 +441,20 @@ _Nenhuma no momento._
 ## Prontas
 
 ## Backlog
+
+### TASK-038 — Arrastar para reordenar as abas da Web
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Baixa
+- **Objetivo:** as abas da Web (`#wtabs`, `src/renderer/web.js`) não têm arrastar; reutilizar a lógica das abas dos terminais (TASK-033).
+
+### TASK-039 — Barra de abas com mais de ~25 abas (rolagem horizontal)
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Baixa
+- **Objetivo:** hoje as inativas encolhem até 34 px; acima de ~25 abas a barra estoura de novo. Avaliar rolagem horizontal mantendo o recorte (`fuseBar`) e o arrastar com rolagem automática.
 
 ### TASK-036 — README profissional e página do projeto no GitHub
 
