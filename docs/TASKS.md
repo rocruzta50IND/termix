@@ -16,8 +16,9 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** publicar a versão **0.2.0** (a dev1 tem 100+ commits desde a 0.1.1: modo Chat, rodapé, telas contínuas, ícones animados, README) e validar, no app **instalado** na máquina do usuário, que o aviso de atualização aparece ao abrir, que o download/instalação funciona e que as sessões dos terminais abertos voltam depois (a atualização fecha o app e a restauração automática retoma as conversas pelo ID; os processos em andamento são encerrados, com confirmação se houver agente trabalhando).
 - **Decisões (usuário, 2026-11-02):** versão **0.2.0**; promover a dev1 para a main junto (para o README aparecer no GitHub). A 037 (imagem lateral do instalador) e a 038 (arrastar abas da Web) **não estão no código da dev1** e ficam no Backlog; o ícone novo da barra de tarefas é da TASK-034 (já validada). 009, 011 e 026 ficam para bem depois; 039 também.
 - **Passos:** (1) `package.json` para 0.2.0, registro e commit na dev1; (2) `/fluxo:promover` (fast-forward da main); (3) `npm run release` (instalador, `latest.yml` e Release v0.2.0 no GitHub); (4) usuário abre o Termix instalado (0.1.1) e confere o aviso, atualiza e vê as abas voltarem.
-- **Feito até agora:** versão 0.2.0 no `package.json`.
-- **Próximo passo:** promover, publicar e conferir os ativos do Release.
+- **Feito até agora:** versão 0.2.0 no `package.json`; **promoção dev1 → main feita** (main == dev1 em `1ff848e`); **Release v0.2.0 publicado** em https://github.com/rocruzta50IND/termix/releases/tag/v0.2.0 com `Termix-Setup-0.2.0.exe` (sha256 `f6f7da6e…`, igual ao arquivo local), `.blockmap` e `latest.yml` da 0.2.0 (conferido pelo link `releases/latest/download/latest.yml`).
+- **Intercorrências:** (1) `npm run release` falhou com 422 (dois envios em paralelo tentando criar o mesmo Release); o Release saiu só com o `.blockmap`; o instalador e o `latest.yml` foram enviados depois com `gh release upload`. (2) Nesse reenvio subiu por engano o `latest.yml` antigo (0.1.1), porque o electron-builder não chegou a gerar o da 0.2.0; foi percebido na hora, o arquivo certo foi gerado do instalador (versão, sha512, tamanho) e substituído em cerca de um minuto, sem ninguém ter baixado. **Lição para as próximas versões:** conferir o `version:` do `latest.yml` antes de enviar e, se o `npm run release` falhar, gerar com `npm run dist` e publicar com `gh release create` enviando exe, blockmap e `latest.yml`.
+- **Resultado do teste (usuário, 2026-11-02):** o app instalado (0.1.1, em `D:Nova pastaTermix`) mostrou o aviso e o botão **Atualizar** cerca de 20 s depois de abrir; ao clicar em **Atualizar agora** o app fechou, instalou e reabriu na **0.2.0** (processo novo às 18:49:53). O que ficou mal: durante a atualização não há nenhum indicativo na tela (virou a TASK-050). **Falta o usuário confirmar que as abas e as conversas voltaram certinho**; só então a TASK-049 vira concluída.
 
 ## Aguardando validação DEV1
 
@@ -26,6 +27,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ## Prontas
 
 ## Backlog
+
+### TASK-050 — Indicativo de que o app está atualizando (do clique em Atualizar até o app reabrir)
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG
+- **Prioridade:** Média — observado pelo usuário em 2026-11-02 no teste da 0.2.0: ao clicar em **Atualizar agora** a janela fecha e o app demora para reabrir (cerca de 4 minutos entre o clique e o processo novo, com a atualização em modo silencioso), **sem nenhum sinal na tela** de que está atualizando; a pessoa pode achar que o app travou ou fechou.
+- **Objetivo:** dar retorno claro durante a atualização, sem a pessoa ter de adivinhar.
+- **Ideias a validar com o usuário:** (1) antes de fechar, um cartão curto "Atualizando para a 0.2.0… o Termix reabre sozinho" com a janela ainda visível por 1 a 2 s; (2) uma janelinha de progresso pequena, separada do app, que fica na tela durante a instalação silenciosa e some quando o Termix reabre (o instalador roda com `quitAndInstall(true, true)`, sem assistente); (3) notificação do Windows "Termix atualizando… reabre em instantes" e outra quando voltar; (4) ao reabrir, um aviso "Termix atualizado para a 0.2.0" com um resumo do que mudou (a partir do CHANGELOG).
+- **Critérios de aceite (a refinar):** do clique em Atualizar agora até o app reabrir há sempre algum indicativo na tela ou na barra de tarefas; ao reabrir, a pessoa vê que a versão mudou; não atrapalha a restauração das abas; testado de ponta a ponta com duas versões publicadas (como na TASK-020/049), medindo e registrando o tempo do clique até a janela voltar.
+- **Base existente:** `src/updater.js` (`update:install` chama `autoUpdater.quitAndInstall(true, true)`), `applyUpdate`, `showUpdCard` e o botão `.updbtn` em `src/renderer/app.js`; `docs/DECISOES.md` ("Atualização do app").
 
 ### TASK-038 — Arrastar para reordenar as abas da Web
 
