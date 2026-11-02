@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**Promoção dev1 → main (versão 0.2.1)** (DEV1)
+
+- Promovidas as TASK-051 e 052 (validadas) e as demais já listadas. A TASK-050 (retorno durante a atualização) foi junto a pedido do usuário, para ser testada na atualização real; segue **aguardando validação** (na dev1). A TASK-049 continua em andamento.
+
 **TASK-050 — Retorno durante a atualização do app (versão 0.2.1)** (DEV1)
 
 - Ao clicar em Atualizar agora aparece um cartão "Atualizando o Termix…" e uma notificação do Windows; ao reabrir na versão nova, o aviso "Termix atualizado para a X · levou N min" mede o tempo do clique até o app voltar. Versão do app: 0.2.1. Testado por CDP com simulação; o fluxo real exige duas atualizações seguidas.
