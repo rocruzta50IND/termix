@@ -87,6 +87,8 @@ function chatAvatar(el, v) { // troca o avatar da resposta entre o brilho parado
 }
 const CHAT_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1-3.8 3.6-5.6 7-5.6s6 1.8 7 5.6"/></svg>';
 const CHAT_ICON = {
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
   send: '<path d="M12 19V5M5 12l7-7 7 7"/>',
   stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>',
   laptop: '<rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 20h20"/>',
@@ -134,6 +136,12 @@ function chatView(tab) {
   c.stick = true;
   root.addEventListener('click', (e) => {
     const a = e.target.closest('a[data-ext]'); if (a) { e.preventDefault(); api.webExternal(a.getAttribute('href')); return; }
+    const all = e.target.closest('.c-copyall');
+    if (all) { // copia a resposta inteira, no texto original (Markdown), não só o que está na tela
+      const row = all.closest('.c-row'), it = c.items.find((x) => x.el === row);
+      if (it && it.text) { api.clipWrite(it.text); all.classList.add('done'); all.innerHTML = chatIc('check', 13) + 'Copiado'; setTimeout(() => { all.classList.remove('done'); all.innerHTML = chatIc('copy', 13) + 'Copiar'; }, 1400); }
+      return;
+    }
     const b = e.target.closest('.c-copy'); if (b) { const pre = b.closest('.c-code').querySelector('pre'); api.clipWrite(pre.innerText); b.textContent = 'Copiado'; setTimeout(() => { b.textContent = 'Copiar'; }, 1400); }
   });
   return c;
@@ -245,7 +253,7 @@ function chatPaintItem(it) {
     d.classList.toggle('live', !!it.live);
     if (it.live && it.v == null) it.v = chatVar;
     chatAvatar(d, it.v == null ? null : it.v); // terminou: fica o símbolo que estava animando, parado
-    d.querySelector('.c-bub').innerHTML = chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : '');
+    d.querySelector('.c-bub').innerHTML = chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : it.text ? `<button class="c-copyall" type="button" title="Copiar a resposta inteira" aria-label="Copiar a resposta inteira">${chatIc('copy', 13)}Copiar</button>` : '');
   } else if (it.k === 'sys') { d.className = 'c-sys' + (it.err ? ' err' : ''); d.textContent = it.text; }
   else if (it.k === 'tool') {
     const open = d.open;

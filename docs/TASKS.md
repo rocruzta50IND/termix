@@ -10,6 +10,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-054 — Botão de copiar a resposta inteira no chat
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com duas capturas (uma resposta longa e um bloco de código com o botão "Copiar" no cabeçalho): "qualquer resposta eu consiga copiar com um botão de copiar, mas manter quando é caixa assim".
+- **Objetivo:** qualquer resposta do Claude pode ser copiada inteira com um botão; os blocos de código continuam com o "Copiar" no cabeçalho do bloco.
+- **Feito:** `src/renderer/chat.js`: botão `.c-copyall` ("Copiar", ícone de cópia) em toda resposta pronta (não aparece durante o streaming nem em resposta vazia); copia o **texto original em Markdown** (títulos, listas e blocos de código intactos, e não só o que está desenhado) pela mesma ponte `api.clipWrite`; mostra "Copiado" por 1,4 s; ícones `copy` e `check` em `CHAT_ICON`. `src/renderer/styles.css`: pílula pequena que fica a cavalo na borda de cima da bolha, no canto direito, visível ao passar o mouse na resposta (ou com o foco do teclado).
+- **Testado (CDP, cliques reais, instância isolada):** invisível sem o mouse e visível com o mouse; o clique copiou a resposta inteira (confirmado lendo a área de transferência do Windows, que foi restaurada depois); "Copiado" volta a "Copiar" sozinho; o botão do bloco de código continua separado. Não testado: respostas muito longas com rolagem e janela estreita. Perguntas do usuário ficaram sem o botão (fácil de incluir).
+- **Como validar:** `npm start`, abrir um chat, passar o mouse numa resposta e clicar em Copiar; colar em outro lugar.
+
 ### TASK-053 — Menu do projeto com o botão direito (barra lateral recolhida e aberta)
 
 - **Responsável:** DEV1
