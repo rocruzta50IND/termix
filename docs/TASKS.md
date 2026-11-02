@@ -511,12 +511,14 @@ _Nenhuma no momento._
 ### TASK-041 — Imagens coladas no chat, com miniatura na caixa de prompt
 
 - **Responsável:** DEV1
-- **Status:** BACKLOG (próxima, depois de fechar a TASK-040)
+- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (implementada e testada pelo Claude em 2026-11-02)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-02, com wireframe e a captura do Claude como referência
 - **Objetivo:** ao colar uma imagem (Ctrl+V) no campo de envio do chat, ela aparece como **miniatura dentro da caixa de prompt, acima do texto**, com contorno só em volta da imagem (como no Claude); a imagem segue junto com a mensagem. Wireframe do usuário: quadrado da miniatura em cima, à esquerda, e a barra de texto embaixo.
 - **Critérios de aceite (a refinar ao começar):** colar imagem da área de transferência (print, cópia de imagem) mostra a miniatura com um "x" para remover; várias imagens lado a lado; arrastar arquivo de imagem para a caixa também funciona (se couber); enviar manda texto e imagens juntos e a bolha da pergunta mostra as miniaturas; o histórico reaberto (do `.jsonl`) também mostra as imagens; limite de tamanho/quantidade com aviso claro; sem quebrar a colagem de texto; testado com o Claude Code real (ele precisa "ver" a imagem e descrevê-la).
 - **Notas técnicas:** o `stream-json` de entrada aceita `message.content` como lista de blocos, inclusive `{type:"image", source:{type:"base64", media_type, data}}`; hoje `chat:send` só manda texto (`src/chat.js`, `chatSendMsg` em `src/renderer/chat.js`). A colagem pode vir do evento `paste` do textarea (`clipboardData.items`) ou de um `clipboard.readImage()` no processo principal (hoje só existe `clip:read` de texto). Reduzir imagens grandes antes de enviar (custo em tokens). Atualizar o `history()` para devolver blocos de imagem.
-- **Próximo passo:** começar pela colagem e pela miniatura; depois o envio e o histórico.
+- **Feito:** colar (Ctrl+V) ou arrastar imagem para a caixa mostra a miniatura (72 px, com "x") dentro da caixa, acima do texto; até 5 imagens; a imagem é reduzida (lado maior 1568 px; PNG grande vira JPEG; recusa se passar de ~3,5 MB) antes de enviar; vai ao Claude como blocos `image` base64 junto do texto (pode enviar só a imagem); a bolha mostra as miniaturas e o histórico reaberto (`.jsonl`) também. Arquivos: `src/renderer/chat.js`, `src/chat.js`, `src/preload.js`, `src/renderer/styles.css`.
+- **Testado (CDP, Claude Code real):** imagem 3000×2000 com a palavra ABACATE colada por evento de colagem: miniatura, envio, o Claude respondeu "ABACATE", e `chatHistory` devolveu a imagem; `npm run check` passou. Defeito achado e corrigido: a política de segurança da tela bloqueava `blob:` (trocado por `createImageBitmap`). Não exercitado: Ctrl+V com print real do Windows, arrastar arquivo, 5+ imagens, WebP/GIF.
+- **Como validar:** `npm start`; num chat, copie um print (Win+Shift+S) e dê Ctrl+V na caixa; escreva "descreva a imagem" e envie.
 
 ### TASK-042 — Refatoração de design: telas que não são terminais sem o fundo aparecendo nas bordas
 

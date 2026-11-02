@@ -51,10 +51,14 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
     return { ok: true, pid: child.pid };
   }
 
-  function send({ tabId, text }) {
+  function send({ tabId, text, images }) {
     const rec = procs.get(tabId);
     if (!rec || !rec.child.stdin.writable) return { ok: false };
-    rec.child.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content: String(text) } }) + '\n');
+    const imgs = (Array.isArray(images) ? images : []).filter((m) => m && /^image\/(png|jpeg|webp|gif)$/.test(m.mt) && typeof m.data === 'string' && /^[A-Za-z0-9+/=]+$/.test(m.data)).slice(0, 5);
+    const content = imgs.length
+      ? [...imgs.map((m) => ({ type: 'image', source: { type: 'base64', media_type: m.mt, data: m.data } })), ...(String(text).trim() ? [{ type: 'text', text: String(text) }] : [])]
+      : String(text);
+    rec.child.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content } }) + '\n');
     return { ok: true };
   }
 
@@ -90,14 +94,17 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
         if (o.type === 'user') {
           if (typeof c === 'string') { if (c.trim() && !c.startsWith('<')) items.push({ k: 'me', text: c }); continue; }
           if (!Array.isArray(c)) continue;
+          const pics = c.filter((b) => b.type === 'image' && b.source && b.source.type === 'base64' && /^image\//.test(b.source.media_type || '')).map((b) => 'data:' + b.source.media_type + ';base64,' + b.source.data);
+          let used = false;
           for (const b of c) {
-            if (b.type === 'text' && b.text && !b.text.startsWith('<')) items.push({ k: 'me', text: b.text });
+            if (b.type === 'text' && b.text && !b.text.startsWith('<')) { items.push({ k: 'me', text: b.text, ...(pics.length && !used ? { imgs: pics } : {}) }); used = true; }
             else if (b.type === 'tool_result' && tools[b.tool_use_id]) {
               const t = tools[b.tool_use_id];
               t.done = true; t.err = !!b.is_error;
               t.body = (typeof b.content === 'string' ? b.content : Array.isArray(b.content) ? b.content.map((x) => x.text || '').join('\n') : '').slice(0, 1500);
             }
           }
+          if (pics.length && !used) items.push({ k: 'me', text: '', imgs: pics });
         } else if (o.type === 'assistant' && Array.isArray(c)) {
           if (o.message.model && o.message.model[0] !== '<') model = o.message.model;
           if (o.message.usage) usage = o.message.usage;

@@ -87,7 +87,7 @@ function chatView(tab) {
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
     <div class="c-scroll"><div class="c-thread"><div class="c-typing"><i></i><i></i><i></i></div></div></div>
     <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>
-      <div class="c-in"><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
+      <div class="c-in"><div class="c-thumbs"></div><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
         <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
         <button class="c-stop" type="button" title="Parar a resposta" aria-label="Parar">${chatIc('stop')}</button></div>
       <div class="c-meta"><span class="c-env">${chatIc('laptop', 15)}Este computador</span><span class="c-env c-folder">${chatIc('folder', 15)}<span></span><em></em></span><span class="sp"></span><span class="c-mdl"></span><span class="c-perm"></span><span class="c-ring" title="Contexto"></span></div>
@@ -97,8 +97,8 @@ function chatView(tab) {
     root, scroll: root.querySelector('.c-scroll'), thread: root.querySelector('.c-thread'), typing: root.querySelector('.c-typing'), inp: root.querySelector('textarea'),
     perm: root.querySelector('.c-perm'), mdl: root.querySelector('.c-mdl'), ring: root.querySelector('.c-ring'),
   });
-  const send = () => { const t = c.inp.value; if (!t.trim()) return; c.inp.value = ''; c.inp.style.height = 'auto'; chatSendMsg(tab, t); };
-  c.slash = root.querySelector('.c-slash');
+  const send = () => { const t = c.inp.value; if (!t.trim() && !c.imgs.length) return; const imgs = c.imgs; c.imgs = []; chatThumbs(c); c.inp.value = ''; c.inp.style.height = 'auto'; chatSendMsg(tab, t, imgs); };
+  c.slash = root.querySelector('.c-slash'); c.thumbs = root.querySelector('.c-thumbs'); c.imgs = [];
   c.inp.addEventListener('keydown', (e) => {
     if (chatSlashKey(tab, c, e)) return;
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
@@ -106,6 +106,12 @@ function chatView(tab) {
   c.inp.addEventListener('blur', () => setTimeout(() => chatSlashClose(c), 120));
   c.slash.addEventListener('mousedown', (e) => { const b = e.target.closest('[data-i]'); if (!b) return; e.preventDefault(); chatSlashPick(tab, c, +b.dataset.i); });
   c.inp.addEventListener('input', () => { c.inp.style.height = 'auto'; c.inp.style.height = Math.min(c.inp.scrollHeight, 180) + 'px'; chatSlashUpdate(tab, c); });
+  c.inp.addEventListener('paste', (e) => { const fl = [...(e.clipboardData ? e.clipboardData.files : [])].filter((f) => /^image\//.test(f.type)); if (!fl.length) return; e.preventDefault(); chatAddImages(c, fl); });
+  const box = root.querySelector('.c-in');
+  box.addEventListener('dragover', (e) => { if ([...(e.dataTransfer ? e.dataTransfer.types : [])].includes('Files')) { e.preventDefault(); box.classList.add('drop'); } });
+  box.addEventListener('dragleave', () => box.classList.remove('drop'));
+  box.addEventListener('drop', (e) => { box.classList.remove('drop'); const fl = [...(e.dataTransfer ? e.dataTransfer.files : [])].filter((f) => /^image\//.test(f.type)); if (!fl.length) return; e.preventDefault(); chatAddImages(c, fl); c.inp.focus(); });
+  c.thumbs.addEventListener('click', (e) => { const x = e.target.closest('[data-rm]'); if (!x) return; c.imgs.splice(+x.dataset.rm, 1); chatThumbs(c); c.inp.focus(); });
   root.querySelector('.c-send').addEventListener('click', send);
   root.querySelector('.c-stop').addEventListener('click', () => chatInterrupt(tab));
   c.scroll.addEventListener('scroll', () => { c.stick = c.scroll.scrollHeight - c.scroll.scrollTop - c.scroll.clientHeight < 90; });
@@ -116,6 +122,32 @@ function chatView(tab) {
   });
   return c;
 }
+
+/* ---------- imagens coladas (TASK-041) ---------- */
+const CHAT_IMG_MAX = 5, CHAT_IMG_SIDE = 1568, CHAT_IMG_BYTES = 3.5 * 1024 * 1024; // a API aceita ~5 MB por imagem; reduz antes de enviar (custo em tokens)
+function chatThumbs(c) {
+  c.thumbs.innerHTML = c.imgs.map((m, i) => `<div class="c-th"><img src="${m.url}" alt="Imagem ${i + 1}"><button type="button" data-rm="${i}" title="Remover" aria-label="Remover imagem">×</button></div>`).join('');
+  c.root.querySelector('.c-in').classList.toggle('has-img', c.imgs.length > 0);
+}
+async function chatReadImage(file) { // createImageBitmap: a política de segurança da tela não deixa usar blob: em <img>
+  let im;
+  try { im = await createImageBitmap(file); } catch { throw new Error('ilegivel'); }
+  const k = Math.min(1, CHAT_IMG_SIDE / Math.max(im.width, im.height)), w = Math.max(1, Math.round(im.width * k)), h = Math.max(1, Math.round(im.height * k));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  cv.getContext('2d').drawImage(im, 0, 0, w, h); im.close();
+  let url = file.type === 'image/jpeg' ? cv.toDataURL('image/jpeg', 0.88) : cv.toDataURL('image/png');
+  if (url.length * 0.75 > CHAT_IMG_BYTES) url = cv.toDataURL('image/jpeg', 0.8); // PNG grande demais: JPEG
+  if (url.length * 0.75 > CHAT_IMG_BYTES) throw new Error('grande');
+  return { url, mt: url.slice(5, url.indexOf(';')), data: url.slice(url.indexOf(',') + 1) };
+}
+async function chatAddImages(c, files) {
+  for (const f of files) {
+    if (c.imgs.length >= CHAT_IMG_MAX) { chatWarn(c, `No máximo ${CHAT_IMG_MAX} imagens por mensagem.`); break; }
+    try { c.imgs.push(await chatReadImage(f)); } catch (e) { chatWarn(c, e.message === 'grande' ? 'A imagem é grande demais, mesmo reduzida.' : 'Não consegui ler essa imagem.'); }
+  }
+  chatThumbs(c);
+}
+function chatWarn(c, msg) { chatSys(c, msg, true); }
 
 /* ---------- menu de comandos "/" (TASK-045) ---------- */
 // No modo -p só rodam comandos de skill, de plugin e personalizados; os interativos do terminal (/mcp, /model...) não entram na lista.
@@ -188,7 +220,7 @@ function chatItemEl(it) {
 }
 function chatPaintItem(it) {
   const d = it.el; if (!d) return;
-  if (it.k === 'me') { d.className = 'c-row me'; d.innerHTML = `<div class="c-av">${CHAT_USER}</div><div class="c-bub">${chatMd(it.text)}</div>`; }
+  if (it.k === 'me') { d.className = 'c-row me'; d.innerHTML = `<div class="c-av">${CHAT_USER}</div><div class="c-bub">${(it.imgs || []).length ? `<div class="c-imgs">${it.imgs.map((u) => `<img src="${u}" alt="Imagem enviada">`).join('')}</div>` : ''}${it.text ? chatMd(it.text) : ''}</div>`; }
   else if (it.k === 'ai') {
     if (!d.firstChild) { d.className = 'c-row ai'; d.innerHTML = `<div class="c-av">${CHAT_MARK}</div><div class="c-bub"></div>`; }
     d.querySelector('.c-bub').innerHTML = chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : '');
@@ -289,16 +321,16 @@ async function chatSpawn(p, tab) {
   r.alive = true; r.killing = false; r.spawnAt = Date.now(); sendSummary();
   return true;
 }
-async function chatSendMsg(tab, text) {
+async function chatSendMsg(tab, text, imgs = []) {
   const f = findTab(tab.id); if (!f) return;
   const r = chatEnsure(tab), c = chatView(tab);
   if (!r.alive && !(await chatSpawn(f.p, tab))) return;
   r.lastInput = Date.now();
   UI.events = UI.events.filter((e) => !(e.kind === 'cache' && e.tabId === tab.id)); // mandou mensagem: o cache foi renovado
-  chatAdd(c, { k: 'me', text: text.trim() });
+  chatAdd(c, { k: 'me', text: text.trim(), imgs: imgs.map((m) => m.url) });
   c.busy = true; c.stick = true; c.lastAi = '';
   setSt(tab, 'work'); chatUi(tab);
-  const res = await api.chatSend(tab.id, text.trim());
+  const res = await api.chatSend(tab.id, text.trim(), imgs.map((m) => ({ mt: m.mt, data: m.data })));
   if (!res.ok) { c.busy = false; chatSys(c, 'Não consegui enviar: o processo do Claude Code não está ativo. Envie de novo para reiniciá-lo.', true); r.alive = false; setSt(tab, 'wait'); chatUi(tab); return; }
   if (!tab.started) { tab.started = true; save(); }
 }

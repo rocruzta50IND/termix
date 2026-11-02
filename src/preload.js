@@ -30,7 +30,7 @@ contextBridge.exposeInMainWorld('termix', {
   gitBranch: (cwd) => ipcRenderer.invoke('git:branch', cwd),
 
   chatStart: (o) => ipcRenderer.invoke('chat:start', o),
-  chatSend: (tabId, text) => ipcRenderer.invoke('chat:send', { tabId, text }),
+  chatSend: (tabId, text, images) => ipcRenderer.invoke('chat:send', { tabId, text, images }),
   chatStop: (tabId) => ipcRenderer.send('chat:stop', { tabId }),
   chatHistory: (cwd, sessionId) => ipcRenderer.invoke('chat:history', { cwd, sessionId }),
   onChatEvents: (fn) => ipcRenderer.on('chat:events', (_e, m) => fn(m)),

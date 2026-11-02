@@ -8,6 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-041 — Imagens coladas no chat** (DEV1)
+
+- Colar ou arrastar imagem mostra a miniatura na caixa (com "x"); vai junto da mensagem para o Claude; aparece na bolha e no histórico reaberto. Até 5 imagens, reduzidas antes de enviar.
+- Testado com o Claude Code real: ele leu a palavra escrita na imagem.
+
 **TASK-045 — Menu de comandos "/" no chat** (DEV1)
 
 - Digitar "/" no início do campo abre a lista de skills e comandos (usuário, projeto e plugins) com descrição e origem; filtra ao digitar; setas, Enter/Tab e Esc; `/clear` abre a conversa nova.
