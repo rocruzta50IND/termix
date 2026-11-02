@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**Promoção dev1 → main (versão 0.2.3)** (DEV1)
+
+- Promovidas as TASK-056 (janelinha "Atualizando…" com o app fechado), 057 (copiar dentro da caixa), 058 (rail igual no chat e no terminal) e 059 (investigação do contexto). A TASK-060 (publicação) e a TASK-055 (validação da 0.2.2) seguem em andamento.
+
 **TASK-057, TASK-058 e TASK-059 — Copiar dentro da caixa, rail igual nos dois modos e investigação do contexto** (DEV1)
 
 - O botão de copiar ficou fixo no canto de cima, dentro da caixa da resposta. O rail do chat passou a ter contexto (com a janela real de 1 M, antes chutada em 200 mil e ~5× inflada), 5 h e 7 d (pelo `rate_limit_event`, guardados ao reabrir) e cache (contagem regressiva) como o do terminal. Investigado: o modo chat não carrega mais contexto que o terminal (base ~28 mil tokens, ~26 mil do núcleo do Claude Code).

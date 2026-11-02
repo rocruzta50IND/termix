@@ -1,7 +1,7 @@
 {
   "name": "termix",
   "productName": "Termix",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Central de sessões de agentes de programação em terminal, em glassmorphism.",
   "main": "src/main.js",
   "scripts": {
