@@ -13,6 +13,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Promovidas a pedido do usuário ("suba a nova versão pro git"): TASK-084 (tela Consumo), TASK-080 (barra lateral), TASK-086 (nome de projeto e modais), TASK-088 (modais fecham só por X ou Esc) e a versão 0.3.4 (TASK-089). Fast-forward; validação `npm run check` ok.
 **Versão 0.3.4** (DEV1)
 
+- Release **v0.3.4** publicado no GitHub (instalador, blockmap e latest.yml; sha512 conferido) depois da promoção dev1 → main (`d7bc79b`). Aguardando o usuário atualizar 0.3.3 → 0.3.4.
 - Publica a tela Consumo (TASK-084), os ajustes da barra lateral (TASK-080), o limite de nome de projeto e modais que não estouram (TASK-086) e o fechamento de modais só por X ou Esc (TASK-088).
 
 **TASK-088 — Modais: fechar só pelo X ou Esc** (DEV1)

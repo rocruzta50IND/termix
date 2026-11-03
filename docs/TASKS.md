@@ -8,15 +8,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-089 — Publicar a versão 0.3.4
-
-- **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
-- **Prioridade:** Alta — pedido do usuário em 2026-11-03: "suba a nova versão pro git" depois dos commits da TASK-084 (tela Consumo), TASK-080 (barra lateral), TASK-086 (nome gigante) e TASK-088 (modais). Pedido explícito, então vale como a confirmação de promover para a `main` e publicar.
-- **Passos:** versão 0.3.4; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml`; `gh release create v0.3.4`; o usuário atualiza (0.3.3 → 0.3.4).
-- **Entra nesta versão:** tela Consumo com tokens e custo reais (TASK-084), barra lateral com rolagem só nos projetos, avatares e "Novo projeto" fixo (TASK-080), limite de 60 caracteres no nome do projeto e modais que não estouram (TASK-086), modais fecham só por X ou Esc (TASK-088).
-- **Feito até agora:** versão 0.3.4 no `package.json` e push na `dev1`; promoção dev1 → main das tarefas 084, 080, 086 e 088 (registrada no CHANGELOG).
-- **Próximo passo:** gerar o instalador, publicar o Release v0.3.4 e pedir ao usuário para atualizar.
 ### TASK-083 — Validação do MVP: auditoria geral e uso por 5 pessoas da empresa
 
 - **Responsável:** DEV1
@@ -90,6 +81,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-089 — Publicar a versão 0.3.4
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (Release publicado; falta o usuário atualizar 0.3.3 → 0.3.4)
+- **Prioridade:** Alta — pedido do usuário em 2026-11-03: "suba a nova versão pro git" depois dos commits da TASK-084 (tela Consumo), TASK-080 (barra lateral), TASK-086 (nome gigante) e TASK-088 (modais). Pedido explícito, então vale como a confirmação de promover para a `main` e publicar.
+- **Passos:** versão 0.3.4; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml`; `gh release create v0.3.4`; o usuário atualiza (0.3.3 → 0.3.4).
+- **Entra nesta versão:** tela Consumo com tokens e custo reais (TASK-084), barra lateral com rolagem só nos projetos, avatares e "Novo projeto" fixo (TASK-080), limite de 60 caracteres no nome do projeto e modais que não estouram (TASK-086), modais fecham só por X ou Esc (TASK-088).
+- **Feito até agora:** versão 0.3.4 no `package.json`; promoção dev1 → main (`d7bc79b`, fast-forward); instalador gerado (125.192.429 bytes, sha512 conferido com o `latest.yml`); Release **v0.3.4** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.3.4) com o instalador, o `.blockmap` e o `latest.yml`.
+- **Próximo passo:** o usuário atualiza o app instalado (0.3.3 → 0.3.4) e confirma; só então a tarefa fecha. Depois, discutir o pós-MVP (TASK-085 Workflow, TASK-087 modais, TASK-083 auditoria do MVP).
 ### TASK-081 — App atualizou mas o Windows bloqueou o Termix.exe (Smart App Control)
 
 - **Responsável:** DEV1
