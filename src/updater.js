@@ -22,7 +22,27 @@ const pendingFile = () => path.join(app.getPath('userData'), 'update-pending.jso
 // preparo enquanto o Termix continua em uso (estado "preparing"); pronto ("ready", modo "swap"), a pessoa reinicia quando quiser e, quando o app
 // fecha, um script (apply-update.ps1) copia a versão nova por cima da instalada em poucos segundos. Se a preparação falhar, cai no caminho antigo
 // (modo "installer": o instalador roda ao reiniciar / ao fechar).
-const STAGE_ROOT = () => path.join(process.env.LOCALAPPDATA || app.getPath('userData'), 'termix-updater', 'staged');
+// TASK-079: a pasta de preparo fica DENTRO da pasta instalada (mesmo disco): a troca vira renomeação, instantânea, e os arquivos mantêm a identidade
+// que o Windows já liberou (a primeira execução de um .exe recém-gravado leva ~8 s para ser liberada). Sem permissão de escrita ali, usa o LOCALAPPDATA
+// (e a troca volta a ser por cópia).
+let stageRootCache = null;
+function STAGE_ROOT() {
+  if (stageRootCache) return stageRootCache;
+  const prefer = path.join(path.dirname(process.execPath), '.update');
+  try { fs.mkdirSync(prefer, { recursive: true }); const w = path.join(prefer, '.w'); fs.writeFileSync(w, '1'); fs.unlinkSync(w); return (stageRootCache = prefer); } catch { /* pasta instalada sem escrita */ }
+  return (stageRootCache = path.join(process.env.LOCALAPPDATA || app.getPath('userData'), 'termix-updater', 'staged'));
+}
+// "aquece" o Termix.exe preparado: roda uma vez com --version (sai na hora, sem janela) para o Windows liberar a primeira execução em segundo plano
+function prime(dir) {
+  return new Promise((resolve) => {
+    try {
+      const p = spawn(path.join(dir, 'Termix.exe'), ['--version'], { windowsHide: true, stdio: 'ignore' });
+      const t = setTimeout(() => { try { p.kill(); } catch { /* ignora */ } resolve(false); }, 90000);
+      p.on('error', () => { clearTimeout(t); resolve(false); });
+      p.on('close', () => { clearTimeout(t); resolve(true); });
+    } catch { resolve(false); }
+  });
+}
 const SEVENZ = () => path.join(process.resourcesPath, '7za.exe');
 let staged = null; // { version, dir } quando a versão nova está pronta na pasta de preparo
 let applyLaunched = false;
@@ -84,7 +104,7 @@ function setupUpdater(getWin, hooks = {}) {
   const beginInstall = (version, write, helper = true) => {
     if (write && helper) startUpdateHelper({ version }); // com a troca em segundos (modo swap) a janelinha não é lançada: só atrapalharia // TASK-056: janelinha separada que cobre o tempo em que o app está fechado
     try { if (write) fs.writeFileSync(pendingFile(), JSON.stringify({ from: app.getVersion(), to: version, t0: Date.now() })); } catch { /* o aviso de "atualizado" é só um extra */ }
-    try { if (Notification.isSupported()) new Notification({ title: 'O Termix está atualizando', body: `Para a versão ${version}. Ele reabre sozinho em instantes; não precisa fazer nada.` }).show(); } catch { /* sem notificação */ }
+    try { if (helper && Notification.isSupported()) new Notification({ title: 'O Termix está atualizando', body: `Para a versão ${version}. Ele reabre sozinho em instantes; não precisa fazer nada.` }).show(); } catch { /* sem notificação */ }
   };
   let state = { state: 'idle' }; // idle | downloading | ready | error
   const push = (patch) => {
@@ -121,12 +141,21 @@ function setupUpdater(getWin, hooks = {}) {
   let lastPct = -1;
   const prepare = async (version, file) => {
     const dir = path.join(STAGE_ROOT(), version);
-    try { for (const d of fs.readdirSync(STAGE_ROOT())) if (d !== version) fs.rmSync(path.join(STAGE_ROOT(), d), { recursive: true, force: true }); } catch { /* pasta ainda não existe */ }
-    if (stagedValid(version, dir)) { staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return; }
+    const marker = path.join(STAGE_ROOT(), version + '.primed');
+    try { for (const d of fs.readdirSync(STAGE_ROOT())) if (d !== version && d !== version + '.primed' && d !== 'staged.json') fs.rmSync(path.join(STAGE_ROOT(), d), { recursive: true, force: true }); } catch { /* pasta ainda não existe */ }
+    if (stagedValid(version, dir)) {
+      if (!fs.existsSync(marker)) { push({ state: 'preparing', version, percent: 90 }); await prime(dir); try { fs.writeFileSync(marker, '1'); } catch { /* sem marca: aquece de novo na próxima vez */ } }
+      staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return;
+    }
     push({ state: 'preparing', version, percent: 0 });
     let ok = false;
-    try { ok = !!file && fs.existsSync(file) && fs.existsSync(SEVENZ()) && await extractInstaller(file, dir, (pc) => { if (pc !== lastPct) { lastPct = pc; push({ state: 'preparing', percent: pc }); } }); } catch { ok = false; }
-    if (ok && stagedValid(version, dir)) { staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return; }
+    try { ok = !!file && fs.existsSync(file) && fs.existsSync(SEVENZ()) && await extractInstaller(file, dir, (pc) => { const sc = Math.round(pc * 0.85); if (sc !== lastPct) { lastPct = sc; push({ state: 'preparing', percent: sc }); } }); } catch { ok = false; }
+    if (ok && stagedValid(version, dir)) {
+      push({ state: 'preparing', percent: 90 });
+      await prime(dir);
+      try { fs.writeFileSync(marker, '1'); } catch { /* sem marca: aquece de novo na próxima vez */ }
+      staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return;
+    }
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* ignora */ }
     autoUpdater.autoInstallOnAppQuit = true; // caminho antigo: o instalador roda quando a pessoa reinicia ou fecha o app
     push({ state: 'ready', version, percent: 100, mode: 'installer' });
@@ -143,7 +172,7 @@ function setupUpdater(getWin, hooks = {}) {
     if (state.state !== 'ready') return false;
     const swap = !!staged && state.mode === 'swap';
     beginInstall(state.version, true, !swap);
-    if (swap) { setTimeout(() => { applyStaged(true); if (hooks.quit) hooks.quit(); else app.quit(); }, INSTALL_DELAY_MS); return true; }
+    if (swap) { setTimeout(() => { applyStaged(true); if (hooks.quit) hooks.quit(); else app.quit(); }, 350); return true; }
     setTimeout(() => autoUpdater.quitAndInstall(true, true), INSTALL_DELAY_MS);
     return true;
   });

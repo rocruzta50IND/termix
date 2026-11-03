@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**TASK-079 — Reinício instantâneo (versão 0.3.1)** (DEV1)
+
+- O reinício levava ~19 s porque o Windows demora ~8 s para liberar a primeira execução de um .exe recém-gravado. Agora o app prepara a versão nova dentro da pasta instalada, "aquece" o Termix.exe em segundo plano e a troca é por renomeação (~0,5 s): o app volta em ~0,6 s. Vale a partir da atualização 0.3.1 → 0.3.2. Backlog: TASK-080 (barra lateral: rolar só os projetos).
+
 **TASK-072 — Auditoria de performance e UX (versão 0.3.0)** (DEV1)
 
 - Duas revisões completas do código e medições em instância isolada (abertura 1,4 s; 8 abas reais ~573 MB e ~8 % de CPU). Corrigidos: erros não capturados no processo principal, gravação atômica das métricas e hooks, limpeza de arquivos antigos, cabeçalho que era refeito a cada métrica, Markdown do chat refeito a cada quadro, cache da varredura de plugins/skills/MCPs, modal com foco e Escape, dica das abas, contraste. A "espera de 16 minutos" era a janelinha do caminho antigo presa (a troca levou 5 s): agora fecha pela marca que o app grava ao abrir. O restante virou Backlog (TASK-073 a 078).

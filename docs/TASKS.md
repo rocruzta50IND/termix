@@ -59,6 +59,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-079 — Reinício instantâneo ao clicar em Reiniciar agora (versão 0.3.1)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Alta — pedido do usuário em 2026-11-03: "a intenção seria que ao clicar ele quase que instantaneamente reinicia o app… o máximo de UX e performance, sem exceção".
+- **Medição (máquina do usuário, 0.2.9 → 0.3.0):** o script de troca terminou em 5 s, mas o `Termix.exe` só nasceu **19 s depois** do `Start-Process`. Reproduzido aqui: a primeira execução de um `.exe` recém-gravado leva ~8–9 s no Windows (verificação de segurança); depois de liberado, o app abre em 0,5–0,7 s, **mesmo depois de renomear a pasta** (a liberação segue a identidade do arquivo, não o caminho). `Termix.exe` muda a cada versão (recurso de versão), então a cópia sempre disparava a verificação.
+- **Feito:** `src/updater.js` (pasta de preparo dentro da pasta instalada, `.update\<versão>`; depois de extrair, "aquece" o `Termix.exe` com `--version` em segundo plano, 0–85 % extraindo, 90 % aquecendo; marca `<versão>.primed`; clique em Reiniciar fecha o app em 350 ms; sem janelinha nem aviso do Windows nesse fluxo), `src/apply-update.ps1` (troca por renomeação com desfazer e cópia como reserva; sem esperas fixas; limpeza só depois de abrir o app). Versão 0.3.1. Decisão em `docs/DECISOES.md`.
+- **Testado:** aquecimento + renomeação + abertura (0,6 s) numa cópia do app; script de troca ponta a ponta numa cópia da pasta instalada com a versão nova preparada: **encerramento → troca em ~0,5 s → `Start-Process` em 70 ms** (a versão da pasta mudou); `npm run check`. Não testado: a atualização real (ver abaixo).
+- **Como validar:** o reinício mais rápido só vale quando o app **que está rodando** já tem este código: a 0.3.0 → 0.3.1 ainda usa o preparo antigo (cópia em `LOCALAPPDATA`, sem aquecimento); a **0.3.1 → 0.3.2** será o teste real (eu publico a 0.3.2 quando você estiver na 0.3.1). Esperado: clicar em Reiniciar agora e o app voltar em ~2–3 s.
+- **Pendências:** a pasta `.update` (e `.old` por instantes) fica dentro da pasta instalada; uma desinstalação pode deixá-la para trás (inofensivo).
+
 ### TASK-071 — Sem a janelinha "Atualizando…" quando a troca leva segundos (versão 0.2.9)
 
 - **Responsável:** DEV1
@@ -259,6 +270,13 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Status:** BACKLOG
 - **Prioridade:** Baixa
 - **Objetivo:** confirmar uma vez (com a contagem) em "Fechar outras guias/à direita" e "Restaurar padrões"; toast também para erros que não são de aba (hoje só o selo do sino); alternar "Sim/Não" das Configurações sem refazer a página (perde o foco); roxo remanescente (cursor e seleção do terminal, cor padrão de evento, palavras-chave do chat) contra a regra "sem roxo" do DESIGN; vocabulário único ("aba" × "guia" × "sessão"; traduzir "Rail" e "Dangerously"); "Nenhum(a) skill encontrado(a)"; esconder as colunas Tokens/Custo "indisponível" da página Consumo; `backdrop-filter` do modal sobre terminais.
+
+### TASK-080 — Barra lateral: rolar só a lista de projetos (não a barra inteira)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Média (visual/UX) — pedido do usuário em 2026-11-03, com captura: com muitos projetos, a barra lateral inteira rola para baixo; devem rolar **apenas os projetos**. **Entra depois da validação de performance/MVP.**
+- **Objetivo:** fixar o topo (alternar recolher, Terminais/Plugins/Skills/MCPs) e o rodapé (Novo projeto, Consumo, Integrações, Configurações) e deixar só a lista de projetos com rolagem própria (com a barra recolhida e aberta); testar com 20+ projetos e com a janela baixa.
 
 ## Concluídas
 

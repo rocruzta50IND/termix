@@ -1,7 +1,9 @@
-# Troca os arquivos do Termix pela versão nova já preparada (TASK-069).
-# O app prepara a versão nova numa pasta de preparo enquanto está aberto; quando ele fecha, este script (lançado pelo app, a partir de uma
-# cópia em %TEMP%) espera o Termix sair, copia a versão nova por cima da instalada e, se pedido, abre o Termix de novo.
-# Só copia por cima (não apaga nada da pasta instalada): se algo falhar no meio, o app continua abrindo.
+# Troca os arquivos do Termix pela versão nova já preparada (TASK-069, TASK-079).
+# O app prepara a versão nova numa pasta de preparo enquanto está aberto (e já a "aquece": o Windows leva ~8 s para liberar a primeira execução de um
+# .exe recém-gravado, e isso é feito em segundo plano). Quando o app fecha, este script (lançado pelo app, a partir de uma cópia em %TEMP%) troca os
+# arquivos e, se pedido, abre o Termix de novo.
+# Caminho rápido: a pasta de preparo fica DENTRO da pasta instalada (mesmo disco), então a troca é por renomeação (instantânea) e os arquivos
+# mantêm a identidade que o Windows já liberou. Se isso falhar, copia por cima (robocopy). Nunca apaga nada além da própria pasta de sobras.
 param(
   [int]$ParentPid,
   [string]$Src,
@@ -9,36 +11,70 @@ param(
   [int]$Restart = 0,
   [string]$Log = ''
 )
-$ErrorActionPreference = 'Continue'
-function Log($m) { if ($Log) { try { Add-Content -LiteralPath $Log -Value ("{0:HH:mm:ss} {1}" -f (Get-Date), $m) -Encoding UTF8 } catch {} } }
+$ErrorActionPreference = 'Stop'
+function Log($m) { if ($Log) { try { Add-Content -LiteralPath $Log -Value ("{0:HH:mm:ss.fff} {1}" -f (Get-Date), $m) -Encoding UTF8 } catch {} } }
 
 Log "inicio: pid=$ParentPid src=$Src dst=$Dst restart=$Restart"
 try { if ($ParentPid -gt 0) { Wait-Process -Id $ParentPid -Timeout 90 -ErrorAction SilentlyContinue } } catch {}
-Start-Sleep -Milliseconds 800
+Log "app encerrado"
 
 # sobras do Termix (ex.: processos filhos) ainda usando arquivos da pasta instalada
 $dstFull = [IO.Path]::GetFullPath($Dst).TrimEnd('\') + '\'
-for ($i = 0; $i -lt 3; $i++) {
+try {
   Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($dstFull, [StringComparison]::OrdinalIgnoreCase) } |
-    ForEach-Object { Log ("encerrando sobra: " + $_.Id + " " + $_.Path); Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }
-  Start-Sleep -Milliseconds 500
-}
+    ForEach-Object { Log ("encerrando sobra: " + $_.Id); Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue }
+} catch {}
 
 $ok = $false
-if ((Test-Path -LiteralPath (Join-Path $Src 'Termix.exe')) -and (Test-Path -LiteralPath (Join-Path $Src 'resources\app\package.json'))) {
-  # /E subpastas; /IS /IT copia mesmo quando o arquivo parece igual; sem /MIR: nunca apaga nada da pasta instalada
-  & robocopy.exe $Src $Dst /E /IS /IT /R:10 /W:2 /NFL /NDL /NJH /NJS /NP | Out-Null
-  $code = $LASTEXITCODE
-  Log "robocopy saiu com $code"
-  if ($code -lt 8) { $ok = $true }
-} else { Log "pasta de preparo incompleta: nada foi copiado" }
-
-if ($ok) {
-  try { Remove-Item -LiteralPath $Src -Recurse -Force -ErrorAction SilentlyContinue } catch {}
-  try { Remove-Item -LiteralPath (Join-Path (Split-Path $Src -Parent) 'staged.json') -Force -ErrorAction SilentlyContinue } catch {}
-  Log "troca concluida"
+$old = Join-Path $Dst '.old'
+$complete = (Test-Path -LiteralPath (Join-Path $Src 'Termix.exe')) -and (Test-Path -LiteralPath (Join-Path $Src 'resources\app\package.json'))
+if (-not $complete) { Log "pasta de preparo incompleta: nada foi trocado" }
+else {
+  $srcFull = [IO.Path]::GetFullPath($Src)
+  if ($srcFull.StartsWith($dstFull, [StringComparison]::OrdinalIgnoreCase)) {
+    # caminho rápido: renomeia cada item de nível superior (o antigo vai para .old, o novo entra no lugar)
+    try {
+      if (Test-Path -LiteralPath $old) { Remove-Item -LiteralPath $old -Recurse -Force -ErrorAction SilentlyContinue }
+      New-Item -ItemType Directory -Path $old -Force | Out-Null
+      $moved = @()
+      try {
+        foreach ($e in Get-ChildItem -LiteralPath $Src -Force) {
+          $t = Join-Path $Dst $e.Name
+          if (Test-Path -LiteralPath $t) { Move-Item -LiteralPath $t -Destination (Join-Path $old $e.Name) -Force; $moved += $e.Name }
+          Move-Item -LiteralPath $e.FullName -Destination $t -Force
+        }
+        $ok = $true
+        Log "troca por renomeação concluída"
+      } catch {
+        Log ("renomeação falhou (" + $_.Exception.Message + "): desfazendo")
+        foreach ($n in $moved) {
+          try {
+            $t = Join-Path $Dst $n
+            if (Test-Path -LiteralPath $t) { Move-Item -LiteralPath $t -Destination (Join-Path $Src $n) -Force } # o novo volta para a pasta de preparo (a cópia de reserva precisa dele inteiro)
+            Move-Item -LiteralPath (Join-Path $old $n) -Destination $t -Force
+          } catch { Log ("não consegui desfazer " + $n) }
+        }
+      }
+    } catch { Log ("preparo da renomeação falhou: " + $_.Exception.Message) }
+  }
+  if (-not $ok) {
+    # caminho de reserva: copia por cima (não apaga nada da pasta instalada)
+    & robocopy.exe $Src $Dst /E /IS /IT /R:10 /W:2 /NFL /NDL /NJH /NJS /NP | Out-Null
+    $code = $LASTEXITCODE
+    Log "robocopy saiu com $code"
+    if ($code -lt 8) { $ok = $true }
+  }
 }
+
 if ($Restart -eq 1) {
   Log "abrindo o Termix"
   Start-Process -FilePath (Join-Path $Dst 'Termix.exe')
+  Log "Termix aberto"
+}
+if ($ok) {
+  try { Remove-Item -LiteralPath (Join-Path (Split-Path $Src -Parent) 'staged.json') -Force -ErrorAction SilentlyContinue } catch {}
+  # limpeza depois de o app já estar de pé: sobras da versão antiga e a pasta de preparo
+  try { Remove-Item -LiteralPath $old -Recurse -Force -ErrorAction SilentlyContinue } catch {}
+  try { Remove-Item -LiteralPath $Src -Recurse -Force -ErrorAction SilentlyContinue } catch {}
+  Log "limpeza concluida"
 }
