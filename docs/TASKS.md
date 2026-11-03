@@ -8,6 +8,28 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-083 — Validação do MVP: auditoria geral e uso por 5 pessoas da empresa
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (a começar)
+- **Prioridade:** Crítica — decisão do usuário em 2026-11-03: fechar o MVP antes das duas funções pós-MVP; o app é de **uso interno, para 5 integrantes da empresa, sem comercialização por ora**, e todos precisam conseguir instalar e usar. O usuário vai dar `/clear` e retomar com o chat limpo para esta auditoria.
+- **Pronto quando:** as 5 pessoas conseguem instalar do zero, abrir, usar o dia a dia e atualizar sem ajuda, e o relatório da auditoria não tem pendência crítica nem alta; então o usuário declara a primeira grande versão (1.0).
+- **Plano (nesta ordem):**
+  - **A. Distribuição e instalação para o time** (o maior risco; apareceu hoje com o Smart App Control bloqueando o `Termix.exe` da 0.3.1, TASK-081):
+    - Instalar do zero numa máquina/VM limpa e na de um colega: Windows 10 e 11, com e sem Smart App Control e SmartScreen, usuário comum sem administrador, pasta de instalação com espaços/acentos, OneDrive.
+    - Decidir a **assinatura de código** (TASK-082): sem ela cada PC novo pode bloquear o instalador/exe; avaliar o custo (Azure Trusted Signing ou certificado) contra o tamanho do time (5 pessoas); registrar a decisão em `docs/DECISOES.md`.
+    - **Onde ficam os releases:** o atualizador exige o repositório `rocruzta50IND/termix` **público** (sem token); para um app interno isso expõe o código. Decidir: manter público, ou repositório privado com outro provedor (pasta de rede/servidor da empresa) ou token.
+    - Pré-requisitos de cada pessoa: Claude Code instalado e com login, Git; mensagens claras quando faltar (hoje "Claude Code não foi encontrado…"); primeiro uso sem nenhum projeto; abrir projeto existente (importar conversas); atualização de uma versão antiga do time; antivírus da empresa.
+    - Entregar `docs/INSTALACAO.md`: passo a passo curto para o time (baixar, instalar, o que fazer se o Windows bloquear, primeiro uso, como atualizar, a quem pedir ajuda).
+  - **B. Percurso de UX clicando em todas as telas** (a auditoria da TASK-072 cobriu UX só por leitura de código): barra lateral aberta/recolhida, projetos (criar, importar, renomear, arquivar, excluir), abas e terminais, chat, aba Web, Plugins, Skills, MCPs, Consumo, Integrações, Configurações, notificações, atualização; com muitos projetos (TASK-080), janela pequena, DPI alto e mais de um monitor; textos em português, estados vazios e de erro, teclado e foco. Capturas só do conteúdo do app (CDP).
+  - **C. Performance e estabilidade:** carga de 10 a 15 abas e uso prolongado (horas) medindo memória e CPU; reavaliar do Backlog o que pesa para o time: TASK-075 (abertura com muitas abas), TASK-076 (hooks que atrasam o agente), TASK-073 (alvos de clique e teclado), TASK-077.
+  - **D. Segurança e privacidade básicas** (várias pessoas, dados da empresa): o que o app lê e grava (`%APPDATA%\Termix`, `~/.claude`), o modo Dangerously, o que vai para o GitHub nos releases, permissões do instalador.
+- **Entregável:** relatório `docs/AUDITORIA_MVP.md` com achados por gravidade, o que foi corrigido e o que fica para depois; versão 1.0 só com aprovação do usuário.
+- **Contexto já feito (não repetir):** auditoria de performance/robustez da TASK-072 (0.3.0), atualização em segundo plano com reinício em ~1 s (TASK-069/071/079, validada pelo usuário), exe fixo contra o Smart App Control (TASK-081, 0.3.2/0.3.3).
+- **Pendente de aprovação do usuário para fechar:** TASK-065, 061, 068 (publicações/medições antigas), 069, 072, 079 e 081 (aguardando validação; o usuário já viu o reinício de ~1 s funcionar).
+- **Feito até agora:** (nada além do plano)
+- **Próximo passo:** começar pelo item A (instalação do zero e a decisão de assinatura/onde publicar), depois B, C e D.
+
 ### TASK-072 — Auditoria completa de performance e UX do app (versão 0.3.0)
 
 - **Responsável:** DEV1
