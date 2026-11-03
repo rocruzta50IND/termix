@@ -6,6 +6,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-03
+
+**TASK-072 — Auditoria de performance e UX (versão 0.3.0)** (DEV1)
+
+- Duas revisões completas do código e medições em instância isolada (abertura 1,4 s; 8 abas reais ~573 MB e ~8 % de CPU). Corrigidos: erros não capturados no processo principal, gravação atômica das métricas e hooks, limpeza de arquivos antigos, cabeçalho que era refeito a cada métrica, Markdown do chat refeito a cada quadro, cache da varredura de plugins/skills/MCPs, modal com foco e Escape, dica das abas, contraste. A "espera de 16 minutos" era a janelinha do caminho antigo presa (a troca levou 5 s): agora fecha pela marca que o app grava ao abrir. O restante virou Backlog (TASK-073 a 078).
+
 ## 2026-11-02
 
 **TASK-071 — Sem a janelinha na troca rápida (versão 0.2.9)** (DEV1)
