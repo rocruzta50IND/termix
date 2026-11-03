@@ -839,7 +839,27 @@ function renderTop() {
     </div>`;
 }
 
+// dica de nome dos ícones da barra lateral recolhida (TASK-067)
+let sideTipEl = null;
+function hideSideTip() { if (sideTipEl) sideTipEl.classList.remove('show'); }
+function showSideTip(el) {
+  if (!sideTipEl) { sideTipEl = document.createElement('div'); sideTipEl.id = 'sidetip'; document.body.appendChild(sideTipEl); }
+  sideTipEl.textContent = el.dataset.tip;
+  const r = el.getBoundingClientRect();
+  sideTipEl.style.left = `${Math.round(r.right + 10)}px`;
+  sideTipEl.style.top = `${Math.round(r.top + r.height / 2)}px`;
+  sideTipEl.classList.add('show');
+}
+document.addEventListener('mouseover', (e) => {
+  const el = e.target.closest && e.target.closest('.side.mini [data-tip]');
+  if (el) showSideTip(el); else hideSideTip();
+});
+document.addEventListener('mouseleave', hideSideTip);
+document.addEventListener('mousedown', hideSideTip, true);
+document.addEventListener('scroll', hideSideTip, true);
+
 function renderSide() {
+  hideSideTip(); // a barra é redesenhada: o ícone sobre o qual estava o mouse pode ter saído
   const col = S.settings.sideCollapsed;
   const side = $('#side');
   side.classList.toggle('mini', col);

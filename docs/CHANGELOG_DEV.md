@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-067 — Dica de nome da barra lateral recolhida** (DEV1)
+
+- A dica aparecia cortada (uma lasca escura ao lado do ícone) e dava a impressão de ícones desalinhados; agora é uma pílula inteira, no estilo do app, centrada na linha do ícone. Testado com o mouse nos 10 ícones.
+
 **TASK-066 — Janelinha da atualização sobrevive ao instalador, trava contra reabrir no meio da instalação e ícones da barra lateral** (DEV1)
 
 - O instalador matava a janelinha "Atualizando…" (ela era filha do Termix e o instalador encerra o Termix com `taskkill /T`); agora ela é lançada fora da árvore do Termix. Também: texto da janelinha avisa para não abrir o app de novo, e o app não abre por cima de uma instalação em andamento sem avisar. Ícones da barra lateral (velocímetro, link e engrenagem) com o mesmo peso visual. Detalhes e a investigação da atualização que "não abriu" na TASK-066.

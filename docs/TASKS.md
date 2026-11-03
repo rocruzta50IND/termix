@@ -34,6 +34,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-067 — Dica de nome dos ícones da barra lateral recolhida (aparecia cortada)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média (visual) — pedido do usuário em 2026-11-02, com captura: "tire esse indicador ou melhore ele para ficar condizente e alinhado com o app; ele dá a sensação dos ícones do app shell estarem desalinhados (apenas o que fica lá embaixo em Geral)".
+- **Causa:** a dica de nome (`::after` do `[data-tip]`) nascia **dentro** da barra lateral, que tem `overflow: hidden`: só aparecia uma lasca escura ao lado do ícone (o "indicador" da captura), que parecia uma peça solta e fazia os ícones parecerem fora de linha.
+- **Feito:** `src/renderer/app.js` (`showSideTip`/`hideSideTip`) e `src/renderer/styles.css` (`#sidetip`): a dica agora é um elemento fixo **fora da barra** (nunca cortado), no estilo do app (fundo escuro, borda, cantos de 11 px, sombra suave), 10 px à direita do ícone e **centrada na linha dele**, com entrada curta (sem animação com "reduzir movimento"); some ao tirar o mouse, ao clicar, ao rolar e quando a barra é redesenhada. Valeu para todos os ícones da barra recolhida (projetos, Terminais/Plugins/Skills/MCPs, Novo projeto e Geral); a regra antiga em `::after` saiu.
+- **Testado (CDP, mouse real, instância isolada):** os 10 ícones da barra recolhida: dica visível, texto correto, diferença de centro vertical 0,0 px em todos e sem ultrapassar a janela; some ao tirar o mouse; capturas de "Consumo" e "Configurações" conferidas. Não testado: barra recolhida com muitos projetos e rolagem.
 ### TASK-066 — Atualização que "não abriu mais", janelinha que sumia e ícones da barra lateral
 
 - **Responsável:** DEV1
