@@ -21,6 +21,18 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-062 — Por que o contexto "explode" ao abrir qualquer chat (investigação nos projetos reais)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Alta ("a próxima urgente", pedido do usuário em 2026-11-02, depois da TASK-059).
+- **Método:** `claude -p` em stream-json com a mesma configuração do app, **sem gravar sessão** (`--no-session-persistence`, para não poluir o histórico do usuário), mensagem "diga apenas: ok", dentro de cada projeto real; leitura só do tamanho em bytes dos documentos, nunca do conteúdo.
+- **Medido (tokens da primeira mensagem, janela real de 1.000.000):** Pagina-Rocruzta **35.398** (3,5%); Termix **34.502** (3,5%); pasta de demonstração sem projeto **28.549** (2,9%). Diferença de ~6 mil entre projeto e pasta vazia: o projeto mostra 62 ferramentas (contra 32), mais CLAUDE.md (~1,3 mil tokens no Pagina-Rocruzta) e a saída do hook de início de sessão (~1,5 mil caracteres, ~450 tokens). O restante (~28 mil) é o núcleo do Claude Code, igual no terminal. A janela é de 1 M para o Sonnet 5.5.
+- **O que o pedido inicial acrescenta (só bytes):** no Pagina-Rocruzta, `docs/TASKS.md` ~4,7 mil tokens, `docs/INTEGRACAO-MATERIAIS.md` ~10,8 mil, `WORKFLOW.md` ~4,1 mil. Mesmo lendo tudo isso, a conversa fica em torno de 55 a 70 mil tokens, ou **5 a 7%** de 1 M.
+- **Conclusão:** o contexto **não explode**; o que explodia era o **número na tela**. Com a janela chutada em 200 mil, 70 mil tokens apareciam como ~36% (exatamente a captura do usuário) quando são ~7%. A correção foi publicada na **0.2.3** (TASK-058), e o app instalado do usuário já aprendeu a janela real (`ctxSizes` = 1 M para o Sonnet 5.5, conferido no estado salvo). O chat não carrega nada a mais que o terminal (a dica do `termix-open` é igual nos dois modos).
+- **Resíduo a conferir pelo usuário:** abrir um chat novo na 0.2.3 e ver o CTX. Esperado ~3 a 4% na primeira resposta (e, **antes** da primeira resposta de um modelo ainda sem janela guardada, o número usa o palpite de 200 mil por alguns segundos; nos modelos já aprendidos isso não acontece). Se ainda parecer alto, mandar o número e a captura.
+- **Ideias, não feitas:** (a) ensinar a janela de 1 M dos modelos 5.x de saída, para o primeiro chat do primeiro uso já abrir certo; (b) mostrar a "base" (~35 mil) na dica do anel de contexto, para a pessoa saber que não é conversa; (c) hoje 62 ferramentas aparecem nos projetos contra 32 na pasta de demonstração: descobrir quais plugins/servidores do projeto as acrescentam (~6 mil tokens) e se vale desligá-las pelo Conectores > Limpo.
+
 ## Validadas em DEV1
 
 ## Prontas

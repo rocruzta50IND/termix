@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-062 — Contexto "explodindo" no chat: investigado** (DEV1)
+
+- Medido nos projetos reais: a primeira mensagem custa ~35 mil tokens (3,5% de 1 M), igual ao terminal; o "explodir" era o percentual inflado ~5× por uma janela chutada em 200 mil, já corrigido na 0.2.3. Sem alteração de código.
+
 **Versão 0.2.4 — medição das etapas da atualização** (DEV1)
 
 - A janelinha da atualização agora também mede as etapas (app fechado até o instalador começar, instalando, até a janela voltar) e o aviso "atualizado" mostra o resumo, para descobrir de onde vêm os ~3 minutos de espera. TASK-055 e TASK-060 concluídas (o usuário atualizou 0.2.1 → 0.2.2 → 0.2.3). TASK-061 em andamento.
