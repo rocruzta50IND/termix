@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-064 — Clear e avisos iguais no chat e no terminal** (DEV1)
+
+- O botão Clear do chat agora pulsa com o contexto alto, como o do terminal, e tem as duas opções ("Só limpar" e "Fechar a tarefa e limpar", com retomada automática); negações de permissão geram "Precisa de você". Auditoria completa na TASK-064. Testado com o Claude Code real.
+
 **Correção: o aviso "atualizado" não trazia o tempo com o app fechado** (DEV1)
 
 - O app novo lia o registro da janelinha antes de ela gravá-lo (corrida de tempo); agora espera por ele até 4 s. Medido no teste real 0.2.3 → 0.2.4: 1 min 01 s no total. Junto, o botão de copiar ficou fixo no canto da caixa (rola com ela). Vão na próxima versão (0.2.5).

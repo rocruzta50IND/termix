@@ -22,6 +22,20 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-064 — Eventos e Clear iguais no chat e no terminal (paridade entre os modos)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02, com duas capturas: "no modo terminal o Clear fica piscando e no chat não; acho que tem uma tarefa assim para validar os eventos iguais independente do modo".
+- **Auditoria (terminal × chat), o que foi conferido no código:**
+  - **Clear pulsando:** o chat tinha `pulse: false` fixo. **Corrigido:** mesma regra do terminal (agente parado e anel CTX no limite de Configurações > Clear, 15% por padrão).
+  - **Fluxo do Clear:** o terminal oferece "Só limpar" e "Fechar a tarefa e limpar"; o chat só tinha "nova conversa". **Corrigido:** o chat tem as duas opções, com o mesmo critério do terminal para continuar sozinho (o aviso final `TERMIX-CLEAR-OK` escrito pelo agente depois do pedido; sem ele, pergunta "A tarefa foi registrada?"), o botão fica "ocupado" durante o fluxo, e usa os mesmos pedidos de fechamento e retomada (inclusive os do fluxo Rocruzta).
+  - **Aviso "Precisa de você":** no terminal vem do pedido de permissão; o chat só escrevia uma linha na conversa. **Corrigido:** se algo é negado (aba em "Perguntar"), o chat também avisa, com o mesmo tipo de notificação e as mesmas configurações.
+  - **Já iguais (mesmas funções):** estados da aba (ponto e "Aguardando você"), aviso de "terminou" e de erro, selo de aba não vista, notificação do Windows e dica ao terminar; rail (TASK-058); aviso "cache esfriando" passa a valer para o chat porque agora ele tem os dados do cache (testado só pelo código: o aviso exige o processo do chat vivo).
+  - **Ainda diferentes, de propósito ou sem equivalente:** o chat não mede "a retomada custou ~X tokens" depois do Clear; o terminal tem pedido de permissão interativo e o chat não tem cartão de aprovação (limite do `claude -p`, TASK-040); o spinner do Reiniciar não gira no chat.
+- **Feito:** `src/renderer/app.js` (`clearDockState` do chat com pulso e estado ocupado) e `src/renderer/chat.js` (`chatClearFlow` completo, `c.flow` próprio do chat para não cruzar com o relógio do terminal, aviso "perm" quando há negações).
+- **Testado (CDP, instância isolada, Claude Code real):** contexto real 2,8%: botão normal; contexto 20%: botão com a classe de pulso; agente trabalhando: sem pulso e desabilitado; fluxo completo sem o aviso final: abre "Limpar o contexto?" (Cancelar / Só limpar / Fechar a tarefa e limpar), o agente trabalha com o botão "ocupado", aparece "A tarefa foi registrada?" e "Não limpar" mantém tudo; fluxo completo com o aviso final: fecha, começa a conversa nova (ID da sessão mudou) e manda o pedido de retomada, ficando só as duas mensagens novas. Não testado: o fluxo num projeto do fluxo Rocruzta de verdade (pedidos longos) e o caso do aviso de permissão negada.
+- **Como validar:** no chat, deixar o contexto passar de 15% e ver o Clear pulsar; clicar em Clear e conferir as duas opções; testar "Fechar a tarefa e limpar" num projeto seu.
 ### TASK-063 — Tirar o círculo de contexto da linha de baixo do chat
 
 - **Responsável:** DEV1

@@ -525,8 +525,11 @@ function clearDockState(p) {
   const tab = p && curTab(p), r = tab && RT[tab.id];
   if (!tab || !openTabs(p).length) return null;
   if (tab.kind === 'chat') { // chat: Clear = conversa nova; Reiniciar = reinicia o processo (a conversa continua)
-    const c = CH[tab.id], busy = !!(c && c.busy);
-    return { off: busy || !(tab.started || (c && c.items.length)), busy: false, pulse: false, rst: { spin: false, off: busy, tip: 'Reiniciar o processo (a conversa continua)' } };
+    // mesma regra do terminal: pulsa quando o agente está parado e o contexto (anel CTX) chegou ao limite de alerta (Configurações > Clear)
+    const c = CH[tab.id], busy = !!(c && c.busy), flow = !!(c && c.flow);
+    const cpc = ((MET[tab.id] || {}).context_window || {}).used_percentage, al = +clearCfg().alert;
+    const ready = !busy && !flow && !!(tab.started || (c && c.items.length));
+    return { off: !ready, busy: flow, pulse: ready && al > 0 && typeof cpc === 'number' && cpc >= al, rst: { spin: false, off: busy || flow, tip: 'Reiniciar o processo (a conversa continua)' } };
   }
   const cp = ((MET[tab.id] || {}).context_window || {}).used_percentage;
   const ready = !!(r && r.alive && r.st === 'wait' && !r.flow);

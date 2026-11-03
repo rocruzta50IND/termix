@@ -418,11 +418,45 @@ async function chatNew(p, tab) {
   c.items = []; c.byIdx = {}; c.busy = false; c.seen = new Set(); c.loaded = true; c.modelName = '';
   chatRenderAll(c); delete MET[tab.id]; setSt(tab, 'wait'); chatUi(tab); renderRail();
 }
+// Clear do chat com as mesmas opções do terminal: "Só limpar" (conversa nova) ou "Fechar a tarefa e limpar" (o agente registra o que fez,
+// a conversa nova começa e ele retoma pelos arquivos do projeto). Aqui sabemos exatamente quando o agente terminou (evento `result`).
 async function chatClearFlow(p, tab) {
   const c = chatView(tab);
-  if (c.busy) return;
-  const ch = await modal({ title: 'Começar uma conversa nova?', body: '<p>A aba passa a uma conversa vazia. A conversa atual continua guardada pelo Claude Code e pode ser retomada pelo ID.</p>', buttons: [['Cancelar', null], ['Nova conversa', 'ok', 'pri']] });
-  if (ch.value === 'ok') chatNew(p, tab);
+  if (c.busy || c.flow) return;
+  const pr = await clearPrompts(p);
+  if (c.busy || c.flow) return;
+  const nota = pr.fl ? `<p class="meta">Projeto no fluxo Rocruzta${pr.info.role ? ` · papel ${esc(pr.info.role)}` : ''}: o fechamento e a retomada seguem o fluxo e leem só o necessário.</p>` : '';
+  const ch = await modal({
+    title: 'Limpar o contexto?',
+    body: '<p>Uma <b>conversa nova</b> começa vazia; a atual continua guardada pelo Claude Code e pode ser retomada pelo ID. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, começa a conversa nova e manda ele retomar pelos arquivos do projeto.</p>' + nota,
+    buttons: pr.canClose ? [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']] : [['Cancelar', null], ['Só limpar', 'only', 'pri']],
+  });
+  if (ch.value === 'only') { chatNew(p, tab); return; }
+  if (ch.value !== 'full') return;
+  c.flow = { step: 'closing', t0: Date.now() }; const n0 = c.items.length; // só vale o aviso final escrito DEPOIS deste pedido
+  renderRail(); dockRefresh();
+  addEvent({ c: tab.color, who: tab.name, msg: 'Fechando a tarefa antes de limpar…' });
+  try {
+    await chatSendMsg(tab, pr.close);
+    const t0 = Date.now();
+    while (c.busy && Date.now() - t0 < 20 * 60 * 1000) await new Promise((r) => setTimeout(r, 500)); // espera o agente terminar (teto de 20 min)
+    if (!c.flow || !CH[tab.id]) return; // a aba foi fechada ou o fluxo cancelado
+    const marcou = c.items.slice(n0).some((it) => it.k === 'ai' && it.text.includes(CLEAR_MARK)); // o agente escreveu o aviso final combinado
+    if (!marcou) { // sem o aviso final (pediu aprovação, deu erro, negou algo ou foi interrompido): pergunta, como no terminal
+      c.flow = { step: 'asking', t0: Date.now() }; dockRefresh();
+      const ask = await modal({
+        title: 'A tarefa foi registrada?',
+        body: '<p>Não encontrei o aviso de que o fechamento terminou (o agente pode ter pedido a sua aprovação, ter sido interrompido, ter tido um erro ou ter deixado algo pendente). Olhe a conversa antes de decidir.</p>',
+        buttons: [['Não limpar', null], ['Limpar e retomar mesmo assim', 'ok', 'pri']],
+      });
+      if (ask.value !== 'ok') return;
+    }
+    c.flow = { step: 'clearing', t0: Date.now() }; dockRefresh();
+    await chatNew(p, tab);
+    await chatSendMsg(tab, pr.resume);
+  } finally {
+    c.flow = null; renderRail(); dockRefresh();
+  }
 }
 async function chatExport(tab) { // "Exportar texto" do menu da aba, para o chat
   const c = CH[tab.id];
@@ -543,6 +577,7 @@ function chatEvent(f, ev) {
       for (const d of ev.permission_denials || []) chatSys(c, `Negado: ${d.tool_name} ${chatToolArg(d.tool_name, d.tool_input)}. Esta aba está em "Perguntar"; para o Claude executar isso, crie a aba em "Automático" (Configurações > Chat).`, true);
       if (ev.is_error) chatSys(c, `O Claude Code devolveu um erro${ev.result ? ': ' + String(ev.result).slice(0, 300) : '.'}`, true);
       setSt(tab, 'wait');
+      if ((ev.permission_denials || []).length) notifyTab(p, tab, 'perm', 'Precisa de você: ' + [...new Set(ev.permission_denials.map((d) => d.tool_name))].join(', ') + ' foi negado (a aba está em "Perguntar").'); // como o pedido de permissão do terminal
       notifyTab(p, tab, ev.is_error ? 'error' : 'done', ev.is_error ? 'A resposta terminou com erro.' : (c.lastAi.replace(/[#*`>_-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160) || 'Terminou. Aguardando você.'));
       break;
     }
