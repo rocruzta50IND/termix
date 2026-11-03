@@ -22,6 +22,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-063 — Tirar o círculo de contexto da linha de baixo do chat
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Baixa (visual) — pedido do usuário em 2026-11-02, com captura: "dessa parte vamos tirar o círculo dali" (o anel pequeno depois de "⚠ bypass").
+- **Feito:** `src/renderer/chat.js` (sem o `.c-ring` no HTML, na ligação e na atualização) e `src/renderer/styles.css` (sem a regra). O contexto continua no anel CTX do rail, que agora é igual ao do terminal (TASK-058).
+- **Testado:** `npm run check`; conferido por captura que a linha de baixo termina em "⚠ bypass", sem círculo, e que o chat segue sem erro no console.
+
 ## Validadas em DEV1
 
 ## Prontas

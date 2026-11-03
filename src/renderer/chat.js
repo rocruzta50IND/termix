@@ -108,12 +108,12 @@ function chatView(tab) {
       <div class="c-in"><div class="c-thumbs"></div><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
         <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
         <button class="c-stop" type="button" title="Parar a resposta" aria-label="Parar">${chatIc('stop')}</button></div>
-      <div class="c-meta"><span class="c-env">${chatIc('laptop', 15)}Este computador</span><span class="c-env c-folder">${chatIc('folder', 15)}<span></span><em></em></span><span class="sp"></span><span class="c-mdl"></span><span class="c-perm"></span><span class="c-ring" title="Contexto"></span></div>
+      <div class="c-meta"><span class="c-env">${chatIc('laptop', 15)}Este computador</span><span class="c-env c-folder">${chatIc('folder', 15)}<span></span><em></em></span><span class="sp"></span><span class="c-mdl"></span><span class="c-perm"></span></div>
     </div></div>`;
   $('#chatHost').appendChild(root);
   Object.assign(c, {
     root, scroll: root.querySelector('.c-scroll'), thread: root.querySelector('.c-thread'), typing: root.querySelector('.c-typing'), inp: root.querySelector('textarea'),
-    perm: root.querySelector('.c-perm'), mdl: root.querySelector('.c-mdl'), ring: root.querySelector('.c-ring'),
+    perm: root.querySelector('.c-perm'), mdl: root.querySelector('.c-mdl'),
   });
   const send = () => { const t = c.inp.value; if (!t.trim() && !c.imgs.length) return; const imgs = c.imgs; c.imgs = []; chatThumbs(c); c.inp.value = ''; c.inp.style.height = 'auto'; chatSendMsg(tab, t, imgs); };
   c.slash = root.querySelector('.c-slash'); c.thumbs = root.querySelector('.c-thumbs'); c.imgs = [];
@@ -329,9 +329,6 @@ function chatUi(tab) {
   c.perm.textContent = tab.perm === 'd' ? '⚠ bypass' : 'Perguntar';
   c.perm.title = tab.perm === 'd' ? 'Esta aba ignora as verificações de permissão (Configurações > Chat)' : 'Edições de arquivo são aceitas; o resto é negado e o chat avisa (Configurações > Chat)';
   c.perm.classList.toggle('w', tab.perm === 'd');
-  const pct = ((MET[tab.id] || {}).context_window || {}).used_percentage;
-  c.ring.style.setProperty('--v', typeof pct === 'number' ? pct : 0);
-  c.ring.title = typeof pct === 'number' ? `Contexto ${Math.round(pct)}%` : 'Contexto ainda sem leitura';
 }
 
 function showChat(tab) {
