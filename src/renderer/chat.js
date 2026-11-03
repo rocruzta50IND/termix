@@ -484,7 +484,7 @@ const CHAT_CTX_DEFAULT = 200000;
 function chatMet(tab, c, patch) {
   const { rate_limits, ...rest } = patch;
   c.met = { ...(c.met || {}), ...rest };
-  const data = { ...c.met, updated: Date.now() / 1000 };
+  const data = { ...c.met, updated: Date.now() }; // em milissegundos, como o arquivo de métricas do terminal: a ordem "mais novo vence" e o "atualizado há" dependem da mesma unidade (TASK-091)
   if (rate_limits) data.rate_limits = rate_limits; // os limites só vão quando acabaram de chegar: não sobrescrevem os mais novos vindos de um terminal
   onMetric({ tabId: tab.id, data });
   if (rate_limits && UI.limits) { S.lastLimits = UI.limits; save(); } // ao reabrir o app os anéis 5 h / 7 d já aparecem (o terminal faz o mesmo pelo arquivo de métricas)

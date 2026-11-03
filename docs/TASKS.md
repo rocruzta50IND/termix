@@ -8,6 +8,29 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-091 — Anéis 5H/7D diferentes do /usage e sub-abas da barra recolhida só no projeto em foco
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (correção feita, falta validar no app)
+- **Prioridade:** Crítica — pedido do usuário em 2026-11-03 (com capturas): o `/usage` do terminal mostra 13 % (sessão) e 46 % (semana), mas o app mostrava 5H "–" e 7D 24 %; "sem essas informações corretas não podemos evoluir para o pós-MVP". Também: na barra recolhida as sub-abas apareciam em mais de um projeto.
+- **Causa (confirmada):** o chat gravava `updated` em **segundos** (`Date.now() / 1000`, `renderer/chat.js`) e o terminal em **milissegundos**. O `onMetric` só aceita um limite se `data.updated >= UI.limits.updated`; depois que um terminal (ms) ou o `lastLimits` salvo (ms) preenchia o valor, toda leitura do chat (segundos) parecia "mais antiga" e era descartada para sempre; o "atualizado há" também errava. O mesmo mistério afetava o Clear no chat (`clearedAt` em ms). O parser em si estava certo: um `claude -p` real devolveu `unifiedWindows.five_hour 0.15` e `seven_day 0.46`, igual ao `/usage`.
+- **Feito:** `renderer/chat.js` (`chatMet`): `updated` em milissegundos nos dois modos. `renderer/app.js` (`renderSide`): na barra recolhida só o projeto em foco mostra a bandeja de sub-abas (`open` só se `UI.cur.p` é o projeto); a barra aberta segue o estado `open` de cada projeto.
+- **Testado:** `npm run check`; formato real do `rate_limit_event` capturado com o Claude Code. **Não testado no app** (precisa de uma resposta no chat/terminal para os anéis atualizarem).
+- **Como validar:** `npm start`; mandar uma mensagem num chat: 5H e 7D devem passar a bater com o `/usage` (tolerância de 1–2 pontos por causa do momento); repetir num terminal; a barra recolhida deve mostrar sub-abas só do projeto selecionado, e trocar de projeto troca a bandeja.
+- **Limite que continua:** o Claude Code só informa os limites depois da **primeira resposta** de uma sessão; numa aba recém-aberta, sem resposta, o anel mostra o último valor conhecido (ou "–" se a janela de 5 h já venceu). Se isso incomodar, a saída é o Termix consultar o mesmo endpoint do `/usage` (não documentado, usa o token de login): fica como opção a decidir.
+- **Próximo passo:** usuário valida; depois retomar a TASK-083.
+
+### TASK-090 — Projetos novos no disco com mais espaço (e escolha da pasta raiz)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (código commitado; o usuário ainda não testou a pasta no app)
+- **Prioridade:** Crítica e urgente — pedido do usuário em 2026-11-03: "os projetos deveriam ser jogados para o armazenamento de maior espaço (geralmente HD)". Surgiu com o C: do usuário cheio (0 GB livres) durante o teste no Sandbox; os projetos criados pelo app iam sempre para `Documentos\Termix`, no C:.
+- **Feito até agora:** `src/main.js` (`resolveRoot`, `biggestDriveRoot`): sem escolha do usuário, a pasta é `X:\Termix` no disco fixo com mais espaço livre (mínimo 2 GB; se a consulta falhar ou nenhum disco servir, volta para `Documentos\Termix`); com escolha, usa a pasta escolhida (e cai no automático se ela estiver indisponível). `src/preload.js` e `src/renderer/app.js`: em Configurações, "Pasta raiz dos projetos criados pelo app" mostra o caminho real e ganhou os botões **Alterar** (seletor de pasta) e **Automática** (volta ao padrão); o valor fica em `settings.projectsRoot`. Projetos importados continuam onde estão. Na máquina do usuário a detecção devolve `D:\Termix` (D: com 421 GB livres; C: com 4 GB).
+- **Testado:** `npm run check`; a consulta de discos (PowerShell/CIM) rodada de verdade (C: e D:). **Não testado:** a tela Configurações e a criação de um projeto no app (CDP).
+- **Como validar:** `npm start` > Configurações: o caminho deve mostrar `D:\Termix` com a nota "Automática"; criar um projeto novo e conferir que a pasta nasce em `D:\Termix\<nome>`; "Alterar" para outra pasta e criar outro; "Automática" volta ao padrão.
+- **Pendências:** o `~\.claude\projects` (conversas do Claude Code) e `%APPDATA%\Termix` continuam no C: (não são controlados pelo Termix); registrar no `docs/INSTALACAO.md` que o instalador e o Sandbox também usam o C:.
+- **Próximo passo:** validar no app; depois retomar a TASK-083 (Sandbox) quando houver espaço no C:.
+
 ### TASK-083 — Validação do MVP: auditoria geral e uso por 5 pessoas da empresa
 
 - **Responsável:** DEV1
@@ -28,7 +51,9 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Contexto já feito (não repetir):** auditoria de performance/robustez da TASK-072 (0.3.0), atualização em segundo plano com reinício em ~1 s (TASK-069/071/079, validada pelo usuário), exe fixo contra o Smart App Control (TASK-081, 0.3.2/0.3.3).
 - **Pendente de aprovação do usuário para fechar:** TASK-065, 061, 068 (publicações/medições antigas), 069, 072, 079 e 081 (aguardando validação; o usuário já viu o reinício de ~1 s funcionar).
 - **Feito até agora (2026-11-03):** decisões de distribuição registradas (repositório sempre público, sem assinatura); **`docs/INSTALACAO.md` escrito** (checagem do Smart App Control, instalar, avisos do Windows, primeiro uso, atualizar, desinstalar, a quem pedir ajuda) e ligado ao README; versão publicada no GitHub. Falta **testar o roteiro** no Sandbox e o Smart App Control num PC real, e corrigir o guia conforme o resultado.
-- **Próximo passo:** começar pelo item A no **Windows Sandbox** (instalação limpa sem Claude Code/Git, primeiro uso, atualização de versão antiga, pasta com espaços), depois B (percurso de UX), C e D. O que o Sandbox não prova (Smart App Control e antivírus de um PC real, Windows 10) o usuário testa no PC de um colega.
+- **Sandbox, rodada 1 (2026-11-03, Windows 11 limpo, sem Claude Code, Git nem Node):** download do instalador do GitHub sem login (3 s); instalação silenciosa em pasta com espaços e acento (`Instalação do Termix\App`) com código 0 em 25 s; abre em ~15 s, 5 processos, 391 MB, janela "Termix" v0.3.4, tela inicial sem projetos correta ("Comece criando um projeto"). **Achado:** numa tela pequena (~1214×651) a janela passa da borda direita/inferior do monitor (texto e botões cortados); verificar tamanho mínimo e posição da janela no item B. Scripts do teste ficam no scratchpad (`sbx\teste.ps1`, `termix.wsb`); o Sandbox também exige espaço livre no C:.
+- **Falta no item A:** abrir uma aba do Claude Code sem ele instalado (mensagem "Claude Code não foi encontrado…"), atualização a partir de versão antiga (0.3.3 → 0.3.4), e conferir o guia `docs/INSTALACAO.md` contra o que se viu.
+- **Próximo passo (anterior):** começar pelo item A no **Windows Sandbox** (instalação limpa sem Claude Code/Git, primeiro uso, atualização de versão antiga, pasta com espaços), depois B (percurso de UX), C e D. O que o Sandbox não prova (Smart App Control e antivírus de um PC real, Windows 10) o usuário testa no PC de um colega.
 
 ### TASK-072 — Auditoria completa de performance e UX do app (versão 0.3.0)
 

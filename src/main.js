@@ -24,7 +24,29 @@ const pty = RUN_MODE ? null : require('@lydell/node-pty');
 
 const STATE_FILE = () => path.join(app.getPath('userData'), 'state.json');
 const STATE_BACKUP = () => path.join(app.getPath('userData'), 'state.bak.json');
-const DEFAULT_ROOT = () => path.join(app.getPath('documents'), 'Termix');
+const DOCS_ROOT = () => path.join(app.getPath('documents'), 'Termix');
+/* TASK-090: pasta dos projetos criados pelo app. Escolha do usuário; sem ela, o disco fixo com mais espaço livre (X:\Termix), para não encher o C:. */
+function biggestDriveRoot() {
+  return new Promise((resolve) => {
+    const cmd = "Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | ForEach-Object { $_.DeviceID + '|' + $_.FreeSpace }";
+    require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', cmd], { windowsHide: true, timeout: 8000 }, (err, out) => {
+      if (err) return resolve(null);
+      let best = null;
+      for (const line of String(out).split(/\r?\n/)) {
+        const [dev, free] = line.trim().split('|');
+        const f = Number(free);
+        if (/^[A-Z]:$/i.test(dev || '') && f > 0 && (!best || f > best.free)) best = { dev: dev.toUpperCase(), free: f };
+      }
+      resolve(best && best.free > 2 * 1024 ** 3 ? path.join(best.dev + '\\', 'Termix') : null);
+    });
+  });
+}
+async function resolveRoot(custom) {
+  if (typeof custom === 'string' && custom.trim()) {
+    try { fs.mkdirSync(custom, { recursive: true }); return { root: custom, auto: false }; } catch { /* pasta escolhida indisponível: cai no automático */ }
+  }
+  return { root: (await biggestDriveRoot()) || DOCS_ROOT(), auto: true };
+}
 // o app se chamava Vitra: na primeira abertura copia os dados salvos para a pasta nova (a antiga fica intacta)
 try {
   const legacy = path.join(app.getPath('appData'), 'Vitra'), cur = app.getPath('userData');
@@ -315,8 +337,8 @@ ipcMain.on('chat:stop', (_e, a) => { if (a && typeof a.tabId === 'string') chat.
 ipcMain.handle('chat:history', (_e, a) => (a && typeof a.cwd === 'string' ? chat.history(a) : { items: [], model: '', usage: null }));
 
 /* ---------- IPC: projetos ---------- */
-ipcMain.handle('project:create', (_e, name) => {
-  const root = DEFAULT_ROOT();
+ipcMain.handle('project:create', async (_e, name, custom) => {
+  const { root } = await resolveRoot(custom);
   fs.mkdirSync(root, { recursive: true });
   let dir = path.join(root, slug(name));
   for (let i = 2; fs.existsSync(dir); i++) dir = path.join(root, `${slug(name)}-${i}`);
@@ -396,7 +418,11 @@ ipcMain.handle('file:saveText', async (_e, { name, text }) => {
   fs.writeFileSync(r.filePath, text, 'utf8');
   return r.filePath;
 });
-ipcMain.handle('app:info', () => ({ root: DEFAULT_ROOT(), winMode }));
+ipcMain.handle('app:info', async (_e, custom) => { const r = await resolveRoot(custom); return { root: r.root, rootAuto: r.auto, winMode }; });
+ipcMain.handle('project:pickRoot', async () => {
+  const r = await dialog.showOpenDialog(win, { title: 'Pasta dos projetos criados pelo Termix', properties: ['openDirectory', 'createDirectory'] });
+  return r.canceled ? null : r.filePaths[0];
+});
 
 /* ---------- IPC: ambiente e recursos ---------- */
 ipcMain.handle('env:check', () => new Promise((resolve) => {

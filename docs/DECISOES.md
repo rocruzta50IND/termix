@@ -162,3 +162,11 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 ## Fluxo de trabalho do projeto
 - Metodologia DEV2 → DEV1 → MAIN (`WORKFLOW.md`). Esta máquina é **DEV1**. A `dev2` não foi criada (trabalho individual).
 - O `/clear` só é dado quando uma tarefa termina e o usuário aprova; o estado vive em `docs/TASKS.md` e `docs/CHANGELOG_DEV.md`. Comandos do projeto: `/retomar` e `/encerrar-tarefa`.
+
+## Pasta dos projetos criados pelo app (TASK-090)
+- Projetos **novos** nascem no **disco fixo com mais espaço livre** (`X:\Termix\<nome>`), não mais sempre em `Documentos\Termix` no C:. Motivo: o C: costuma ser o menor (SSD) e encheu no uso real. Se a consulta de discos falhar ou nenhum tiver pelo menos 2 GB livres, volta para `Documentos\Termix`.
+- O usuário pode escolher a pasta em Configurações ("Alterar") e voltar ao automático ("Automática"). Projetos importados continuam onde estão; mudar a pasta não move projetos existentes.
+
+## Barra recolhida e horário das métricas (TASK-091)
+- Na barra **recolhida**, só o projeto **em foco** mostra a bandeja de sub-abas; os outros ficam só com o avatar. A barra aberta continua com o estado aberto/fechado de cada projeto.
+- Todas as métricas (terminal e chat) levam `updated` em **milissegundos**. O limite 5H/7D mais novo vence; misturar unidades fazia o chat ser ignorado depois de uma leitura do terminal.

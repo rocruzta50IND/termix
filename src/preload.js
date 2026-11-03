@@ -39,14 +39,15 @@ contextBridge.exposeInMainWorld('termix', {
   onChatEvents: (fn) => ipcRenderer.on('chat:events', (_e, m) => fn(m)),
   onChatExit: (fn) => ipcRenderer.on('chat:exit', (_e, m) => fn(m)),
 
-  createProject: (name) => ipcRenderer.invoke('project:create', name),
+  createProject: (name, root) => ipcRenderer.invoke('project:create', name, root),
+  pickProjectsRoot: () => ipcRenderer.invoke('project:pickRoot'),
   pickFolder: () => ipcRenderer.invoke('project:pick'),
   scanSessions: (p) => ipcRenderer.invoke('sessions:scan', p),
   sessionExists: (cwd, id) => ipcRenderer.invoke('session:exists', { cwd, id }),
   openFolder: (p) => ipcRenderer.invoke('project:open', p),
   trashFolder: (p) => ipcRenderer.invoke('project:trash', p),
   folderExists: (p) => ipcRenderer.invoke('project:exists', p),
-  appInfo: () => ipcRenderer.invoke('app:info'),
+  appInfo: (root) => ipcRenderer.invoke('app:info', root),
   relaunch: () => ipcRenderer.send('app:relaunch'),
   saveText: (name, text) => ipcRenderer.invoke('file:saveText', { name, text }),
 

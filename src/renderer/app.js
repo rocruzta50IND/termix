@@ -922,7 +922,7 @@ function renderSide() {
       const g = GRADS[(p.g || 0) % GRADS.length];
       const n = openTabs(p).length;
       const dotc = projDot(p), letter = projLetter(p);
-      return `<div class="pg ${p.open !== false ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
+      return `<div class="pg ${p.open !== false && UI.cur.p === p.id ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
         <div class="subs"><div class="subs-in"><div class="tray">${subsOf(p, true, isCur)}</div></div></div></div>`;
     }).join('');
     side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
@@ -1502,7 +1502,7 @@ function confHTML() {
     <div class="row"><div class="grow">Opacidade do terminal<small>Mais baixo = mais vidro, menos legibilidade</small></div><input type="range" min="50" max="100" value="${S.settings.termOp}" id="rngOp" style="--pct:${(S.settings.termOp - 50) * 2}%"><span id="opv" class="chip">${S.settings.termOp}%</span></div>
     <div class="row"><div class="grow">Fundo do app<small>Degradê: o app é o degradê e o resto fica transparente. Ofuscado: o mesmo degradê, mais suave, com o Windows de fundo aparecendo desfocado por trás (Windows 11). Trocar de um para o outro pede para reabrir o app.</small></div>
       <div class="seg"><button class="${bgMode() === 'gradient' ? 'sel' : ''}" data-bg="gradient">Degradê</button><button class="${bgMode() === 'blur' ? 'sel' : ''}" data-bg="blur">Ofuscado</button></div></div>
-    <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small>Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip">…</span></div>
+    <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small id="rootNote">Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip" style="user-select:text;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">…</span><button class="btn" id="rootPick">Alterar</button>${S.settings.projectsRoot ? '<button class="btn" id="rootAuto">Automática</button>' : ''}</div>
     <div class="row"><div class="grow">Ao fechar o app<small>Encerra os processos, com confirmação. As conversas ficam guardadas.</small></div><span class="chip">Pergunta antes de sair</span></div>
     <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
     <h5 style="margin:22px 0 8px">Rail e rodapé</h5>
@@ -1586,7 +1586,7 @@ function renderPage() {
   else if (m === 'page') html = resPageHTML(UI.cur.page);
   $('#page').innerHTML = html;
   layout(); // o recorte do vidro depende do tipo de tela
-  if (UI.cur.p === '_' && UI.cur.page === 'Configurações') api.appInfo().then((i) => { const c = $('#rootChip'); if (c) c.textContent = i.root; });
+  if (UI.cur.p === '_' && UI.cur.page === 'Configurações') api.appInfo(S.settings.projectsRoot).then((i) => { const c = $('#rootChip'); if (c) { c.textContent = i.root; c.title = i.root; } const n = $('#rootNote'); if (n && i.rootAuto) n.textContent = 'Automática: o disco com mais espaço livre, para não encher o C:. Projetos importados ficam onde já estão.'; });
 }
 
 function renderPop() {
@@ -1699,7 +1699,7 @@ async function newProjectFlow() {
   if (r.value !== 'ok') return;
   const name = projNameClip(r.form.name);
   if (!name) return;
-  const { path } = await api.createProject(name);
+  const { path } = await api.createProject(name, S.settings.projectsRoot);
   let note = '';
   if (connCfg().newProject === 'clean') {
     $('#modalRoot').innerHTML = '<div class="modal"><div class="dlg glass"><h2>Preparando o projeto limpo…</h2><p>Desligando plugins, MCPs e conectores só neste projeto. Leva alguns segundos.</p></div></div>';
@@ -1949,6 +1949,8 @@ document.addEventListener('click', async (e) => {
     const k = el.dataset.rail; railCfg()[k] = !railCfg()[k]; save();
     renderMenu(); renderRail(); renderTop(); return;
   }
+  if (q('#rootPick')) { api.pickProjectsRoot().then((r) => { if (r) { S.settings.projectsRoot = r; save(); renderPage(); } }); return; }
+  if (q('#rootAuto')) { delete S.settings.projectsRoot; save(); renderPage(); return; }
   if ((el = q('[data-bg]'))) { S.settings.bg = el.dataset.bg; save(); applyBg(); if (UI.cur.page === 'Configurações') renderPage(); return; }
   if ((el = q('[data-win]'))) { api.winCtl(el.dataset.win); return; }
   if (q('[data-togside]')) { S.settings.sideCollapsed = !S.settings.sideCollapsed; save(); renderSide(); tween('sideW', sideTarget()); return; }

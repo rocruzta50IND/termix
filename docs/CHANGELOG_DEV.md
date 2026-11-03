@@ -8,6 +8,14 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**TASK-091 — Anéis 5H/7D certos no chat e sub-abas só do projeto em foco** (DEV1)
+
+- Causa dos anéis diferentes do `/usage`: o chat gravava o horário da leitura em segundos e o terminal em milissegundos, então depois de uma leitura do terminal o chat nunca mais atualizava o 5H/7D (e o Clear no chat tinha o mesmo problema). Agora os dois usam milissegundos. Na barra recolhida, só o projeto em foco mostra as sub-abas. Arquivos: `renderer/chat.js`, `renderer/app.js`; docs. Falta validar no app.
+
+**TASK-090 — Projetos novos no disco com mais espaço** (DEV1)
+
+- Os projetos criados pelo app iam sempre para o C: (`Documentos\Termix`), que encheu. Agora vão para `X:\Termix`, no disco com mais espaço livre, e dá para escolher a pasta em Configurações (Alterar / Automática). Arquivos: `main.js`, `preload.js`, `renderer/app.js`; docs. Falta validar no app.
+
 **Guia de instalação para o time** (DEV1)
 
 - Novo `docs/INSTALACAO.md` (passo a passo curto: o que conferir antes, como saber se o Smart App Control pode bloquear, instalar, avisos do Windows, primeiro uso, atualizar, desinstalar e a quem pedir ajuda) e link no README. Parte do item A da TASK-083; o roteiro ainda será testado no Sandbox e em um PC real.
