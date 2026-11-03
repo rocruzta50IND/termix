@@ -44,6 +44,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-069 — Atualização sem sair do app (barrinha no cabeçalho, preparar em segundo plano e reiniciar)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 (protótipo aprovado): "a atualização deve ocorrer na tela ainda do Termix… com animação de progresso… mostra uma mensagem para fechar e abrir de novo… enquanto o usuário ainda mexe".
+- **Objetivo:** tirar a espera de ~1 min com o app fechado: a versão nova é baixada e **preparada com o app aberto**; no fim, o usuário reinicia quando quiser e a troca leva segundos.
+- **Feito:** `src/updater.js` (estado `preparing`; extrai o instalador com o `7za`; modo `swap` ou, se falhar, `installer` como antes; `applyStaged`/`applyStagedOnQuit`), `src/apply-update.ps1` (espera o app sair, copia por cima com robocopy sem apagar nada, reabre se pedido), `src/update-helper.js` (`runDetachedScript`, com `spawnSync` do cmd intermediário para o script sobreviver ao app saindo no mesmo instante), `src/main.js` (gancho no fechamento e `quit` do app), `src/renderer/app.js` e `styles.css` (chip no cabeçalho com barrinha que atualiza no lugar, cartão e aviso de "Reiniciando…" por modo), `assets/7za.exe` (+ licença, via `extraResources`), `package.json`. Versão 0.2.7. Decisão registrada em `docs/DECISOES.md`.
+- **Testado:** extração real do instalador 0.2.6 com o `7za` (3,4 s, 370 MB, versão conferida); script de troca com os 561 arquivos reais, pasta com espaços e o app saindo no mesmo instante (log "troca concluída", nada apagado); chip e cartão em instância isolada com `TERMIX_FAKE_UPDATE=1` (capturas de "Preparando" e "pronto"); `npm run check`. **Não testado ainda:** o fluxo inteiro numa atualização real (só dá para ver numa atualização **a partir da 0.2.7**, ou seja, 0.2.7 → 0.2.8; a 0.2.6 → 0.2.7 ainda usa o caminho antigo).
+- **Como validar:** instalar a 0.2.7 (pelo caminho antigo); eu publico a 0.2.8 e o app aberto deve mostrar o chip (Baixando → Preparando → verde "Reiniciar agora") sem fechar; clicar em Reiniciar e ver o tempo do aviso "atualizado"; repetir fechando o app à mão para ver a troca sem reabrir.
+- **Pendências:** a janelinha "Atualizando…" ainda aparece no Reiniciar (agora por poucos segundos); o registro do Windows continua com a versão da instalação original.
+- **Próximo passo:** usuário atualiza 0.2.6 → 0.2.7; eu publico a 0.2.8 para o teste real.
+
+
 ## Validadas em DEV1
 
 ### TASK-067 — Dica de nome dos ícones da barra lateral recolhida (aparecia cortada)

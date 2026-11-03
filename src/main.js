@@ -481,8 +481,9 @@ if (!RUN_MODE) {
   if (!app.requestSingleInstanceLock()) app.quit();
   else {
     app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } createWindow(); require('./updater').setupUpdater(() => win); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
+    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } createWindow(); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
   }
+  app.on('quit', () => { if (!wantRelaunch) require('./updater').applyStagedOnQuit(); }); // TASK-069: versão nova já preparada entra no lugar ao fechar
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
 }
 ipcMain.on('app:relaunch', () => { wantRelaunch = true; if (win && !win.isDestroyed()) win.close(); });

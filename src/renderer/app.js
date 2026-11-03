@@ -641,8 +641,9 @@ function showUpdCard() {
     });
     document.body.appendChild(updCard);
   }
-  updCard.innerHTML = `<div class="ut"><span class="ui">${ic('download', 18)}</span><div><b>Nova versão ${esc(UPD.version || '')} pronta</b><span>O Termix fecha, atualiza e abre de novo. Os terminais voltam sozinhos.</span></div></div>
-    <div class="ua"><button class="btn sm" data-updc="later">Depois</button><button class="btn sm pri" data-updc="go">Atualizar agora</button></div>`;
+  const swap = UPD.mode === 'swap';
+  updCard.innerHTML = `<div class="ut"><span class="ui">${ic('download', 18)}</span><div><b>Termix ${esc(UPD.version || '')} pronto</b><span>${swap ? 'A atualização foi preparada sem interromper o seu trabalho. Reinicie quando quiser: o Termix fecha e abre de novo em poucos segundos, e as abas voltam sozinhas. Se preferir, é só fechar e abrir o app depois.' : 'O Termix fecha, atualiza e abre de novo. Os terminais voltam sozinhos.'}</span></div></div>
+    <div class="ua"><button class="btn sm" data-updc="later">Depois</button><button class="btn sm pri" data-updc="go">${swap ? 'Reiniciar agora' : 'Atualizar agora'}</button></div>`;
   updCard.classList.remove('show'); void updCard.offsetWidth; updCard.classList.add('show');
 }
 async function applyUpdate() {
@@ -659,7 +660,9 @@ async function applyUpdate() {
 function showUpdBusy(v) {
   let el = $('#updbusy');
   if (!el) { el = document.createElement('div'); el.id = 'updbusy'; document.body.appendChild(el); }
-  el.innerHTML = `<div class="ub"><i class="spin"></i><b>Atualizando o Termix${v ? ' para a versão ' + esc(v) : ''}…</b><span>O app vai fechar e abrir de novo sozinho. Pode levar alguns minutos, e durante esse tempo não aparece nenhuma janela: não abra o Termix de novo, ele volta sozinho.</span><span>Suas conversas ficam guardadas e as abas voltam sozinhas.</span></div>`;
+  el.innerHTML = UPD.mode === 'swap'
+    ? `<div class="ub"><i class="spin"></i><b>Reiniciando o Termix${v ? ' na versão ' + esc(v) : ''}…</b><span>O app fecha e abre de novo sozinho em poucos segundos. Não abra o Termix de novo, ele volta sozinho.</span><span>Suas conversas ficam guardadas e as abas voltam sozinhas.</span></div>`
+    : `<div class="ub"><i class="spin"></i><b>Atualizando o Termix${v ? ' para a versão ' + esc(v) : ''}…</b><span>O app vai fechar e abrir de novo sozinho. Pode levar alguns minutos, e durante esse tempo não aparece nenhuma janela: não abra o Termix de novo, ele volta sozinho.</span><span>Suas conversas ficam guardadas e as abas voltam sozinhas.</span></div>`;
   el.classList.add('show');
 }
 const fmtMs = (ms) => { const s = Math.round(ms / 1000); return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + String(s % 60).padStart(2, '0') + ' s'; };
@@ -674,7 +677,30 @@ function onUpdateState(s) {
   UPD = s || { state: 'idle' };
   if (UPD.state === 'ready' && updShownFor !== UPD.version) { updShownFor = UPD.version; showUpdCard(); }
   if (UPD.state !== 'ready') hideUpdCard();
-  renderTop();
+  if (!patchUpdChip()) renderTop();
+}
+
+// TASK-069: chip no cabeçalho com a barrinha (baixando → preparando → pronto), sem tirar a pessoa do que está fazendo
+function updChipHTML() {
+  const st = UPD.state, v = esc(UPD.version || '');
+  if (st === 'downloading' || st === 'preparing') {
+    const p = Math.max(0, Math.min(100, Math.round(UPD.percent || 0)));
+    return `<div class="updchip" id="updchip" data-st="${st}" title="${st === 'downloading' ? 'Baixando' : 'Preparando'} a versão ${v} em segundo plano; você pode continuar usando o Termix"><i class="uic"></i><span class="ult">${st === 'downloading' ? 'Baixando' : 'Preparando'} ${v}</span><span class="ubar"><i style="width:${p}%"></i></span><span class="upc">${p}%</span></div>`;
+  }
+  if (st === 'ready') {
+    const swap = UPD.mode === 'swap';
+    return `<div class="updchip ready" id="updchip" data-st="ready"><i class="uic"></i><span class="ult">${swap ? 'Termix ' + v + ' pronto' : 'Nova versão ' + v}</span><button class="updbtn" data-upd="go" title="${swap ? 'Reiniciar o Termix para usar a versão ' + v : 'Atualizar e reabrir o Termix'}">${ic('download', 15)}${swap ? 'Reiniciar agora' : 'Atualizar'}</button></div>`;
+  }
+  return '';
+}
+function patchUpdChip() {
+  const el = $('#updchip');
+  if (!el || el.dataset.st !== UPD.state || (UPD.state !== 'downloading' && UPD.state !== 'preparing')) return false;
+  const p = Math.max(0, Math.min(100, Math.round(UPD.percent || 0)));
+  const b = el.querySelector('.ubar i'), t = el.querySelector('.upc');
+  if (b) b.style.width = p + '%';
+  if (t) t.textContent = p + '%';
+  return true;
 }
 
 /* ---------- peças de renderização ---------- */
@@ -830,7 +856,7 @@ function renderTop() {
   $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix</div><span class="sp"></span>
     ${railCfg().on ? '' : `<div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>`}
     <span class="sp"></span>
-    ${UPD.state === 'ready' ? `<button class="updbtn" data-upd="go" title="Nova versão ${esc(UPD.version || '')} pronta: atualizar e reabrir o Termix">${ic('download', 15)}Atualizar</button>` : ''}
+    ${updChipHTML()}
     <button class="tbtn round ${UI.actOpen ? 'on' : ''}" data-togact title="Notificações">${ic('bell', 18)}${pending() ? `<span class="nb">${pending()}</span>` : ''}</button>
     <div class="wc">
       <button data-win="min" title="Minimizar">${ic('minus', 16)}</button>

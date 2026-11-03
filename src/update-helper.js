@@ -59,4 +59,22 @@ function installerRunning() {
   } catch { return false; }
 }
 
-module.exports = { startUpdateHelper, readHelperTimeline, installerRunning };
+// TASK-069: roda um script PowerShell solto (fora da árvore do Termix, sobrevive ao fechamento do app) a partir de uma cópia em %TEMP%.
+// Usado para trocar os arquivos do app pela versão nova depois que ele fecha (src/apply-update.ps1).
+function runDetachedScript(scriptSrc, tmpName, params) {
+  if (process.platform !== 'win32') return false;
+  try {
+    const tmp = path.join(os.tmpdir(), tmpName);
+    fs.writeFileSync(tmp, '﻿' + fs.readFileSync(scriptSrc, 'utf8').replace(/^﻿/, ''), 'utf8');
+    const args = ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', tmp];
+    for (const [k, v] of Object.entries(params)) args.push('-' + k, String(v));
+    // cmd.exe intermediário (start) que sai logo: o script fica órfão, fora da árvore do Termix. spawnSync espera o cmd sair, o que garante que o
+    // PowerShell já foi criado antes de o app terminar (lançar sem esperar perdia o script quando o app saía no mesmo instante).
+    const q = (x) => '"' + String(x).replace(/"/g, '') + '"';
+    const r = require('child_process').spawnSync('cmd.exe', ['/d /s /c "start "" /B powershell.exe ' + args.map(q).join(' ') + '"'], { stdio: 'ignore', windowsHide: true, windowsVerbatimArguments: true, timeout: 8000 });
+    if (r.error) return false;
+    return true;
+  } catch { return false; }
+}
+
+module.exports = { startUpdateHelper, readHelperTimeline, installerRunning, runDetachedScript };

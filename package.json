@@ -1,7 +1,7 @@
 {
   "name": "termix",
   "productName": "Termix",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Central de sessões de agentes de programação em terminal, em glassmorphism.",
   "main": "src/main.js",
   "scripts": {
@@ -29,6 +29,16 @@
     "productName": "Termix",
     "copyright": "Rocruzta",
     "asar": false,
+    "extraResources": [
+      {
+        "from": "assets/7za.exe",
+        "to": "7za.exe"
+      },
+      {
+        "from": "assets/7za-LICENSE.txt",
+        "to": "7za-LICENSE.txt"
+      }
+    ],
     "publish": {
       "provider": "github",
       "owner": "rocruzta50IND",

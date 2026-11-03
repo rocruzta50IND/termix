@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-069 — Atualização sem sair do app (versão 0.2.7)** (DEV1)
+
+- O Termix baixa e prepara a versão nova em segundo plano, com uma barrinha no cabeçalho (Baixando → Preparando → pronto) e o botão Reiniciar agora; a troca dos arquivos leva segundos. Se a preparação falhar, volta ao instalador de antes. O fluxo real só aparece na atualização 0.2.7 → 0.2.8.
+
 **TASK-066 e TASK-067 validadas; versão 0.2.6** (DEV1)
 
 - Aprovadas pelo usuário: janelinha da atualização fora da árvore do Termix, trava contra reabrir durante a instalação, ícones com o mesmo peso e dica de nome da barra recolhida inteira. Release v0.2.6 publicado (TASK-068); promoção dev1 → main feita.

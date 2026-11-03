@@ -4,7 +4,9 @@
 const { app, ipcMain, Notification } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const { startUpdateHelper, readHelperTimeline, installerRunning } = require('./update-helper');
+const os = require('os');
+const { spawn } = require('child_process');
+const { startUpdateHelper, readHelperTimeline, installerRunning, runDetachedScript } = require('./update-helper');
 
 const FIRST_CHECK_MS = 15 * 1000;
 const EVERY_MS = 4 * 60 * 60 * 1000;
@@ -16,7 +18,50 @@ const EVERY_MS = 4 * 60 * 60 * 1000;
 const INSTALL_DELAY_MS = 2500; // dá tempo de a interface mostrar o cartão antes de o app fechar
 const pendingFile = () => path.join(app.getPath('userData'), 'update-pending.json');
 
-function setupUpdater(getWin) {
+// TASK-069: atualização sem tirar a pessoa do app. Baixada a versão nova, o instalador é extraído (com o 7za, sem executá-lo) para uma pasta de
+// preparo enquanto o Termix continua em uso (estado "preparing"); pronto ("ready", modo "swap"), a pessoa reinicia quando quiser e, quando o app
+// fecha, um script (apply-update.ps1) copia a versão nova por cima da instalada em poucos segundos. Se a preparação falhar, cai no caminho antigo
+// (modo "installer": o instalador roda ao reiniciar / ao fechar).
+const STAGE_ROOT = () => path.join(process.env.LOCALAPPDATA || app.getPath('userData'), 'termix-updater', 'staged');
+const SEVENZ = () => path.join(process.resourcesPath, '7za.exe');
+let staged = null; // { version, dir } quando a versão nova está pronta na pasta de preparo
+let applyLaunched = false;
+
+function stagedValid(version, dir) {
+  try {
+    return fs.existsSync(path.join(dir, 'Termix.exe')) && JSON.parse(fs.readFileSync(path.join(dir, 'resources', 'app', 'package.json'), 'utf8')).version === version;
+  } catch { return false; }
+}
+// extrai o instalador (que é um arquivo 7z com o app dentro) para dir; onPercent recebe 0..100
+function extractInstaller(file, dir, onPercent) {
+  return new Promise((resolve) => {
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+      const p = spawn(SEVENZ(), ['x', '-y', '-bsp1', '-bso0', '-bse0', '-o' + dir, file], { windowsHide: true });
+      let buf = '';
+      p.stdout.on('data', (d) => {
+        buf = (buf + d.toString()).slice(-200);
+        const all = buf.match(/\d{1,3}(?=%)/g);
+        if (all) onPercent(Math.min(100, +all[all.length - 1]));
+      });
+      p.on('error', () => resolve(false));
+      p.on('close', (code) => resolve(code === 0 || code === 1)); // 1 = avisos (o cabeçalho do instalador não é 7z puro)
+    } catch { resolve(false); }
+  });
+}
+// copia a versão preparada por cima da instalada depois que este app fechar (restart: abre o Termix de novo)
+function applyStaged(restart) {
+  if (!staged || applyLaunched || !app.isPackaged) return false;
+  applyLaunched = runDetachedScript(path.join(__dirname, 'apply-update.ps1'), 'termix-apply-update.ps1', {
+    ParentPid: process.pid, Src: staged.dir, Dst: path.dirname(process.execPath), Restart: restart ? 1 : 0, Log: path.join(os.tmpdir(), 'termix-apply-update.log'),
+  });
+  return applyLaunched;
+}
+// chamado quando o app fecha por qualquer caminho: se há versão preparada, ela entra no lugar (sem reabrir)
+function applyStagedOnQuit() { applyStaged(false); }
+
+function setupUpdater(getWin, hooks = {}) {
   let just = null; // { from, to, ms } quando este início é o primeiro depois de uma atualização
   try {
     const p = JSON.parse(fs.readFileSync(pendingFile(), 'utf8'));
@@ -60,25 +105,47 @@ function setupUpdater(getWin) {
     ipcMain.handle('update:install', () => { beginInstall(state.version || '9.9.9', false); push({ state: 'idle' }); return true; });
     ipcMain.handle('update:check', () => state);
     setTimeout(() => push({ state: 'downloading', version: '9.9.9', percent: 40 }), 3000);
-    setTimeout(() => push({ state: 'ready', version: '9.9.9', percent: 100 }), 6000);
+    setTimeout(() => push({ state: 'downloading', version: '9.9.9', percent: 85 }), 5000);
+    setTimeout(() => push({ state: 'preparing', version: '9.9.9', percent: 30 }), 6500);
+    setTimeout(() => push({ state: 'preparing', version: '9.9.9', percent: 75 }), 8000);
+    setTimeout(() => push({ state: 'ready', version: '9.9.9', percent: 100, mode: 'swap' }), 9500);
     return;
   }
 
   const { autoUpdater } = require('electron-updater');
   autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true; // ignorou o aviso: instala sozinho quando a pessoa fechar o app
+  autoUpdater.autoInstallOnAppQuit = false; // a troca é feita por applyStagedOnQuit; só volta a ligar se a preparação falhar (modo installer)
   autoUpdater.allowPrerelease = false;
   autoUpdater.on('update-available', (i) => push({ state: 'downloading', version: i.version, percent: 0 }));
   autoUpdater.on('download-progress', (p) => push({ state: 'downloading', percent: Math.round(p.percent || 0) }));
-  autoUpdater.on('update-downloaded', (i) => push({ state: 'ready', version: i.version, percent: 100 }));
-  autoUpdater.on('update-not-available', () => { if (state.state !== 'ready') push({ state: 'idle' }); });
+  let lastPct = -1;
+  const prepare = async (version, file) => {
+    const dir = path.join(STAGE_ROOT(), version);
+    try { for (const d of fs.readdirSync(STAGE_ROOT())) if (d !== version) fs.rmSync(path.join(STAGE_ROOT(), d), { recursive: true, force: true }); } catch { /* pasta ainda não existe */ }
+    if (stagedValid(version, dir)) { staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return; }
+    push({ state: 'preparing', version, percent: 0 });
+    let ok = false;
+    try { ok = !!file && fs.existsSync(file) && fs.existsSync(SEVENZ()) && await extractInstaller(file, dir, (pc) => { if (pc !== lastPct) { lastPct = pc; push({ state: 'preparing', percent: pc }); } }); } catch { ok = false; }
+    if (ok && stagedValid(version, dir)) { staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return; }
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* ignora */ }
+    autoUpdater.autoInstallOnAppQuit = true; // caminho antigo: o instalador roda quando a pessoa reinicia ou fecha o app
+    push({ state: 'ready', version, percent: 100, mode: 'installer' });
+  };
+  autoUpdater.on('update-downloaded', (i) => { prepare(i.version, i.downloadedFile); });
+  autoUpdater.on('update-not-available', () => { if (state.state !== 'ready' && state.state !== 'preparing') push({ state: 'idle' }); });
   // sem rede ou servidor fora do ar: não incomoda; tenta de novo no próximo ciclo
-  autoUpdater.on('error', () => { if (state.state !== 'ready') push({ state: 'idle' }); });
+  autoUpdater.on('error', () => { if (state.state !== 'ready' && state.state !== 'preparing') push({ state: 'idle' }); });
 
-  const check = () => { if (state.state === 'ready') return state; autoUpdater.checkForUpdates().catch(() => {}); return state; };
+  const check = () => { if (state.state === 'ready' || state.state === 'preparing') return state; autoUpdater.checkForUpdates().catch(() => {}); return state; };
   ipcMain.handle('update:check', () => check());
   // silencioso (sem o assistente do instalador) e reabre o app já na versão nova
-  ipcMain.handle('update:install', () => { if (state.state !== 'ready') return false; beginInstall(state.version, true); setTimeout(() => autoUpdater.quitAndInstall(true, true), INSTALL_DELAY_MS); return true; });
+  ipcMain.handle('update:install', () => {
+    if (state.state !== 'ready') return false;
+    beginInstall(state.version, true);
+    if (staged && state.mode === 'swap') { setTimeout(() => { applyStaged(true); if (hooks.quit) hooks.quit(); else app.quit(); }, INSTALL_DELAY_MS); return true; }
+    setTimeout(() => autoUpdater.quitAndInstall(true, true), INSTALL_DELAY_MS);
+    return true;
+  });
   setTimeout(check, FIRST_CHECK_MS);
   setInterval(check, EVERY_MS);
 }
@@ -98,4 +165,4 @@ function holdForRunningInstaller(dialog) {
   } catch { return false; }
 }
 
-module.exports = { setupUpdater, holdForRunningInstaller };
+module.exports = { setupUpdater, holdForRunningInstaller, applyStagedOnQuit };
