@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**TASK-086 — Nome de projeto gigante estoura o modal "Gerenciar projeto"** (DEV1)
+
+- Causa: a caixa dos modais não quebrava texto sem espaços e o nome do projeto não tinha limite (a pasta criada usa o nome e passava do limite do Windows). Agora o nome tem no máximo 60 caracteres (campo de criar e renomear, e ao importar pasta), a pasta criada também, e todos os modais quebram texto longo e nunca rolam na horizontal. O título do "Gerenciar projeto" mostra até 3 linhas com reticências.
+- Arquivos: `main.js` (`slug`), `renderer/app.js`, `renderer/styles.css`; docs. Registrada a TASK-087 (refatoração visual dos modais, pós-MVP).
 **TASK-080 — Barra lateral: rolar só os projetos e mesmo efeito aberta/recolhida** (DEV1)
 
 - A barra virou três faixas: cabeçalho parado, lista de projetos com rolagem própria e rodapé "Geral" parado. Com muitos projetos, só a lista rola (antes a barra inteira rolava e empurrava o cabeçalho e o rodapé).

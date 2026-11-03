@@ -90,6 +90,9 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - **Modelos:** uma tabela (tokens, entrada, saída, cache lido, cache gravado, custo equivalente, parte).
 - O cartão do mapa rola na horizontal em janela estreita (nunca estoura a página). Valores usam `Intl` pt-BR (milhar com ponto, vírgula decimal, "mil / mi / bi"). Dado que não existe: "indisponível" (limites) ou "—" com explicação (contexto de sessão encerrada, aba sem resposta); nunca zero inventado.
 
+## Modais (TASK-086)
+- A caixa do modal (`.dlg`) **nunca rola na horizontal**: título, textos e caminhos quebram em qualquer ponto (`overflow-wrap:anywhere`) e só a rolagem vertical existe. O título do "Gerenciar projeto" mostra no máximo 3 linhas com reticências (nome inteiro na dica). Nome de projeto: até **60 caracteres**. O redesenho visual dos modais é a TASK-087 (pós-MVP).
+
 ## Padrão dos controles (TASK-031)
 - **Alturas:** `--ctl-h` 36 px (botões, campos, alternadores `.seg`, campo numérico) e `--ctl-sm` 32 px (versão compacta `.btn.sm`, `.seg.sm`, busca `.resq`, barra de endereço). Raio dos campos 12 px (`--ctl-r`); botões e buscas em pílula. Nada de controle com aparência nativa do navegador: o app declara `color-scheme: dark`.
 - **Uma só regra de campo:** `.inp` (texto, `select`, `textarea`) em `styles.css`, bloco "padrão único dos controles". Fundo `--field`, borda `--border2`, foco com borda azul e anel (`--ring`), sem contorno nativo. Não criar outra regra `.inp` em outro ponto do arquivo (duas regras conflitantes causaram o campo minúsculo de "Novo projeto").

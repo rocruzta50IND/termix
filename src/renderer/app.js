@@ -1690,12 +1690,12 @@ function renderAll() {
 async function newProjectFlow() {
   const r = await modal({
     title: 'Novo projeto',
-    body: '<p>O Termix cria e organiza a pasta do projeto. Você só informa o nome.</p><div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="name" placeholder="Meu SaaS"></div>',
+    body: '<p>O Termix cria e organiza a pasta do projeto. Você só informa o nome.</p><div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="name" placeholder="Meu SaaS" maxlength="60"></div>',
     buttons: [['Cancelar', null], ['Importar pasta existente…', 'import'], ['Criar projeto', 'ok', 'pri']],
   });
   if (r.value === 'import') return importFlow();
   if (r.value !== 'ok') return;
-  const name = (r.form.name || '').trim();
+  const name = projNameClip(r.form.name);
   if (!name) return;
   const { path } = await api.createProject(name);
   let note = '';
@@ -1712,7 +1712,7 @@ async function importFlow() {
   const dir = await api.pickFolder();
   if (!dir) return;
   if (S.projects.some((p) => p.path.toLowerCase() === dir.toLowerCase() && !p.archived)) { addEvent({ who: 'Projetos', msg: 'Essa pasta já está registrada.' }); return; }
-  const name = dir.split(/[\\/]/).filter(Boolean).pop() || 'Projeto';
+  const name = projNameClip(dir.split(/[\\/]/).filter(Boolean).pop()) || 'Projeto';
   const found = (await api.scanSessions(dir)).length;
   const p = addProject({ name, path: dir, imported: true, noTab: found > 0 });
   if (found) await importSessionsFlow(p, true);
@@ -1837,19 +1837,21 @@ function disposeProjectViews(p) {
   p.tabs.forEach((t) => { if (RT[t.id]) { RT[t.id].term.dispose(); RT[t.id].el.remove(); delete RT[t.id]; } t.live = false; });
 }
 
+const PROJ_NAME_MAX = 60; // nome do projeto: limite de tamanho (a pasta criada usa o nome; Windows aceita 255 por nome e 260 no caminho)
+const projNameClip = (s) => String(s || '').trim().slice(0, PROJ_NAME_MAX);
 async function projectMenuFlow() {
   const p = curProject();
   if (!p) return;
   UI.menu = null; renderMenu();
   const r = await modal({
-    title: esc(p.name),
+    title: `<span class="clamp3" title="${esc(p.name)}">${esc(p.name)}</span>`,
     body: `<p class="meta" style="user-select:text">${esc(p.path)}</p><p>${p.imported ? 'Pasta importada: o app só a registra, sem copiar nem mover.' : 'Pasta criada e organizada pelo app.'}</p>`,
     buttons: [['Fechar', null], ['Abrir pasta', 'open'], ['Renomear', 'rename'], ['Arquivar', 'archive'], ['Remover do app', 'remove', 'bad']].concat(p.imported ? [] : [['Excluir pasta…', 'delete', 'bad']]),
   });
   if (r.value === 'open') api.openFolder(p.path);
   if (r.value === 'rename') {
-    const n = await modal({ title: 'Renomear projeto', body: `<p>Só o nome na interface muda; a pasta continua no mesmo lugar.</p><div class="f"><input class="inp" type="text" data-f="name" value="${esc(p.name)}"></div>`, buttons: [['Cancelar', null], ['Salvar', 'ok', 'pri']] });
-    if (n.value === 'ok' && n.form.name.trim()) { p.name = n.form.name.trim(); save(); renderAll(); }
+    const n = await modal({ title: 'Renomear projeto', body: `<p>Só o nome na interface muda; a pasta continua no mesmo lugar.</p><div class="f"><input class="inp" type="text" data-f="name" value="${esc(p.name)}" maxlength="60"></div>`, buttons: [['Cancelar', null], ['Salvar', 'ok', 'pri']] });
+    if (n.value === 'ok' && projNameClip(n.form.name)) { p.name = projNameClip(n.form.name); save(); renderAll(); }
   }
   if (r.value === 'archive' || r.value === 'remove') {
     const any = p.tabs.some((t) => RT[t.id] && RT[t.id].alive);

@@ -40,6 +40,9 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - A escolha **nunca vira padrão das próximas sessões sem o usuário pedir**.
 - Dangerously é indicado por um **⚠ na aba** (com explicação ao passar o mouse). Não há selo grande.
 
+## Nome do projeto (TASK-086)
+- O nome tem no máximo **60 caracteres** (campo de criar e de renomear, importar pasta). A **pasta criada pelo app** também usa no máximo 60 caracteres (o Windows aceita 255 por nome e 260 no caminho inteiro). Nomes antigos maiores continuam válidos.
+
 ## Barra lateral (TASK-080)
 - O estado aberto/fechado das subtelas é **por projeto** (`open`) e **vale igual na barra aberta e na recolhida**. Clicar no projeto atual mostra/esconde as subtelas; clicar em outro projeto vai até ele (Terminais) e as deixa abertas.
 - Só a lista de projetos rola; o cabeçalho, o "+ Novo projeto" e o rodapé "Geral" ficam parados.

@@ -99,7 +99,7 @@ const WRAPPER = () => path.join(__dirname, 'statusline-wrapper.js').replace(/\\/
 
 function slug(name) {
   const s = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    .replace(/[^a-z0-9]+/g, '-').slice(0, 60).replace(/^-+|-+$/g, '');
   return s || 'projeto';
 }
 

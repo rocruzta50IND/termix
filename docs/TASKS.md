@@ -141,6 +141,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Validadas em DEV1
 
+### TASK-086 — Nome de projeto gigante estoura o modal "Gerenciar projeto"
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-03)
+- **Prioridade:** Média (defeito visual) — pedido do usuário em 2026-11-03, com duas capturas: com um nome de projeto enorme, o modal de gerenciar estoura (título e caminho passam da caixa e surge rolagem horizontal); na barra lateral o nome já aparecia truncado. Pediu avaliar o caso.
+- **Causa:** o `.dlg` (caixa de todos os modais) não quebrava texto sem espaços, e o nome do projeto não tinha limite; a pasta criada pelo app usa o nome, então um nome de ~300 letras gerava uma pasta maior que o limite do Windows (255 por nome, 260 no caminho).
+- **Feito (2026-11-03):** (1) **limite de 60 caracteres** no nome do projeto (campo de criar e de renomear com `maxlength`, e o nome é cortado ao criar, renomear e importar uma pasta); (2) a **pasta criada** pelo app usa no máximo 60 caracteres (`slug`); (3) **todos os modais** quebram texto longo (`overflow-wrap:anywhere`) e nunca rolam na horizontal; (4) no modal de gerenciar o título mostra **até 3 linhas com reticências** e o nome inteiro na dica; o caminho quebra em várias linhas. Nomes já salvos com mais de 60 letras continuam válidos e agora aparecem sem estourar.
+- **Arquivos tocados:** `src/main.js` (`slug`), `src/renderer/app.js` (`PROJ_NAME_MAX`, `projNameClip`, `projectMenuFlow`, criar/renomear/importar), `src/renderer/styles.css` (`.dlg`, `.clamp3`), `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/TASKS.md`.
+- **Como validar:** `npm run check`; criar projeto e tentar digitar mais de 60 letras (o campo para em 60); abrir "Gerenciar projeto" de um projeto de nome muito longo. Teste feito em instância isolada com nome de 300 letras e caminho de 250: sem rolagem horizontal, título em 3 linhas com reticências, caminho quebrado, botões inteiros.
+- **Pendências:** o redesenho visual dos modais é a TASK-087 (pós-MVP).
+- **Próximo passo:** nenhum nesta tarefa.
 ### TASK-080 — Barra lateral: rolar só os projetos e mesmo efeito aberta/recolhida
 
 - **Responsável:** DEV1
@@ -197,6 +208,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-087 — Refatoração de design dos modais (pós-MVP)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG (pós-MVP)
+- **Prioridade:** Média-baixa — pedido do usuário em 2026-11-03: aprimorar o design do modal "Gerenciar projeto" para condizer com o app e **estender a refatoração a todos os modais com a mesma cara** (caixa escura com título, texto e fileira de botões em pílula).
+- **Escopo:** inventariar todos os modais (`modal()` em `app.js` e `chat.js`: gerenciar/renomear/arquivar/remover projeto, novo projeto, importar conversas, Clear, Dangerously, confirmações, editor de skill, atualização etc.) e propor um desenho único no glassmorphism do app: cabeçalho com ícone/avatar do projeto, hierarquia de título e subtítulo, caminho em bloco copiável, ações **agrupadas por importância** (primária, secundárias e destrutivas separadas e com confirmação), em vez da fileira de pílulas que quebra em duas linhas; foco, teclado e "reduzir movimento"; tamanhos por tipo (confirmação curta, formulário, editor).
+- **Já resolvido antes (TASK-086):** modais não estouram com texto longo e o nome do projeto tem limite de 60 caracteres. Aqui é só o **visual**.
+- **Pronto quando:** protótipo aprovado pelo usuário, aplicado a todos os modais com capturas do conteúdo do app (CDP), `docs/DESIGN.md` atualizado.
 ### TASK-085 — Categoria "Workflow" na barra lateral (pós-MVP, validar a ideia)
 
 - **Responsável:** A definir
