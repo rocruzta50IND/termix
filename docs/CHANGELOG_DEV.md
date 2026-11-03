@@ -8,6 +8,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**TASK-084 — Tela Consumo totalmente funcional** (DEV1)
+
+- Tokens e custo equivalente reais por sessão, por projeto e no total geral, lidos das conversas do Claude Code (`~/.claude/projects`), com leitura incremental em segundo plano e cache (1ª leitura ~2 s para 1,6 GB; as seguintes ~14 ms). Nada mais aparece como "indisponível" por falta de implementação.
+- Tela no estilo do `/stats` do Claude Code: mapa de calor de 53 semanas, Visão geral / Modelos, filtro Todo o período / 7 / 30 dias, estatísticas (modelo favorito, sessões, dias ativos, sequências, maior sessão) e quebra entrada / saída / cache. Atualiza sozinha a cada 15 s; os cartões de limite 5 h / 7 d, a cada métrica.
+- Custo equivalente pela tabela de preços da API (não é a cobrança da assinatura); modelo sem preço aparece como "sem preço". Conferido contra um cálculo independente (7 dias: 727.002.193 tokens e US$ 230,04 nos dois). Decidido com o usuário: sem alertas, sem histórico gravado e sem exportação por ora.
+- Arquivos: `src/consumo.js` (novo), `main.js`, `preload.js`, `renderer/app.js`, `renderer/styles.css`, `package.json`; docs `DECISOES.md`, `DESIGN.md`, `TASKS.md`.
 **Versão 0.3.3** (DEV1)
 
 - Só a versão (sem mudança de código), a pedido do usuário, para continuar o teste da atualização com o Termix.exe fixo e do reinício instantâneo.

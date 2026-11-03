@@ -8,23 +8,10 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-084 — Tela Consumo totalmente funcional (entra no MVP, antes da auditoria da TASK-083)
-
-- **Responsável:** DEV1
-- **Status:** EM ANDAMENTO (a começar)
-- **Prioridade:** Crítica — pedido do usuário em 2026-11-03, com captura da tela Geral › Consumo: "esta tela também entra no escopo MVP, precisamos deixá-la totalmente funcional; adicione antes da auditoria final". O usuário vai dar `/clear` e retomar em seguida para concluir esta tarefa.
-- **O que a captura mostra (estado atual, v0.3.3):** cartões "Janela de 5 horas" (3 %, renova em 3h42m) e "Semana" (36 %, renova em 5d21h) com barra; cartão **"Origem dos dados" quase vazio** ("Status line do Claude Code · atualizado há 1 h"); tabela de sessões (Sessão, Projeto, Estado, Contexto, Tokens, Custo equivalente) em que **as colunas Tokens e Custo equivalente estão sempre "indisponível"**, o Contexto some em várias sessões encerradas e em chats ("indisponível"), há sessões "Encerrada" misturadas com ativas, sem ordenação/filtro/total, e a leitura dos limites fica velha (1 h) porque só atualiza quando alguma sessão responde.
-- **Absorve** as tarefas de Backlog TASK-011 (consumo por sessão e alertas de limite) e TASK-026 (registro de consumo e alertas de ritmo): o que elas pedem e couber aqui entra; o resto fica registrado nelas.
-- **Primeiro passo na retomada:** perguntar ao usuário, em poucas perguntas objetivas, o que "totalmente funcional" significa para ele nesta tela (o que quer enxergar e decidir a partir dela: custo por sessão/projeto/dia? alertas de limite 5 h/7 d? histórico? exportar?), porque os dados disponíveis são os da status line do Claude Code (`rate_limits`, `context_window`, `cost`) e os arquivos de conversa (`.jsonl` com o `usage` de cada resposta), e o que aparece como "indisponível" hoje pode passar a ter dado real.
-- **Pontos técnicos já levantados:** o `statusline-wrapper.js` já grava `cost`, `context_window` e `rate_limits` por aba; o `chat` (claude -p em stream-json) recebe `usage` por resposta; os `.jsonl` em `~/.claude/projects` têm tokens (entrada, saída, cache) por mensagem, o que permite Tokens e custo equivalente por sessão mesmo para sessões encerradas; limites 5 h/7 d só atualizam quando uma sessão responde (decidir como indicar "dado velho" e se vale uma leitura periódica); "dado indisponível aparece como indisponível, nunca como zero" é regra de produto (`docs/DECISOES.md`).
-- **Pronto quando:** nenhuma coluna fica "indisponível" por falta de implementação (só quando o dado realmente não existe, dito com o motivo), a tela responde às perguntas que o usuário definir, atualiza sozinha, aguenta muitos projetos/sessões, textos e estados vazios/erro revisados; testada com sessões reais (terminal e chat) e capturas do conteúdo do app; `docs/DECISOES.md` e `docs/DESIGN.md` atualizados.
-- **Feito até agora:** (nada além do levantamento acima)
-- **Próximo passo:** perguntas ao usuário sobre o que a tela deve entregar; depois implementar, validar e só então seguir para a TASK-083.
-
 ### TASK-083 — Validação do MVP: auditoria geral e uso por 5 pessoas da empresa
 
 - **Responsável:** DEV1
-- **Status:** PRONTA (começa **depois da TASK-084**, a tela Consumo)
+- **Status:** PRONTA (a TASK-084, a tela Consumo, já foi validada)
 - **Prioridade:** Crítica — decisão do usuário em 2026-11-03: fechar o MVP antes das duas funções pós-MVP; o app é de **uso interno, para 5 integrantes da empresa, sem comercialização por ora**, e todos precisam conseguir instalar e usar. O usuário vai dar `/clear` e retomar com o chat limpo para esta auditoria.
 - **Pronto quando:** as 5 pessoas conseguem instalar do zero, abrir, usar o dia a dia e atualizar sem ajuda, e o relatório da auditoria não tem pendência crítica nem alta; então o usuário declara a primeira grande versão (1.0).
 - **Plano (nesta ordem):**
@@ -153,6 +140,24 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 
 ## Validadas em DEV1
+
+### TASK-084 — Tela Consumo totalmente funcional (entra no MVP, antes da auditoria da TASK-083)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-03; vai na próxima versão publicada)
+- **Prioridade:** Crítica — pedido do usuário em 2026-11-03, com captura da tela Geral › Consumo: "esta tela também entra no escopo MVP, precisamos deixá-la totalmente funcional; adicione antes da auditoria final". O usuário vai dar `/clear` e retomar em seguida para concluir esta tarefa.
+- **O que a captura mostra (estado atual, v0.3.3):** cartões "Janela de 5 horas" (3 %, renova em 3h42m) e "Semana" (36 %, renova em 5d21h) com barra; cartão **"Origem dos dados" quase vazio** ("Status line do Claude Code · atualizado há 1 h"); tabela de sessões (Sessão, Projeto, Estado, Contexto, Tokens, Custo equivalente) em que **as colunas Tokens e Custo equivalente estão sempre "indisponível"**, o Contexto some em várias sessões encerradas e em chats ("indisponível"), há sessões "Encerrada" misturadas com ativas, sem ordenação/filtro/total, e a leitura dos limites fica velha (1 h) porque só atualiza quando alguma sessão responde.
+- **Absorve** as tarefas de Backlog TASK-011 (consumo por sessão e alertas de limite) e TASK-026 (registro de consumo e alertas de ritmo): o que elas pedem e couber aqui entra; o resto fica registrado nelas.
+- **Primeiro passo na retomada:** perguntar ao usuário, em poucas perguntas objetivas, o que "totalmente funcional" significa para ele nesta tela (o que quer enxergar e decidir a partir dela: custo por sessão/projeto/dia? alertas de limite 5 h/7 d? histórico? exportar?), porque os dados disponíveis são os da status line do Claude Code (`rate_limits`, `context_window`, `cost`) e os arquivos de conversa (`.jsonl` com o `usage` de cada resposta), e o que aparece como "indisponível" hoje pode passar a ter dado real.
+- **Pontos técnicos já levantados:** o `statusline-wrapper.js` já grava `cost`, `context_window` e `rate_limits` por aba; o `chat` (claude -p em stream-json) recebe `usage` por resposta; os `.jsonl` em `~/.claude/projects` têm tokens (entrada, saída, cache) por mensagem, o que permite Tokens e custo equivalente por sessão mesmo para sessões encerradas; limites 5 h/7 d só atualizam quando uma sessão responde (decidir como indicar "dado velho" e se vale uma leitura periódica); "dado indisponível aparece como indisponível, nunca como zero" é regra de produto (`docs/DECISOES.md`).
+- **Pronto quando:** nenhuma coluna fica "indisponível" por falta de implementação (só quando o dado realmente não existe, dito com o motivo), a tela responde às perguntas que o usuário definir, atualiza sozinha, aguenta muitos projetos/sessões, textos e estados vazios/erro revisados; testada com sessões reais (terminal e chat) e capturas do conteúdo do app; `docs/DECISOES.md` e `docs/DESIGN.md` atualizados.
+- **Decisões do usuário (2026-11-03):** recortes **por sessão, por projeto e total geral**; **sem alertas** de limite (fica fora; TASK-026 segue no Backlog); **sem histórico persistido nem exportação** por ora; limites 5 h/7 d **só com atualização automática** (sem botão, sem aviso de dado velho). Referência visual enviada: a tela `/stats` do Claude Code (mapa de calor de atividade por dia, abas Visão geral/Modelos, filtros Todo o período / 7 dias / 30 dias, modelo favorito, total de tokens, sessões, dias ativos, dia mais ativo, maior sessão, sequências, quebra Input/Output/Cache read/Cache write). O mapa de calor e os totais saem da leitura dos `.jsonl` (datas e `usage` por mensagem), sem gravar histórico próprio.
+- **Feito até agora (2026-11-03):** (1) `src/consumo.js` (novo): lê `~/.claude/projects/*/*.jsonl` em segundo plano, deduplica as respostas por `message.id`, soma por sessão / dia / modelo e calcula o custo equivalente pela tabela de preços; leitura incremental com cache em `%APPDATA%\Termix\consumo-cache.json` (1ª leitura ~2 s para 1,6 GB; seguintes ~14 ms). (2) IPC `consumo:get` + `api.consumo()`. (3) Tela reescrita (`consumoHTML` e auxiliares em `app.js`): cartões de limite, Visão geral (mapa de calor 53 semanas + estatísticas no estilo `/stats`) / Modelos, filtro Todo o período / 7 / 30 dias, Por projeto (com "Fora do Termix" e total), Por sessão; atualização automática a cada 15 s e cartões de limite a cada métrica (sem refazer a página). (4) CSS e `npm run check` incluem o `consumo.js`. (5) `docs/DECISOES.md` e `docs/DESIGN.md` atualizados.
+- **Decisões técnicas:** o total geral é de tudo que o Claude Code gravou no computador (linha "Fora do Termix" fecha a soma); sessões de subagentes em subpastas ficam de fora; Haiku 5.5 usa cache lido 0,1x por suposição; contexto de sessão encerrada = "—".
+- **Arquivos tocados:** `src/consumo.js` (novo), `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `src/renderer/styles.css`, `package.json` (check), `docs/DECISOES.md`, `docs/DESIGN.md`, `docs/TASKS.md`.
+- **Como validar:** `npm run check`; abrir o app > Geral > Consumo e conferir o mapa de calor, as abas Visão geral / Modelos, os filtros 7 e 30 dias, as tabelas e a soma (Por projeto fecha com o Total geral). Teste feito: instância isolada com `--user-data-dir` e CDP (capturas só do conteúdo do app); números conferidos por um script independente (7 dias: 727.002.193 tokens e US$ 230,04 iguais nos dois).
+- **Pendências:** testar com muitas sessões abertas ao mesmo tempo e em janela estreita / DPI alto (entra na auditoria da TASK-083); confirmar a tabela de preços quando sair modelo novo; subagentes em subpastas (decidir se contam).
+- **Próximo passo:** nenhum nesta tarefa. Segue a TASK-083 (auditoria do MVP). Backlog: TASK-011 e TASK-026 ficam só com o que não coube aqui (alertas de limite e ritmo, histórico gravado, exportação).
 
 ### TASK-067 — Dica de nome dos ícones da barra lateral recolhida (aparecia cortada)
 

@@ -373,7 +373,7 @@ function onMetric({ tabId, data }) {
   }
   renderTop(); renderRail();
   if (UI.pop) renderPop();
-  if (UI.cur.p === '_' && UI.cur.page === 'Consumo') renderPage();
+  if (UI.cur.p === '_' && UI.cur.page === 'Consumo') consLimits();
 }
 api.onMetrics(onMetric);
 setInterval(() => { renderTop(); }, 30000); // atualiza "renova em" e "atualizado há"
@@ -1285,16 +1285,172 @@ async function skEditFlow(x) {
   if (m.value === 'ok') return resRun(`Salvando /${x.name}…`, () => api.resDo('skillOp', { op: 'write', ...args, text: m.form.text }), false);
 }
 
-function consumoHTML() {
-  const rows = S.projects.flatMap((p) => p.tabs.filter((t) => t.started).map((t) => ({ p, t })));
+/* ---------- Consumo (TASK-084) ---------- */
+// Limites 5 h / 7 d: status line (conta inteira). Tokens e custo: lidos das conversas deste computador (src/consumo.js).
+UI.cons = UI.cons || { data: null, loading: false, tab: 'ov', per: 'all', more: false, sig: '' };
+const CONS_PERIODS = [['all', 'Todo o período'], ['7', '7 dias'], ['30', '30 dias']];
+const nfPt = new Intl.NumberFormat('pt-BR');
+const fmtTokBig = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} bi` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} mi` : n >= 1e3 ? `${(n / 1e3).toFixed(1)} mil` : String(Math.round(n))).replace('.', ',');
+const fmtUsd = (v) => `US$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const consDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const consDate = (k) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const consDayLabel = (k) => consDate(k).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
+const consDur = (ms) => { const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60); return d ? `${d}d ${h}h ${m % 60}m` : h ? `${h}h ${m % 60}m` : `${m}m`; };
+const normDir = (p) => String(p || '').replace(/[^a-zA-Z0-9]/g, '-');
+
+// cartões 5 h / 7 d (atualizam sozinhos a cada métrica, sem refazer a tela inteira)
+function consLimCards() {
   const L = UI.limits;
-  const card = (title, d) => `<div class="card"><h5>${title}</h5>${liveWin(d) ? `<div style="font:600 26px var(--mono);margin:8px 0" class="${pctClass(d.pct)}">${Math.round(d.pct)}%</div>${barHTML(d.pct, 220)}<p style="margin-top:8px">Renova em ${fmtReset(d.resets)}</p>` : '<div style="font:600 18px var(--mono);margin:12px 0" class="na">indisponível</div><p>Sem dados recentes.</p>'}</div>`;
-  const ctx = (t) => { const m = MET[t.id]; const v = m && m.context_window && m.context_window.used_percentage; return typeof v === 'number' ? `${Math.round(v)}%` : '<span class="na">indisponível</span>'; };
-  return `<div class="page">${ptitle('Consumo')}<div class="note">Percentuais da conta vêm da status line do Claude Code e podem incluir uso fora do app; não são somados por terminal. Dado indisponível aparece como indisponível, nunca como zero.</div>
-    <div class="cards">${card('Janela de 5 horas', L && L.five)}${card('Semana', L && L.week)}
-    <div class="card"><h5>Origem dos dados</h5><p>${L ? `Status line do Claude Code · atualizado ${ago(L.updated)}` : 'Aguardando a primeira resposta de uma sessão.'}</p></div></div>
-    <table class="t"><tr><th>Sessão</th><th>Projeto</th><th>Estado</th><th>Contexto</th><th>Tokens</th><th>Custo equivalente</th></tr>
-    ${rows.map(({ p, t }) => `<tr><td>${esc(t.name)}</td><td>${esc(p.name)}</td><td>${STATES[stOf(t)][1]}</td><td>${ctx(t)}</td><td class="na">indisponível</td><td class="na">indisponível</td></tr>`).join('') || '<tr><td colspan="6" class="na">Nenhuma sessão ainda.</td></tr>'}</table></div>`;
+  const card = (title, d) => `<div class="card"><h5>${title}</h5>${liveWin(d) ? `<div class="big ${pctClass(d.pct)}">${Math.round(d.pct)}%</div>${barHTML(d.pct, 220)}<p style="margin-top:8px">Renova em ${fmtReset(d.resets)}</p>` : '<div class="big na">indisponível</div><p>Nenhuma sessão informou este limite ainda.</p>'}</div>`;
+  return card('Janela de 5 horas', L && L.five) + card('Semana', L && L.week);
+}
+function consLimits() { const el = document.getElementById('cons-lim'); if (el) el.innerHTML = consLimCards(); }
+
+function consFetch() {
+  const C = UI.cons;
+  if (C.loading) return;
+  C.loading = true;
+  const onPage = () => UI.cur.p === '_' && UI.cur.page === 'Consumo';
+  api.consumo().then((d) => {
+    C.loading = false; C.data = d;
+    const sig = `${d.sessions.length}|${d.sessions.reduce((a, s) => a + s.msgs, 0)}|${d.sessions.reduce((a, s) => Math.max(a, s.last), 0)}`;
+    const changed = sig !== C.sig; C.sig = sig;
+    if (onPage() && (changed || !C.painted)) renderPage();
+  }).catch(() => { C.loading = false; C.data = C.data || { sessions: [], error: true }; if (onPage()) renderPage(); });
+}
+setInterval(() => { if (UI.cur.p === '_' && UI.cur.page === 'Consumo' && !document.hidden) consFetch(); }, 15000);
+
+// soma por período (exata, por dia e por modelo): tot [entrada, saída, cache lido, cache gravado, custo], dias, modelos e sessões
+function consAgg(data, per) {
+  const cut = per === 'all' ? '' : consDay(new Date(Date.now() - (Number(per) - 1) * 86400000));
+  const a = { tot: [0, 0, 0, 0, 0], days: {}, models: {}, sess: {}, unpriced: 0, nSess: 0, longest: 0 };
+  for (const s of data.sessions) {
+    const t = [0, 0, 0, 0, 0]; let unp = 0;
+    for (const [k, models] of Object.entries(s.days)) {
+      if (k < cut) continue;
+      for (const [m, v] of Object.entries(models)) {
+        for (let i = 0; i < 5; i++) { t[i] += v[i]; a.tot[i] += v[i]; }
+        const n = v[0] + v[1] + v[2] + v[3];
+        a.days[k] = (a.days[k] || 0) + n;
+        if (!v[5]) unp += n;
+        const mm = (a.models[m] = a.models[m] || [0, 0, 0, 0, 0, v[5]]);
+        for (let i = 0; i < 5; i++) mm[i] += v[i];
+      }
+    }
+    const n = t[0] + t[1] + t[2] + t[3];
+    if (!n) continue;
+    a.sess[s.id] = { t, n, unpriced: unp, dir: s.dir };
+    a.unpriced += unp; a.nSess++;
+    a.longest = Math.max(a.longest, s.last - s.first);
+  }
+  return a;
+}
+
+// mapa de calor das últimas 53 semanas (colunas = semanas, linhas = seg..dom), como o /stats do Claude Code
+function consHeatmap(days) {
+  const WEEKS = 53, today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = new Date(today); start.setDate(start.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7);
+  const vals = Object.values(days).filter((v) => v > 0).sort((x, y) => x - y);
+  const q = (f) => (vals.length ? vals[Math.min(vals.length - 1, Math.floor(vals.length * f))] : 0);
+  const cuts = [q(0.25), q(0.5), q(0.75)];
+  const lvl = (v) => (!v ? 0 : v <= cuts[0] ? 1 : v <= cuts[1] ? 2 : v <= cuts[2] ? 3 : 4);
+  let cols = '', mon = '', lastMonth = -1;
+  for (let w = 0; w < WEEKS; w++) {
+    let cells = '';
+    for (let r = 0; r < 7; r++) {
+      const d = new Date(start); d.setDate(start.getDate() + w * 7 + r);
+      if (d > today) { cells += '<i class="hm-x"></i>'; continue; }
+      const k = consDay(d), v = days[k] || 0;
+      cells += `<i class="hm l${lvl(v)}" title="${consDayLabel(k)}: ${v ? `${fmtTokBig(v)} tokens` : 'sem uso'}"></i>`;
+    }
+    const first = new Date(start); first.setDate(start.getDate() + w * 7);
+    mon += `<span>${first.getMonth() !== lastMonth ? first.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '') : ''}</span>`;
+    lastMonth = first.getMonth();
+    cols += `<div class="hm-col">${cells}</div>`;
+  }
+  return `<div class="hm-wrap"><div class="hm-days"><span>seg</span><span></span><span>qua</span><span></span><span>sex</span><span></span><span></span></div>
+    <div><div class="hm-mon">${mon}</div><div class="hm-grid">${cols}</div></div></div>
+    <div class="hm-leg">Menos <i class="hm l0"></i><i class="hm l1"></i><i class="hm l2"></i><i class="hm l3"></i><i class="hm l4"></i> Mais</div>`;
+}
+
+function consStreaks(days) {
+  const keys = Object.keys(days).filter((k) => days[k] > 0).sort();
+  let best = 0, run = 0, prev = null;
+  for (const k of keys) {
+    const t = consDate(k).getTime();
+    run = prev !== null && Math.round((t - prev) / 86400000) === 1 ? run + 1 : 1;
+    best = Math.max(best, run); prev = t;
+  }
+  let cur = 0; const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (!days[consDay(d)]) d.setDate(d.getDate() - 1); // hoje ainda sem uso não quebra a sequência
+  while (days[consDay(d)] > 0) { cur++; d.setDate(d.getDate() - 1); }
+  return { best, cur };
+}
+
+function consumoHTML() {
+  const C = UI.cons;
+  C.painted = true;
+  if (!C.data || Date.now() - (C.data.updated || 0) > 15000) consFetch();
+  const head = `<div class="page">${ptitle('Consumo')}
+    <div class="note">Os limites de 5 h e 7 dias são da conta inteira (vêm do Claude Code e podem incluir uso fora do app). Tokens e custo vêm das conversas gravadas neste computador. <b>Custo equivalente</b> é quanto o uso custaria pelos preços de tabela da API; a assinatura não cobra por token.</div>
+    <div class="cards" id="cons-lim">${consLimCards()}</div>`;
+  const D = C.data;
+  if (!D) return `${head}<div class="empty" style="height:auto;margin-top:18px">Lendo suas conversas… a primeira leitura pode levar alguns segundos.</div></div>`;
+  if (D.error) return `${head}<div class="empty" style="height:auto;margin-top:18px">Não foi possível ler as conversas do Claude Code (pasta ~/.claude/projects).</div></div>`;
+  const A = consAgg(D, C.per);
+  const bar = `<div class="cons-bar"><div class="seg sm">${[['ov', 'Visão geral'], ['md', 'Modelos']].map(([k, n]) => `<button class="${C.tab === k ? 'sel' : ''}" data-ctab="${k}">${n}</button>`).join('')}</div>
+    <div class="seg sm">${CONS_PERIODS.map(([k, n]) => `<button class="${C.per === k ? 'sel' : ''}" data-cper="${k}">${n}</button>`).join('')}</div></div>`;
+  const noPrice = '<span class="na" title="Modelo sem preço na tabela do app">sem preço</span>';
+  const costOf = (v, unp) => (unp > 0 ? noPrice : fmtUsd(v));
+  const cost = A.unpriced > 0 ? `<span title="Parte do uso é de um modelo sem preço na tabela: o valor está incompleto">${fmtUsd(A.tot[4])}+</span>` : fmtUsd(A.tot[4]);
+  const total = A.tot[0] + A.tot[1] + A.tot[2] + A.tot[3];
+  if (!A.nSess) return `${head}${bar}<div class="empty" style="height:auto;margin-top:18px">Nenhum uso neste período.</div></div>`;
+
+  let body = '';
+  if (C.tab === 'md') {
+    const rows = Object.entries(A.models).map(([m, v]) => ({ m, v, n: v[0] + v[1] + v[2] + v[3] })).sort((x, y) => y.n - x.n);
+    body = `<table class="t"><tr><th>Modelo</th><th>Tokens</th><th>Entrada</th><th>Saída</th><th>Cache lido</th><th>Cache gravado</th><th>Custo equivalente</th><th>Parte</th></tr>
+      ${rows.map(({ m, v, n }) => `<tr><td>${esc(m)}</td><td>${fmtTokBig(n)}</td><td>${fmtTokBig(v[0])}</td><td>${fmtTokBig(v[1])}</td><td>${fmtTokBig(v[2])}</td><td>${fmtTokBig(v[3])}</td><td>${v[5] ? fmtUsd(v[4]) : noPrice}</td><td>${Math.round(n / total * 100)}%</td></tr>`).join('')}</table>`;
+  } else {
+    const days = A.days, active = Object.keys(days).filter((k) => days[k] > 0).sort();
+    const fav = Object.entries(A.models).sort((x, y) => (y[1][0] + y[1][1] + y[1][2] + y[1][3]) - (x[1][0] + x[1][1] + x[1][2] + x[1][3]))[0];
+    const spanDays = Math.max(1, Math.round((new Date().setHours(0, 0, 0, 0) - consDate(active[0]).getTime()) / 86400000) + 1);
+    const top = active.slice().sort((x, y) => days[y] - days[x])[0], st = consStreaks(days);
+    const dd = (n) => `${n} ${n === 1 ? 'dia' : 'dias'}`;
+    const stat = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+    body = `<div class="card cons-ov">${consHeatmap(days)}
+      <div class="stats">${stat('Modelo favorito', esc(fav ? fav[0] : '—'))}${stat('Total de tokens', fmtTokBig(total))}
+        ${stat('Sessões', nfPt.format(A.nSess))}${stat('Maior sessão', consDur(A.longest))}
+        ${stat('Dias ativos', `${active.length}<small>/${spanDays}</small>`)}${stat('Maior sequência', dd(st.best))}
+        ${stat('Dia mais ativo', consDayLabel(top))}${stat('Sequência atual', dd(st.cur))}
+        ${stat('Custo equivalente', cost)}${stat('Média por dia ativo', fmtUsd(A.tot[4] / active.length))}</div>
+      <p class="cons-brk">Entrada ${fmtTokBig(A.tot[0])} · Saída ${fmtTokBig(A.tot[1])} · Cache lido ${fmtTokBig(A.tot[2])} · Cache gravado ${fmtTokBig(A.tot[3])}</p></div>`;
+
+    // por projeto: projetos do Termix + o que está fora dele, para a soma fechar com o total geral
+    const byDir = {};
+    for (const s of Object.values(A.sess)) { const o = (byDir[s.dir] = byDir[s.dir] || { n: 0, c: 0, un: 0, ns: 0 }); o.n += s.n; o.c += s.t[4]; o.un += s.unpriced; o.ns++; }
+    const used = new Set(), prow = [];
+    for (const p of S.projects) { const k = normDir(p.path); used.add(k); prow.push({ name: p.name, ...(byDir[k] || { n: 0, c: 0, un: 0, ns: 0 }) }); }
+    const out = Object.entries(byDir).filter(([k]) => !used.has(k)).reduce((x, [, o]) => ({ n: x.n + o.n, c: x.c + o.c, un: x.un + o.un, ns: x.ns + o.ns }), { n: 0, c: 0, un: 0, ns: 0 });
+    if (out.ns) prow.push({ name: 'Fora do Termix', ...out, muted: true });
+    prow.sort((x, y) => y.n - x.n);
+    const proj = `<h4 class="cons-h">Por projeto</h4><table class="t"><tr><th>Projeto</th><th>Sessões</th><th>Tokens</th><th>Custo equivalente</th><th>Parte</th></tr>
+      ${prow.map((r) => `<tr class="${r.muted ? 'dim' : ''}"><td>${esc(r.name)}</td><td>${r.ns}</td><td>${fmtTokBig(r.n)}</td><td>${costOf(r.c, r.un)}</td><td>${Math.round(r.n / total * 100)}%</td></tr>`).join('')}
+      <tr class="tot"><td>Total geral</td><td>${A.nSess}</td><td>${fmtTokBig(total)}</td><td>${cost}</td><td>100%</td></tr></table>`;
+
+    // por sessão: as abas do Termix
+    const ctx = (t) => { const m = MET[t.id]; const v = m && m.context_window && m.context_window.used_percentage; return typeof v === 'number' ? `${Math.round(v)}%` : '<span class="na" title="O contexto só existe enquanto a sessão está aberta">—</span>'; };
+    const known = new Set(D.sessions.map((x) => x.id)); // sessões com conversa gravada (mesmo sem uso no período)
+    const rows = S.projects.flatMap((p) => p.tabs.filter((t) => t.started).map((t) => ({ p, t, s: A.sess[t.sessionId] })));
+    rows.sort((x, y) => (y.s ? y.s.n : 0) - (x.s ? x.s.n : 0));
+    const none = '<span class="na" title="Esta aba ainda não tem nenhuma resposta gravada">—</span>';
+    const shown = rows.slice(0, C.more ? rows.length : 25);
+    const sess = `<h4 class="cons-h">Por sessão <small>(abas do Termix)</small></h4><table class="t"><tr><th>Sessão</th><th>Projeto</th><th>Estado</th><th>Contexto</th><th>Tokens</th><th>Custo equivalente</th></tr>
+      ${shown.map(({ p, t, s }) => `<tr><td>${esc(t.name)}</td><td>${esc(p.name)}</td><td>${STATES[stOf(t)][1]}</td><td>${ctx(t)}</td><td>${s ? fmtTokBig(s.n) : known.has(t.sessionId) ? '0' : none}</td><td>${s ? costOf(s.t[4], s.unpriced) : known.has(t.sessionId) ? fmtUsd(0) : none}</td></tr>`).join('') || '<tr><td colspan="6" class="na">Nenhuma sessão ainda.</td></tr>'}</table>
+      ${rows.length > 25 ? `<button class="btn sm" data-cmore="1" style="margin-top:8px">${C.more ? 'Mostrar só as 25 maiores' : `Mostrar todas (${rows.length})`}</button>` : ''}`;
+    body += proj + sess;
+  }
+  return `${head}${bar}${body}</div>`;
 }
 
 function integHTML() {
@@ -1777,6 +1933,9 @@ document.addEventListener('click', async (e) => {
     inp.dispatchEvent(new Event('input', { bubbles: true })); return;
   }
   if ((el = q('[data-ract]'))) { resAct(el.dataset.ract, el.dataset.rk); return; }
+  if ((el = q('[data-ctab]'))) { UI.cons.tab = el.dataset.ctab; renderPage(); return; }
+  if ((el = q('[data-cper]'))) { UI.cons.per = el.dataset.cper; renderPage(); return; }
+  if ((el = q('[data-cmore]'))) { UI.cons.more = !UI.cons.more; renderPage(); return; }
   if ((el = q('[data-resscope]'))) { UI.res.scope = el.dataset.resscope; renderPage(); return; }
   if ((el = q('[data-resst]'))) { UI.res.st = el.dataset.resst; renderPage(); return; }
   if ((el = q('[data-resrefresh]'))) {

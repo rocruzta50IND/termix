@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('termix', {
   chatSend: (tabId, text, images) => ipcRenderer.invoke('chat:send', { tabId, text, images }),
   chatStop: (tabId) => ipcRenderer.send('chat:stop', { tabId }),
   chatHistory: (cwd, sessionId) => ipcRenderer.invoke('chat:history', { cwd, sessionId }),
+  consumo: () => ipcRenderer.invoke('consumo:get'),
   onChatEvents: (fn) => ipcRenderer.on('chat:events', (_e, m) => fn(m)),
   onChatExit: (fn) => ipcRenderer.on('chat:exit', (_e, m) => fn(m)),
 

@@ -484,6 +484,10 @@ ipcMain.handle('metrics:all', () => {
   return files.map((f) => ({ tabId: f.slice(4, -5), data: readJson(path.join(METRICS_DIR(), f)) })).filter((x) => x.data);
 });
 
+// tela Consumo: tokens e custo equivalente lidos das conversas do Claude Code (leitura incremental, ver consumo.js)
+const consumo = RUN_MODE ? null : require('./consumo').create({ userData: app.getPath('userData') });
+ipcMain.handle('consumo:get', () => (consumo ? consumo.snapshot() : { updated: Date.now(), sessions: [] }));
+
 // branch git da pasta de um projeto (para o rail); vazio se não for repositório ou sem git
 ipcMain.handle('git:branch', (_e, cwd) => new Promise((resolve) => {
   if (!cwd || !fs.existsSync(cwd)) return resolve('');
