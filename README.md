@@ -24,6 +24,8 @@ Uma janela só para todas as suas conversas com o **Claude Code**. O Termix orga
 - Windows 11 (é onde o Termix é testado; o Windows 10 deve funcionar, mas não foi testado).
 - O **Claude Code** instalado e com a sua conta conectada. O Termix **não instala** o Claude Code: se ele não for encontrado, a aba mostra como resolver.
 
+> Guia completo para o time, com a checagem do Smart App Control e o que fazer se o Windows bloquear: **[docs/INSTALACAO.md](docs/INSTALACAO.md)**.
+
 **Passo a passo**
 
 1. Abra a página de [Releases](https://github.com/rocruzta50IND/termix/releases/latest) e baixe `Termix-Setup-<versão>.exe`.

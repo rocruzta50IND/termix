@@ -27,7 +27,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Entregável:** relatório `docs/AUDITORIA_MVP.md` com achados por gravidade, o que foi corrigido e o que fica para depois; versão 1.0 só com aprovação do usuário.
 - **Contexto já feito (não repetir):** auditoria de performance/robustez da TASK-072 (0.3.0), atualização em segundo plano com reinício em ~1 s (TASK-069/071/079, validada pelo usuário), exe fixo contra o Smart App Control (TASK-081, 0.3.2/0.3.3).
 - **Pendente de aprovação do usuário para fechar:** TASK-065, 061, 068 (publicações/medições antigas), 069, 072, 079 e 081 (aguardando validação; o usuário já viu o reinício de ~1 s funcionar).
-- **Feito até agora:** (nada além do plano)
+- **Feito até agora (2026-11-03):** decisões de distribuição registradas (repositório sempre público, sem assinatura); **`docs/INSTALACAO.md` escrito** (checagem do Smart App Control, instalar, avisos do Windows, primeiro uso, atualizar, desinstalar, a quem pedir ajuda) e ligado ao README; versão publicada no GitHub. Falta **testar o roteiro** no Sandbox e o Smart App Control num PC real, e corrigir o guia conforme o resultado.
 - **Próximo passo:** começar pelo item A no **Windows Sandbox** (instalação limpa sem Claude Code/Git, primeiro uso, atualização de versão antiga, pasta com espaços), depois B (percurso de UX), C e D. O que o Sandbox não prova (Smart App Control e antivírus de um PC real, Windows 10) o usuário testa no PC de um colega.
 
 ### TASK-072 — Auditoria completa de performance e UX do app (versão 0.3.0)

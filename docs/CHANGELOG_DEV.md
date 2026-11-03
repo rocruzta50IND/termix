@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**Guia de instalação para o time** (DEV1)
+
+- Novo `docs/INSTALACAO.md` (passo a passo curto: o que conferir antes, como saber se o Smart App Control pode bloquear, instalar, avisos do Windows, primeiro uso, atualizar, desinstalar e a quem pedir ajuda) e link no README. Parte do item A da TASK-083; o roteiro ainda será testado no Sandbox e em um PC real.
+
 **Decisões de distribuição** (DEV1)
 
 - Por pedido do usuário: o repositório fica **público para sempre** e o app **não terá assinatura de código** (uso interno). TASK-082 cancelada; TASK-083 atualizada (item A passa a ser testado no Windows Sandbox).
