@@ -9,12 +9,13 @@ param(
   [string]$Src,
   [string]$Dst,
   [int]$Restart = 0,
+  [int]$KeepExe = 0,
   [string]$Log = ''
 )
 $ErrorActionPreference = 'Stop'
 function Log($m) { if ($Log) { try { Add-Content -LiteralPath $Log -Value ("{0:HH:mm:ss.fff} {1}" -f (Get-Date), $m) -Encoding UTF8 } catch {} } }
 
-Log "inicio: pid=$ParentPid src=$Src dst=$Dst restart=$Restart"
+Log "inicio: pid=$ParentPid src=$Src dst=$Dst restart=$Restart keepexe=$KeepExe"
 try { if ($ParentPid -gt 0) { Wait-Process -Id $ParentPid -Timeout 90 -ErrorAction SilentlyContinue } } catch {}
 Log "app encerrado"
 
@@ -39,6 +40,7 @@ else {
       $moved = @()
       try {
         foreach ($e in Get-ChildItem -LiteralPath $Src -Force) {
+          if ($KeepExe -eq 1 -and $e.Name -ieq 'Termix.exe') { continue } # mesmo motor: o Termix.exe instalado (já liberado pelo Windows) não é trocado
           $t = Join-Path $Dst $e.Name
           if (Test-Path -LiteralPath $t) { Move-Item -LiteralPath $t -Destination (Join-Path $old $e.Name) -Force; $moved += $e.Name }
           Move-Item -LiteralPath $e.FullName -Destination $t -Force
@@ -59,7 +61,8 @@ else {
   }
   if (-not $ok) {
     # caminho de reserva: copia por cima (não apaga nada da pasta instalada)
-    & robocopy.exe $Src $Dst /E /IS /IT /R:10 /W:2 /NFL /NDL /NJH /NJS /NP | Out-Null
+    $xf = @(); if ($KeepExe -eq 1) { $xf = @('/XF', 'Termix.exe') }
+    & robocopy.exe $Src $Dst /E /IS /IT /R:10 /W:2 /NFL /NDL /NJH /NJS /NP @xf | Out-Null
     $code = $LASTEXITCODE
     Log "robocopy saiu com $code"
     if ($code -lt 8) { $ok = $true }

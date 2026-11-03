@@ -5,3 +5,5 @@ node_modules/
 # fluxo: papel local por máquina, nunca versionar
 CLAUDE.local.md
 dist/
+# casco fixo do Termix.exe (~250 MB), usado por tools/after-pack.js
+build-cache/

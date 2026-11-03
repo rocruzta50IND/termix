@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**TASK-081 — Windows bloqueou o Termix.exe da 0.3.1 (versão 0.3.2)** (DEV1)
+
+- O Smart App Control bloqueou o executável novo (sem assinatura). Reparado na máquina do usuário com o exe anterior; a 0.3.2 fixa o Termix.exe entre versões e o atualizador deixa de trocá-lo quando o motor Electron não muda. Assinatura de código no Backlog (TASK-082).
+
 **TASK-079 — Reinício instantâneo (versão 0.3.1)** (DEV1)
 
 - O reinício levava ~19 s porque o Windows demora ~8 s para liberar a primeira execução de um .exe recém-gravado. Agora o app prepara a versão nova dentro da pasta instalada, "aquece" o Termix.exe em segundo plano e a troca é por renomeação (~0,5 s): o app volta em ~0,6 s. Vale a partir da atualização 0.3.1 → 0.3.2. Backlog: TASK-080 (barra lateral: rolar só os projetos).

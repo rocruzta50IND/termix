@@ -59,6 +59,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-081 — App atualizou mas o Windows bloqueou o Termix.exe (Smart App Control)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Crítica — relato do usuário em 2026-11-03 (0.3.0 → 0.3.1): "o app atualizou mas não abriu, e quando eu abri o app foi bloqueado pelo Windows".
+- **Causa (confirmada no log do Windows):** Smart App Control ativo (`VerifiedAndReputablePolicyState = 1`); o Code Integrity bloqueou o `Termix.exe` da 0.3.1 (eventos 3033/3077 às 08:48, 08:50 e 08:52, tanto pelo script de troca quanto pelo Explorer): "não atendeu aos requisitos de nível de assinatura". A troca em si funcionou (versão 0.3.1 instalada); o exe novo é que foi barrado. As versões anteriores passaram só depois de uma verificação na nuvem de 8–19 s (a "demora" da TASK-079).
+- **Reparo imediato:** o `Termix.exe` da 0.3.0 (que o Windows já tinha liberado) foi colocado no lugar do bloqueado (o bloqueado ficou como `Termix.exe.bloqueado-0.3.1` na pasta instalada, pode ser apagado); o app 0.3.1 abre com ele.
+- **Correção definitiva (0.3.2):** ver `docs/DECISOES.md` (TASK-081): exe fixo entre versões (`tools/after-pack.js` + `build-cache/Termix-shell.exe`) e o atualizador não troca o exe quando o motor é o mesmo (`KeepExe`).
+- **Testado:** troca com `KeepExe` (o exe antigo permanece, o resto atualiza, o desinstalador fica); `npm run check`. Não testado: a atualização real 0.3.1 → 0.3.2 (a executa o app 0.3.1, que ainda não tem o `KeepExe`: ela troca o exe pelo casco fixo, que tem o mesmo conteúdo do exe que o Windows liberou).
+- **Pendências:** assinatura de código (certificado) para o Windows de qualquer pessoa confiar no instalador e no exe; sem ela, um PC novo com Smart App Control pode bloquear o instalador.
+- **Próximo passo:** usuário atualiza 0.3.1 → 0.3.2 e confirma que abre.
+
+
 ### TASK-079 — Reinício instantâneo ao clicar em Reiniciar agora (versão 0.3.1)
 
 - **Responsável:** DEV1
@@ -277,6 +290,13 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Status:** BACKLOG
 - **Prioridade:** Média (visual/UX) — pedido do usuário em 2026-11-03, com captura: com muitos projetos, a barra lateral inteira rola para baixo; devem rolar **apenas os projetos**. **Entra depois da validação de performance/MVP.**
 - **Objetivo:** fixar o topo (alternar recolher, Terminais/Plugins/Skills/MCPs) e o rodapé (Novo projeto, Consumo, Integrações, Configurações) e deixar só a lista de projetos com rolagem própria (com a barra recolhida e aberta); testar com 20+ projetos e com a janela baixa.
+
+### TASK-082 — Assinatura de código do instalador e do Termix.exe
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Alta antes de distribuir para outras pessoas — decorrente da TASK-081
+- **Objetivo:** assinar `Termix.exe` e o instalador (certificado de assinatura de código, p. ex. Azure Trusted Signing ou um certificado OV/EV) para o Smart App Control e o SmartScreen aceitarem sem reputação; configurar o electron-builder para assinar e o atualizador para validar; depois disso o casco fixo do `Termix.exe` deixa de ser necessário.
 
 ## Concluídas
 

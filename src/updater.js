@@ -52,6 +52,17 @@ function stagedValid(version, dir) {
     return fs.existsSync(path.join(dir, 'Termix.exe')) && JSON.parse(fs.readFileSync(path.join(dir, 'resources', 'app', 'package.json'), 'utf8')).version === version;
   } catch { return false; }
 }
+// TASK-081: o Smart App Control do Windows bloqueia um Termix.exe novo (sem assinatura, reputação desconhecida): aconteceu na 0.3.1. Por isso o Termix.exe
+// instalado só é trocado quando o motor Electron muda; com o mesmo motor ele fica como está (o código do app está em resources/app). Compara arquivos
+// centrais do motor (pequenos) entre a pasta instalada e a preparada.
+const ENGINE_FILES = ['v8_context_snapshot.bin', 'snapshot_blob.bin', 'icudtl.dat', 'ffmpeg.dll', 'chrome_100_percent.pak'];
+function sameEngine(dir) {
+  try {
+    const inst = path.dirname(process.execPath);
+    for (const f of ENGINE_FILES) if (!fs.readFileSync(path.join(inst, f)).equals(fs.readFileSync(path.join(dir, f)))) return false;
+    return true;
+  } catch { return false; }
+}
 // extrai o instalador (que é um arquivo 7z com o app dentro) para dir; onPercent recebe 0..100
 function extractInstaller(file, dir, onPercent) {
   return new Promise((resolve) => {
@@ -74,7 +85,7 @@ function extractInstaller(file, dir, onPercent) {
 function applyStaged(restart) {
   if (!staged || applyLaunched || !app.isPackaged) return false;
   applyLaunched = runDetachedScript(path.join(__dirname, 'apply-update.ps1'), 'termix-apply-update.ps1', {
-    ParentPid: process.pid, Src: staged.dir, Dst: path.dirname(process.execPath), Restart: restart ? 1 : 0, Log: path.join(os.tmpdir(), 'termix-apply-update.log'),
+    ParentPid: process.pid, Src: staged.dir, Dst: path.dirname(process.execPath), Restart: restart ? 1 : 0, KeepExe: sameEngine(staged.dir) ? 1 : 0, Log: path.join(os.tmpdir(), 'termix-apply-update.log'),
   });
   return applyLaunched;
 }
@@ -144,15 +155,14 @@ function setupUpdater(getWin, hooks = {}) {
     const marker = path.join(STAGE_ROOT(), version + '.primed');
     try { for (const d of fs.readdirSync(STAGE_ROOT())) if (d !== version && d !== version + '.primed' && d !== 'staged.json') fs.rmSync(path.join(STAGE_ROOT(), d), { recursive: true, force: true }); } catch { /* pasta ainda não existe */ }
     if (stagedValid(version, dir)) {
-      if (!fs.existsSync(marker)) { push({ state: 'preparing', version, percent: 90 }); await prime(dir); try { fs.writeFileSync(marker, '1'); } catch { /* sem marca: aquece de novo na próxima vez */ } }
+      if (!fs.existsSync(marker) && !sameEngine(dir)) { push({ state: 'preparing', version, percent: 90 }); await prime(dir); try { fs.writeFileSync(marker, '1'); } catch { /* sem marca: aquece de novo na próxima vez */ } }
       staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return;
     }
     push({ state: 'preparing', version, percent: 0 });
     let ok = false;
     try { ok = !!file && fs.existsSync(file) && fs.existsSync(SEVENZ()) && await extractInstaller(file, dir, (pc) => { const sc = Math.round(pc * 0.85); if (sc !== lastPct) { lastPct = sc; push({ state: 'preparing', percent: sc }); } }); } catch { ok = false; }
     if (ok && stagedValid(version, dir)) {
-      push({ state: 'preparing', percent: 90 });
-      await prime(dir);
+      if (!sameEngine(dir)) { push({ state: 'preparing', percent: 90 }); await prime(dir); }
       try { fs.writeFileSync(marker, '1'); } catch { /* sem marca: aquece de novo na próxima vez */ }
       staged = { version, dir }; push({ state: 'ready', version, percent: 100, mode: 'swap' }); return;
     }
