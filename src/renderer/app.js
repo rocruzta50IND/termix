@@ -135,6 +135,7 @@ function showToast(ev) {
   toastEl.style.right = `${Math.round(window.innerWidth - r.left + 10)}px`;
   toastEl.style.top = `${Math.round(r.top + r.height / 2)}px`;
   toastEl.style.setProperty('--c', ev.c || '#8B7BFF');
+  toastEl.title = `${ev.who}: ${ev.msg}`; // a mensagem na dica é cortada em uma linha; o texto inteiro aparece ao passar o mouse
   toastEl.innerHTML = `<b>${esc(ev.who)}<small>${esc(KIND_TITLE[ev.kind] || '')}</small></b><span>${esc(ev.msg)}</span>`;
   toastEl.classList.remove('show'); void toastEl.offsetWidth; toastEl.classList.add('show'); // reinicia a animação
   clearTimeout(toastTimer);

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, Notification, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Notification, clipboard, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -139,11 +139,14 @@ function createWindow() {
   const bg = st && st.settings && st.settings.bg;
   winMode = bg === 'blur' || bg === 'acrylic' || bg === 'mica' ? 'acrylic' : 'none'; // valores antigos (acrylic/mica) viram Ofuscado
   const mat = winMode !== 'none';
+  // TASK-093: o tamanho inicial e o mínimo nunca passam da área útil da tela (antes, numa tela de ~1200×650 a janela de 1280×760 saía pela borda)
+  const wa = screen.getPrimaryDisplay().workArea;
+  const fitW = Math.max(640, wa.width - 16), fitH = Math.max(480, wa.height - 16);
   win = new BrowserWindow({
-    width: 1280,
-    height: 760,
-    minWidth: 980,
-    minHeight: 620,
+    width: Math.min(1280, fitW),
+    height: Math.min(760, fitH),
+    minWidth: Math.min(980, fitW),
+    minHeight: Math.min(620, fitH),
     transparent: !mat, // sem material: janela realmente transparente, sem "placa" atrás do vidro
     ...(mat ? { backgroundMaterial: winMode } : {}), // com material: o Windows desenha o fundo desfocado atrás do vidro
     frame: false,

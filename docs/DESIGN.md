@@ -104,3 +104,6 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - **Linhas das Configurações (`.row`):** rótulo à esquerda (flexível), controle à direita sem encolher; em tela estreita (menos de 560 px de conteúdo) o controle desce para baixo do texto; linhas com área de texto quebram antes (780 px) e a área ocupa a largura toda.
 - **Janelas (`.dlg`):** largura `min(470px, 92vw)`, altura máxima da tela com rolagem e **rodapé fixo** (os botões não saem da tela em janela baixa); o editor de skill é mais largo.
 - **Foco por teclado:** anel azul em todo botão e controle (`:focus-visible`). **Selo do sino:** no canto, com borda escura, sem cobrir o ícone.
+
+## Dica de notificação ao lado do sino (TASK-092)
+- A dica que aparece à esquerda do sino é uma **pílula de uma linha** (34 px, cantos totalmente arredondados), centrada na altura do sino e **sempre dentro do cabeçalho**: título da aba e tipo na frente, mensagem cortada com reticências (o texto inteiro vai na dica nativa ao passar o mouse). Largura máxima 420 px e nunca passa da área do cabeçalho. Antes tinha 59 px de altura, subia sobre a borda da janela e ficava fora do quadro do app.

@@ -8,6 +8,35 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-094 — Publicar a versão 0.3.5
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-03: "pode subir a nova versão" (o usuário delegou a avaliação das TASK-090, 092 e 093 e pediu publicar, para o time seguir o `docs/INSTALACAO.md` que fica no GitHub).
+- **Entra nesta versão:** anéis 5H/7D certos no chat e sub-abas da barra recolhida só do projeto em foco (TASK-091), projetos novos no disco com mais espaço e escolha da pasta (TASK-090), dica de notificação dentro do cabeçalho (TASK-092), janela que respeita a tela pequena (TASK-093); documentação: guia de instalação com o passo a passo do Smart App Control.
+- **Passos:** versão 0.3.5; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml`; `gh release create v0.3.5`.
+- **Próximo passo:** ver o registro de publicação abaixo e, depois, a validação da instalação em **outra máquina** seguindo o guia do GitHub: só então o MVP (TASK-083) é declarado.
+
+### TASK-093 — Janela maior que a tela pequena (item B da TASK-083)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (emulada em 1000×560 e 800×500 por CDP, por delegação do usuário; falta ver numa tela física pequena)
+- **Prioridade:** Média — achado do teste no Sandbox: a janela abria em 1280×760 e saía pela borda do Sandbox (~1214×651). **Esclarecido em 2026-11-03:** esse tamanho era do Sandbox aberto em janela pequena; em tela cheia ele fica normal. O ajuste continua válido para notebooks de tela pequena, mas o achado é menos grave do que parecia.
+- **Feito:** `main.js` (`createWindow`): tamanho inicial e mínimo limitados à área útil da tela principal (`screen.getPrimaryDisplay().workArea` menos 16 px; nunca abaixo de 640×480). Em telas grandes nada muda (1280×760, mínimo 980×620).
+- **Testado:** `npm run check`; layout do app emulado em 1000×560 e 800×500 por CDP nas telas Terminais, Consumo e Configurações: sem rolagem horizontal, nada estoura. Não testado: numa tela física pequena (a lógica é simples; confirmar no Sandbox ou num notebook pequeno).
+- **Achados menores do percurso (sem correção ainda):** em 800 px de largura o mapa de calor da tela Consumo é cortado no lado direito (sem rolagem); a bandeja de sub-abas mostra só 2 de 4 ícones em 500 px de altura (rola, mas sem indício claro).
+- **Percurso feito até aqui (instância isolada, 1280×760):** Terminais, Plugins, Skills, MCPs, Consumo, Integrações e Configurações, sem erro visível, textos em português e carregamento rápido depois da primeira leitura. Falta: aba Web, chat, modais e estados de erro, notificações, DPI alto e mais de um monitor, teclado e foco, muitos projetos.
+
+### TASK-092 — Dica de notificação ao lado do sino saía do cabeçalho
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (testada por CDP em 2026-11-03, por delegação do usuário)
+- **Prioridade:** Alta — pedido do usuário em 2026-11-03: a caixa que aparece ao lado do ícone de notificação ficava fora do app e não alinhada ao cabeçalho.
+- **Causa (medida por CDP):** a dica tinha 59 px de altura, centrada no sino (y 31), então o topo ficava a 1,6 px da borda da janela, acima do quadro arredondado do app e mais alta que o cabeçalho (46 px).
+- **Feito:** `renderer/styles.css` (`#ntoast`): pílula de 34 px numa linha (título + tipo + mensagem com reticências), centrada no sino, largura máxima 420 px; `renderer/app.js` (`showToast`): texto inteiro na dica nativa. `docs/DESIGN.md` atualizado.
+- **Testado:** instância isolada por CDP com mensagem curta e longa: topo a 14 px, base a 48 px (dentro do cabeçalho), alinhada ao sino, com reticências; `npm run check`. Não testado: com a janela bem estreita e com o painel de notificações aberto.
+- **Como validar:** deixar um terminal/chat terminar com o app em foco em outra aba e ver a dica ao lado do sino.
+
 ### TASK-091 — Anéis 5H/7D diferentes do /usage e sub-abas da barra recolhida só no projeto em foco
 
 - **Responsável:** DEV1
@@ -23,7 +52,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-090 — Projetos novos no disco com mais espaço (e escolha da pasta raiz)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (código commitado; o usuário ainda não testou a pasta no app)
+- **Status:** VALIDADA EM DEV1 (testada por CDP em instância isolada em 2026-11-03, por delegação do usuário: automático em `D:Termix`, pasta escolhida respeitada, pasta inválida cai no automático, tela Configurações com Alterar/Automática)
 - **Prioridade:** Crítica e urgente — pedido do usuário em 2026-11-03: "os projetos deveriam ser jogados para o armazenamento de maior espaço (geralmente HD)". Surgiu com o C: do usuário cheio (0 GB livres) durante o teste no Sandbox; os projetos criados pelo app iam sempre para `Documentos\Termix`, no C:.
 - **Feito até agora:** `src/main.js` (`resolveRoot`, `biggestDriveRoot`): sem escolha do usuário, a pasta é `X:\Termix` no disco fixo com mais espaço livre (mínimo 2 GB; se a consulta falhar ou nenhum disco servir, volta para `Documentos\Termix`); com escolha, usa a pasta escolhida (e cai no automático se ela estiver indisponível). `src/preload.js` e `src/renderer/app.js`: em Configurações, "Pasta raiz dos projetos criados pelo app" mostra o caminho real e ganhou os botões **Alterar** (seletor de pasta) e **Automática** (volta ao padrão); o valor fica em `settings.projectsRoot`. Projetos importados continuam onde estão. Na máquina do usuário a detecção devolve `D:\Termix` (D: com 421 GB livres; C: com 4 GB).
 - **Testado:** `npm run check`; a consulta de discos (PowerShell/CIM) rodada de verdade (C: e D:). **Não testado:** a tela Configurações e a criação de um projeto no app (CDP).
@@ -52,7 +81,13 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Pendente de aprovação do usuário para fechar:** TASK-065, 061, 068 (publicações/medições antigas), 069, 072, 079 e 081 (aguardando validação; o usuário já viu o reinício de ~1 s funcionar).
 - **Feito até agora (2026-11-03):** decisões de distribuição registradas (repositório sempre público, sem assinatura); **`docs/INSTALACAO.md` escrito** (checagem do Smart App Control, instalar, avisos do Windows, primeiro uso, atualizar, desinstalar, a quem pedir ajuda) e ligado ao README; versão publicada no GitHub. Falta **testar o roteiro** no Sandbox e o Smart App Control num PC real, e corrigir o guia conforme o resultado.
 - **Sandbox, rodada 1 (2026-11-03, Windows 11 limpo, sem Claude Code, Git nem Node):** download do instalador do GitHub sem login (3 s); instalação silenciosa em pasta com espaços e acento (`Instalação do Termix\App`) com código 0 em 25 s; abre em ~15 s, 5 processos, 391 MB, janela "Termix" v0.3.4, tela inicial sem projetos correta ("Comece criando um projeto"). **Achado:** numa tela pequena (~1214×651) a janela passa da borda direita/inferior do monitor (texto e botões cortados); verificar tamanho mínimo e posição da janela no item B. Scripts do teste ficam no scratchpad (`sbx\teste.ps1`, `termix.wsb`); o Sandbox também exige espaço livre no C:.
-- **Falta no item A:** abrir uma aba do Claude Code sem ele instalado (mensagem "Claude Code não foi encontrado…"), atualização a partir de versão antiga (0.3.3 → 0.3.4), e conferir o guia `docs/INSTALACAO.md` contra o que se viu.
+- **Sandbox, rodada 2 (0.3.3):** o Windows do Sandbox **tem o Smart App Control ligado** e bloqueou o instalador da 0.3.3 ("Uma política de Controle de Aplicativo bloqueou este arquivo"), embora tenha deixado passar o da 0.3.4 na rodada 1. **Rodada 3 (0.3.4 de novo, Sandbox novo): também bloqueada**, então o veredito não é por versão: é imprevisível (reputação na nuvem) e, com o Smart App Control ligado, o instalador pode ser barrado sempre. Confirma o risco principal do item A; o `docs/INSTALACAO.md` foi atualizado com isso. **Decisão pendente do usuário:** a assinatura de código foi descartada (TASK-082), mas este resultado mostra que, para colegas com o Smart App Control ligado, a única saída hoje é desligá-lo (irreversível sem reinstalar o Windows) ou assinar; vale reavaliar antes de entregar para as 5 pessoas. Consequência: o teste da atualização 0.3.3 → 0.3.4 não pôde ser feito aí (o app antigo nem instala); a atualização real só dá para provar com um release novo (0.3.5) sobre a 0.3.4. O Sandbox também é instável ao reabrir logo após ser fechado (esperar ~25 s).
+- **Confirmado pelo usuário no Sandbox (2026-11-03, duplo clique no Explorer):** janela com X vermelho e "Uma política de Controle de Aplicativo bloqueou este arquivo", só com OK (sem "executar assim mesmo"). É o que um colega com o Smart App Control ligado vê; o guia foi corrigido para citar esse texto (o Windows não escreve "Smart App Control").
+- **Decisão do usuário (2026-11-03):** sem gasto mensal; a saída para o Smart App Control é **desligá-lo** nos PCs em que estiver Ativado. Documentado em `docs/INSTALACAO.md` (o que muda, o que continua protegendo, precauções) e em `docs/DECISOES.md`, sem afirmar risco zero. Falta confirmar no Sandbox que, com o Smart App Control **desligado**, o instalador passa, e conferir o estado do Smart App Control nos 5 PCs do time.
+- **Tentativa de desligar o Smart App Control no Sandbox (2026-11-03):** o app Segurança do Windows não existe no Sandbox ("Não é possível abrir este link windowsdefender"); gravar `VerifiedAndReputablePolicyState = 0` no registro funcionou (valor 0), mas **não vale sem reiniciar e o Sandbox fecha ao reiniciar**, perdendo a mudança; o instalador continuou bloqueado. Conclusão: **não dá para provar no Sandbox o caminho com o Smart App Control desligado**; só num PC real (o de um colega, com ele ligado e depois desligado).
+- **Item B iniciado:** ver TASK-093 (janela maior que a tela) e o percurso das telas principais, sem erros visíveis.
+- **Falta no item A:** abrir uma aba do Claude Code sem ele instalado (mensagem "Claude Code não foi encontrado…"; dá para fazer instalando a 0.3.4 no Sandbox), atualização 0.3.4 → próxima versão, Smart App Control num PC real de colega e Windows 10.
+- **Estado para retomar (2026-11-03):** decisão do usuário: o MVP só é declarado **depois de validar a instalação em outra máquina seguindo o `docs/INSTALACAO.md` do GitHub** (um colega com o Smart App Control ligado desliga e instala; depois a atualização 0.3.5 → próxima). Item A: guia e decisões prontos; faltam os dois testes em PC real. Item B: telas principais vistas sem erro (ver TASK-093); faltam aba Web, chat, modais, DPI alto e mais de um monitor. Itens C (performance com 10–15 abas) e D (segurança e privacidade) não iniciados. Entregável final: `docs/AUDITORIA_MVP.md`; versão 1.0 só com aprovação do usuário.
 - **Próximo passo (anterior):** começar pelo item A no **Windows Sandbox** (instalação limpa sem Claude Code/Git, primeiro uso, atualização de versão antiga, pasta com espaços), depois B (percurso de UX), C e D. O que o Sandbox não prova (Smart App Control e antivírus de um PC real, Windows 10) o usuário testa no PC de um colega.
 
 ### TASK-072 — Auditoria completa de performance e UX do app (versão 0.3.0)

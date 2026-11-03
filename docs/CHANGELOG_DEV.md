@@ -8,6 +8,22 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**Versão 0.3.5** (DEV1)
+
+- A pedido do usuário, publica as TASK-090 (pasta dos projetos), 091 (anéis 5H/7D e barra recolhida), 092 (dica do sino) e 093 (janela em tela pequena), validadas por CDP por delegação do usuário, e o guia de instalação com o Smart App Control. O MVP só será declarado depois de validar a instalação em outra máquina pelo guia do GitHub.
+
+**Smart App Control: guia de desligamento** (DEV1)
+
+- Decisão do usuário (sem gasto mensal): quem tem o Smart App Control Ativado o desliga. `docs/INSTALACAO.md` ganhou a seção com o que muda, o que continua protegendo e as precauções; `docs/DECISOES.md` registra a decisão.
+
+**TASK-093 — Janela não passa da tela pequena** (DEV1)
+
+- O tamanho inicial e o mínimo da janela agora respeitam a área útil da tela (antes 1280×760 saía pela borda em telas de ~1200×650). Percurso visual das telas principais, sem erros; achados menores no `TASKS.md`. Arquivo: `main.js`. Falta validar.
+
+**TASK-092 — Dica de notificação dentro do cabeçalho** (DEV1)
+
+- A caixa que aparece ao lado do sino tinha 59 px e passava da borda do app; agora é uma pílula de uma linha (34 px), alinhada ao sino e dentro do cabeçalho, com a mensagem inteira na dica nativa. Arquivos: `renderer/styles.css`, `renderer/app.js`; `docs/DESIGN.md`. Falta validar.
+
 **TASK-091 — Anéis 5H/7D certos no chat e sub-abas só do projeto em foco** (DEV1)
 
 - Causa dos anéis diferentes do `/usage`: o chat gravava o horário da leitura em segundos e o terminal em milissegundos, então depois de uma leitura do terminal o chat nunca mais atualizava o 5H/7D (e o Clear no chat tinha o mesmo problema). Agora os dois usam milissegundos. Na barra recolhida, só o projeto em foco mostra as sub-abas. Arquivos: `renderer/chat.js`, `renderer/app.js`; docs. Falta validar no app.

@@ -18,7 +18,7 @@ O Termix é de uso interno. Este guia leva uns 5 minutos. Se algo não sair como
 |---|---|---|
 | **Desativado** | O Windows não bloqueia programas sem assinatura. | Pode instalar. |
 | **Avaliação** | O Windows está observando o seu uso e pode ligar sozinho. | Pode instalar agora. |
-| **Ativado** | O Windows bloqueia programas sem assinatura que ele não conhece. | O Termix **pode ser bloqueado**. Veja [O Windows bloqueou](#o-windows-bloqueou-o-instalador-ou-o-app) antes de instalar e avise quem cuida do Termix. |
+| **Ativado** | O Windows bloqueia programas sem assinatura que ele não conhece. | O instalador do Termix **provavelmente será bloqueado**. Leia [Desligar o Smart App Control](#desligar-o-smart-app-control-decisão-da-equipe) antes de instalar: é o caminho decidido pela equipe, e ele explica o que muda. |
 
 Se você não encontrar essa opção, o seu Windows não tem o Smart App Control (por exemplo, Windows 10). Pode instalar.
 
@@ -38,10 +38,39 @@ O instalador **não é assinado digitalmente** (o app é interno), por isso o Wi
 
 ### O Windows bloqueou o instalador ou o app
 
-Se aparecer uma mensagem dizendo que o **Smart App Control bloqueou** o programa, **não há botão "executar assim mesmo"**: é uma regra do Windows. Tire uma captura da mensagem e avise quem cuida do Termix (veja [Se algo der errado](#se-algo-der-errado)). As saídas, em ordem:
+Ao dar duplo clique no instalador, pode aparecer uma janelinha com um **X vermelho** e o texto **"Uma política de Controle de Aplicativo bloqueou este arquivo"**, só com o botão OK. Esse é o **Smart App Control** (o Windows não cita o nome dele). **Não há botão "executar assim mesmo"**: é uma regra do Windows, e o Termix não consegue mudar isso. Não confunda com o **SmartScreen** ("O Windows protegeu o computador"), que é outro recurso, tem o botão "Executar assim mesmo" e **não precisa ser desligado**.
 
-1. **Nada a fazer por enquanto**, até o responsável decidir. Não tente contornar.
-2. **Desligar o Smart App Control** nesse PC, só se a empresa aceitar. Atenção: depois de desligado, **ele não volta a ligar sem reinstalar o Windows**. Fica em *Segurança do Windows → Controle de aplicativos e navegador → Configurações do Smart App Control → Desativado*.
+**O resultado não é previsível**: no teste com o Smart App Control ligado (Windows Sandbox), o instalador da 0.3.4 passou numa tentativa e foi bloqueado em outra, e o da 0.3.3 foi bloqueado. O Windows decide pela reputação do arquivo na nuvem, que muda. Com o Smart App Control ligado, **conte com o bloqueio**.
+
+### Desligar o Smart App Control (decisão da equipe)
+
+O Termix não tem assinatura digital (é interno e a equipe decidiu não pagar certificado). Por isso, a saída adotada para quem tem o Smart App Control **Ativado** é **desligá-lo**. A decisão é de cada pessoa, sobre o próprio PC: só faça se concordar com o que está abaixo. Se o PC é da empresa e gerenciado pela TI, **peça autorização** antes.
+
+**O que o Smart App Control faz.** Ele só existe no Windows 11 (a partir da versão 22H2) e, quando ligado, **bloqueia programas que não têm assinatura digital confiável e que a Microsoft ainda não conhece**. Ele é uma camada extra, **além** do antivírus.
+
+**O que muda ao desligar:**
+
+- Deixa de existir o bloqueio automático de programas **desconhecidos e sem assinatura**. Se você abrir, por engano, um programa malicioso sem assinatura, essa camada não vai barrá-lo.
+- **Não é irreversível por culpa do Termix, mas é irreversível na prática:** a Microsoft informa que, depois de desligado, o Smart App Control **só volta a ser ligado reinstalando ou redefinindo o Windows**. Por isso, decida com calma.
+- Seu PC passa a ter o **mesmo nível de proteção que o Windows 10 e as versões do Windows 11 anteriores a 2022 sempre tiveram** (eles nem têm esse recurso). Muitas pessoas e empresas usam o Windows assim todos os dias.
+
+**O que NÃO muda (continua protegendo):**
+
+- o **Antivírus do Microsoft Defender** (ou o antivírus da empresa), com proteção em tempo real, que continua analisando o que você baixa e executa;
+- o **SmartScreen**, que continua avisando sobre downloads e programas suspeitos;
+- o **Firewall**, o **Controle de Conta de Usuário (UAC)**, a **proteção contra ransomware** e as **atualizações do Windows**;
+- seus arquivos, projetos e configurações: **nada é apagado ou alterado**.
+
+**Não é risco zero**, só é pequeno quando você mantém o resto. Para manter o PC seguro depois de desligar:
+
+1. Deixe o **antivírus em tempo real** e o **SmartScreen** ligados.
+2. Baixe o Termix **somente** da página oficial de [Releases](https://github.com/rocruzta50IND/termix/releases/latest) do projeto.
+3. Não execute arquivos de origem desconhecida (anexos de e-mail, links de mensagens, "cracks" e afins), como já vale para qualquer PC.
+4. Mantenha o Windows atualizado.
+
+**Como desligar:** *Segurança do Windows → Controle de aplicativos e navegador → Configurações do Smart App Control → Desativado*. Depois, execute o instalador de novo. Não é preciso reiniciar o PC.
+
+Se, mesmo com o Smart App Control **Desativado**, algo ainda for bloqueado, o motivo pode ser o antivírus da empresa: veja a seção anterior e avise quem cuida do Termix.
 
 ## 3. Primeiro uso
 
@@ -77,4 +106,4 @@ Se o app abre mas algo falha, o arquivo `%APPDATA%\Termix\erros.log` (se existir
 
 ---
 
-*Última revisão: versão 0.3.4. Testado em Windows 11 limpo (Windows Sandbox). Ainda sem teste: Windows 10 e PCs com Smart App Control **Ativado**; esta página será atualizada com o resultado.*
+*Última revisão: versão 0.3.4. Testado em Windows 11 limpo (Windows Sandbox). Com Smart App Control ligado (Sandbox), a 0.3.3 foi bloqueada e a 0.3.4 instalou numa tentativa e foi bloqueada em outra; a saída decidida é desligá-lo (ver seção acima). Ainda sem teste: instalar com o Smart App Control **desligado** (para confirmar que o instalador passa), Windows 10, atualização de uma versão antiga e PCs reais com antivírus da empresa; esta página será atualizada com o resultado.*

@@ -170,3 +170,8 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 ## Barra recolhida e horário das métricas (TASK-091)
 - Na barra **recolhida**, só o projeto **em foco** mostra a bandeja de sub-abas; os outros ficam só com o avatar. A barra aberta continua com o estado aberto/fechado de cada projeto.
 - Todas as métricas (terminal e chat) levam `updated` em **milissegundos**. O limite 5H/7D mais novo vence; misturar unidades fazia o chat ser ignorado depois de uma leitura do terminal.
+
+## Smart App Control: a saída é desligá-lo (TASK-083, 2026-11-03)
+- O instalador não tem assinatura digital (sem gasto mensal ou recorrente, decisão do usuário) e, com o **Smart App Control** ligado, o Windows pode bloqueá-lo sem botão de "executar assim mesmo" (visto no Sandbox: "Uma política de Controle de Aplicativo bloqueou este arquivo"; o resultado varia de uma tentativa para outra).
+- **Decisão:** quem tem o Smart App Control **Ativado** o desliga (cada pessoa decide sobre o próprio PC; em PC gerenciado pela TI, com autorização). O que muda e o que continua protegendo está explicado, sem prometer risco zero, em `docs/INSTALACAO.md`. Smart App Control e SmartScreen são recursos diferentes: o SmartScreen continua ligado.
+- Reavaliar a assinatura grátis para projeto de código aberto (por exemplo, programas que assinam projetos públicos sem custo) se algum PC do time não puder desligar o Smart App Control.
