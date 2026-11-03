@@ -2,6 +2,10 @@ const { app, BrowserWindow, ipcMain, dialog, shell, Notification, clipboard } = 
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+// TASK-072: erro não capturado (ex.: escrever num terminal que acabou de fechar) não derruba o app nem abre a caixa de erro do Electron; vai para o log
+const logError = (e) => { try { fs.appendFileSync(path.join(app.getPath('userData'), 'erros.log'), `${new Date().toISOString()} ${(e && e.stack) || e}\n`); } catch { /* sem log */ } };
+process.on('uncaughtException', logError);
+process.on('unhandledRejection', logError);
 const { execFile } = require('child_process');
 const { pathToFileURL } = require('url');
 const { setupWeb } = require('./web');
@@ -43,11 +47,13 @@ function claudeDirs() {
     path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), 'Programs', 'claude'));
   return dirs;
 }
+let claudeCache = null;
 function findClaude() {
+  if (claudeCache && fs.existsSync(claudeCache)) return claudeCache;
   for (const dir of claudeDirs()) {
     for (const f of ['claude.exe', 'claude.cmd']) {
       const full = path.join(dir, f);
-      if (dir && fs.existsSync(full)) return full;
+      if (dir && fs.existsSync(full)) return (claudeCache = full);
     }
   }
   return null;
@@ -64,11 +70,14 @@ function cleanEnv() {
   return env;
 }
 
+const pathCache = new Map();
 function findInPath(names) {
+  const key = names.join('|'), hit = pathCache.get(key);
+  if (hit && fs.existsSync(hit)) return hit;
   for (const dir of (process.env.PATH || '').split(path.delimiter)) {
     for (const f of names) {
       const full = path.join(dir, f);
-      if (dir && fs.existsSync(full)) return full;
+      if (dir && fs.existsSync(full)) { pathCache.set(key, full); return full; }
     }
   }
   return null;
@@ -129,6 +138,9 @@ function createWindow() {
   });
   win.setMenuBarVisibility(false);
   win.once('ready-to-show', () => win.show());
+  win.webContents.on('render-process-gone', (_e, d) => { logError('render-process-gone: ' + (d && d.reason)); if (!quitting && win && !win.isDestroyed() && d && d.reason !== 'clean-exit') win.reload(); });
+  // marca de "o Termix abriu" para o auxiliar da atualização saber que já pode fechar a janelinha (TASK-072)
+  win.webContents.once('did-finish-load', () => { try { fs.writeFileSync(path.join(os.tmpdir(), 'termix-started.json'), String(Date.now())); } catch { /* sem a marca, o auxiliar usa a detecção da janela */ } });
   const sendMax = () => { if (!win.isDestroyed()) win.webContents.send('win:state', { maximized: win.isMaximized() }); };
   win.on('focus', () => { win.flashFrame(false); win.webContents.send('win:focus'); });
   win.on('maximize', sendMax);
@@ -173,8 +185,10 @@ ipcMain.handle('state:save', (_e, state) => {
     if ((!fs.existsSync(bak) || Date.now() - fs.statSync(bak).mtimeMs > 3600e3) && readJson(file)) fs.copyFileSync(file, bak);
   } catch { /* o backup nunca atrapalha o salvamento */ }
   const tmp = file + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
-  fs.renameSync(tmp, file);
+  fs.writeFileSync(tmp, JSON.stringify(state));
+  try { fs.renameSync(tmp, file); } catch { // antivírus/indexador segurando o arquivo (EPERM/EBUSY): copia por cima
+    fs.copyFileSync(tmp, file); try { fs.unlinkSync(tmp); } catch { /* ignora */ }
+  }
   return true;
 });
 ipcMain.on('sessions:summary', (_e, s) => { summary = s; });
@@ -279,7 +293,7 @@ ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
     return { ok: false, error: String(err && err.message || err) };
   }
 });
-ipcMain.on('pty:write', (_e, { tabId, data }) => { const p = procs.get(tabId); if (p) p.write(data); });
+ipcMain.on('pty:write', (_e, { tabId, data }) => { const p = procs.get(tabId); if (p) { try { p.write(data); } catch { /* terminal acabou de encerrar */ } } });
 ipcMain.on('pty:resize', (_e, { tabId, cols, rows }) => {
   const p = procs.get(tabId);
   if (p && cols > 0 && rows > 0) { try { p.resize(cols, rows); } catch { /* ignora */ } }
@@ -411,9 +425,10 @@ function pollMetrics() {
     const full = path.join(METRICS_DIR(), f);
     let st; try { st = fs.statSync(full); } catch { continue; }
     if (seen.get(f) === st.mtimeMs) continue;
-    seen.set(f, st.mtimeMs);
     const data = readJson(full);
-    if (data) win.webContents.send('metrics:update', { tabId: f.slice(4, -5), data });
+    if (!data) continue; // gravado pela metade: tenta de novo no próximo ciclo
+    seen.set(f, st.mtimeMs);
+    win.webContents.send('metrics:update', { tabId: f.slice(4, -5), data });
   }
 }
 
@@ -427,9 +442,10 @@ function pollHooks() {
     const full = path.join(METRICS_DIR(), f);
     let st; try { st = fs.statSync(full); } catch { continue; }
     if (hookSeen.get(f) === st.mtimeMs) continue;
-    hookSeen.set(f, st.mtimeMs);
     const data = readJson(full);
-    if (data && Date.now() - data.t < 60000) win.webContents.send('hook:event', { tabId: f.slice(5, -5), data });
+    if (!data) continue;
+    hookSeen.set(f, st.mtimeMs);
+    if (Date.now() - data.t < 60000) win.webContents.send('hook:event', { tabId: f.slice(5, -5), data });
   }
 }
 
@@ -441,11 +457,24 @@ function pollOpens() {
   for (const f of files) {
     const full = path.join(METRICS_DIR(), f);
     const data = readJson(full);
+    if (!data) { try { if (Date.now() - fs.statSync(full).mtimeMs > 60000) fs.unlinkSync(full); } catch { /* já removido */ } continue; } // gravado pela metade: espera o próximo ciclo
     try { fs.unlinkSync(full); } catch { /* já removido */ }
-    if (!data || !data.tabId || !data.target || Date.now() - data.t > 60000) continue;
+    if (!data.tabId || !data.target || Date.now() - data.t > 60000) continue;
     const url = /^https?:\/\//i.test(data.target) ? data.target : pathToFileURL(data.target).href;
     win.webContents.send('web:open', { tabId: data.tabId, url });
   }
+}
+
+// limpeza ao abrir: métricas e hooks de abas que não existem mais (mais de 7 dias sem mudar)
+function cleanOldMetrics() {
+  try {
+    const dir = METRICS_DIR(), lim = Date.now() - 7 * 864e5;
+    for (const f of fs.readdirSync(dir)) {
+      if (!/^(tab|hook|open)-.*\.json$/.test(f)) continue;
+      const full = path.join(dir, f);
+      try { if (fs.statSync(full).mtimeMs < lim) fs.unlinkSync(full); } catch { /* ignora */ }
+    }
+  } catch { /* pasta ainda não existe */ }
 }
 
 // instantâneo das métricas já gravadas: a interface pede ao iniciar, para não perder o que chegou antes de estar pronta
@@ -481,7 +510,7 @@ if (!RUN_MODE) {
   if (!app.requestSingleInstanceLock()) app.quit();
   else {
     app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } createWindow(); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
+    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } createWindow(); setTimeout(cleanOldMetrics, 5000); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
   }
   app.on('quit', () => { if (!wantRelaunch) require('./updater').applyStagedOnQuit(); }); // TASK-069: versão nova já preparada entra no lugar ao fechar
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });

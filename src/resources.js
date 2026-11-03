@@ -48,8 +48,27 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, pty,
     });
   }
 
-  // frontmatter simples (name, description), com descrição em várias linhas (> ou |)
+  // TASK-072: leitura de JSON e de frontmatter com cache por data e tamanho do arquivo (o .claude.json chega a MBs e era relido e interpretado a cada 4 s)
+  const jsonCache = new Map();
+  function cachedJson(f) {
+    let st; try { st = fs.statSync(f); } catch { jsonCache.delete(f); return null; }
+    const c = jsonCache.get(f);
+    if (c && c.m === st.mtimeMs && c.s === st.size) return c.v;
+    const v = readJson(f);
+    jsonCache.set(f, { m: st.mtimeMs, s: st.size, v });
+    return v;
+  }
+  const fmCache = new Map();
   function frontmatter(file) {
+    let st; try { st = fs.statSync(file); } catch { return {}; }
+    const c = fmCache.get(file);
+    if (c && c.m === st.mtimeMs && c.s === st.size) return c.v;
+    const v = frontmatterRaw(file);
+    fmCache.set(file, { m: st.mtimeMs, s: st.size, v });
+    return v;
+  }
+  // frontmatter simples (name, description), com descrição em várias linhas (> ou |)
+  function frontmatterRaw(file) {
     let txt;
     try { txt = fs.readFileSync(file, 'utf8').slice(0, 6000); } catch { return {}; }
     const m = txt.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -95,14 +114,14 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, pty,
     const files = [path.join(home, '.claude', 'settings.json')];
     if (projectPath) files.push(path.join(projectPath, '.claude', 'settings.json'), path.join(projectPath, '.claude', 'settings.local.json'));
     for (const f of files) {
-      const ep = (readJson(f) || {}).enabledPlugins;
+      const ep = (cachedJson(f) || {}).enabledPlugins;
       if (ep && typeof ep[id] === 'boolean') on = ep[id];
     }
     return on;
   }
 
   function installedPlugins(projectPath) {
-    const j = readJson(path.join(home, '.claude', 'plugins', 'installed_plugins.json'));
+    const j = cachedJson(path.join(home, '.claude', 'plugins', 'installed_plugins.json'));
     const list = [];
     for (const [id, entries] of Object.entries((j && j.plugins) || {})) {
       const e = (entries || []).find((x) => (x.scope !== 'project' && x.scope !== 'local') || (x.projectPath && projectPath && same(x.projectPath, projectPath)));
@@ -128,17 +147,17 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, pty,
     for (const pl of installedPlugins(projectPath)) {
       const on = pluginOn(pl.id, projectPath);
       skills.push(...skillsIn(pl.installPath, 'Plugin', pl.id, on === false));
-      const mj = readJson(path.join(pl.installPath, '.mcp.json'));
+      const mj = cachedJson(path.join(pl.installPath, '.mcp.json'));
       mcpConfig((mj && (mj.mcpServers || mj)) || {}, 'Plugin', pl.id, mcps);
     }
-    const cj = readJson(path.join(home, '.claude.json'));
+    const cj = cachedJson(path.join(home, '.claude.json'));
     if (cj) {
       mcpConfig(cj.mcpServers, 'Usuário', '', mcps);
       const key = projectPath && Object.keys(cj.projects || {}).find((k) => same(k, projectPath));
       if (key) mcpConfig(cj.projects[key].mcpServers, 'Local', '', mcps);
     }
     if (projectPath) {
-      const mj = readJson(path.join(projectPath, '.mcp.json'));
+      const mj = cachedJson(path.join(projectPath, '.mcp.json'));
       mcpConfig(mj && mj.mcpServers, 'Projeto', '', mcps);
     }
     for (const n of ((cj && cj.claudeAiMcpEverConnected) || [])) {
@@ -162,11 +181,18 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, pty,
   }
 
   const detailsCache = new Map(); // id@versão -> inventário
+  const detailsFail = new Map(); // id@versão -> quando falhou
+  let detRun = 0; const detQueue = [];
+  const detLimited = (fn) => new Promise((resolve, reject) => {
+    const go = () => { detRun++; fn().then(resolve, reject).finally(() => { detRun--; const n = detQueue.shift(); if (n) n(); }); };
+    if (detRun < 3) go(); else detQueue.push(go);
+  });
   async function details(id, version, cwd) {
     const key = id + '@' + version;
     if (detailsCache.has(key)) return detailsCache.get(key);
-    const r = await runClaude(['plugin', 'details', id], cwd, 20000);
-    if (!r.ok && !r.out) return {};
+    if (Date.now() - (detailsFail.get(key) || 0) < 60000) return {};
+    const r = await detLimited(() => runClaude(['plugin', 'details', id], cwd, 20000));
+    if (!r.ok && !r.out) { detailsFail.set(key, Date.now()); return {}; }
     const d = { skills: [], agents: 0, hooks: [], mcps: [], desc: '', alwaysOn: null, perItem: {} };
     let mode = '';
     for (const raw of r.out.split(/\r?\n/)) {

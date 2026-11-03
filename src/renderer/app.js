@@ -221,7 +221,7 @@ function showTab(tab) {
 let fitTimer = null;
 function fitActive() {
   if (fitTimer) return;
-  fitTimer = setTimeout(() => { fitTimer = null; fitNow(); }, 60);
+  fitTimer = setTimeout(() => { fitTimer = null; fitNow(); }, 150);
 }
 function fitNow() {
   const p = curProject();
@@ -611,9 +611,10 @@ setInterval(renderAct, 30000);
 function modal({ title, body = '', buttons = [['Cancelar', null], ['OK', 'ok', 'pri']], onOpen }) {
   return new Promise((resolve) => {
     const root = $('#modalRoot');
-    root.innerHTML = `<div class="modal"><div class="dlg glass"><h2>${title}</h2>${body}<div class="foot2">${buttons.map(([l, , c], i) => `<button class="btn ${c || ''}" data-mb="${i}">${l}</button>`).join('')}</div></div></div>`;
+    const prevFocus = document.activeElement;
+    root.innerHTML = `<div class="modal"><div class="dlg glass" role="dialog" aria-modal="true"><h2>${title}</h2>${body}<div class="foot2">${buttons.map(([l, , c], i) => `<button class="btn ${c || ''}" data-mb="${i}">${l}</button>`).join('')}</div></div></div>`;
     const collect = () => { const f = {}; root.querySelectorAll('[data-f]').forEach((i) => { f[i.dataset.f] = i.value; }); return f; };
-    const done = (v) => { const form = collect(); const picked = [...root.querySelectorAll('[data-sid]:checked')].map((i) => i.dataset.sid); root.innerHTML = ''; resolve({ value: v, form, picked }); fitActive(); };
+    const done = (v) => { const form = collect(); const picked = [...root.querySelectorAll('[data-sid]:checked')].map((i) => i.dataset.sid); root.innerHTML = ''; resolve({ value: v, form, picked }); fitActive(); try { if (prevFocus && prevFocus.isConnected && prevFocus.focus) prevFocus.focus(); } catch { /* sem foco para devolver */ } };
     root.querySelectorAll('[data-mb]').forEach((b) => { b.onclick = () => done(buttons[+b.dataset.mb][1]); });
     root.firstElementChild.onclick = (e) => { if (e.target === root.firstElementChild) done(null); };
     root.onkeydown = (e) => {
@@ -621,7 +622,9 @@ function modal({ title, body = '', buttons = [['Cancelar', null], ['OK', 'ok', '
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') done(buttons[buttons.length - 1][1]);
     };
     if (onOpen) onOpen(root);
-    const first = root.querySelector('input[type=text]'); if (first) { first.focus(); first.select(); }
+    const first = root.querySelector('input[type=text]');
+    if (first) { first.focus(); first.select(); }
+    else { const pb = root.querySelector('.foot2 .btn.pri') || root.querySelector('.foot2 .btn:last-child'); if (pb) pb.focus(); } // sem campo de texto: foco no botão principal (Escape/Enter não vazam para o terminal)
   });
 }
 
@@ -701,6 +704,7 @@ function patchUpdChip() {
   const b = el.querySelector('.ubar i'), t = el.querySelector('.upc');
   if (b) b.style.width = p + '%';
   if (t) t.textContent = p + '%';
+  topLast = '';
   return true;
 }
 
@@ -845,6 +849,7 @@ function mode() {
   return curTab(p) ? 'term' : 'noterm';
 }
 
+let topLast = ''; // último HTML do cabeçalho (TASK-072)
 function renderTop() {
   const L = UI.limits;
   const lim = (lbl, d) => `<div class="lim"><span class="lb">${lbl}</span>${liveWin(d) ? `${barHTML(d.pct, 78)}<b class="${pctClass(d.pct)}">${Math.round(d.pct)}%</b><span class="rn" title="Renova em ${fmtReset(d.resets)}">${ic('clock', 12)}${fmtReset(d.resets)}</span>` : `${barHTML(0, 78)}<span class="na">indisponível</span>`}</div>`;
@@ -854,7 +859,7 @@ function renderTop() {
   const maxIcon = UI.maxed
     ? '<rect x="7" y="9" width="10" height="10" rx="1.5"/><path d="M9.5 9V7a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 18.5 7v6A1.5 1.5 0 0 1 17 14.5h-2"/>'
     : '<rect x="5.5" y="5.5" width="13" height="13" rx="1.8"/>';
-  $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix<span class="ver" title="Versão instalada do Termix">${APP_VER ? 'v' + esc(APP_VER) : ''}</span></div><span class="sp"></span>
+  const topHtml = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix<span class="ver" title="Versão instalada do Termix">${APP_VER ? 'v' + esc(APP_VER) : ''}</span></div><span class="sp"></span>
     ${railCfg().on ? '' : `<div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>`}
     <span class="sp"></span>
     ${updChipHTML()}
@@ -864,6 +869,7 @@ function renderTop() {
       <button data-win="max" title="${UI.maxed ? 'Restaurar' : 'Maximizar'}"><svg class="i" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">${maxIcon}</svg></button>
       <button class="close" data-win="close" title="Fechar">${ic('x', 16)}</button>
     </div>`;
+  if (topHtml !== topLast) { topLast = topHtml; $('#topbar').innerHTML = topHtml; }
 }
 
 // dica de nome dos ícones da barra lateral recolhida (TASK-067)
@@ -941,7 +947,7 @@ function renderTabs() {
   $('#sess').style.setProperty('--tc', cur.color);
   $('#sess').classList.toggle('working', st === 'work');
   $('#tabsRow').classList.toggle('working', st === 'work');
-  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="Clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
+  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="${esc(t.name)} · ${STATES[stOf(t)][1]} — clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
     + `<button class="plus" data-newtab="${chatNewKey()}" title="${chatCfg().mode === 'chat' ? 'Novo chat (Claude Code)' : 'Novo terminal (Claude Code)'}">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
     <span class="sp"></span>
     <div class="tctl">
@@ -1631,7 +1637,7 @@ async function closedListFlow() {
     body: list.length ? `<p>As conversas continuam guardadas. Reabrir retoma a conversa exata.</p>${list.map((t) => `<div class="lrow"><i class="cdot" style="background:${t.color}"></i><span class="nm">${esc(t.name)}</span><button class="btn sm" data-reopen="${t.id}">Reabrir</button><button class="btn sm" data-archive-tab="${t.id}">Arquivar</button></div>`).join('')}` : '<p>Nenhuma sessão fechada.</p>',
     buttons: [['Fechar', null]],
     onOpen: (root) => {
-      root.addEventListener('click', (e) => {
+      (root.querySelector('.dlg') || root).addEventListener('click', (e) => {
         const ro = e.target.closest('[data-reopen]'), ar = e.target.closest('[data-archive-tab]');
         if (ro) { const t = p.tabs.find((x) => x.id === ro.dataset.reopen); t.open = true; p.activeTab = t.id; save(); root.innerHTML = ''; renderAll(); restartTab(p, t); }
         if (ar) { p.tabs.find((x) => x.id === ar.dataset.archiveTab).archived = true; save(); root.innerHTML = ''; renderAll(); }
@@ -1882,7 +1888,6 @@ document.addEventListener('input', (e) => {
   e.target.style.setProperty('--pct', `${(+e.target.value - 50) * 2}%`);
   $('#opv').textContent = `${e.target.value}%`;
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
-  for (const r of Object.values(RT)) r.term.options.theme = termTheme();
   save();
 });
 

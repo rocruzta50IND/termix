@@ -275,7 +275,8 @@ function chatMark(c, it) { // desenha o item em andamento no máximo uma vez por
   c.dirty.add(it);
   if (c.q) return;
   c.q = true;
-  requestAnimationFrame(() => { c.q = false; for (const x of c.dirty) chatPaintItem(x); c.dirty.clear(); chatScroll(c); });
+  const wait = Math.max(0, 110 - (performance.now() - (c.lp || 0)));
+  setTimeout(() => requestAnimationFrame(() => { c.q = false; c.lp = performance.now(); for (const x of c.dirty) chatPaintItem(x); c.dirty.clear(); chatScroll(c); }), wait);
 }
 function chatRenderAll(c) {
   [...c.thread.children].forEach((el) => { if (el !== c.typing) el.remove(); });

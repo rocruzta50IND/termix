@@ -34,7 +34,8 @@ try { raw = fs.readFileSync(0, 'utf8'); } catch { /* sem entrada */ }
         // Claude Code >= 2.1.251 envia prompt_cache; nas versões antigas estima pelo arquivo da conversa
         prompt_cache: j.prompt_cache || cacheFromTranscript(j.transcript_path),
       };
-      fs.writeFileSync(file, JSON.stringify(slim));
+      fs.writeFileSync(file + '.tmp', JSON.stringify(slim));
+      fs.renameSync(file + '.tmp', file);
     }
   } catch { /* não atrapalha a status line */ }
 

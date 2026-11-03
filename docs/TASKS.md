@@ -15,8 +15,12 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Prioridade:** Alta — pedido do usuário em 2026-11-03: "rode uma task longa de auditoria de performance e UX, pelo app inteiro, um teste completo… para o 0.3.0"; a publicação da 0.3.0 espera o usuário confirmar a atualização 0.2.8 → 0.2.9 (teste da barrinha).
 - **Origem adicional:** a atualização 0.2.6 → 0.2.8 (caminho antigo) levou **16 minutos** na máquina do usuário (a medição anterior dava ~1 min); investigar junto.
 - **Plano:** (1) medir em instância isolada e com carga (vários projetos e abas): tempo de abertura, memória, CPU parada, trabalho de renderização, intervalos e leituras de disco periódicas; (2) revisão estática do processo principal e da interface atrás de gargalos e vazamentos; (3) percurso de UX por todas as telas (barra lateral, abas, chat, terminal, Web, Plugins/Skills/MCPs, Consumo, Configurações, atualização): textos, estados vazios e de erro, teclado, foco, contraste, tamanhos; (4) corrigir o que for seguro e de alto valor, registrar o resto no Backlog; (5) testar tudo por CDP; (6) versão 0.3.0, promoção e publicação.
-- **Feito até agora:** (preencher)
-- **Próximo passo:** (preencher)
+- **Medido (instância isolada, sem carga e com 4 projetos × 2 abas reais do Claude Code):** abertura da janela em 1,4 s; vazio: 402 MB e ~3 % de CPU; com 8 abas: 573 MB e ~8 % de CPU (parado); troca de aba 35–78 ms; rajada de 20 mil linhas no terminal em ~100 ms sem tarefa longa. O app em si é leve; o peso está nos processos do Claude Code.
+- **Achado importante (a "espera de 16 minutos"):** a janelinha "Atualizando…" do caminho antigo não sabia que o app já tinha voltado (dependia de achar a janela do Termix) e ficou na tela até o limite de tempo; era isso que parecia 16 minutos (a troca em si levou 5 s: `termix-apply-update.log`). **Corrigido:** o app grava uma marca ao terminar de abrir e o auxiliar fecha ao vê-la (testado: fecha em ~1 s); e a janelinha já não é lançada no fluxo novo (TASK-071).
+- **Auditoria (2 revisões de código lendo todos os arquivos + medições):** ~60 achados. **Corrigidos nesta tarefa:** erro não capturado no processo principal vai para `erros.log` em vez de derrubar o app; escrever num terminal/chat que acabou de fechar não lança mais exceção; gravação atômica (arquivo temporário + rename) nos encaminhadores de métricas e de hooks, e o app só marca como lido depois de ler com sucesso (antes um arquivo gravado pela metade perdia a atualização, p. ex. o "terminou" de uma aba); limpeza ao abrir das métricas/hooks com mais de 7 dias; recarrega a interface se ela morrer; cache do caminho do Claude Code e do Node; salvar o estado sem indentação e sem falhar quando o antivírus segura o arquivo; cache por data/tamanho dos JSON e frontmatters da varredura de Plugins/Skills/MCPs e no máximo 3 `claude plugin details` ao mesmo tempo; o cabeçalho deixou de ser refeito a cada métrica (0 mutações em 10 s com 8 abas; antes engolia cliques e dicas, inclusive no "Reiniciar agora"); opacidade do terminal sem reaplicar o tema em todas as abas; ajuste do terminal em rajada limitado a ~6/s; Markdown do chat em andamento refeito no máximo a cada ~110 ms; modal com foco no botão principal, Escape, papel de diálogo e foco devolvido ao fechar; listener de "Sessões fechadas" não se acumula mais; dica da aba com nome e estado; erro do chat copiável; texto discreto (--text3) mais claro (contraste).
+- **Testado:** `npm run check`; instância isolada com 8 abas reais (cabeçalho 0 mutações/10 s, modal com foco/Escape, troca de aba ~40 ms, `erros.log` vazio), varredura de recursos (9–16 ms), simulação da troca com o auxiliar (marca detectada em ~1 s). Não testado: Enter no botão do modal por CDP (a ferramenta não envia o caractere; no navegador o botão focado confirma com Enter).
+- **O que ficou fora (virou Backlog, TASK-073 a 078):** acessibilidade e alvos de clique, chat com histórico longo, abertura mais rápida, hooks mais leves, varreduras de disco/IPC e polimento de UX. Atalhos de teclado, busca e links no terminal foram anexados à TASK-009.
+- **Próximo passo:** quando o usuário confirmar a atualização 0.2.8 → 0.2.9 (barrinha), subir a versão 0.3.0, promover e publicar.
 
 ### TASK-068 — Publicar a versão 0.2.6
 
@@ -200,6 +204,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ### TASK-009 — Atalhos de teclado, busca no terminal e paleta de comandos
 
+- **Acrescentado pela auditoria da TASK-072:** hoje só existem Ctrl+`, Ctrl+L (na Web) e Escape. Faltam próxima/anterior aba (Ctrl+Tab), Alt+1..9, nova aba e fechar aba (sem colidir com o shell dentro do xterm); busca (`@xterm/addon-search`) e links clicáveis (`@xterm/addon-web-links`) no terminal.
 - **Responsável:** A definir
 - **Status:** BACKLOG
 - **Prioridade:** Média
@@ -211,6 +216,48 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Status:** BACKLOG
 - **Prioridade:** Média
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
+
+### TASK-073 — Acessibilidade e alvos de clique (da auditoria da TASK-072)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Média
+- **Objetivo:** alvos de 28–30 px nos controles mais usados (rodapé Terminais/Web/Clear/Reiniciar/engrenagem: 26 px; fechar aba: 22 px e invisível até o hover; cores da aba: 20 px); o fechar da aba virar `<button>` irmão focável por teclado, com `aria-label`; `.pm` do projeto visível com foco (`:focus-within`); estado da aba também em texto/`aria-label` (hoje só a cor do ponto); `title` do Clear desabilitado com o motivo.
+
+### TASK-074 — Chat: histórico longo, imagens e feedback (da auditoria da TASK-072)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Média
+- **Objetivo:** renderizar só os últimos 60–100 itens do histórico (botão "Mostrar anteriores") ou `content-visibility:auto`; liberar/reduzir imagens coladas depois do envio (hoje ficam na memória); estado "Carregando conversa…" e erro em `chat:history` (hoje mostra "Nova conversa" por engano); a mensagem aparecer e o "pensando" começar antes do spawn do processo (e devolver o texto à caixa se falhar); botão "ir para o fim" ao rolar para cima durante a resposta; avaliar renomear a permissão "Perguntar" (só aceita edições; o resto é negado) — decisão de produto.
+
+### TASK-075 — Abertura mais rápida e restauração das abas (da auditoria da TASK-072)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Média
+- **Objetivo:** liberar a interface assim que a aba ativa subir (as outras restauram por trás; hoje o splash espera todas, 4–8 s com 10+ abas; decisão de design a rever); criar o PTY já no tamanho real do terminal (hoje nasce em 80×24 e é redimensionado); `folderExists` em paralelo; carregar o `node-pty` e o dock da Web sob demanda; migração do Vitra copiar só `state.json`, o backup e `metrics` (hoje copia os caches do Chromium); reaproveitar a leitura do `state.json` do `createWindow`.
+
+### TASK-076 — Hooks e status line mais leves (da auditoria da TASK-072)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Média (envolve decisão de produto)
+- **Objetivo:** o hook `PostToolUse` é síncrono (o Claude Code espera) e interpreta o JSON inteiro da resposta da ferramenta, que pode ter MBs; sem Node no PATH cada chamada sobe um Electron inteiro (~150–400 ms). Opções: passar o evento como argumento e gravar só `{t,event}`, verificar `"async": true` nesse hook, ou tirar o `PostToolUse` se só serve para limpar "atenção"; guardar o comando original da status line por aba (em vez de ler 3 `settings.json` a cada atualização).
+
+### TASK-077 — Varreduras de disco e IPC (da auditoria da TASK-072)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Baixa/Média
+- **Objetivo:** trocar os 3 temporizadores (0,3 s, 0,3 s e 1,5 s) por um `fs.watch` da pasta de métricas; `sessions:scan` e `chat:history` assíncronos, com pré-filtro antes do `JSON.parse` e cache por data/tamanho (hoje até ~0,3–1 s de main travado com ~200 conversas); `git:branch` com cache de 5 s; no máximo 2–3 contextos WebGL (trocar de aba recria o contexto); `web:snapshot` em JPEG; `pty:data` com controle de fluxo; `claude mcp list` com `taskkill /T` no timeout (deixa processos órfãos); `claudeJsonEdit` com espera assíncrona.
+
+### TASK-078 — Polimento de UX (da auditoria da TASK-072)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG
+- **Prioridade:** Baixa
+- **Objetivo:** confirmar uma vez (com a contagem) em "Fechar outras guias/à direita" e "Restaurar padrões"; toast também para erros que não são de aba (hoje só o selo do sino); alternar "Sim/Não" das Configurações sem refazer a página (perde o foco); roxo remanescente (cursor e seleção do terminal, cor padrão de evento, palavras-chave do chat) contra a regra "sem roxo" do DESIGN; vocabulário único ("aba" × "guia" × "sessão"; traduzir "Rail" e "Dangerously"); "Nenhum(a) skill encontrado(a)"; esconder as colunas Tokens/Custo "indisponível" da página Consumo; `backdrop-filter` do modal sobre terminais.
 
 ## Concluídas
 

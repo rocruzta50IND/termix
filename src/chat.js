@@ -24,6 +24,7 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
     try {
       child = spawn(isCmd ? 'cmd.exe' : claude, isCmd ? ['/c', claude, ...args] : args, { cwd, env: sessionEnv(tabId), windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) { return { ok: false, error: String((err && err.message) || err) }; }
+    child.stdin.on('error', () => { /* o processo encerrou no meio da escrita */ });
     const rec = { child, killed: false, err: '' };
     procs.set(tabId, rec);
     // junta os eventos em lotes (~16 ms): o texto chega em dezenas de pedaços por segundo

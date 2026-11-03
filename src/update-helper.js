@@ -7,6 +7,7 @@ const path = require('path');
 
 const SCRIPT_SRC = path.join(__dirname, 'update-helper.ps1');
 const SCRIPT_TMP = path.join(os.tmpdir(), 'termix-updating.ps1'); // roda de uma cópia: o instalador vai trocar os arquivos da pasta do app
+const FLAG = path.join(os.tmpdir(), 'termix-started.json'); // o app grava aqui quando termina de abrir
 const TIMELINE = path.join(os.tmpdir(), 'termix-updating.json'); // o auxiliar grava aqui quando o app fechou e quando voltou
 
 function startUpdateHelper({ version = '', parentPid = process.pid, processName = path.basename(process.execPath, '.exe'), timeoutSec = 600, shot = '' } = {}) {
@@ -16,7 +17,7 @@ function startUpdateHelper({ version = '', parentPid = process.pid, processName 
     // o PowerShell 5.1 só lê acentos certos se o arquivo tiver BOM
     fs.writeFileSync(SCRIPT_TMP, '﻿' + fs.readFileSync(SCRIPT_SRC, 'utf8').replace(/^﻿/, ''), 'utf8');
     const args = ['-NoProfile', '-NonInteractive', '-STA', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', SCRIPT_TMP,
-      '-ParentPid', String(parentPid), '-Version', String(version), '-ProcessName', processName, '-TimeoutSec', String(timeoutSec), '-Timeline', TIMELINE];
+      '-ParentPid', String(parentPid), '-Version', String(version), '-ProcessName', processName, '-TimeoutSec', String(timeoutSec), '-Timeline', TIMELINE, '-Flag', FLAG];
     if (shot) args.push('-Shot', shot);
     // O instalador encerra o Termix.exe com `taskkill /T`, que leva junto todos os processos FILHOS dele: um auxiliar filho do Termix morria
     // na hora (foi o que escondeu a janelinha). Por isso o auxiliar é lançado por um cmd.exe intermediário (`start`) que sai logo em seguida: o

@@ -17,6 +17,8 @@ try { raw = fs.readFileSync(0, 'utf8'); } catch { /* sem entrada */ }
     fs.mkdirSync(dir, { recursive: true });
     const out = { t: Date.now(), event, session_id: j.session_id, source: j.source, notification_type: j.notification_type, message: j.message,
       last: typeof j.last_assistant_message === 'string' ? j.last_assistant_message.slice(0, 600) : undefined }; // texto final do agente (Stop), para o aviso mostrar o que foi feito
-    fs.writeFileSync(path.join(dir, `hook-${id}.json`), JSON.stringify(out));
+    const hf = path.join(dir, `hook-${id}.json`);
+    fs.writeFileSync(hf + '.tmp', JSON.stringify(out));
+    fs.renameSync(hf + '.tmp', hf);
   } catch { /* silencioso */ }
 }

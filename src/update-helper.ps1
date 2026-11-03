@@ -10,6 +10,7 @@ param(
   [string]$ProcessName = 'Termix',
   [int]$TimeoutSec = 600,
   [string]$Timeline = '',
+  [string]$Flag = '',
   [string]$Shot = ''
 )
 $ErrorActionPreference = 'SilentlyContinue'
@@ -135,6 +136,11 @@ function Get-InstallerBusy {
 }
 function Get-BackAt {
   try {
+    # marca gravada pelo app novo quando termina de abrir (mais confiável que procurar a janela)
+    if ($Flag -and (Test-Path -LiteralPath $Flag)) {
+      $v = [long]((Get-Content -LiteralPath $Flag -Raw) -replace '\D', '')
+      if ($v -ge $script:closedMs) { return $true }
+    }
     $p = Get-Process -Name $ProcessName -ErrorAction SilentlyContinue | Where-Object { $_.StartTime -gt $t0 -and $_.MainWindowHandle -ne [IntPtr]::Zero }
     return [bool]$p
   } catch { return $false }
