@@ -10,6 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **Versão 0.3.5** (DEV1)
 
+- Release **v0.3.5** publicado no GitHub (instalador, blockmap e latest.yml conferidos; promoção dev1 → main `ab029da`).
 - A pedido do usuário, publica as TASK-090 (pasta dos projetos), 091 (anéis 5H/7D e barra recolhida), 092 (dica do sino) e 093 (janela em tela pequena), validadas por CDP por delegação do usuário, e o guia de instalação com o Smart App Control. O MVP só será declarado depois de validar a instalação em outra máquina pelo guia do GitHub.
 
 **Smart App Control: guia de desligamento** (DEV1)

@@ -11,11 +11,12 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-094 — Publicar a versão 0.3.5
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (Release publicado; faltam a atualização 0.3.4 → 0.3.5 no app do usuário e a instalação em outra máquina pelo guia)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-03: "pode subir a nova versão" (o usuário delegou a avaliação das TASK-090, 092 e 093 e pediu publicar, para o time seguir o `docs/INSTALACAO.md` que fica no GitHub).
 - **Entra nesta versão:** anéis 5H/7D certos no chat e sub-abas da barra recolhida só do projeto em foco (TASK-091), projetos novos no disco com mais espaço e escolha da pasta (TASK-090), dica de notificação dentro do cabeçalho (TASK-092), janela que respeita a tela pequena (TASK-093); documentação: guia de instalação com o passo a passo do Smart App Control.
 - **Passos:** versão 0.3.5; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml`; `gh release create v0.3.5`.
-- **Próximo passo:** ver o registro de publicação abaixo e, depois, a validação da instalação em **outra máquina** seguindo o guia do GitHub: só então o MVP (TASK-083) é declarado.
+- **Feito:** versão 0.3.5; promoção dev1 → main (`ab029da`, fast-forward); `npm run dist`; `latest.yml` conferido (versão, tamanho 125.193.450 e sha512 batem com o instalador); Release **v0.3.5** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.3.5) com instalador, blockmap e `latest.yml`; conferido que o feed público já mostra a 0.3.5, que o `docs/INSTALACAO.md` está na `main` do repositório público e que o pacote traz as mudanças (`workArea`, `biggestDriveRoot`).
+- **Próximo passo:** o usuário atualiza o app (0.3.4 → 0.3.5) e, depois, a validação da instalação em **outra máquina** seguindo o guia do GitHub: só então o MVP (TASK-083) é declarado.
 
 ### TASK-093 — Janela maior que a tela pequena (item B da TASK-083)
 
