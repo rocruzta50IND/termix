@@ -94,15 +94,24 @@ body.maxed .shadow{filter:none}
 .side{position:absolute;left:0;top:var(--head,46px);bottom:12px;display:flex;flex-direction:column;padding:6px 10px 8px;overflow:hidden}
 /* faixas da barra (TASK-080): cabeçalho e rodapé parados, só a lista de projetos rola */
 .sscroll{flex:1;min-height:0;overflow-x:hidden;overflow-y:auto;display:flex;flex-direction:column}
+.sscroll{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%)} /* esmaece o corte da lista no topo e na base */
 .sfoot{flex:none}
+/* "Novo projeto" fixo entre a lista e o rodapé (não rola junto com os projetos) */
+.sadd{flex:none;padding-top:4px}
+.side.mini .sadd{display:flex;justify-content:center;padding-top:2px}
 .label{font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);padding:10px 10px 6px;white-space:nowrap}
 .shead2{display:flex;align-items:center;justify-content:space-between;padding:0 0 2px 10px;min-height:34px}
 .shead2 .label{padding:0}
-.prow{display:flex;align-items:center}
-.ph{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:8px 10px;border-radius:12px;font-weight:600;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow{display:flex;align-items:center;position:relative}
+.ph{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:6px 10px;border-radius:12px;font-weight:600;text-align:left;white-space:nowrap}
+.pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* avatar do projeto na barra aberta (mesma letra e degradê da recolhida) */
+.pav{width:26px;height:26px;border-radius:9px;background:linear-gradient(135deg,var(--c1),var(--c2));font-weight:700;font-size:12px;color:#0b0818;display:grid;place-items:center;position:relative;flex:none}
+.pav .st{position:absolute;right:-3px;bottom:-3px;width:9px;height:9px;border-radius:50%;border:2px solid #0b0818;box-sizing:border-box}
 .ph:hover{background:var(--glass)}
-.pm{width:28px;height:28px;border-radius:9px;color:var(--text3);opacity:0}
-.prow:hover .pm{opacity:1}.pm:hover{background:var(--glass);color:var(--text)}
+.pm{position:absolute;right:26px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:9px;color:var(--text2);opacity:0;background:var(--glass2)} /* sobrepõe o fim da linha só no hover; mesma cor clara com o mouse na linha ou no botão */
+.prow:hover .pm{opacity:1}
+.prow:hover .pn{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 48px),transparent calc(100% - 24px));mask-image:linear-gradient(to right,#000 calc(100% - 48px),transparent calc(100% - 24px))} /* o nome esmaece sob o botão */
 .chev{transition:transform .2s;color:var(--text3);font-size:10px}
 .proj.open .chev{transform:rotate(90deg)}
 /* subtelas: abrem e fecham com a mesma animação na barra aberta e na recolhida */
@@ -116,7 +125,9 @@ body.maxed .shadow{filter:none}
 .item.active{background:var(--glass2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border2)}
 .item .cnt{margin-left:auto;font-size:11px;color:var(--text3);background:rgba(255,255,255,.08);padding:1px 7px;border-radius:99px}
 .ico{width:16px;text-align:center;opacity:.9;flex:none}
-.newproj{border:1px dashed var(--border2);border-radius:12px;padding:8px;color:var(--text2);text-align:center;margin:8px 0 0;white-space:nowrap}
+/* "+ Novo projeto": discreto, sem caixa tracejada (aparece só ao passar o mouse) */
+.newproj{display:flex;align-items:center;gap:10px;width:100%;margin:2px 0 0;padding:8px 10px;border-radius:12px;color:var(--text3);text-align:left;white-space:nowrap;flex:none}
+.newproj svg{flex:none;margin:0 6px 0 5px}
 .newproj:hover{color:var(--text);background:var(--glass)}
 /* recolhida: só ícones */
 .side.mini{align-items:center;gap:6px;padding:12px 0 10px}
@@ -129,7 +140,7 @@ body.maxed .shadow{filter:none}
 .side.mini .sscroll::-webkit-scrollbar{display:none}
 .pg{display:flex;flex-direction:column;align-items:center;flex:none}
 .tray{display:flex;flex-direction:column;align-items:center;gap:4px;margin:8px 0 2px;padding:5px 4px;border-radius:15px;background:rgba(255,255,255,.05);border:1px solid var(--border)}
-.ci.add{border:1px dashed var(--border2)}
+.ci.add{border:1px dashed rgba(255,255,255,.14);color:var(--text3)}.ci.add:hover{border-color:var(--border2)}
 .av{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--c1),var(--c2));font-weight:700;font-size:16px;position:relative;display:grid;place-items:center;color:#0b0818;transition:.2s;flex:none}
 .av:hover{transform:translateY(-1px)}
 .av.active{box-shadow:0 0 0 2px rgba(255,255,255,.55),0 6px 20px var(--c1)}

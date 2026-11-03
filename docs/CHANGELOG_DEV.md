@@ -14,6 +14,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Barra aberta e recolhida usam o mesmo estado (`open` por projeto) e o mesmo clique: no projeto atual mostra/esconde as subtelas (mesma animação); em outro projeto vai até ele e abre. Na recolhida as subtelas ficam numa bandeja de vidro sob o avatar. Corrigido: clicar num projeto fechado que não era o atual o fechava ao navegar.
 - Testado em instância isolada com 17 projetos (CDP). Categoria Workflow registrada como ideia pós-MVP (TASK-085), sem código.
 - Arquivos: `renderer/app.js`, `renderer/styles.css`; docs `DESIGN.md`, `DECISOES.md`, `TASKS.md`.
+- Ajustes após a primeira versão: avatar colorido de cada projeto também na barra aberta (letra, degradê e ponto de estado); "Novo projeto" discreto e **fixo** (fora da rolagem, nos dois modos); lista esmaece nas bordas; botão "⋯" do projeto numa cor única clara, com o nome esmaecendo sob ele.
 **TASK-084 — Tela Consumo totalmente funcional** (DEV1)
 
 - Tokens e custo equivalente reais por sessão, por projeto e no total geral, lidos das conversas do Claude Code (`~/.claude/projects`), com leitura incremental em segundo plano e cache (1ª leitura ~2 s para 1,6 GB; as seguintes ~14 ms). Nada mais aparece como "indisponível" por falta de implementação.

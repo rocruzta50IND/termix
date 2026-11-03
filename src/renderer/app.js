@@ -897,6 +897,13 @@ const subsOf = (p, mini, isCur) => (mini
   ? SUBS.map(([n, i]) => `<button class="ci sub ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}" data-tip="${n}">${ic(i, 17)}</button>`).join('')
   : SUBS.map(([n, i]) => `<button class="item ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}"><span class="ico">${ic(i, 17)}</span>${n}${n === 'Terminais' && openTabs(p).length ? `<span class="cnt ${openTabs(p).some((t) => RT[t.id] && RT[t.id].unread) ? 'att' : ''}">${openTabs(p).length}</span>` : ''}</button>`).join(''));
 
+// cor do ponto de estado do projeto (sinal novo > trabalhando > aguardando) e letra do avatar: iguais na barra aberta e na recolhida
+function projDot(p) {
+  const ts = openTabs(p);
+  return ts.some((t) => RT[t.id] && RT[t.id].unread) ? 'var(--warn)' : ts.some((t) => stOf(t) === 'work') ? 'var(--work)' : ts.some((t) => stOf(t) === 'wait') ? 'var(--ok)' : '';
+}
+const projLetter = (p) => esc(p.name.trim()[0] ? p.name.trim()[0].toUpperCase() : '?');
+
 function renderSide() {
   hideSideTip(); // a barra é redesenhada: o ícone sobre o qual estava o mouse pode ter saído
   const col = S.settings.sideCollapsed;
@@ -912,23 +919,21 @@ function renderSide() {
     const list = ps.map((p) => {
       const g = GRADS[(p.g || 0) % GRADS.length];
       const n = openTabs(p).length;
-      const work = openTabs(p).some((t) => stOf(t) === 'work');
-      const wait = openTabs(p).some((t) => stOf(t) === 'wait');
-      const att = openTabs(p).some((t) => RT[t.id] && RT[t.id].unread);
-      const dotc = att ? 'var(--warn)' : work ? 'var(--work)' : wait ? 'var(--ok)' : '';
-      const letter = esc(p.name.trim()[0] ? p.name.trim()[0].toUpperCase() : '?');
+      const dotc = projDot(p), letter = projLetter(p);
       return `<div class="pg ${p.open !== false ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
         <div class="subs"><div class="subs-in"><div class="tray">${subsOf(p, true, isCur)}</div></div></div></div>`;
     }).join('');
     side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
-      <div class="sscroll">${list}<button class="ci add" data-newproj data-tip="Novo projeto">${ic('plus', 17)}</button></div>
+      <div class="sscroll">${list}</div>
+      <div class="sadd"><button class="ci add" data-newproj data-tip="Novo projeto">${ic('plus', 17)}</button></div>
       <div class="sfoot"><span class="rsep"></span>${GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('')}</div>`;
   } else {
     side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
       <div class="sscroll">${ps.map((p) => `<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
-        <div class="prow"><button class="ph" data-ph="${p.id}"><span class="chev">${ic('chevr', 12)}</span>${esc(p.name)}</button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
+        <div class="prow"><button class="ph" data-ph="${p.id}"><span class="pav" style="--c1:${GRADS[(p.g || 0) % GRADS.length][0]};--c2:${GRADS[(p.g || 0) % GRADS.length][1]}">${projLetter(p)}${projDot(p) ? `<span class="st" style="background:${projDot(p)}"></span>` : ''}</span><span class="pn">${esc(p.name)}</span><span class="chev">${ic('chevr', 12)}</span></button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
         <div class="subs"><div class="subs-in"><div class="subs-pad">${subsOf(p, false, isCur)}</div></div></div></div>`).join('')}
-        <button class="newproj" data-newproj>+ Novo projeto</button></div>
+      </div>
+      <div class="sadd"><button class="newproj" data-newproj>${ic('plus', 14)}<span>Novo projeto</span></button></div>
       <div class="sfoot"><div class="label">Geral</div>
       ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${gIc(i, 17)}</span>${n}</button>`).join('')}</div>`;
   }

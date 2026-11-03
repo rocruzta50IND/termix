@@ -42,7 +42,7 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 
 ## Barra lateral (TASK-080)
 - O estado aberto/fechado das subtelas é **por projeto** (`open`) e **vale igual na barra aberta e na recolhida**. Clicar no projeto atual mostra/esconde as subtelas; clicar em outro projeto vai até ele (Terminais) e as deixa abertas.
-- Só a lista de projetos rola; o cabeçalho e o rodapé "Geral" ficam parados.
+- Só a lista de projetos rola; o cabeçalho, o "+ Novo projeto" e o rodapé "Geral" ficam parados.
 - Nova categoria **Workflow**: ideia a validar (TASK-085, pós-MVP); nada implementado.
 
 ## Consumo e limites
