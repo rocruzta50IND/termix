@@ -141,6 +141,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Validadas em DEV1
 
+### TASK-080 — Barra lateral: rolar só os projetos e mesmo efeito aberta/recolhida
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-03 para subir; ele confere no app depois)
+- **Prioridade:** Média (visual/UX) — pedido do usuário em 2026-11-03, com duas capturas: (1) com muitos projetos a barra inteira rola e empurra o cabeçalho e o rodapé; (2) na barra recolhida as subtelas (Terminais, Plugins, Skills, MCPs) não escondem ao clicar no ícone do projeto, ao contrário da aberta; "o efeito tem que ser o mesmo para os dois". Pediu também uma forma melhor de organizar a barra sem quebrar o layout.
+- **Feito até agora (2026-11-03):** (1) a barra virou **três faixas**: cabeçalho parado (alternar barra / "Projetos"), **lista de projetos com rolagem própria** (`.sscroll`; o "+ Novo projeto" fica no fim da lista) e rodapé "Geral" parado (Consumo, Integrações, Configurações); a rolagem não volta ao topo a cada redesenho, zera ao trocar de modo e o projeto atual é trazido para a vista quando muda. (2) **Mesmo estado e mesmo clique nas duas barras** (`p.open` + `projClick`): clicar em outro projeto vai até ele e abre as subtelas; clicar no projeto atual mostra/esconde as subtelas, com a **mesma animação** (grade 0fr→1fr, 0,2 s, desligada em "reduzir movimento"), trocando a classe no lugar. (3) Na recolhida, as subtelas de cada projeto aberto ficam numa **bandeja de vidro** logo abaixo do avatar (agrupa visualmente e deixa claro de quem são); antes só o projeto atual mostrava subtelas, soltas. (4) Corrigido de passagem: clicar num projeto fechado que não era o atual o fechava ao navegar.
+- **Decisões:** o estado aberto/fechado vale por projeto e é o mesmo nas duas barras (projetos já salvos como abertos aparecem abertos também na recolhida; a lista rola, então não estoura); "+ Novo projeto" fica dentro da lista (preserva o desenho original), com a barra rolável sempre dá para chegar nele.
+- **Arquivos tocados:** `src/renderer/app.js` (`renderSide`, `subsOf`, `projClick`, clique `data-ph`/`data-pt`), `src/renderer/styles.css`, `docs/DESIGN.md`, `docs/DECISOES.md`, `docs/TASKS.md`.
+- **Como validar:** `npm run check`; no app, com vários projetos: rolar a lista (cabeçalho e Geral não se mexem), recolher/abrir a barra, clicar no projeto atual nas duas barras (esconde/mostra as subtelas igual) e em outro projeto (vai até ele). Teste feito em instância isolada com 17 projetos (CDP): rolagem só da lista, rodapé fixo, clique alternando 145 px ↔ 0 nas duas barras, avatar ativo com anel e brilho sem corte.
+- **Pendências:** testar janela baixa e DPI alto (TASK-083, item B); decidir depois se o "+ Novo projeto" deve ficar fixo no rodapé da lista; reservar o lugar da categoria **Workflow** (TASK-085).
+- **Próximo passo:** o usuário confere no app; ajustes viram nova tarefa. Pendências de janela baixa e DPI alto seguem na TASK-083 (item B).
 ### TASK-084 — Tela Consumo totalmente funcional (entra no MVP, antes da auditoria da TASK-083)
 
 - **Responsável:** DEV1
@@ -184,6 +195,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-085 — Categoria "Workflow" na barra lateral (pós-MVP, validar a ideia)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG (pós-MVP) — ideia a validar, não implementar ainda
+- **Prioridade:** Baixa — pedido do usuário em 2026-11-03: "adicione uma categoria nova no appshell, Workflow, que iremos ver depois (task pós-MVP, validar a ideia desta função)".
+- **O que é:** uma nova categoria na barra lateral (aberta e recolhida) chamada **Workflow**. O conteúdo ainda não está definido: a primeira etapa é **conversar e validar a ideia** (para que serve, quem usa, se é por projeto ou geral, se encaixa no fluxo DEV1/DEV2 e nos agentes) antes de qualquer desenho ou código.
+- **Perguntas para a validação:** é uma tela por projeto (como Plugins/Skills/MCPs) ou geral (como Consumo)? Mostra o fluxo de tarefas (`docs/TASKS.md`), automações/rotinas, ou encadeia agentes? Precisa de dados novos ou só lê o que já existe? O que seria o MVP dela?
+- **Lugar reservado:** a organização da barra da TASK-080 já separa cabeçalho / lista de projetos / rodapé "Geral"; o Workflow entra como item de projeto (junto das subtelas) ou do rodapé conforme a resposta acima.
+- **Pronto quando:** a ideia estiver validada e registrada em `docs/DECISOES.md`, e então virar tarefa de implementação.
 ### TASK-026 — Registro de consumo e alertas de ritmo (derivado do guia de economia de tokens)
 
 - **Responsável:** A definir
@@ -323,13 +343,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Status:** BACKLOG
 - **Prioridade:** Baixa
 - **Objetivo:** confirmar uma vez (com a contagem) em "Fechar outras guias/à direita" e "Restaurar padrões"; toast também para erros que não são de aba (hoje só o selo do sino); alternar "Sim/Não" das Configurações sem refazer a página (perde o foco); roxo remanescente (cursor e seleção do terminal, cor padrão de evento, palavras-chave do chat) contra a regra "sem roxo" do DESIGN; vocabulário único ("aba" × "guia" × "sessão"; traduzir "Rail" e "Dangerously"); "Nenhum(a) skill encontrado(a)"; esconder as colunas Tokens/Custo "indisponível" da página Consumo; `backdrop-filter` do modal sobre terminais.
-
-### TASK-080 — Barra lateral: rolar só a lista de projetos (não a barra inteira)
-
-- **Responsável:** A definir
-- **Status:** BACKLOG
-- **Prioridade:** Média (visual/UX) — pedido do usuário em 2026-11-03, com captura: com muitos projetos, a barra lateral inteira rola para baixo; devem rolar **apenas os projetos**. **Entra depois da validação de performance/MVP.**
-- **Objetivo:** fixar o topo (alternar recolher, Terminais/Plugins/Skills/MCPs) e o rodapé (Novo projeto, Consumo, Integrações, Configurações) e deixar só a lista de projetos com rolagem própria (com a barra recolhida e aberta); testar com 20+ projetos e com a janela baixa.
 
 ### TASK-082 — Assinatura de código do instalador e do Termix.exe
 

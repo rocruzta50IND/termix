@@ -891,17 +891,25 @@ document.addEventListener('mouseleave', hideSideTip);
 document.addEventListener('mousedown', hideSideTip, true);
 document.addEventListener('scroll', hideSideTip, true);
 
+/* Barra lateral (TASK-080): três faixas. Cabeçalho e rodapé "Geral" ficam parados; só a lista de projetos (.sscroll) rola.
+   Aberta e recolhida usam o mesmo estado (p.open) e o mesmo clique: clicar no projeto mostra/esconde as subtelas dele. */
+const subsOf = (p, mini, isCur) => (mini
+  ? SUBS.map(([n, i]) => `<button class="ci sub ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}" data-tip="${n}">${ic(i, 17)}</button>`).join('')
+  : SUBS.map(([n, i]) => `<button class="item ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}"><span class="ico">${ic(i, 17)}</span>${n}${n === 'Terminais' && openTabs(p).length ? `<span class="cnt ${openTabs(p).some((t) => RT[t.id] && RT[t.id].unread) ? 'att' : ''}">${openTabs(p).length}</span>` : ''}</button>`).join(''));
+
 function renderSide() {
   hideSideTip(); // a barra é redesenhada: o ícone sobre o qual estava o mouse pode ter saído
   const col = S.settings.sideCollapsed;
   const side = $('#side');
+  const keep = side.querySelector('.sscroll'), same = side.dataset.mode === (col ? 'mini' : 'open');
+  const top = keep && same ? keep.scrollTop : 0; // a rolagem da lista não volta ao topo a cada redesenho (só ao trocar de modo)
+  side.dataset.mode = col ? 'mini' : 'open';
   side.classList.toggle('mini', col);
   const ps = visibleProjects();
-  const cp = curProject();
   const isCur = (p, n) => UI.cur.p === p && UI.cur.page === n;
   const toggle = `<button class="tbtn" data-togside title="${col ? 'Abrir' : 'Fechar'} barra lateral">${ic('panel', 19)}</button>`;
   if (col) {
-    side.innerHTML = toggle + `<span class="rsep"></span>` + ps.map((p) => {
+    const list = ps.map((p) => {
       const g = GRADS[(p.g || 0) % GRADS.length];
       const n = openTabs(p).length;
       const work = openTabs(p).some((t) => stOf(t) === 'work');
@@ -909,21 +917,36 @@ function renderSide() {
       const att = openTabs(p).some((t) => RT[t.id] && RT[t.id].unread);
       const dotc = att ? 'var(--warn)' : work ? 'var(--work)' : wait ? 'var(--ok)' : '';
       const letter = esc(p.name.trim()[0] ? p.name.trim()[0].toUpperCase() : '?');
-      return `<button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>`
-        + (cp && cp.id === p.id ? SUBS.map(([n, i]) => `<button class="ci sub ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}" data-tip="${n}">${ic(i, 17)}</button>`).join('') : '');
-    }).join('')
-      + `<button class="ci add" data-newproj data-tip="Novo projeto">${ic('plus', 17)}</button><span class="sp"></span><span class="rsep"></span>`
-      + GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('');
-    return;
+      return `<div class="pg ${p.open !== false ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
+        <div class="subs"><div class="subs-in"><div class="tray">${subsOf(p, true, isCur)}</div></div></div></div>`;
+    }).join('');
+    side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
+      <div class="sscroll">${list}<button class="ci add" data-newproj data-tip="Novo projeto">${ic('plus', 17)}</button></div>
+      <div class="sfoot"><span class="rsep"></span>${GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('')}</div>`;
+  } else {
+    side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
+      <div class="sscroll">${ps.map((p) => `<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
+        <div class="prow"><button class="ph" data-ph="${p.id}"><span class="chev">${ic('chevr', 12)}</span>${esc(p.name)}</button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
+        <div class="subs"><div class="subs-in"><div class="subs-pad">${subsOf(p, false, isCur)}</div></div></div></div>`).join('')}
+        <button class="newproj" data-newproj>+ Novo projeto</button></div>
+      <div class="sfoot"><div class="label">Geral</div>
+      ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${gIc(i, 17)}</span>${n}</button>`).join('')}</div>`;
   }
-  side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
-    ${ps.map((p) => `<div class="proj ${p.open !== false ? 'open' : ''}">
-      <div class="prow"><button class="ph" data-ph="${p.id}"><span class="chev">${ic('chevr', 12)}</span>${esc(p.name)}</button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
-      <div class="subs">${SUBS.map(([n, i]) => `<button class="item ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}"><span class="ico">${ic(i, 17)}</span>${n}${n === 'Terminais' && openTabs(p).length ? `<span class="cnt ${openTabs(p).some((t) => RT[t.id] && RT[t.id].unread) ? 'att' : ''}">${openTabs(p).length}</span>` : ''}</button>`).join('')}</div></div>`).join('')}
-    <button class="newproj" data-newproj>+ Novo projeto</button>
-    <span class="sp"></span>
-    <div class="label">Geral</div>
-    ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${gIc(i, 17)}</span>${n}</button>`).join('')}`;
+  const sc = side.querySelector('.sscroll'); if (sc) sc.scrollTop = top;
+  if (UI.sideCur !== UI.cur.p || !same) { // mudou de projeto (ou de modo): traz o projeto atual para a vista
+    UI.sideCur = UI.cur.p;
+    const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+// clique num projeto (nome na barra aberta ou avatar na recolhida): outro projeto = vai até ele e abre as subtelas; o projeto atual = mostra/esconde as subtelas (mesmo efeito nas duas barras)
+function projClick(id) {
+  const p = proj(id);
+  if (!p) return;
+  if (UI.cur.p !== p.id) { p.open = true; UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.res = null; save(); renderAll(); return; }
+  p.open = p.open === false; save();
+  const el = document.querySelector(`#side [data-pid="${p.id}"]`); // troca a classe no lugar (sem redesenhar) para a animação rodar
+  if (el) el.classList.toggle('open', p.open !== false); else renderSide();
 }
 
 // mede a aba ativa e deixa a barra sem o fundo escuro atrás dela (com as duas orelhas), para ela se fundir ao terminal
@@ -1920,12 +1943,8 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-bg]'))) { S.settings.bg = el.dataset.bg; save(); applyBg(); if (UI.cur.page === 'Configurações') renderPage(); return; }
   if ((el = q('[data-win]'))) { api.winCtl(el.dataset.win); return; }
   if (q('[data-togside]')) { S.settings.sideCollapsed = !S.settings.sideCollapsed; save(); renderSide(); tween('sideW', sideTarget()); return; }
-  if ((el = q('[data-ph]'))) {
-    const p = proj(el.dataset.ph);
-    p.open = p.open === false; save();
-    if (UI.cur.p !== p.id) { UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.res = null; renderAll(); } else renderSide();
-    return;
-  }
+  if ((el = q('[data-ph]'))) { projClick(el.dataset.ph); return; }
+  if ((el = q('[data-pt]'))) { projClick(el.dataset.pt); return; }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
   if ((el = q('[data-step]'))) { // botões − e + do campo numérico
     const box = el.closest('.numf'), inp = box.querySelector('input');
