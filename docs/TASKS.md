@@ -8,6 +8,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-072 — Auditoria completa de performance e UX do app (versão 0.3.0)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-03: "rode uma task longa de auditoria de performance e UX, pelo app inteiro, um teste completo… para o 0.3.0"; a publicação da 0.3.0 espera o usuário confirmar a atualização 0.2.8 → 0.2.9 (teste da barrinha).
+- **Origem adicional:** a atualização 0.2.6 → 0.2.8 (caminho antigo) levou **16 minutos** na máquina do usuário (a medição anterior dava ~1 min); investigar junto.
+- **Plano:** (1) medir em instância isolada e com carga (vários projetos e abas): tempo de abertura, memória, CPU parada, trabalho de renderização, intervalos e leituras de disco periódicas; (2) revisão estática do processo principal e da interface atrás de gargalos e vazamentos; (3) percurso de UX por todas as telas (barra lateral, abas, chat, terminal, Web, Plugins/Skills/MCPs, Consumo, Configurações, atualização): textos, estados vazios e de erro, teclado, foco, contraste, tamanhos; (4) corrigir o que for seguro e de alto valor, registrar o resto no Backlog; (5) testar tudo por CDP; (6) versão 0.3.0, promoção e publicação.
+- **Feito até agora:** (preencher)
+- **Próximo passo:** (preencher)
+
 ### TASK-068 — Publicar a versão 0.2.6
 
 - **Responsável:** DEV1
