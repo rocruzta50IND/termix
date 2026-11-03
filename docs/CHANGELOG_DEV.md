@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-066 e TASK-067 validadas; versão 0.2.6** (DEV1)
+
+- Aprovadas pelo usuário: janelinha da atualização fora da árvore do Termix, trava contra reabrir durante a instalação, ícones com o mesmo peso e dica de nome da barra recolhida inteira. Publicação na TASK-068.
+
 **TASK-067 — Dica de nome da barra lateral recolhida** (DEV1)
 
 - A dica aparecia cortada (uma lasca escura ao lado do ícone) e dava a impressão de ícones desalinhados; agora é uma pílula inteira, no estilo do app, centrada na linha do ícone. Testado com o mouse nos 10 ícones.

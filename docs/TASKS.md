@@ -8,6 +8,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-068 — Publicar a versão 0.2.6
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("suba a versão nova para eu atualizar o app")
+- **Objetivo:** publicar a 0.2.6 com as TASK-066 (janelinha fora da árvore do Termix, trava contra reabrir no meio da instalação, ícones) e TASK-067 (dica da barra recolhida).
+- **Passos:** versão 0.2.6; promoção dev1 → main; `npm run dist`; conferir o `latest.yml`; `gh release create v0.2.6`; o usuário atualiza (0.2.5 → 0.2.6).
+- **Feito até agora:** (preenchido ao publicar)
+- **Próximo passo (usuário):** atualizar 0.2.5 → 0.2.6 e dizer o que o aviso verde mostrou; depois, uma 0.2.7 para ver a janelinha nova.
+
 ### TASK-065 — Publicar a versão 0.2.5
 
 - **Responsável:** DEV1
@@ -34,24 +44,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
-### TASK-067 — Dica de nome dos ícones da barra lateral recolhida (aparecia cortada)
-
-- **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
-- **Prioridade:** Média (visual) — pedido do usuário em 2026-11-02, com captura: "tire esse indicador ou melhore ele para ficar condizente e alinhado com o app; ele dá a sensação dos ícones do app shell estarem desalinhados (apenas o que fica lá embaixo em Geral)".
-- **Causa:** a dica de nome (`::after` do `[data-tip]`) nascia **dentro** da barra lateral, que tem `overflow: hidden`: só aparecia uma lasca escura ao lado do ícone (o "indicador" da captura), que parecia uma peça solta e fazia os ícones parecerem fora de linha.
-- **Feito:** `src/renderer/app.js` (`showSideTip`/`hideSideTip`) e `src/renderer/styles.css` (`#sidetip`): a dica agora é um elemento fixo **fora da barra** (nunca cortado), no estilo do app (fundo escuro, borda, cantos de 11 px, sombra suave), 10 px à direita do ícone e **centrada na linha dele**, com entrada curta (sem animação com "reduzir movimento"); some ao tirar o mouse, ao clicar, ao rolar e quando a barra é redesenhada. Valeu para todos os ícones da barra recolhida (projetos, Terminais/Plugins/Skills/MCPs, Novo projeto e Geral); a regra antiga em `::after` saiu.
-- **Testado (CDP, mouse real, instância isolada):** os 10 ícones da barra recolhida: dica visível, texto correto, diferença de centro vertical 0,0 px em todos e sem ultrapassar a janela; some ao tirar o mouse; capturas de "Consumo" e "Configurações" conferidas. Não testado: barra recolhida com muitos projetos e rolagem.
-### TASK-066 — Atualização que "não abriu mais", janelinha que sumia e ícones da barra lateral
-
-- **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
-- **Prioridade:** Alta — relato do usuário em 2026-11-02 na atualização 0.2.4 → 0.2.5: "cliquei para atualizar, o app fechou e não abriu mais; abri e está na versão antiga, e a atualização está ali"; e, na mesma conversa, "os ícones não estão alinhados" (captura da barra lateral recolhida: velocímetro, link e engrenagem).
-- **Investigação (com monitor de processos rodando durante a segunda tentativa do usuário):** a primeira tentativa falhou porque o app foi reaberto 2 min 18 s depois do clique, **no meio da instalação** (instalar levou 36 s; o total, 46 s): abrir o app durante a instalação a interrompe sem avisar e fica a versão antiga (a instalação antiga ficou **intacta**, todos os arquivos de 20:39). A segunda tentativa funcionou: clique 22:44:36, instalador `Termix-Setup-0.2.5.exe --updated /S --force-run` de 22:44:46 a 22:45:22, app novo às 22:45:21. E o monitor revelou o defeito que **escondia a janelinha**: o auxiliar existia às 22:44:36 e **sumia no mesmo instante em que o Termix fechava** (22:44:46): o instalador encerra o `Termix.exe` com `taskkill /T`, que leva embora todos os processos filhos, e o auxiliar era filho do Termix.
-- **Corrigido:** (1) `src/update-helper.js`: o auxiliar agora é lançado por um `cmd.exe` intermediário (`start`) que sai logo em seguida, deixando o auxiliar órfão, fora da árvore do Termix; provado com um teste de controle (`taskkill /im ... /f /t`): lançamento antigo, auxiliar morre; lançamento novo, sobrevive. (2) `src/update-helper.ps1`: o texto da janelinha agora diz "Não abra o Termix de novo agora: isso interrompe a instalação" (e a janela ganhou altura). (3) **Trava na abertura**: `src/updater.js` (`holdForRunningInstaller`) e `src/main.js`: se há atualização pendente e o instalador (`Termix-Setup-*.exe`) ainda está rodando, o app abre uma caixa "O Termix está se atualizando… aguarde" com "Aguardar (fechar agora)" ou "Abrir mesmo assim", em vez de interromper a instalação; a detecção (`installerRunning`) foi testada com um processo de mentira. (4) **Ícones**: `src/renderer/app.js`: os três ícones de baixo da barra lateral (velocímetro, link e engrenagem) tinham desenhos de tamanhos diferentes (engrenagem ~15 px, link ~11,5 px); agora têm o mesmo peso visual (12,7 / 12,7 / 13 px) tanto na barra recolhida quanto na aberta. Todos os ícones já estavam no mesmo eixo (centro x igual; desvio do desenho < 0,5 px).
-- **Observação sobre a aparência da janelinha em atualizações anteriores:** a janelinha nunca chegou a ser vista pelo usuário, por esse defeito. O aviso "atualizado" com as etapas da 0.2.5 também não pôde aparecer na 0.2.4 → 0.2.5 por ser o auxiliar antigo.
-- **Testado:** controle do `taskkill /T` (antigo × novo), `installerRunning` ligado/desligado, janelinha com o texto novo (captura), `npm run check`, medição dos ícones antes e depois com capturas. **Não testado:** a caixa de "O Termix está se atualizando" numa atualização real (é diálogo nativo do sistema), e o efeito na atualização real: só dá para ver numa atualização **a partir de uma versão que já traga estas correções**.
-- **Como validar:** publicar a 0.2.6; atualizar do 0.2.5 para o 0.2.6 (ainda com o auxiliar antigo, que some); depois uma 0.2.7 para ver a janelinha de verdade e o aviso com as etapas.
 ## Validadas em DEV1
 
 ## Prontas
