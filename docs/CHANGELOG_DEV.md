@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-071 — Sem a janelinha na troca rápida (versão 0.2.9)** (DEV1)
+
+- Ao reiniciar pelo fluxo novo (TASK-069) a janelinha "Atualizando…" não é mais lançada; fica o aviso dentro do app. Vale a partir da atualização 0.2.9 → 0.2.10.
+
 **TASK-070 — Versão do app no cabeçalho (versão 0.2.8)** (DEV1)
 
 - Pílula "vX.Y.Z" ao lado do nome Termix. A 0.2.8 é a versão para o primeiro teste real da atualização sem sair do app (0.2.7 → 0.2.8).

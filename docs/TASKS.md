@@ -44,6 +44,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-071 — Sem a janelinha "Atualizando…" quando a troca leva segundos (versão 0.2.9)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura: a janelinha "Atualizando… em alguns minutos" ficava no canto até o fim.
+- **Feito:** `src/updater.js`: no modo `swap` (TASK-069) o auxiliar da janelinha não é mais lançado ao clicar em Reiniciar agora; fica só o aviso "Reiniciando…" dentro do app antes de ele fechar. A janelinha continua no caminho antigo (instalador). Versão 0.2.9.
+- **Importante para o teste:** o código que decide isso é o do app **que está rodando**; então a atualização 0.2.8 → 0.2.9 ainda lança a janelinha (por poucos segundos) e valida o chip e a troca; **só a 0.2.9 → 0.2.10 chega sem a janelinha**.
+- **Testado:** `npm run check`. Sem teste real ainda.
+
 ### TASK-070 — Versão do app visível ao lado do nome, no cabeçalho (versão 0.2.8)
 
 - **Responsável:** DEV1

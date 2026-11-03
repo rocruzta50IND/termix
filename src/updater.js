@@ -81,8 +81,8 @@ function setupUpdater(getWin, hooks = {}) {
     }
     return j;
   });
-  const beginInstall = (version, write) => {
-    if (write) startUpdateHelper({ version }); // TASK-056: janelinha separada que cobre o tempo em que o app está fechado
+  const beginInstall = (version, write, helper = true) => {
+    if (write && helper) startUpdateHelper({ version }); // com a troca em segundos (modo swap) a janelinha não é lançada: só atrapalharia // TASK-056: janelinha separada que cobre o tempo em que o app está fechado
     try { if (write) fs.writeFileSync(pendingFile(), JSON.stringify({ from: app.getVersion(), to: version, t0: Date.now() })); } catch { /* o aviso de "atualizado" é só um extra */ }
     try { if (Notification.isSupported()) new Notification({ title: 'O Termix está atualizando', body: `Para a versão ${version}. Ele reabre sozinho em instantes; não precisa fazer nada.` }).show(); } catch { /* sem notificação */ }
   };
@@ -141,8 +141,9 @@ function setupUpdater(getWin, hooks = {}) {
   // silencioso (sem o assistente do instalador) e reabre o app já na versão nova
   ipcMain.handle('update:install', () => {
     if (state.state !== 'ready') return false;
-    beginInstall(state.version, true);
-    if (staged && state.mode === 'swap') { setTimeout(() => { applyStaged(true); if (hooks.quit) hooks.quit(); else app.quit(); }, INSTALL_DELAY_MS); return true; }
+    const swap = !!staged && state.mode === 'swap';
+    beginInstall(state.version, true, !swap);
+    if (swap) { setTimeout(() => { applyStaged(true); if (hooks.quit) hooks.quit(); else app.quit(); }, INSTALL_DELAY_MS); return true; }
     setTimeout(() => autoUpdater.quitAndInstall(true, true), INSTALL_DELAY_MS);
     return true;
   });
