@@ -486,4 +486,5 @@ if (!RUN_MODE) {
   app.on('quit', () => { if (!wantRelaunch) require('./updater').applyStagedOnQuit(); }); // TASK-069: versão nova já preparada entra no lugar ao fechar
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });
 }
+ipcMain.handle('app:version', () => app.getVersion());
 ipcMain.on('app:relaunch', () => { wantRelaunch = true; if (win && !win.isDestroyed()) win.close(); });

@@ -628,6 +628,7 @@ function modal({ title, body = '', buttons = [['Cancelar', null], ['OK', 'ok', '
 /* ---------- atualização do app (TASK-035) ---------- */
 // O app baixa a versão nova em segundo plano. Pronta: aparece este aviso; "Depois" o guarda no botão "Atualizar" do cabeçalho.
 let UPD = { state: 'idle' };
+let APP_VER = ''; // versão instalada, mostrada ao lado do nome no cabeçalho (TASK-070)
 let updCard = null, updShownFor = '';
 function hideUpdCard() { if (updCard) updCard.classList.remove('show'); }
 function showUpdCard() {
@@ -853,7 +854,7 @@ function renderTop() {
   const maxIcon = UI.maxed
     ? '<rect x="7" y="9" width="10" height="10" rx="1.5"/><path d="M9.5 9V7a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 18.5 7v6A1.5 1.5 0 0 1 17 14.5h-2"/>'
     : '<rect x="5.5" y="5.5" width="13" height="13" rx="1.8"/>';
-  $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix</div><span class="sp"></span>
+  $('#topbar').innerHTML = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix<span class="ver" title="Versão instalada do Termix">${APP_VER ? 'v' + esc(APP_VER) : ''}</span></div><span class="sp"></span>
     ${railCfg().on ? '' : `<div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>`}
     <span class="sp"></span>
     ${updChipHTML()}
@@ -1996,6 +1997,7 @@ async function applyBg() {
   applyWinShape();
   api.onWinState(({ maximized }) => { UI.maxed = maximized; applyWinShape(); renderTop(); setTimeout(layout, 50); layout(); });
   GEO.sideW = sideTarget(); GEO.armW = armTarget();
+  api.appVersion().then((v) => { APP_VER = v || ''; renderTop(); }).catch(() => {});
   api.onUpdate(onUpdateState);
   api.updateGet().then(onUpdateState).catch(() => {});
   api.updateJust().then((j) => { if (j) setTimeout(() => showUpdated(j), 1500); }).catch(() => {});

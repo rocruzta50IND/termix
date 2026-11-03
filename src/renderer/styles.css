@@ -71,6 +71,7 @@ body.maxed .shadow{filter:none}
 .tbtn:hover{background:var(--glass2);color:var(--text)}
 .tbtn.round{border:0;background:none;border-radius:50%;width:30px;height:30px;transition:background .14s,color .14s}
 .tbtn.round:hover,.tbtn.round.on{background:rgba(255,255,255,.1);color:var(--text)}
+.brand .ver{font-size:11.5px;font-weight:500;letter-spacing:0;color:var(--text3);padding:2px 7px;border-radius:99px;border:1px solid var(--border);align-self:center;font-family:var(--mono)}
 .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.4px;font-size:17px;line-height:1}
 .logo{height:21px;width:auto;display:block;transform:translateY(1px);filter:drop-shadow(0 1px 6px rgba(59,130,246,.45))}
 .lims{display:flex;align-items:center;gap:0;padding:0;border-radius:99px;cursor:pointer;border:1px solid var(--border);background:var(--glass);overflow:hidden}

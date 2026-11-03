@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('termix', {
   loadState: () => ipcRenderer.invoke('state:load'),
   saveState: (s) => ipcRenderer.invoke('state:save', s),
   summary: (s) => ipcRenderer.send('sessions:summary', s),
+  appVersion: () => ipcRenderer.invoke('app:version'),
   updateGet: () => ipcRenderer.invoke('update:get'),
   updateInstall: () => ipcRenderer.invoke('update:install'),
   updateJust: () => ipcRenderer.invoke('update:just'),

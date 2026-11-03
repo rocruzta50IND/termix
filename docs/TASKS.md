@@ -44,6 +44,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-070 — Versão do app visível ao lado do nome, no cabeçalho (versão 0.2.8)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Prioridade:** Média — pedido do usuário em 2026-11-02: "colocar visível no app a versão dele… no top ao lado do título Termix".
+- **Feito:** pílula pequena "v0.2.8" (fonte mono, cor discreta) ao lado de "Termix" no cabeçalho; a versão vem do processo principal (`app:version`, `app.getVersion()`), então sempre é a instalada. Arquivos: `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `src/renderer/styles.css`. Versão 0.2.8, que também é a **primeira versão para testar o fluxo novo de atualização da TASK-069** (0.2.7 → 0.2.8).
+- **Testado:** captura da instância isolada com "v0.2.7" ao lado do nome; `npm run check`.
+- **Como validar:** na 0.2.7 aparece o chip de atualização (Baixando → Preparando → Reiniciar agora); depois de reiniciar o cabeçalho mostra v0.2.8.
+
 ### TASK-069 — Atualização sem sair do app (barrinha no cabeçalho, preparar em segundo plano e reiniciar)
 
 - **Responsável:** DEV1

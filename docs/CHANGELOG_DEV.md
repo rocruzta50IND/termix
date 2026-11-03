@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-070 — Versão do app no cabeçalho (versão 0.2.8)** (DEV1)
+
+- Pílula "vX.Y.Z" ao lado do nome Termix. A 0.2.8 é a versão para o primeiro teste real da atualização sem sair do app (0.2.7 → 0.2.8).
+
 **TASK-069 — Atualização sem sair do app (versão 0.2.7)** (DEV1)
 
 - O Termix baixa e prepara a versão nova em segundo plano, com uma barrinha no cabeçalho (Baixando → Preparando → pronto) e o botão Reiniciar agora; a troca dos arquivos leva segundos. Se a preparação falhar, volta ao instalador de antes. O fluxo real só aparece na atualização 0.2.7 → 0.2.8.
