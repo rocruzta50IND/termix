@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**Correção: o aviso "atualizado" não trazia o tempo com o app fechado** (DEV1)
+
+- O app novo lia o registro da janelinha antes de ela gravá-lo (corrida de tempo); agora espera por ele até 4 s. Medido no teste real 0.2.3 → 0.2.4: 1 min 01 s no total. Junto, o botão de copiar ficou fixo no canto da caixa (rola com ela). Vão na próxima versão (0.2.5).
+
 **TASK-062 — Contexto "explodindo" no chat: investigado** (DEV1)
 
 - Medido nos projetos reais: a primeira mensagem custa ~35 mil tokens (3,5% de 1 M), igual ao terminal; o "explodir" era o percentual inflado ~5× por uma janela chutada em 200 mil, já corrigido na 0.2.3. Sem alteração de código.

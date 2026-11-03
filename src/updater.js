@@ -21,9 +21,21 @@ function setupUpdater(getWin) {
   try {
     const p = JSON.parse(fs.readFileSync(pendingFile(), 'utf8'));
     fs.unlinkSync(pendingFile());
-    if (p && p.to === app.getVersion()) just = { from: p.from, to: p.to, ms: Date.now() - p.t0, ...(readHelperTimeline() || {}) }; // closedMs: quanto o app ficou fechado
+    if (p && p.to === app.getVersion()) just = { from: p.from, to: p.to, ms: Date.now() - p.t0 };
   } catch { /* sem atualização pendente */ }
-  ipcMain.handle('update:just', () => { const j = just; just = null; return j; });
+  // O registro do auxiliar (quanto o app ficou fechado e as etapas) só é gravado quando ele enxerga a janela do Termix já na tela, DEPOIS de este app
+  // abrir: por isso espera por ele até 4 s em vez de ler uma vez só no início (antes o aviso nunca trazia esse tempo).
+  ipcMain.handle('update:just', async () => {
+    const j = just; just = null;
+    if (j) {
+      for (let i = 0; i < 10; i++) {
+        const t = readHelperTimeline();
+        if (t) { Object.assign(j, t); break; }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    }
+    return j;
+  });
   const beginInstall = (version, write) => {
     if (write) startUpdateHelper({ version }); // TASK-056: janelinha separada que cobre o tempo em que o app está fechado
     try { if (write) fs.writeFileSync(pendingFile(), JSON.stringify({ from: app.getVersion(), to: version, t0: Date.now() })); } catch { /* o aviso de "atualizado" é só um extra */ }
