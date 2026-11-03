@@ -5,6 +5,9 @@ const DEFAULT_COLOR = '#5B9DFF'; // cor principal do sistema (azul): toda aba no
 const COLORS = ['#5B9DFF', '#7C8CFF', '#34D399', '#F472B6', '#FBBF24', '#22D3EE', '#FB923C', '#A78BFA', '#F87171', '#84CC16', '#38BDF8'];
 const GRADS = [['#60a5fa', '#22d3ee'], ['#94a3b8', '#64748b'], ['#38bdf8', '#6366f1'], ['#a5b4fc', '#60a5fa'], ['#67e8f9', '#34d399']];
 const GLOBALS = [['Consumo', 'gauge'], ['Integrações', 'link'], ['Configurações', 'gear']];
+// o desenho de cada ícone ocupa uma parte diferente do quadro (a engrenagem é grande, o link é pequeno): o tamanho de cada um é ajustado para os três terem o mesmo peso visual (~13 px de desenho)
+const GLOBAL_ICON = { gauge: 19, link: 21, gear: 16 };
+const gIc = (name, base) => ic(name, Math.round(base * (GLOBAL_ICON[name] || 19) / 19 * 10) / 10);
 const SUBS = [['Terminais', 'terminal'], ['Plugins', 'plug'], ['Skills', 'sparkles'], ['MCPs', 'network']];
 
 // engrenagem de 8 dentes, gerada por pontos para não depender de um desenho externo
@@ -857,7 +860,7 @@ function renderSide() {
         + (cp && cp.id === p.id ? SUBS.map(([n, i]) => `<button class="ci sub ${isCur(p.id, n) ? 'active' : ''}" data-go="${p.id}|${n}" data-tip="${n}">${ic(i, 17)}</button>`).join('') : '');
     }).join('')
       + `<button class="ci add" data-newproj data-tip="Novo projeto">${ic('plus', 17)}</button><span class="sp"></span><span class="rsep"></span>`
-      + GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${ic(i, 19)}</button>`).join('');
+      + GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('');
     return;
   }
   side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
@@ -867,7 +870,7 @@ function renderSide() {
     <button class="newproj" data-newproj>+ Novo projeto</button>
     <span class="sp"></span>
     <div class="label">Geral</div>
-    ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${ic(i, 17)}</span>${n}</button>`).join('')}`;
+    ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${gIc(i, 17)}</span>${n}</button>`).join('')}`;
 }
 
 // mede a aba ativa e deixa a barra sem o fundo escuro atrás dela (com as duas orelhas), para ela se fundir ao terminal

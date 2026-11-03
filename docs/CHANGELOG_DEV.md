@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**TASK-066 — Janelinha da atualização sobrevive ao instalador, trava contra reabrir no meio da instalação e ícones da barra lateral** (DEV1)
+
+- O instalador matava a janelinha "Atualizando…" (ela era filha do Termix e o instalador encerra o Termix com `taskkill /T`); agora ela é lançada fora da árvore do Termix. Também: texto da janelinha avisa para não abrir o app de novo, e o app não abre por cima de uma instalação em andamento sem avisar. Ícones da barra lateral (velocímetro, link e engrenagem) com o mesmo peso visual. Detalhes e a investigação da atualização que "não abriu" na TASK-066.
+
 **Promoção dev1 → main (versão 0.2.5)** (DEV1)
 
 - Promovidas as correções: botão de copiar fixo no canto da caixa (TASK-057), aviso "atualizado" com o tempo e as etapas (TASK-061), sem o círculo de contexto no chat (TASK-063) e Clear e avisos iguais nos dois modos (TASK-064). A TASK-065 (publicação) e a TASK-061 (validação das etapas ao vivo) seguem em andamento.

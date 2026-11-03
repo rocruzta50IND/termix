@@ -18,8 +18,12 @@ function startUpdateHelper({ version = '', parentPid = process.pid, processName 
     const args = ['-NoProfile', '-NonInteractive', '-STA', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', SCRIPT_TMP,
       '-ParentPid', String(parentPid), '-Version', String(version), '-ProcessName', processName, '-TimeoutSec', String(timeoutSec), '-Timeline', TIMELINE];
     if (shot) args.push('-Shot', shot);
-    // sem `detached`: no Windows o filho não morre com o pai, e com `detached` o PowerShell perde o console e sai na hora, sem janela
-    const child = spawn('powershell.exe', args, { stdio: 'ignore', windowsHide: true });
+    // O instalador encerra o Termix.exe com `taskkill /T`, que leva junto todos os processos FILHOS dele: um auxiliar filho do Termix morria
+    // na hora (foi o que escondeu a janelinha). Por isso o auxiliar é lançado por um cmd.exe intermediário (`start`) que sai logo em seguida: o
+    // auxiliar fica órfão, fora da árvore do Termix. (Sem `detached`: com ele o PowerShell perde o console e sai na hora, sem janela.)
+    const q = (s) => '"' + String(s).replace(/"/g, '') + '"';
+    const cmdline = 'start "" /B powershell.exe ' + args.map(q).join(' ');
+    const child = spawn('cmd.exe', ['/d /s /c "' + cmdline + '"'], { stdio: 'ignore', windowsHide: true, windowsVerbatimArguments: true });
     child.on('error', () => { /* sem PowerShell: segue sem a janelinha */ });
     child.unref();
     return true;
@@ -46,4 +50,13 @@ function readHelperTimeline() {
   return null;
 }
 
-module.exports = { startUpdateHelper, readHelperTimeline };
+// o instalador da atualização está rodando agora? (Termix-Setup-<versão>.exe). Abrir o app nessa hora interrompe a instalação sem avisar.
+function installerRunning() {
+  if (process.platform !== 'win32') return false;
+  try {
+    const r = require('child_process').spawnSync('tasklist', ['/FI', 'IMAGENAME eq Termix-Setup*', '/NH'], { encoding: 'utf8', windowsHide: true, timeout: 5000 });
+    return /Termix-Setup/i.test(r.stdout || '');
+  } catch { return false; }
+}
+
+module.exports = { startUpdateHelper, readHelperTimeline, installerRunning };

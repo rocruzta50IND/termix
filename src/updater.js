@@ -4,7 +4,7 @@
 const { app, ipcMain, Notification } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const { startUpdateHelper, readHelperTimeline } = require('./update-helper');
+const { startUpdateHelper, readHelperTimeline, installerRunning } = require('./update-helper');
 
 const FIRST_CHECK_MS = 15 * 1000;
 const EVERY_MS = 4 * 60 * 60 * 1000;
@@ -83,4 +83,19 @@ function setupUpdater(getWin) {
   setInterval(check, EVERY_MS);
 }
 
-module.exports = { setupUpdater };
+// TASK-066: se o app for aberto enquanto o instalador da atualização ainda está rodando, a instalação é interrompida e fica a versão antiga
+// (foi o que aconteceu: o usuário reabriu o app 2 min depois do clique). Só consulta o instalador quando há uma atualização pendente.
+// Devolve true quando o app deve fechar sem abrir a janela.
+function holdForRunningInstaller(dialog) {
+  try {
+    if (!app.isPackaged || !fs.existsSync(pendingFile()) || !installerRunning()) return false;
+    const r = dialog.showMessageBoxSync({
+      type: 'info', title: 'Termix', buttons: ['Aguardar (fechar agora)', 'Abrir mesmo assim'], defaultId: 0, cancelId: 0, noLink: true,
+      message: 'O Termix está se atualizando',
+      detail: 'A instalação da nova versão ainda está terminando. Aguarde alguns minutos: o Termix abre sozinho quando ela acabar. Se você abrir agora, a instalação é interrompida e o Termix continua na versão antiga.',
+    });
+    return r === 0;
+  } catch { return false; }
+}
+
+module.exports = { setupUpdater, holdForRunningInstaller };

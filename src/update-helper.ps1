@@ -32,7 +32,7 @@ if ($ParentPid -gt 0) {
 $script:closedAt = Get-Date
 $script:closedMs = Get-NowMs
 
-$W = 400; $H = 134
+$W = 400; $H = 150
 $accent = [System.Drawing.Color]::FromArgb(91, 157, 255)
 $muted = [System.Drawing.Color]::FromArgb(169, 179, 196)
 
@@ -76,16 +76,16 @@ $title.Font = $fTitle; $title.ForeColor = [System.Drawing.Color]::White; $title.
 if ($Version) { $title.Text = "Atualizando o Termix para a versão $Version" } else { $title.Text = 'Atualizando o Termix' }
 
 $sub = New-Object System.Windows.Forms.Label
-$sub.AutoSize = $false; $sub.Location = New-Object System.Drawing.Point(20, 44); $sub.Size = New-Object System.Drawing.Size(364, 38)
+$sub.AutoSize = $false; $sub.Location = New-Object System.Drawing.Point(20, 44); $sub.Size = New-Object System.Drawing.Size(364, 54)
 $sub.Font = $fText; $sub.ForeColor = $muted; $sub.BackColor = [System.Drawing.Color]::Transparent
-$sub.Text = 'O Termix fechou para se atualizar e abre sozinho quando terminar. Pode levar alguns minutos; não precisa fazer nada.'
+$sub.Text = 'O Termix fechou para se atualizar e abre sozinho quando terminar, em alguns minutos. Não abra o Termix de novo agora: isso interrompe a instalação.'
 
 $bar = New-Object System.Windows.Forms.Panel
-$bar.Location = New-Object System.Drawing.Point(20, 92); $bar.Size = New-Object System.Drawing.Size(360, 6); $bar.BackColor = $form.BackColor
+$bar.Location = New-Object System.Drawing.Point(20, 106); $bar.Size = New-Object System.Drawing.Size(360, 6); $bar.BackColor = $form.BackColor
 $bar.GetType().GetProperty('DoubleBuffered', [Reflection.BindingFlags]'Instance,NonPublic').SetValue($bar, $true, $null)
 
 $time = New-Object System.Windows.Forms.Label
-$time.AutoSize = $false; $time.Location = New-Object System.Drawing.Point(20, 106); $time.Size = New-Object System.Drawing.Size(360, 18)
+$time.AutoSize = $false; $time.Location = New-Object System.Drawing.Point(20, 120); $time.Size = New-Object System.Drawing.Size(360, 18)
 $time.Font = $fSmall; $time.ForeColor = [System.Drawing.Color]::FromArgb(111, 122, 142); $time.BackColor = [System.Drawing.Color]::Transparent
 $time.Text = 'Decorrido: 0 s'
 
