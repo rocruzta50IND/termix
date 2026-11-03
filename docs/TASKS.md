@@ -54,7 +54,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Testado:** extração real do instalador 0.2.6 com o `7za` (3,4 s, 370 MB, versão conferida); script de troca com os 561 arquivos reais, pasta com espaços e o app saindo no mesmo instante (log "troca concluída", nada apagado); chip e cartão em instância isolada com `TERMIX_FAKE_UPDATE=1` (capturas de "Preparando" e "pronto"); `npm run check`. **Não testado ainda:** o fluxo inteiro numa atualização real (só dá para ver numa atualização **a partir da 0.2.7**, ou seja, 0.2.7 → 0.2.8; a 0.2.6 → 0.2.7 ainda usa o caminho antigo).
 - **Como validar:** instalar a 0.2.7 (pelo caminho antigo); eu publico a 0.2.8 e o app aberto deve mostrar o chip (Baixando → Preparando → verde "Reiniciar agora") sem fechar; clicar em Reiniciar e ver o tempo do aviso "atualizado"; repetir fechando o app à mão para ver a troca sem reabrir.
 - **Pendências:** a janelinha "Atualizando…" ainda aparece no Reiniciar (agora por poucos segundos); o registro do Windows continua com a versão da instalação original.
-- **Próximo passo:** usuário atualiza 0.2.6 → 0.2.7; eu publico a 0.2.8 para o teste real.
+- **Publicado:** promoção dev1 → main (`874e6f2`); Release **v0.2.7** (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.7), instalador sha256 `c2e091f6…`, `latest.yml` conferido; conferido dentro do pacote que o `7za.exe` e o `apply-update.ps1` vão junto e que o `7za` empacotado extrai o instalador.
+- **Próximo passo:** usuário atualiza 0.2.6 → 0.2.7 (caminho antigo); depois eu publico a 0.2.8 (só uma versão nova qualquer) para o teste real do fluxo novo.
 
 
 ## Validadas em DEV1
