@@ -69,7 +69,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Correção definitiva (0.3.2):** ver `docs/DECISOES.md` (TASK-081): exe fixo entre versões (`tools/after-pack.js` + `build-cache/Termix-shell.exe`) e o atualizador não troca o exe quando o motor é o mesmo (`KeepExe`).
 - **Testado:** troca com `KeepExe` (o exe antigo permanece, o resto atualiza, o desinstalador fica); `npm run check`. Não testado: a atualização real 0.3.1 → 0.3.2 (a executa o app 0.3.1, que ainda não tem o `KeepExe`: ela troca o exe pelo casco fixo, que tem o mesmo conteúdo do exe que o Windows liberou).
 - **Pendências:** assinatura de código (certificado) para o Windows de qualquer pessoa confiar no instalador e no exe; sem ela, um PC novo com Smart App Control pode bloquear o instalador.
-- **Próximo passo:** usuário atualiza 0.3.1 → 0.3.2 e confirma que abre.
+()=>'- **Confirmado pelo usuário (2026-11-03):** o app abriu depois do reparo do exe. Publicada a 0.3.3 (sem mudança de código, só a versão) para o teste real do reinício rápido: como o app do usuário está na 0.3.1, a atualização vai direto 0.3.1 → 0.3.3 (executada pelo app antigo); o teste do reinício instantâneo de fato é 0.3.3 → 0.3.4.\n- **Próximo passo:** usuário atualiza e confirma que abre; depois publico a 0.3.4 para medir o reinício rápido.'
 
 
 ### TASK-079 — Reinício instantâneo ao clicar em Reiniciar agora (versão 0.3.1)

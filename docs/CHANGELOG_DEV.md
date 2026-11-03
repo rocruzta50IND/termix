@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**Versão 0.3.3** (DEV1)
+
+- Só a versão (sem mudança de código), a pedido do usuário, para continuar o teste da atualização com o Termix.exe fixo e do reinício instantâneo.
+
 **TASK-081 — Windows bloqueou o Termix.exe da 0.3.1 (versão 0.3.2)** (DEV1)
 
 - O Smart App Control bloqueou o executável novo (sem assinatura). Reparado na máquina do usuário com o exe anterior; a 0.3.2 fixa o Termix.exe entre versões e o atualizador deixa de trocá-lo quando o motor Electron não muda. Assinatura de código no Backlog (TASK-082).
