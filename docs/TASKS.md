@@ -17,8 +17,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Plano (nesta ordem):**
   - **A. Distribuição e instalação para o time** (o maior risco; apareceu hoje com o Smart App Control bloqueando o `Termix.exe` da 0.3.1, TASK-081):
     - Instalar do zero numa máquina/VM limpa e na de um colega: Windows 10 e 11, com e sem Smart App Control e SmartScreen, usuário comum sem administrador, pasta de instalação com espaços/acentos, OneDrive.
-    - Decidir a **assinatura de código** (TASK-082): sem ela cada PC novo pode bloquear o instalador/exe; avaliar o custo (Azure Trusted Signing ou certificado) contra o tamanho do time (5 pessoas); registrar a decisão em `docs/DECISOES.md`.
-    - **Onde ficam os releases:** o atualizador exige o repositório `rocruzta50IND/termix` **público** (sem token); para um app interno isso expõe o código. Decidir: manter público, ou repositório privado com outro provedor (pasta de rede/servidor da empresa) ou token.
+    - **Assinatura de código: decidido que NÃO precisa** (uso interno; TASK-082 cancelada, ver `docs/DECISOES.md`). O risco que sobra é o Smart App Control ligado no PC de um colega: testar num PC real com ele ligado e documentar a saída no `docs/INSTALACAO.md`.
+    - **Onde ficam os releases: decidido, o repositório fica público para sempre** (ver `docs/DECISOES.md`). Falta só conferir, no item D, que o repositório e o histórico não têm segredos nem dados da empresa.
     - Pré-requisitos de cada pessoa: Claude Code instalado e com login, Git; mensagens claras quando faltar (hoje "Claude Code não foi encontrado…"); primeiro uso sem nenhum projeto; abrir projeto existente (importar conversas); atualização de uma versão antiga do time; antivírus da empresa.
     - Entregar `docs/INSTALACAO.md`: passo a passo curto para o time (baixar, instalar, o que fazer se o Windows bloquear, primeiro uso, como atualizar, a quem pedir ajuda).
   - **B. Percurso de UX clicando em todas as telas** (a auditoria da TASK-072 cobriu UX só por leitura de código): barra lateral aberta/recolhida, projetos (criar, importar, renomear, arquivar, excluir), abas e terminais, chat, aba Web, Plugins, Skills, MCPs, Consumo, Integrações, Configurações, notificações, atualização; com muitos projetos (TASK-080), janela pequena, DPI alto e mais de um monitor; textos em português, estados vazios e de erro, teclado e foco. Capturas só do conteúdo do app (CDP).
@@ -28,7 +28,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Contexto já feito (não repetir):** auditoria de performance/robustez da TASK-072 (0.3.0), atualização em segundo plano com reinício em ~1 s (TASK-069/071/079, validada pelo usuário), exe fixo contra o Smart App Control (TASK-081, 0.3.2/0.3.3).
 - **Pendente de aprovação do usuário para fechar:** TASK-065, 061, 068 (publicações/medições antigas), 069, 072, 079 e 081 (aguardando validação; o usuário já viu o reinício de ~1 s funcionar).
 - **Feito até agora:** (nada além do plano)
-- **Próximo passo:** começar pelo item A (instalação do zero e a decisão de assinatura/onde publicar), depois B, C e D.
+- **Próximo passo:** começar pelo item A no **Windows Sandbox** (instalação limpa sem Claude Code/Git, primeiro uso, atualização de versão antiga, pasta com espaços), depois B (percurso de UX), C e D. O que o Sandbox não prova (Smart App Control e antivírus de um PC real, Windows 10) o usuário testa no PC de um colega.
 
 ### TASK-072 — Auditoria completa de performance e UX do app (versão 0.3.0)
 
@@ -332,14 +332,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Prioridade:** Baixa
 - **Objetivo:** confirmar uma vez (com a contagem) em "Fechar outras guias/à direita" e "Restaurar padrões"; toast também para erros que não são de aba (hoje só o selo do sino); alternar "Sim/Não" das Configurações sem refazer a página (perde o foco); roxo remanescente (cursor e seleção do terminal, cor padrão de evento, palavras-chave do chat) contra a regra "sem roxo" do DESIGN; vocabulário único ("aba" × "guia" × "sessão"; traduzir "Rail" e "Dangerously"); "Nenhum(a) skill encontrado(a)"; esconder as colunas Tokens/Custo "indisponível" da página Consumo; `backdrop-filter` do modal sobre terminais.
 
+## Concluídas
+
 ### TASK-082 — Assinatura de código do instalador e do Termix.exe
 
 - **Responsável:** A definir
-- **Status:** BACKLOG
+- **Status:** CANCELADA (decisão do usuário em 2026-11-03: o app é de uso interno e não precisa de assinatura de código; reabrir só se deixar de ser interno)
 - **Prioridade:** Alta antes de distribuir para outras pessoas — decorrente da TASK-081
 - **Objetivo:** assinar `Termix.exe` e o instalador (certificado de assinatura de código, p. ex. Azure Trusted Signing ou um certificado OV/EV) para o Smart App Control e o SmartScreen aceitarem sem reputação; configurar o electron-builder para assinar e o atualizador para validar; depois disso o casco fixo do `Termix.exe` deixa de ser necessário.
-
-## Concluídas
 
 ### TASK-084 — Tela Consumo totalmente funcional (entra no MVP, antes da auditoria da TASK-083)
 

@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**Decisões de distribuição** (DEV1)
+
+- Por pedido do usuário: o repositório fica **público para sempre** e o app **não terá assinatura de código** (uso interno). TASK-082 cancelada; TASK-083 atualizada (item A passa a ser testado no Windows Sandbox).
+
 **Promoção dev1 → main** (DEV1)
 
 - Promovidas a pedido do usuário ("suba a nova versão pro git"): TASK-084 (tela Consumo), TASK-080 (barra lateral), TASK-086 (nome de projeto e modais), TASK-088 (modais fecham só por X ou Esc) e a versão 0.3.4 (TASK-089). Fast-forward; validação `npm run check` ok.
