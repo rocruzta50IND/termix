@@ -141,6 +141,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Validadas em DEV1
 
+### TASK-088 — Modais: fechar só pelo X ou Esc (clicar fora não fecha)
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (aprovada pelo usuário em 2026-11-03)
+- **Prioridade:** Média (UX, MVP) — pedido do usuário em 2026-11-03: hoje clicar fora do modal o fecha; o ideal é fechar pelo X ou por Esc.
+- **Feito (2026-11-03):** (1) todo modal (`modal()`) ganhou o **botão X** no canto do título (dica "Fechar (Esc)"); (2) **clicar fora não fecha mais** (perdia o que foi digitado e podia cancelar uma confirmação sem querer): o modal dá um balanço discreto (desligado em "reduzir movimento") para lembrar que espera X ou Esc; (3) **Esc continua fechando**. O aviso "Preparando o projeto limpo…" (sem botões, é progresso) segue sem poder ser fechado.
+- **Arquivos tocados:** `src/renderer/app.js` (`modal`), `src/renderer/styles.css` (`.dh`, `.mclose`, `.nudge`), `docs/DESIGN.md`, `docs/DECISOES.md`, `docs/TASKS.md`.
+- **Como validar:** `npm run check`; abrir qualquer modal (clique direito no projeto > gerenciar, Renomear, Novo projeto…): clicar fora não fecha, X fecha, Esc fecha, texto digitado sobrevive ao clique fora. Teste feito em instância isolada (CDP): cliques fora com o modal aberto e o balanço aplicado; X fechou; Esc fechou; "texto digitado" mantido no Renomear.
+- **Pendências:** foco inicial do "Gerenciar projeto" cai em "Remover do app" (botão destrutivo; a confirmação seguinte protege): tratar na TASK-087.
+- **Próximo passo:** nenhum nesta tarefa.
 ### TASK-086 — Nome de projeto gigante estoura o modal "Gerenciar projeto"
 
 - **Responsável:** DEV1
@@ -213,7 +223,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Responsável:** A definir
 - **Status:** BACKLOG (pós-MVP)
 - **Prioridade:** Média-baixa — pedido do usuário em 2026-11-03: aprimorar o design do modal "Gerenciar projeto" para condizer com o app e **estender a refatoração a todos os modais com a mesma cara** (caixa escura com título, texto e fileira de botões em pílula).
-- **Escopo:** inventariar todos os modais (`modal()` em `app.js` e `chat.js`: gerenciar/renomear/arquivar/remover projeto, novo projeto, importar conversas, Clear, Dangerously, confirmações, editor de skill, atualização etc.) e propor um desenho único no glassmorphism do app: cabeçalho com ícone/avatar do projeto, hierarquia de título e subtítulo, caminho em bloco copiável, ações **agrupadas por importância** (primária, secundárias e destrutivas separadas e com confirmação), em vez da fileira de pílulas que quebra em duas linhas; foco, teclado e "reduzir movimento"; tamanhos por tipo (confirmação curta, formulário, editor).
+- **Escopo:** inventariar todos os modais (`modal()` em `app.js` e `chat.js`: gerenciar/renomear/arquivar/remover projeto, novo projeto, importar conversas, Clear, Dangerously, confirmações, editor de skill, atualização etc.) e propor um desenho único no glassmorphism do app: cabeçalho com ícone/avatar do projeto, hierarquia de título e subtítulo, caminho em bloco copiável, ações **agrupadas por importância** (primária, secundárias e destrutivas separadas e com confirmação), em vez da fileira de pílulas que quebra em duas linhas; o foco inicial nunca em botão destrutivo (hoje o "Gerenciar projeto" abre com "Remover do app" focado); foco, teclado e "reduzir movimento"; tamanhos por tipo (confirmação curta, formulário, editor).
 - **Já resolvido antes (TASK-086):** modais não estouram com texto longo e o nome do projeto tem limite de 60 caracteres. Aqui é só o **visual**.
 - **Pronto quando:** protótipo aprovado pelo usuário, aplicado a todos os modais com capturas do conteúdo do app (CDP), `docs/DESIGN.md` atualizado.
 ### TASK-085 — Categoria "Workflow" na barra lateral (pós-MVP, validar a ideia)

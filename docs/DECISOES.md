@@ -40,6 +40,9 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - A escolha **nunca vira padrão das próximas sessões sem o usuário pedir**.
 - Dangerously é indicado por um **⚠ na aba** (com explicação ao passar o mouse). Não há selo grande.
 
+## Modais (TASK-088)
+- Modal **fecha só pelo X ou por Esc**; clicar fora não fecha (para não perder o que foi digitado nem cancelar uma confirmação sem querer). Atalhos de teclado futuros (TASK-009) seguem a mesma regra.
+
 ## Nome do projeto (TASK-086)
 - O nome tem no máximo **60 caracteres** (campo de criar e de renomear, importar pasta). A **pasta criada pelo app** também usa no máximo 60 caracteres (o Windows aceita 255 por nome e 260 no caminho inteiro). Nomes antigos maiores continuam válidos.
 

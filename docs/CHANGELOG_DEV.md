@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**TASK-088 — Modais: fechar só pelo X ou Esc** (DEV1)
+
+- Todo modal ganhou o botão X; clicar fora não fecha mais (perdia o que foi digitado); Esc continua fechando. Um balanço discreto lembra que o modal espera X ou Esc.
+- Arquivos: `renderer/app.js` (`modal`), `renderer/styles.css`; docs.
 **TASK-086 — Nome de projeto gigante estoura o modal "Gerenciar projeto"** (DEV1)
 
 - Causa: a caixa dos modais não quebrava texto sem espaços e o nome do projeto não tinha limite (a pasta criada usa o nome e passava do limite do Windows). Agora o nome tem no máximo 60 caracteres (campo de criar e renomear, e ao importar pasta), a pasta criada também, e todos os modais quebram texto longo e nunca rolam na horizontal. O título do "Gerenciar projeto" mostra até 3 linhas com reticências.

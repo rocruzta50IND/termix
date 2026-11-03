@@ -90,7 +90,8 @@ Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o v
 - **Modelos:** uma tabela (tokens, entrada, saída, cache lido, cache gravado, custo equivalente, parte).
 - O cartão do mapa rola na horizontal em janela estreita (nunca estoura a página). Valores usam `Intl` pt-BR (milhar com ponto, vírgula decimal, "mil / mi / bi"). Dado que não existe: "indisponível" (limites) ou "—" com explicação (contexto de sessão encerrada, aba sem resposta); nunca zero inventado.
 
-## Modais (TASK-086)
+## Modais (TASK-086, TASK-088)
+- **Fechar:** só pelo **X** (canto superior direito do título, 30 px, cinza que clareia no hover, dica "Fechar (Esc)") ou por **Esc**. Clicar fora **não** fecha: a caixa dá um balanço curto (escala 1,8 %, 0,3 s; sem animação em "reduzir movimento").
 - A caixa do modal (`.dlg`) **nunca rola na horizontal**: título, textos e caminhos quebram em qualquer ponto (`overflow-wrap:anywhere`) e só a rolagem vertical existe. O título do "Gerenciar projeto" mostra no máximo 3 linhas com reticências (nome inteiro na dica). Nome de projeto: até **60 caracteres**. O redesenho visual dos modais é a TASK-087 (pós-MVP).
 
 ## Padrão dos controles (TASK-031)

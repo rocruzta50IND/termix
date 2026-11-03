@@ -612,11 +612,13 @@ function modal({ title, body = '', buttons = [['Cancelar', null], ['OK', 'ok', '
   return new Promise((resolve) => {
     const root = $('#modalRoot');
     const prevFocus = document.activeElement;
-    root.innerHTML = `<div class="modal"><div class="dlg glass" role="dialog" aria-modal="true"><h2>${title}</h2>${body}<div class="foot2">${buttons.map(([l, , c], i) => `<button class="btn ${c || ''}" data-mb="${i}">${l}</button>`).join('')}</div></div></div>`;
+    root.innerHTML = `<div class="modal"><div class="dlg glass" role="dialog" aria-modal="true"><div class="dh"><h2>${title}</h2><button class="mclose" data-mclose title="Fechar (Esc)" aria-label="Fechar">${ic('x', 16)}</button></div>${body}<div class="foot2">${buttons.map(([l, , c], i) => `<button class="btn ${c || ''}" data-mb="${i}">${l}</button>`).join('')}</div></div></div>`;
     const collect = () => { const f = {}; root.querySelectorAll('[data-f]').forEach((i) => { f[i.dataset.f] = i.value; }); return f; };
     const done = (v) => { const form = collect(); const picked = [...root.querySelectorAll('[data-sid]:checked')].map((i) => i.dataset.sid); root.innerHTML = ''; resolve({ value: v, form, picked }); fitActive(); try { if (prevFocus && prevFocus.isConnected && prevFocus.focus) prevFocus.focus(); } catch { /* sem foco para devolver */ } };
     root.querySelectorAll('[data-mb]').forEach((b) => { b.onclick = () => done(buttons[+b.dataset.mb][1]); });
-    root.firstElementChild.onclick = (e) => { if (e.target === root.firstElementChild) done(null); };
+    root.querySelector('[data-mclose]').onclick = () => done(null);
+    // clicar fora NÃO fecha (perderia o que foi digitado): só um balanço discreto lembra que o modal espera Esc ou o X
+    root.firstElementChild.onclick = (e) => { if (e.target !== root.firstElementChild) return; const d = root.querySelector('.dlg'); d.classList.remove('nudge'); void d.offsetWidth; d.classList.add('nudge'); };
     root.onkeydown = (e) => {
       if (e.key === 'Escape') done(null);
       if (e.key === 'Enter' && e.target.tagName === 'INPUT') done(buttons[buttons.length - 1][1]);
