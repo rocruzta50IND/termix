@@ -8,10 +8,23 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-083 — Validação do MVP: auditoria geral e uso por 5 pessoas da empresa
+### TASK-084 — Tela Consumo totalmente funcional (entra no MVP, antes da auditoria da TASK-083)
 
 - **Responsável:** DEV1
 - **Status:** EM ANDAMENTO (a começar)
+- **Prioridade:** Crítica — pedido do usuário em 2026-11-03, com captura da tela Geral › Consumo: "esta tela também entra no escopo MVP, precisamos deixá-la totalmente funcional; adicione antes da auditoria final". O usuário vai dar `/clear` e retomar em seguida para concluir esta tarefa.
+- **O que a captura mostra (estado atual, v0.3.3):** cartões "Janela de 5 horas" (3 %, renova em 3h42m) e "Semana" (36 %, renova em 5d21h) com barra; cartão **"Origem dos dados" quase vazio** ("Status line do Claude Code · atualizado há 1 h"); tabela de sessões (Sessão, Projeto, Estado, Contexto, Tokens, Custo equivalente) em que **as colunas Tokens e Custo equivalente estão sempre "indisponível"**, o Contexto some em várias sessões encerradas e em chats ("indisponível"), há sessões "Encerrada" misturadas com ativas, sem ordenação/filtro/total, e a leitura dos limites fica velha (1 h) porque só atualiza quando alguma sessão responde.
+- **Absorve** as tarefas de Backlog TASK-011 (consumo por sessão e alertas de limite) e TASK-026 (registro de consumo e alertas de ritmo): o que elas pedem e couber aqui entra; o resto fica registrado nelas.
+- **Primeiro passo na retomada:** perguntar ao usuário, em poucas perguntas objetivas, o que "totalmente funcional" significa para ele nesta tela (o que quer enxergar e decidir a partir dela: custo por sessão/projeto/dia? alertas de limite 5 h/7 d? histórico? exportar?), porque os dados disponíveis são os da status line do Claude Code (`rate_limits`, `context_window`, `cost`) e os arquivos de conversa (`.jsonl` com o `usage` de cada resposta), e o que aparece como "indisponível" hoje pode passar a ter dado real.
+- **Pontos técnicos já levantados:** o `statusline-wrapper.js` já grava `cost`, `context_window` e `rate_limits` por aba; o `chat` (claude -p em stream-json) recebe `usage` por resposta; os `.jsonl` em `~/.claude/projects` têm tokens (entrada, saída, cache) por mensagem, o que permite Tokens e custo equivalente por sessão mesmo para sessões encerradas; limites 5 h/7 d só atualizam quando uma sessão responde (decidir como indicar "dado velho" e se vale uma leitura periódica); "dado indisponível aparece como indisponível, nunca como zero" é regra de produto (`docs/DECISOES.md`).
+- **Pronto quando:** nenhuma coluna fica "indisponível" por falta de implementação (só quando o dado realmente não existe, dito com o motivo), a tela responde às perguntas que o usuário definir, atualiza sozinha, aguenta muitos projetos/sessões, textos e estados vazios/erro revisados; testada com sessões reais (terminal e chat) e capturas do conteúdo do app; `docs/DECISOES.md` e `docs/DESIGN.md` atualizados.
+- **Feito até agora:** (nada além do levantamento acima)
+- **Próximo passo:** perguntas ao usuário sobre o que a tela deve entregar; depois implementar, validar e só então seguir para a TASK-083.
+
+### TASK-083 — Validação do MVP: auditoria geral e uso por 5 pessoas da empresa
+
+- **Responsável:** DEV1
+- **Status:** PRONTA (começa **depois da TASK-084**, a tela Consumo)
 - **Prioridade:** Crítica — decisão do usuário em 2026-11-03: fechar o MVP antes das duas funções pós-MVP; o app é de **uso interno, para 5 integrantes da empresa, sem comercialização por ora**, e todos precisam conseguir instalar e usar. O usuário vai dar `/clear` e retomar com o chat limpo para esta auditoria.
 - **Pronto quando:** as 5 pessoas conseguem instalar do zero, abrir, usar o dia a dia e atualizar sem ajuda, e o relatório da auditoria não tem pendência crítica nem alta; então o usuário declara a primeira grande versão (1.0).
 - **Plano (nesta ordem):**
