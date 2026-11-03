@@ -15,7 +15,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("suba a versão nova para eu atualizar o app")
 - **Objetivo:** publicar a 0.2.6 com as TASK-066 (janelinha fora da árvore do Termix, trava contra reabrir no meio da instalação, ícones) e TASK-067 (dica da barra recolhida).
 - **Passos:** versão 0.2.6; promoção dev1 → main; `npm run dist`; conferir o `latest.yml`; `gh release create v0.2.6`; o usuário atualiza (0.2.5 → 0.2.6).
-- **Feito até agora:** (preenchido ao publicar)
+- **Feito até agora:** versão 0.2.6; promoção dev1 → main (`a6dec9d`); `npm run check` ok; Release **v0.2.6** publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.2.6) com instalador (sha256 `3efe41c4…`), blockmap e `latest.yml` (versão, tamanho e sha512 conferidos; o feed já mostra a 0.2.6). Sem intercorrências. O app instalado do usuário está na **0.2.5**.
 - **Próximo passo (usuário):** atualizar 0.2.5 → 0.2.6 e dizer o que o aviso verde mostrou; depois, uma 0.2.7 para ver a janelinha nova.
 
 ### TASK-065 — Publicar a versão 0.2.5

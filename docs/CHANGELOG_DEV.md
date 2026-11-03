@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-066 e TASK-067 validadas; versão 0.2.6** (DEV1)
 
-- Aprovadas pelo usuário: janelinha da atualização fora da árvore do Termix, trava contra reabrir durante a instalação, ícones com o mesmo peso e dica de nome da barra recolhida inteira. Publicação na TASK-068.
+- Aprovadas pelo usuário: janelinha da atualização fora da árvore do Termix, trava contra reabrir durante a instalação, ícones com o mesmo peso e dica de nome da barra recolhida inteira. Release v0.2.6 publicado (TASK-068); promoção dev1 → main feita.
 
 **TASK-067 — Dica de nome da barra lateral recolhida** (DEV1)
 
