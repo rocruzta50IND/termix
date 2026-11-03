@@ -184,7 +184,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Responsável:** DEV1
 - **Status:** CONCLUÍDA (aprovada pelo usuário em 2026-11-02; promovida para a `main` em 2026-11-02, versão 0.2.3)
 - **Prioridade:** Média — pedido do usuário em 2026-11-02, com captura: o botão "Copiar" da TASK-054 ficava a cavalo na borda de cima, para fora do quadro da resposta; "ficaria melhor fixo no topo direito da caixa".
-- **Feito:** `src/renderer/chat.js`: o botão vem antes do texto dentro de um contêiner `.c-cpw` de altura zero e `position: sticky` (não empurra o texto e acompanha a rolagem de respostas longas); agora é só o ícone de copiar (círculo de 26 px) e vira um "✓" verde por 1,4 s; `src/renderer/styles.css`: `.c-cpw`, `.c-copyall` dentro da caixa (canto de cima à direita) e o primeiro bloco ganha 30 px de margem à direita para o botão não cobrir o texto.
+- **Correção (usuário, 2026-11-02, após a 0.2.3: "ao arrastar para baixo o botão vem junto, e ele tem que ficar lá fixo"):** eu tinha entendido "fixo" como grudado na tela (`sticky`); o pedido era fixo **no canto da caixa**. Agora o contêiner é estático e o botão é absoluto no canto de cima à direita da caixa (8 px das bordas), rolando junto com ela.
+- **Feito:** `src/renderer/chat.js`: o botão vem antes do texto dentro de um contêiner `.c-cpw` de altura zero (não empurra o texto); agora é só o ícone de copiar (círculo de 26 px) e vira um "✓" verde por 1,4 s; `src/renderer/styles.css`: `.c-cpw`, `.c-copyall` dentro da caixa (canto de cima à direita) e o primeiro bloco ganha 30 px de margem à direita para o botão não cobrir o texto.
 - **Testado (CDP, instância isolada):** bolha curta ("ok") sem espaço sobrando; resposta longa rolada 700 px com o botão continuando no topo visível, dentro da caixa; capturas conferidas. Não testado: bloco de código ou tabela como primeiro item da resposta.
 
 ### TASK-058 — Rail igual no chat e no terminal (contexto, 5 h, 7 d e cache)

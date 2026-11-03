@@ -559,10 +559,10 @@ input[type=checkbox]:checked::after{content:"";width:9px;height:5px;border-left:
 .c-bub{max-width:calc(100% - 84px);min-width:0;padding:11px 15px;border-radius:16px;line-height:1.55;user-select:text;font-size:14px;overflow-wrap:anywhere}
 .c-row.ai .c-bub{background:rgba(255,255,255,.055);border:1px solid var(--border);border-top-left-radius:6px}
 .c-row.me .c-bub{background:linear-gradient(135deg,rgba(91,157,255,.34),rgba(59,110,230,.24));border:1px solid rgba(91,157,255,.4);border-top-right-radius:6px}
-/* botão de copiar a resposta inteira: dentro da caixa, no canto de cima à direita, sticky (acompanha a rolagem); só aparece ao passar o mouse. O dos blocos de código continua no cabeçalho do bloco. */
+/* botão de copiar a resposta inteira: fixo no canto de cima à direita DENTRO da caixa (rola junto com ela); só aparece ao passar o mouse. O dos blocos de código continua no cabeçalho do bloco. */
 .c-row.ai .c-bub{position:relative}
-.c-cpw{position:sticky;top:8px;display:block;height:0;z-index:2} /* altura zero: não empurra o texto; "sticky" mantém o botão no canto de cima ao rolar uma resposta longa */
-.c-copyall{position:absolute;top:-5px;right:-7px;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:rgba(24,30,46,.97);border:1px solid var(--border2);color:var(--text2);opacity:0;transition:opacity .15s,color .15s}
+.c-cpw{display:block;height:0} /* altura zero: não empurra o texto; o botão fica fixo no canto de cima da caixa e rola junto com ela */
+.c-copyall{position:absolute;top:8px;right:8px;z-index:2;width:26px;height:26px;display:grid;place-items:center;border-radius:50%;background:rgba(24,30,46,.97);border:1px solid var(--border2);color:var(--text2);opacity:0;transition:opacity .15s,color .15s}
 .c-copyall svg{flex:none}
 .c-row.ai:hover .c-copyall,.c-copyall:focus-visible,.c-copyall.done{opacity:1}
 .c-copyall:hover{color:var(--text)}
