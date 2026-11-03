@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-03
 
+**Versão 0.3.4** (DEV1)
+
+- Publica a tela Consumo (TASK-084), os ajustes da barra lateral (TASK-080), o limite de nome de projeto e modais que não estouram (TASK-086) e o fechamento de modais só por X ou Esc (TASK-088).
+
 **TASK-088 — Modais: fechar só pelo X ou Esc** (DEV1)
 
 - Todo modal ganhou o botão X; clicar fora não fecha mais (perdia o que foi digitado); Esc continua fechando. Um balanço discreto lembra que o modal espera X ou Esc.
