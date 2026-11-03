@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-02
 
+**Promoção dev1 → main (versão 0.2.5)** (DEV1)
+
+- Promovidas as correções: botão de copiar fixo no canto da caixa (TASK-057), aviso "atualizado" com o tempo e as etapas (TASK-061), sem o círculo de contexto no chat (TASK-063) e Clear e avisos iguais nos dois modos (TASK-064). A TASK-065 (publicação) e a TASK-061 (validação das etapas ao vivo) seguem em andamento.
+
 **TASK-064 — Clear e avisos iguais no chat e no terminal** (DEV1)
 
 - O botão Clear do chat agora pulsa com o contexto alto, como o do terminal, e tem as duas opções ("Só limpar" e "Fechar a tarefa e limpar", com retomada automática); negações de permissão geram "Precisa de você". Auditoria completa na TASK-064. Testado com o Claude Code real.

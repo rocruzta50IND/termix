@@ -8,6 +8,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-065 — Publicar a versão 0.2.5
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02 ("pode publicar")
+- **Objetivo:** publicar a 0.2.5, que leva: botão de copiar fixo no canto da caixa (correção da TASK-057), aviso "atualizado" que agora traz o tempo com o app fechado e as etapas (correção da corrida de tempo, TASK-061), sem o círculo de contexto na linha de baixo do chat (TASK-063) e Clear e avisos iguais no chat e no terminal (TASK-064).
+- **Passos:** versão 0.2.5; promoção dev1 → main; `npm run dist`; conferir o `latest.yml`; `gh release create v0.2.5`; o usuário atualiza (0.2.4 → 0.2.5).
+- **O que ver nesta atualização (0.2.4 → 0.2.5):** como o app instalado é a 0.2.4, que já tem a janelinha com as etapas do instalador, o aviso verde ao reabrir deve trazer a divisão da espera ("o app ficou fechado por X: A até o instalador começar, B instalando e C até a janela voltar"). É o que fecha a TASK-061.
+- **Feito até agora:** versão 0.2.5 no `package.json`.
+
 ### TASK-061 — Publicar a 0.2.4 e medir de onde vêm os ~3 minutos da atualização
 
 - **Responsável:** DEV1
@@ -21,28 +31,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Passos:** versão 0.2.4; promoção dev1 → main; `npm run dist`; conferir o `latest.yml`; `gh release create v0.2.4`; o usuário atualiza (0.2.3 → 0.2.4), vê a janelinha e me passa o resumo do aviso verde.
 
 ## Aguardando validação DEV1
-
-### TASK-064 — Eventos e Clear iguais no chat e no terminal (paridade entre os modos)
-
-- **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
-- **Prioridade:** Alta — pedido do usuário em 2026-11-02, com duas capturas: "no modo terminal o Clear fica piscando e no chat não; acho que tem uma tarefa assim para validar os eventos iguais independente do modo".
-- **Auditoria (terminal × chat), o que foi conferido no código:**
-  - **Clear pulsando:** o chat tinha `pulse: false` fixo. **Corrigido:** mesma regra do terminal (agente parado e anel CTX no limite de Configurações > Clear, 15% por padrão).
-  - **Fluxo do Clear:** o terminal oferece "Só limpar" e "Fechar a tarefa e limpar"; o chat só tinha "nova conversa". **Corrigido:** o chat tem as duas opções, com o mesmo critério do terminal para continuar sozinho (o aviso final `TERMIX-CLEAR-OK` escrito pelo agente depois do pedido; sem ele, pergunta "A tarefa foi registrada?"), o botão fica "ocupado" durante o fluxo, e usa os mesmos pedidos de fechamento e retomada (inclusive os do fluxo Rocruzta).
-  - **Aviso "Precisa de você":** no terminal vem do pedido de permissão; o chat só escrevia uma linha na conversa. **Corrigido:** se algo é negado (aba em "Perguntar"), o chat também avisa, com o mesmo tipo de notificação e as mesmas configurações.
-  - **Já iguais (mesmas funções):** estados da aba (ponto e "Aguardando você"), aviso de "terminou" e de erro, selo de aba não vista, notificação do Windows e dica ao terminar; rail (TASK-058); aviso "cache esfriando" passa a valer para o chat porque agora ele tem os dados do cache (testado só pelo código: o aviso exige o processo do chat vivo).
-  - **Ainda diferentes, de propósito ou sem equivalente:** o chat não mede "a retomada custou ~X tokens" depois do Clear; o terminal tem pedido de permissão interativo e o chat não tem cartão de aprovação (limite do `claude -p`, TASK-040); o spinner do Reiniciar não gira no chat.
-- **Feito:** `src/renderer/app.js` (`clearDockState` do chat com pulso e estado ocupado) e `src/renderer/chat.js` (`chatClearFlow` completo, `c.flow` próprio do chat para não cruzar com o relógio do terminal, aviso "perm" quando há negações).
-- **Testado (CDP, instância isolada, Claude Code real):** contexto real 2,8%: botão normal; contexto 20%: botão com a classe de pulso; agente trabalhando: sem pulso e desabilitado; fluxo completo sem o aviso final: abre "Limpar o contexto?" (Cancelar / Só limpar / Fechar a tarefa e limpar), o agente trabalha com o botão "ocupado", aparece "A tarefa foi registrada?" e "Não limpar" mantém tudo; fluxo completo com o aviso final: fecha, começa a conversa nova (ID da sessão mudou) e manda o pedido de retomada, ficando só as duas mensagens novas. Não testado: o fluxo num projeto do fluxo Rocruzta de verdade (pedidos longos) e o caso do aviso de permissão negada.
-- **Como validar:** no chat, deixar o contexto passar de 15% e ver o Clear pulsar; clicar em Clear e conferir as duas opções; testar "Fechar a tarefa e limpar" num projeto seu.
-### TASK-063 — Tirar o círculo de contexto da linha de baixo do chat
-
-- **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1
-- **Prioridade:** Baixa (visual) — pedido do usuário em 2026-11-02, com captura: "dessa parte vamos tirar o círculo dali" (o anel pequeno depois de "⚠ bypass").
-- **Feito:** `src/renderer/chat.js` (sem o `.c-ring` no HTML, na ligação e na atualização) e `src/renderer/styles.css` (sem a regra). O contexto continua no anel CTX do rail, que agora é igual ao do terminal (TASK-058).
-- **Testado:** `npm run check`; conferido por captura que a linha de baixo termina em "⚠ bypass", sem círculo, e que o chat segue sem erro no console.
 
 ## Validadas em DEV1
 
@@ -148,6 +136,29 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** tokens/contexto/custo por sessão, histórico de 5h e 7d, alerta em 80%/90% e previsão de quando o limite zera.
 
 ## Concluídas
+
+### TASK-063 — Tirar o círculo de contexto da linha de baixo do chat
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (aprovada pelo usuário em 2026-11-02; promovida para a `main` em 2026-11-02, versão 0.2.5)
+- **Prioridade:** Baixa (visual) — pedido do usuário em 2026-11-02, com captura: "dessa parte vamos tirar o círculo dali" (o anel pequeno depois de "⚠ bypass").
+- **Feito:** `src/renderer/chat.js` (sem o `.c-ring` no HTML, na ligação e na atualização) e `src/renderer/styles.css` (sem a regra). O contexto continua no anel CTX do rail, que agora é igual ao do terminal (TASK-058).
+- **Testado:** `npm run check`; conferido por captura que a linha de baixo termina em "⚠ bypass", sem círculo, e que o chat segue sem erro no console.
+
+### TASK-064 — Eventos e Clear iguais no chat e no terminal (paridade entre os modos)
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (aprovada pelo usuário em 2026-11-02; promovida para a `main` em 2026-11-02, versão 0.2.5)
+- **Prioridade:** Alta — pedido do usuário em 2026-11-02, com duas capturas: "no modo terminal o Clear fica piscando e no chat não; acho que tem uma tarefa assim para validar os eventos iguais independente do modo".
+- **Auditoria (terminal × chat), o que foi conferido no código:**
+  - **Clear pulsando:** o chat tinha `pulse: false` fixo. **Corrigido:** mesma regra do terminal (agente parado e anel CTX no limite de Configurações > Clear, 15% por padrão).
+  - **Fluxo do Clear:** o terminal oferece "Só limpar" e "Fechar a tarefa e limpar"; o chat só tinha "nova conversa". **Corrigido:** o chat tem as duas opções, com o mesmo critério do terminal para continuar sozinho (o aviso final `TERMIX-CLEAR-OK` escrito pelo agente depois do pedido; sem ele, pergunta "A tarefa foi registrada?"), o botão fica "ocupado" durante o fluxo, e usa os mesmos pedidos de fechamento e retomada (inclusive os do fluxo Rocruzta).
+  - **Aviso "Precisa de você":** no terminal vem do pedido de permissão; o chat só escrevia uma linha na conversa. **Corrigido:** se algo é negado (aba em "Perguntar"), o chat também avisa, com o mesmo tipo de notificação e as mesmas configurações.
+  - **Já iguais (mesmas funções):** estados da aba (ponto e "Aguardando você"), aviso de "terminou" e de erro, selo de aba não vista, notificação do Windows e dica ao terminar; rail (TASK-058); aviso "cache esfriando" passa a valer para o chat porque agora ele tem os dados do cache (testado só pelo código: o aviso exige o processo do chat vivo).
+  - **Ainda diferentes, de propósito ou sem equivalente:** o chat não mede "a retomada custou ~X tokens" depois do Clear; o terminal tem pedido de permissão interativo e o chat não tem cartão de aprovação (limite do `claude -p`, TASK-040); o spinner do Reiniciar não gira no chat.
+- **Feito:** `src/renderer/app.js` (`clearDockState` do chat com pulso e estado ocupado) e `src/renderer/chat.js` (`chatClearFlow` completo, `c.flow` próprio do chat para não cruzar com o relógio do terminal, aviso "perm" quando há negações).
+- **Testado (CDP, instância isolada, Claude Code real):** contexto real 2,8%: botão normal; contexto 20%: botão com a classe de pulso; agente trabalhando: sem pulso e desabilitado; fluxo completo sem o aviso final: abre "Limpar o contexto?" (Cancelar / Só limpar / Fechar a tarefa e limpar), o agente trabalha com o botão "ocupado", aparece "A tarefa foi registrada?" e "Não limpar" mantém tudo; fluxo completo com o aviso final: fecha, começa a conversa nova (ID da sessão mudou) e manda o pedido de retomada, ficando só as duas mensagens novas. Não testado: o fluxo num projeto do fluxo Rocruzta de verdade (pedidos longos) e o caso do aviso de permissão negada.
+- **Como validar:** no chat, deixar o contexto passar de 15% e ver o Clear pulsar; clicar em Clear e conferir as duas opções; testar "Fechar a tarefa e limpar" num projeto seu.
 
 ### TASK-062 — Por que o contexto "explode" ao abrir qualquer chat (investigação nos projetos reais)
 
