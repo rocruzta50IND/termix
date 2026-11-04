@@ -11,7 +11,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-097 — Publicar a versão 0.3.6 (só para provar a atualização automática em outro PC)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (Release v0.3.6 publicado em 2026-11-04: https://github.com/rocruzta50IND/termix/releases/tag/v0.3.6; instalador 125.193.579 bytes, sha512 conferido; promoção dev1 → main `29c2d93`; feed público já mostra 0.3.6)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-04: o PC de teste (Windows 11, Smart App Control em Avaliação) instalou a 0.3.5 pelo guia; subir uma versão simples para esse PC atualizar sozinho. Parte da TASK-095.
 - **Entra:** nenhuma mudança de código; versão 0.3.6 e o rodapé do `docs/INSTALACAO.md` com o resultado do teste real.
 - **Como validar:** no PC de teste, com o Termix 0.3.5 aberto, aparece o chip de atualização no cabeçalho (até alguns segundos após abrir ou em até 4 h); baixa em segundo plano; **Reiniciar agora**; o app volta com `v0.3.6` e as abas restauradas. Anotar o tempo.
