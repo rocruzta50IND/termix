@@ -268,6 +268,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Perguntas abertas:** (1) visibilidade entre pessoas: tempo real entre máquinas (precisa de sincronização: git, GitHub ou serviço) ou basta o estado por commit? (2) o fluxo continua como plugin para outros projetos da Rocruzta ou o app o substitui só dentro do Termix? (3) o que da regra atual do fluxo é essencial e o que é burocracia?
 - **Próximo passo:** quando o usuário priorizar, começar pela medição de tokens.
 
+### TASK-101 — Categoria "Workflow": projeto guiado com dois agentes fixos (ORQ e DEV) (avaliação e desenho)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — só avaliação e desenho, **sem código** nesta tarefa.
+- **Prioridade:** Média-alta — levantada pelo usuário em 2026-11-04. Ligada à TASK-099 (o app controlar o fluxo nativamente): as duas provavelmente viram um desenho único.
+- **Ideia central:** nova categoria **Workflow** na barra lateral, ao lado de Projetos. O usuário cria um projeto nela e vê os plugins, skills e MCPs (com um conjunto padrão para o fluxo funcionar). Abre uma tela parecida com a atual, mas com **dois terminais/chat fixos, ORQ e DEV** (nomes editáveis), possivelmente com painéis de controle (fase, tarefas, consumo, o que cada agente faz). Ao entrar, o app pergunta o que vamos fazer; o brainstorm, as decisões e a arquitetura geram tudo o que o projeto precisa para seguir sozinho até o fim. O app controla contexto e tokens (Clear no momento certo, retomada com resumo curto) usando o que já existe: limites 5h/7d, Clear, retomada pelo ID, notificação de "terminou". Pode exigir mudar um pouco o layout do componente do appshell.
+- **Vantagem esperada:** o **app** passa as mensagens entre os agentes (em vez de arquivos lidos pelo Claude), o que reduz o gasto de tokens suspeito na TASK-099.
+- **Riscos a tratar no desenho:** (1) autonomia e custo: loop entre ORQ e DEV e consumo rápido do limite, então teto por ciclo, pausa acima de X% do limite, pontos de aprovação e botão de parar; (2) permissões do DEV (edita arquivos e roda comandos) sem virar um Dangerously solto; (3) o app precisa saber quando um agente terminou e o que entregou (formato de entrega que o app entenda; hoje só existe o "terminou" por hook); (4) controle de contexto: quando dar Clear e o que entra no resumo (resumo que perde decisão faz o projeto derivar); (5) escopo grande: é um produto dentro do produto.
+- **Faseamento sugerido:** (a) tela com ORQ/DEV fixos e mensagens manuais entre eles; (b) o app repassa as mensagens com aprovação a cada passo; (c) autonomia com freios.
+- **Perguntas abertas:** (1) o brainstorm é conduzido pelo ORQ no chat (recomendado, com o app fornecendo modelos) ou por um assistente guiado do app (formulários)? (2) o usuário aprova a cada ciclo (ORQ planeja → aprova → DEV executa) ou o fluxo roda até um ponto de parada que ele define? (3) ORQ e DEV são sempre Claude Code ou o desenho já deixa aberto para Codex e outros? (4) papéis fixos em dois ou o Workflow pode crescer para mais agentes (ex.: revisor)?
+- **Primeiros passos:** decidir as perguntas; juntar o desenho com o da TASK-099 (modelo de dados das tarefas e papéis); esboçar a tela e as fases em `docs/DESIGN.md`/`docs/DECISOES.md`; quebrar a fase (a) em tarefas de implementação.
+- **Próximo passo:** quando o usuário priorizar, responder as perguntas abertas.
+
 ### TASK-100 — Tela "Hardware": consumo do computador e por aba/projeto (avaliação e desenho)
 
 - **Responsável:** A definir (DEV1 + usuário)
