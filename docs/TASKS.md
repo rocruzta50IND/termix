@@ -268,6 +268,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Perguntas abertas:** (1) visibilidade entre pessoas: tempo real entre máquinas (precisa de sincronização: git, GitHub ou serviço) ou basta o estado por commit? (2) o fluxo continua como plugin para outros projetos da Rocruzta ou o app o substitui só dentro do Termix? (3) o que da regra atual do fluxo é essencial e o que é burocracia?
 - **Próximo passo:** quando o usuário priorizar, começar pela medição de tokens.
 
+### TASK-100 — Tela "Hardware": consumo do computador e por aba/projeto (avaliação e desenho)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — só avaliação e desenho, **sem código** nesta tarefa.
+- **Prioridade:** Média — levantada pelo usuário em 2026-11-04.
+- **Ideia central:** tela nova "Hardware" com as métricas de consumo do próprio computador da pessoa, trazendo os dados relevantes. Motivo concreto: vários agentes de IA rodando juntos pesam no PC (TASK-072 mediu o app em 402 MB vazio e 573 MB com 8 abas; o peso vem dos processos do Claude Code).
+- **Dados candidatos:** CPU (total, por núcleo, histórico curto), memória (usada/livre, arquivo de paginação), disco (espaço livre por unidade, leitura/escrita; liga com a TASK-090), GPU (uso e memória, se a leitura for simples; NVIDIA via `nvidia-smi`), rede (envio/recebimento), bateria/energia em notebook. Temperatura fica fora do primeiro corte (no Windows costuma exigir programa de terceiros ou administrador).
+- **Diferencial a avaliar:** consumo **por aba e por projeto** (o Termix sabe quais processos pertencem a cada aba), apontando qual agente está pesando; avisos quando a máquina estiver no limite. Sem isso a tela só repetiria o Gerenciador de Tarefas.
+- **Custo e riscos:** ler o sistema só com a tela aberta e em intervalo de 2 a 3 s; módulos nativos do Node (`os`, `process`) dão CPU, memória, rede e bateria sem dependência; disco por unidade e GPU pedem PowerShell/CIM ou biblioteca (ex.: `systeminformation`), que aumenta o instalador, então medir antes de escolher.
+- **Perguntas abertas:** (1) informativa ou também ativa (avisos como "memória acima de 90%", ligados às notificações existentes)? (2) a atribuição por aba/projeto entra no primeiro corte (recomendado: sim)? (3) visual igual ao da tela Consumo (anéis e gráficos em glassmorphism) ou painel mais técnico?
+- **Primeiros passos:** decidir as perguntas; medir o custo de coleta (CPU/memória do próprio app lendo os dados) com as opções de fonte; esboçar a tela em `docs/DESIGN.md`; quebrar em tarefas de implementação.
+- **Próximo passo:** quando o usuário priorizar, responder as perguntas abertas.
+
 ### TASK-095 — Teste de verdade: instalar em outro PC do time pelo guia do GitHub
 
 - **Responsável:** A definir (usuário + um colega)
