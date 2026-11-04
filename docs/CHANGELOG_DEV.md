@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-04
 
+**TASK-097 — Versão 0.3.6** (DEV1)
+
+- Versão sem mudança de código, só para provar a atualização automática num segundo PC (o de teste instalou a 0.3.5 pelo guia: SmartScreen com "Executar assim mesmo", Smart App Control em Avaliação). `docs/INSTALACAO.md` registra o resultado do teste real.
+
 **TASK-083 encerrada: MVP declarado na 0.3.5** (DEV1)
 
 - Decisão do usuário: considerar o MVP pronto e passar às ideias pós-MVP. Não é a versão 1.0. O que ficou sem fazer virou Backlog: TASK-095 (instalar em PC de colega pelo guia do GitHub, com o Smart App Control) e TASK-096 (restante da auditoria B/C/D e `docs/AUDITORIA_MVP.md`). Só documentação.
