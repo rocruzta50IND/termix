@@ -64,7 +64,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-083 — Validação do MVP: auditoria geral e uso por 5 pessoas da empresa
 
 - **Responsável:** DEV1
-- **Status:** PRONTA (a TASK-084, a tela Consumo, já foi validada)
+- **Status:** ENCERRADA — MVP DECLARADO NA 0.3.5 (decisão do usuário em 2026-11-04: "considerar um MVP pronto" e partir para as ideias pós-MVP). **Não é a versão 1.0** (só com aprovação do usuário). O que ficou sem fazer foi movido para o Backlog: **TASK-095** (instalação em PC de colega) e **TASK-096** (restante da auditoria B/C/D e `docs/AUDITORIA_MVP.md`).
 - **Prioridade:** Crítica — decisão do usuário em 2026-11-03: fechar o MVP antes das duas funções pós-MVP; o app é de **uso interno, para 5 integrantes da empresa, sem comercialização por ora**, e todos precisam conseguir instalar e usar. O usuário vai dar `/clear` e retomar com o chat limpo para esta auditoria.
 - **Pronto quando:** as 5 pessoas conseguem instalar do zero, abrir, usar o dia a dia e atualizar sem ajuda, e o relatório da auditoria não tem pendência crítica nem alta; então o usuário declara a primeira grande versão (1.0).
 - **Plano (nesta ordem):**
@@ -235,6 +235,25 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ## Prontas
 
 ## Backlog
+
+### TASK-095 — Teste de verdade: instalar em outro PC do time pelo guia do GitHub
+
+- **Responsável:** A definir (usuário + um colega)
+- **Status:** BACKLOG (pendência herdada do MVP, TASK-083; o usuário declarou o MVP sem este teste e pediu que ele aconteça quando houver um colega disponível)
+- **Prioridade:** Alta — é a única prova de que o guia funciona fora da máquina do desenvolvedor.
+- **Como fazer:** o colega segue só o `docs/INSTALACAO.md` da `main` no GitHub: (1) vê o estado do Smart App Control; (2) se **Ativado**, desliga conforme o guia; (3) baixa o instalador do Release mais recente e instala; (4) abre, cria um projeto e abre um chat/terminal; (5) numa aba sem o Claude Code instalado, confere a mensagem "Claude Code não foi encontrado"; (6) na versão seguinte, confere a atualização pelo chip do cabeçalho.
+- **Registrar:** versão testada, Windows (10/11), estado do Smart App Control antes/depois, antivírus, o que o colega estranhou no guia. Corrigir o guia com o resultado e tirar o aviso "ainda sem teste" do rodapé. Se algum PC **não** puder desligar o Smart App Control, reavaliar assinatura gratuita (p. ex. SignPath) em vez de pagar certificado.
+- **Também pendente:** atualização 0.3.4 → 0.3.5 no app instalado do usuário (fecha a TASK-094/089); alternativa por PowerShell para desligar o Smart App Control só depois de um colega confirmar que funciona num PC real; nota no guia de que o instalador usa o C:.
+
+### TASK-096 — Restante da auditoria do MVP (itens B, C e D) e relatório
+
+- **Responsável:** A definir
+- **Status:** BACKLOG (o que não foi feito da TASK-083)
+- **Prioridade:** Média — fazer antes de qualquer 1.0.
+- **B (UX):** aba Web, chat em estados de erro, modais, notificações com a janela estreita, DPI alto e mais de um monitor, teclado e foco, muitos projetos; achados menores já vistos: mapa de calor do Consumo cortado em 800 px de largura e bandeja de sub-abas mostrando 2 de 4 ícones em 500 px de altura; a TASK-093 numa tela física pequena.
+- **C (performance):** 10 a 15 abas e uso por horas, medindo memória e CPU (reavaliar TASK-075, 076, 073, 077).
+- **D (segurança e privacidade):** o que o app lê e grava (`%APPDATA%\Termix`, `~/.claude`), modo Dangerously, segredos no repositório público e no histórico, permissões do instalador.
+- **Entregável:** `docs/AUDITORIA_MVP.md` com achados por gravidade.
 
 ### TASK-087 — Refatoração de design dos modais (pós-MVP)
 
