@@ -255,6 +255,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-099 — Trazer o fluxo (tarefas, papéis, visão do time) para dentro do app: avaliação e desenho
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — só avaliação e desenho, **sem código** nesta tarefa.
+- **Prioridade:** Média-alta — levantada pelo usuário em 2026-11-04.
+- **Ideia central:** o fluxo-rocruzta existe para visualizar o que cada pessoa faz nos projetos. Manter essa ideia, mas nativa no Termix, como se o app controlasse: uma tela nova de gerência de projeto (quadro de tarefas por status, quem faz o quê, atividade das sessões, consumo por tarefa), com as tarefas controladas pelo app e não por arquivos Markdown lidos e reescritos pelo Claude.
+- **Motivação:** suspeita do usuário de que o fluxo atual não atende bem o desenvolvimento e gasta mais tokens do que parece, às vezes criando tarefa sem necessidade.
+- **Hipóteses de gasto a medir:** `/retomar` lê `CLAUDE.md`, `WORKFLOW.md`, `TASKS.md` (grande, com tarefas de 10+ linhas) e o changelog inteiros; cada tarefa reescreve vários campos, `TASKS.md`, `CHANGELOG_DEV.md` e commit; o hook de sessão injeta lista longa de tarefas; tarefas de "publicar versão" e similares viram entrada própria.
+- **Direção a avaliar:** (1) tarefas em dado estruturado (JSON por projeto ou banco pequeno) em vez de Markdown longo; (2) o Claude recebe só um resumo curto da tarefa ativa e atualiza por comandos pequenos; (3) papéis e travas (ex.: DEV1 não consulta a dev2) passam a ser regra do app em vez de hooks de shell; (4) exportar para Markdown como visão legível/versionada no git.
+- **Primeiros passos:** (a) **medir** o custo em tokens do fluxo atual (um `/retomar` e uma tarefa típica) antes de propor o desenho; (b) decidir as perguntas abertas abaixo; (c) esboçar o modelo de dados e a tela; (d) quebrar em tarefas de implementação.
+- **Perguntas abertas:** (1) visibilidade entre pessoas: tempo real entre máquinas (precisa de sincronização: git, GitHub ou serviço) ou basta o estado por commit? (2) o fluxo continua como plugin para outros projetos da Rocruzta ou o app o substitui só dentro do Termix? (3) o que da regra atual do fluxo é essencial e o que é burocracia?
+- **Próximo passo:** quando o usuário priorizar, começar pela medição de tokens.
+
 ### TASK-095 — Teste de verdade: instalar em outro PC do time pelo guia do GitHub
 
 - **Responsável:** A definir (usuário + um colega)
