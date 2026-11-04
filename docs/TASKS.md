@@ -11,7 +11,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-097 — Publicar a versão 0.3.6 (só para provar a atualização automática em outro PC)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (Release v0.3.6 publicado em 2026-11-04: https://github.com/rocruzta50IND/termix/releases/tag/v0.3.6; instalador 125.193.579 bytes, sha512 conferido; promoção dev1 → main `29c2d93`; feed público já mostra 0.3.6)
+- **Status:** VALIDADA EM DEV1 (usuário confirmou em 2026-11-04: o PC de teste atualizou 0.3.5 → 0.3.6 sozinho, "tudo funcionando") — Release v0.3.6 publicado em 2026-11-04: https://github.com/rocruzta50IND/termix/releases/tag/v0.3.6; instalador 125.193.579 bytes, sha512 conferido; promoção dev1 → main `29c2d93`; feed público já mostra 0.3.6)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-04: o PC de teste (Windows 11, Smart App Control em Avaliação) instalou a 0.3.5 pelo guia; subir uma versão simples para esse PC atualizar sozinho. Parte da TASK-095.
 - **Entra:** nenhuma mudança de código; versão 0.3.6 e o rodapé do `docs/INSTALACAO.md` com o resultado do teste real.
 - **Como validar:** no PC de teste, com o Termix 0.3.5 aberto, aparece o chip de atualização no cabeçalho (até alguns segundos após abrir ou em até 4 h); baixa em segundo plano; **Reiniciar agora**; o app volta com `v0.3.6` e as abas restauradas. Anotar o tempo.
@@ -248,7 +248,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-095 — Teste de verdade: instalar em outro PC do time pelo guia do GitHub
 
 - **Responsável:** A definir (usuário + um colega)
-- **Status:** BACKLOG (pendência herdada do MVP, TASK-083; o usuário declarou o MVP sem este teste e pediu que ele aconteça quando houver um colega disponível)
+- **Status:** PARCIALMENTE FEITA (2026-11-04). **Provado num PC real (Windows 11, Smart App Control em Avaliação):** instalação pelo guia da 0.3.5 (SmartScreen com "Executar assim mesmo"), primeira abertura mais lenta e depois normal, e atualização automática 0.3.5 → 0.3.6 sem ajuda. **Ainda sem prova:** PC com Smart App Control **Ativado** (bloqueio e desligamento), Windows 10, mensagem "Claude Code não foi encontrado" e antivírus da empresa. Fica no Backlog para quando um colega nessa situação puder testar.
 - **Prioridade:** Alta — é a única prova de que o guia funciona fora da máquina do desenvolvedor.
 - **Como fazer:** o colega segue só o `docs/INSTALACAO.md` da `main` no GitHub: (1) vê o estado do Smart App Control; (2) se **Ativado**, desliga conforme o guia; (3) baixa o instalador do Release mais recente e instala; (4) abre, cria um projeto e abre um chat/terminal; (5) numa aba sem o Claude Code instalado, confere a mensagem "Claude Code não foi encontrado"; (6) na versão seguinte, confere a atualização pelo chip do cabeçalho.
 - **Registrar:** versão testada, Windows (10/11), estado do Smart App Control antes/depois, antivírus, o que o colega estranhou no guia. Corrigir o guia com o resultado e tirar o aviso "ainda sem teste" do rodapé. Se algum PC **não** puder desligar o Smart App Control, reavaliar assinatura gratuita (p. ex. SignPath) em vez de pagar certificado.
