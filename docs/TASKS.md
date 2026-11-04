@@ -11,12 +11,12 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-098 — Apresentação do Termix para a reunião (index.html)
 
 - **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (feita em 2026-11-04; falta o usuário revisar o texto)
+- **Status:** VALIDADA EM DEV1 (usuário aprovou em 2026-11-04: "ficou perfeito"; usada na reunião do dia)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-04: apresentação em `index.html` do sistema inteiro, com tudo o que ele faz e o intuito de ter criado o app, para a reunião do dia.
 - **Feito:** `docs/apresentacao/index.html` (arquivo único, sem dependências, imagem embutida): 19 slides (capa, por que criamos, intuito, o app em uma tela, projetos e abas, chat e terminal, retomada, anéis de consumo, tela Consumo, Clear, plugins/skills/MCPs, Web, notificações, instalação e atualização, dados e privacidade, como foi feito, limites, próximos passos, encerramento). Conteúdo tirado do README e de `docs/DECISOES.md`; limites e pendências ditos com franqueza. Navegação por setas, F (tela cheia), P (imprimir/PDF).
 - **Atenção:** o texto do "intuito" foi deduzido da documentação (o `DECISOES.md` não traz uma frase de motivação); o usuário deve ajustar ao que quer dizer. Os números do slide 16 (170+ commits, 90+ tarefas, 5 usuários) vêm do repositório. Não é código do app: não entra em versão.
 - **Testado:** capturas headless (Edge) dos slides em 1600×900 e 1366×700 sem corte nem estouro.
-- **Próximo passo:** usuário abre o arquivo, revisa e diz o que ajustar.
+- **Próximo passo:** nenhum. Ideias pós-MVP são o próximo assunto (Backlog; TASK-095 e TASK-096 seguem pendentes).
 
 ### TASK-097 — Publicar a versão 0.3.6 (só para provar a atualização automática em outro PC)
 
