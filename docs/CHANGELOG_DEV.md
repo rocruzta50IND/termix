@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
+**TASK-104 — Avaliação: reabrir como administrador sob demanda** (DEV1)
+
+- Conclusão registrada: com o app elevado todas as abas sobem elevadas (o filho herda o nível), então o padrão continua normal; recomendada a opção D (botão Reabrir como administrador, selo ADMIN e voltar ao normal), reaproveitando restauração de abas e o auxiliar de troca. Ressalva principal: só serve se a conta do usuário é administradora. Só documentação.
+
 **Promoção dev1 → main (versão 0.3.7)** (DEV1)
 
 - Promovidas, por pedido do usuário para publicar a 0.3.7: TASK-105 (cartão de permissão no chat), TASK-107 (versão) e o registro de avaliações no Backlog (TASK-099 a 106) e da TASK-097/098. Fast-forward; a TASK-105 segue aguardando a validação do usuário no uso real.
