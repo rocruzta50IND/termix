@@ -296,6 +296,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-110 — Termix não aparece no Snap Assist do Windows (encaixar ao lado de outra janela)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — causa provável medida; correção ainda não feita.
+- **Prioridade:** Baixa, pós-MVP — pedido do usuário em 2026-11-05, com um print: ao encaixar uma janela (Chrome) numa metade da tela, o Windows lista as outras janelas abertas para preencher a outra metade (Snap Assist), e o Termix não aparece na lista.
+- **Medido (2026-11-05, janelas reais do Electron, estilos do Windows lidos com `GetWindowLongPtr`):** no modo **transparente** (padrão; é o do usuário, `bg: gradient`) a janela do Termix **não tem o estilo `WS_THICKFRAME`** (nem `WS_CAPTION`); no modo **Ofuscado** (`acrylic`) tem os dois. O Snap Assist e os atalhos de encaixe (Win+setas) dependem de a janela ser redimensionável pelo sistema, então a causa provável é essa. Não consegui observar o Snap Assist em si (é uma tela do sistema), então fica como **provável, não confirmada**.
+- **Teste de correção simples (não resolve):** num app Electron isolado, janela `transparent: true, frame: false` com `thickFrame: true` e com `resizable: true` continuou **sem** `WS_THICKFRAME`; o Electron não entrega esse estilo a janelas transparentes no Windows.
+- **Atalho hoje (a confirmar com o usuário):** trocar o fundo para **Ofuscado** em Configurações; a janela passa a ter `WS_THICKFRAME` e deve aparecer no encaixe. O visual muda (vidro fosco do Windows no lugar do degradê transparente) e a troca reabre o app.
+- **Opções para o desenho:** (a) testar uma janela **sem** `transparent` e com `backgroundMaterial: 'none'`/cor sólida por trás do degradê (ganha `WS_THICKFRAME`; perde a transparência real do modo padrão); (b) adicionar `WS_THICKFRAME` por código nativo depois de criar a janela (exige um módulo nativo, como `koffi` ou um `.node`, e cuidado com o desenho da sombra/borda); (c) fazer o próprio app oferecer "Encaixar à esquerda/direita" (menu da barra de título) movendo e redimensionando a janela, sem depender do Snap do Windows (resolve o uso, não o Snap Assist); (d) aceitar a limitação e documentar o modo Ofuscado como o modo para encaixar.
+- **Riscos:** mudar o tipo de janela mexe no visual central do app (glassmorphism), na sombra e nas bordas arredondadas; Win+setas e o botão de maximizar do Windows 11 (layouts de encaixe ao passar o mouse) devem ser testados junto; vale checar também com várias telas e escala de 125–150 %.
+- **Como validar (depois):** encaixar o Chrome numa metade e ver o Termix na lista de sugestões; Win+seta esquerda/direita encaixa o Termix; maximizar, restaurar e arrastar continuam normais.
+- **Próximo passo:** quando o usuário priorizar, confirmar se o Ofuscado serve de atalho e escolher entre (a), (b) e (c).
+
 ### TASK-108 — Pedido de permissão do chat pode passar despercebido (aviso fora da tela e notificação do Windows)
 
 - **Responsável:** DEV1

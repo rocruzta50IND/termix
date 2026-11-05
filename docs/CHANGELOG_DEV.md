@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
+**TASK-110 — Registrada no Backlog (baixa, pós-MVP): Termix não aparece no Snap Assist do Windows** (DEV1)
+
+- Causa provável medida: no modo transparente (padrão) a janela não tem WS_THICKFRAME; no Ofuscado tem. `thickFrame: true` e `resizable: true` não resolvem no Electron. Atalho: usar o modo Ofuscado. Só documentação.
+
 **TASK-109 — Registrada no Backlog: fila de pedidos de permissão e "Permitir tudo nesta sessão"** (DEV1)
 
 - Causa confirmada por teste: chamadas em paralelo geram vários pedidos de uma vez (mesma regra sugerida), e o app só responde ao pedido clicado. Confirmado também que o `setMode bypassPermissions` (sessão) funciona, mas só se o processo subir com `--allow-dangerously-skip-permissions`. Só documentação.
