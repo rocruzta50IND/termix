@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
+**TASK-109 — Registrada no Backlog: fila de pedidos de permissão e "Permitir tudo nesta sessão"** (DEV1)
+
+- Causa confirmada por teste: chamadas em paralelo geram vários pedidos de uma vez (mesma regra sugerida), e o app só responde ao pedido clicado. Confirmado também que o `setMode bypassPermissions` (sessão) funciona, mas só se o processo subir com `--allow-dangerously-skip-permissions`. Só documentação.
+
 **TASK-108 — Registrada no Backlog: pedido de permissão do chat pode passar despercebido** (DEV1)
 
 - Avaliação com teste real: com o app em foco e a conversa rolada para cima, o cartão fica fora da tela e não há toast, som nem notificação; a notificação do Windows só vale com a janela sem foco, não tem botões nem lembrete e pode ser engolida por Não incomodar. Layout em janela pequena sem problema encontrado. Só documentação.
