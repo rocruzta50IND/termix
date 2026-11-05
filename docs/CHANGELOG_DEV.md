@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
+**TASK-105 — Registrada no Backlog: caixa de permissão não aparece no chat** (DEV1)
+
+- Investigação: o chat roda `claude -p` sem `--permission-prompt-tool stdio`, então tudo que pede aprovação é negado em silêncio. Reproduzido; com a flag o Claude Code envia `control_request` (`can_use_tool`) e executa ao receber `control_response` com `allow`. Falha no terminal ainda sem causa conhecida (registrado o que perguntar ao usuário). Só documentação.
+
 **TASK-104 — Registrada no Backlog: terminal em modo administrador** (DEV1)
 
 - Avaliação: o app hoje não atende (roda como usuário comum e as abas herdam esse nível). Registradas três opções (Termix elevado, elevação por aba, terminal externo elevado) e a recomendação inicial. Só documentação.
