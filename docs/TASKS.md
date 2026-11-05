@@ -255,6 +255,18 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-104 — Terminal em modo administrador (avaliação e desenho)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — só avaliação e desenho, **sem código** nesta tarefa.
+- **Prioridade:** Média — levantada pelo usuário em 2026-11-05: se o usuário precisar de um terminal com privilégios de administrador, o app atende?
+- **Avaliação (verificada no código em 2026-11-05): não atende.** (1) O Termix roda como usuário comum: o instalador é por usuário (`perMachine: false`) e não há manifesto de elevação nem `requestedExecutionLevel`. (2) Cada aba é criada em `pty:spawn` (`src/main.js`) com `pty.spawn` do `@lydell/node-pty`, que herda o nível do próprio Termix; não existe elevação por aba. (3) Cada aba abre o **Claude Code**, não um shell avulso; "terminal administrativo" aqui significa o Claude Code (e os comandos que ele roda) com privilégios elevados. Consequência: tarefas como instalar serviço, mexer em HKLM, portas baixas, `netsh`, `sfc`, Hyper-V ou WSL com recursos do Windows falham com "acesso negado" e o usuário precisa sair do app e abrir um terminal elevado fora dele.
+- **Opções a avaliar:** (A) **Termix inteiro elevado** (atalho "Executar como administrador" ou manifesto `requireAdministrator`): simples, mas **todas** as abas ficam elevadas (risco de segurança: o Claude Code com `--dangerously`/permissões soltas passa a ter poder total), pede UAC a cada abertura, e o Windows bloqueia arrastar arquivos do Explorer comum para a janela elevada (UIPI) e pode atrapalhar a instância única, a atualização automática e a abertura pelo atalho. (B) **Elevação por aba**: um processo auxiliar elevado (UAC só ao abrir a aba) que hospeda o PTY e conversa com o Termix por pipe nomeado com autenticação; é o desenho certo, mas dá mais trabalho e exige cuidado para outro processo local não usar o auxiliar para escalar privilégio. (C) **Abrir um PowerShell/cmd elevado externo** na pasta do projeto (`Start-Process -Verb RunAs`), fora do app: barato, resolve o caso de emergência, sem integração com as abas, status line e hooks.
+- **Pontos a decidir:** quem pode abrir aba elevada (só com confirmação do usuário a cada vez); sinalizar a aba elevada de forma inconfundível (selo/cor "ADMIN" na aba e no cabeçalho); se o chat (modo SDK) também ganha o modo; como ficam hooks, status line e `%APPDATA%\Termix` com o processo elevado (mesmo usuário, mas conferir permissões dos arquivos criados); teste em PC com UAC no padrão e com Smart App Control.
+- **Recomendação inicial:** começar pela (C) como solução rápida e desenhar a (B) como solução definitiva; evitar a (A) como padrão pelo risco de elevar tudo.
+- **Primeiros passos:** decidir entre A, B e C com o usuário; registrar a decisão em `docs/DECISOES.md`; se for B, prototipar o auxiliar elevado com um PTY e o pipe, sem mexer no fluxo normal.
+- **Próximo passo:** quando o usuário priorizar, escolher a opção.
+
 ### TASK-099 — Trazer o fluxo (tarefas, papéis, visão do time) para dentro do app: avaliação e desenho
 
 - **Responsável:** A definir (DEV1 + usuário)

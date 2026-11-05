@@ -6,6 +6,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-05
+
+**TASK-104 — Registrada no Backlog: terminal em modo administrador** (DEV1)
+
+- Avaliação: o app hoje não atende (roda como usuário comum e as abas herdam esse nível). Registradas três opções (Termix elevado, elevação por aba, terminal externo elevado) e a recomendação inicial. Só documentação.
+
 ## 2026-11-04
 
 **TASK-097 — Versão 0.3.6** (DEV1)
