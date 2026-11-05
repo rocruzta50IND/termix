@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
+**Promoção dev1 → main (versão 0.3.7)** (DEV1)
+
+- Promovidas, por pedido do usuário para publicar a 0.3.7: TASK-105 (cartão de permissão no chat), TASK-107 (versão) e o registro de avaliações no Backlog (TASK-099 a 106) e da TASK-097/098. Fast-forward; a TASK-105 segue aguardando a validação do usuário no uso real.
+
 **TASK-107 — Versão 0.3.7** (DEV1)
 
 - Publica o cartão de permissão do chat (TASK-105). Pedido do usuário; a TASK-105 ainda aguarda a validação no uso real. Registrada também a TASK-106 no Backlog (lista prévia de permissões e aviso ao trocar o modo, vindos do feedback de um chat).
