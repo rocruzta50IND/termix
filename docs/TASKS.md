@@ -283,6 +283,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-108 — Pedido de permissão do chat pode passar despercebido (aviso fora da tela e notificação do Windows)
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG — falha confirmada por teste; correção ainda não feita.
+- **Prioridade:** Alta — levantada pelo usuário em 2026-11-05, depois da TASK-105: com o cartão de permissão, o pedido pode não aparecer para a pessoa (notificação do Windows ausente, resolução ou layout diferentes). Enquanto o pedido não é respondido, o agente fica parado.
+- **Confirmado (instância isolada, Claude Code real, janela 900×480, foco emulado, 2026-11-05):** com o app em foco e a aba visível, se a pessoa rolou a conversa para cima enquanto o Claude trabalhava, o cartão nasce **fora da tela** (altura da conversa 958 px, janela de 238 px) e **não há nenhum aviso**: nem toast, nem som, nem notificação (0 eventos novos), e a linha "Aguardando a sua permissão" também fica fora da tela. O único sinal é o texto "Aguardando você" no canto da barra de abas. Causa no código: `chatScroll` só rola quando a pessoa está no fim (`c.stick`), e `notifyTab` (`src/renderer/app.js`) descarta o aviso quando o app tem foco e a aba está visível, mesmo com o cartão fora da vista.
+- **Resolução pequena (confirmado):** a 760×520 o cartão cabe e os 3 botões ficam visíveis (quebram de linha); comando longo rola dentro do cartão (teto de 160 px). Sem problema de layout encontrado; falta testar telas muito baixas (altura < 450 px) e escala de 125–150 % do Windows.
+- **Notificação do Windows (por leitura do código, `notify:show` em `src/main.js`):** só dispara com a janela **sem foco**; título até 80 e texto até 200 caracteres; **sem botões** (clicar só traz a janela e abre a aba; não leva até o cartão); depende de Configurações > Notificações (tipo "Precisa de você" e "Notificação do Windows" ligados) e do Windows aceitar o aviso: **Não incomodar / Assistente de foco**, notificações desligadas para o Termix ou o app sem identificação no menu Iniciar fazem o aviso sumir, e o app **não tem como detectar** isso. O que sobra nesse caso é o ícone piscando na barra de tarefas, o som, o selo no sino e o selo na aba. Não há lembrete: o pedido fica pendente para sempre.
+- **Correção proposta:** (1) pedido novo **sempre** leva a conversa até o cartão (rola até ele mesmo com a pessoa no alto) ou, menos invasivo, mostra um botão fixo "Pedido de permissão ↓" sobre a caixa de mensagem; (2) `notifyTab` do tipo `perm` não é descartado quando o cartão não está visível (toast e som no app mesmo com foco); (3) clicar na notificação do Windows (e no toast/painel) abre a aba **e rola até o cartão**; (4) lembrete se o pedido continua sem resposta (ex.: após 2 min, depois a cada 5 min, enquanto o app estiver sem foco ou o cartão fora da vista), com contagem de pedidos pendentes na aba; (5) texto da notificação com o nome do projeto/aba e o comando (já tem a aba e ~100 caracteres do comando); (6) `docs/INSTALACAO.md`: seção curta para liberar as notificações do Termix e o Assistente de foco/Não incomodar; (7) **não** aprovar pela notificação do Windows (sem contexto e fácil de clicar sem querer): só avisar.
+- **Perguntas abertas:** (1) rolar sozinho até o cartão ou só o botão fixo? (2) o lembrete repete até quando? (3) mostrar o pedido também no painel de notificações com "Ir para o pedido"?
+- **Como validar (depois):** rolar a conversa para cima durante um pedido (o aviso aparece e leva ao cartão); app em segundo plano com a notificação ligada e depois com o Windows em Não incomodar (o ícone pisca e o lembrete chega); janela pequena e escala 150 %.
+- **Próximo passo:** usuário aprova o desenho (perguntas 1 a 3) e DEV1 implementa.
+
 ### TASK-106 — Chat: permissões mais úteis (lista prévia por ferramenta/domínio e aviso ao trocar o modo) (avaliação e desenho)
 
 - **Responsável:** A definir (DEV1 + usuário)
