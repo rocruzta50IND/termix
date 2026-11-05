@@ -8,6 +8,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-107 — Publicar a versão 0.3.7 (cartão de permissão no chat)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO
+- **Prioridade:** Alta — pedido do usuário em 2026-11-05: "suba a nova versão", para levar a TASK-105 (cartão Permitir/Negar no chat) ao time.
+- **Entra nesta versão:** TASK-105 (cartão de permissão no chat em modo Perguntar) e as tarefas de documentação do Backlog (099 a 106). A TASK-105 foi testada por CDP, mas ainda não validada pelo usuário no uso real: o usuário decidiu publicar mesmo assim.
+- **Passos:** versão 0.3.7; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml`; `gh release create v0.3.7`.
+- **Próximo passo:** publicar; depois o usuário atualiza o app (0.3.6 → 0.3.7) e valida o cartão no uso real.
+
 ### TASK-098 — Apresentação do Termix para a reunião (index.html)
 
 - **Responsável:** DEV1
@@ -272,6 +281,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ## Prontas
 
 ## Backlog
+
+### TASK-106 — Chat: permissões mais úteis (lista prévia por ferramenta/domínio e aviso ao trocar o modo) (avaliação e desenho)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — só avaliação e desenho, **sem código** nesta tarefa.
+- **Prioridade:** Média — vem do feedback de um chat do app, em 2026-11-05, depois da TASK-105. O cartão resolveu o "não pergunta"; sobraram dois pontos.
+- **Ponto A — meio-termo entre "Perguntar" e "Automático" (lista prévia):** hoje o "Permitir sempre" cria a regra pedido a pedido, e o usuário precisa errar uma vez para liberar. Avaliar em Configurações > Chat (ou por projeto) uma lista de liberações definida antes: ferramentas de leitura (Read, Grep, Glob), `WebFetch`/`WebSearch` para domínios escolhidos, comandos de shell de leitura (`git status`, `node --version` etc.). Grava no mesmo `.claude/settings.local.json` ou em dado do app; cuidado para não virar um Dangerously disfarçado. Arquivos sensíveis (`.mcp.json`, `.claude/`) seguem só "uma vez", como o Claude Code decide.
+- **Ponto B — a configuração só vale para chats novos:** quem troca Automático/Perguntar e continua na mesma aba acha que não funcionou (o texto pequeno em Configurações é o único aviso). Avaliar: aviso na hora da troca ("vale só para novos chats") e/ou botão "Aplicar a esta aba" (reinicia o processo do chat com o modo novo, retomando a conversa) e/ou seletor do modo no próprio rodapé da aba, junto do selo que já existe. Liga com o Backlog que já cogitou controles no rodapé (TASK-047 manteve só Chat/Terminal por decisão do usuário: reconfirmar).
+- **Já tratado pela TASK-105 (não repetir):** cartão Permitir/Negar, mensagem de negação sem orientação enganosa, selo do modo no rodapé do chat (já existia).
+- **Perguntas abertas:** (1) a lista prévia é global ou por projeto? (2) trocar o modo na aba atual reinicia o processo (perde o que está em andamento)? (3) o selo vira clicável para alternar?
+- **Próximo passo:** quando o usuário priorizar, responder as perguntas e esboçar a tela.
 
 ### TASK-104 — Terminal em modo administrador (avaliação e desenho)
 

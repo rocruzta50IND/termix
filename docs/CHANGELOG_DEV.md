@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
+**TASK-107 — Versão 0.3.7** (DEV1)
+
+- Publica o cartão de permissão do chat (TASK-105). Pedido do usuário; a TASK-105 ainda aguarda a validação no uso real. Registrada também a TASK-106 no Backlog (lista prévia de permissões e aviso ao trocar o modo, vindos do feedback de um chat).
+
 **TASK-105 — Chat: caixa de permissão (Permitir/Negar) dentro da conversa** (DEV1)
 
 - Causa: o chat rodava `claude -p` sem `--permission-prompt-tool stdio`, então tudo que pedia aprovação era negado em silêncio. Agora, na aba em "Perguntar", o Claude Code envia um pedido (`control_request`) e o chat mostra um cartão com **Permitir uma vez**, **Permitir sempre neste projeto** e **Negar**; a aba fica em "Aguardando você" e notifica. Pedido pendente fecha ao interromper, reiniciar ou se o processo cair. `AskUserQuestion` ainda volta como negativa (o Claude pergunta em texto). Testado por CDP com o Claude Code real. A falha relatada no terminal continua sem causa conhecida (aguarda respostas do usuário).
