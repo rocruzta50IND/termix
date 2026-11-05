@@ -11,11 +11,12 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-107 — Publicar a versão 0.3.7 (cartão de permissão no chat)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO
+- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (Release v0.3.7 publicado em 2026-11-05: https://github.com/rocruzta50IND/termix/releases/tag/v0.3.7; instalador 125.195.366 bytes, sha512 conferido; promoção dev1 → main `8956754`; feed público já mostra 0.3.7)
 - **Prioridade:** Alta — pedido do usuário em 2026-11-05: "suba a nova versão", para levar a TASK-105 (cartão Permitir/Negar no chat) ao time.
 - **Entra nesta versão:** TASK-105 (cartão de permissão no chat em modo Perguntar) e as tarefas de documentação do Backlog (099 a 106). A TASK-105 foi testada por CDP, mas ainda não validada pelo usuário no uso real: o usuário decidiu publicar mesmo assim.
 - **Passos:** versão 0.3.7; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml`; `gh release create v0.3.7`.
-- **Próximo passo:** publicar; depois o usuário atualiza o app (0.3.6 → 0.3.7) e valida o cartão no uso real.
+- **Feito:** versão 0.3.7; promoção dev1 → main (fast-forward); `npm run dist`; `latest.yml` conferido (versão, tamanho e sha512 batem com o instalador); pacote confere (`--permission-prompt-tool` presente em `src/chat.js`); Release v0.3.7 com instalador, blockmap e `latest.yml`.
+- **Próximo passo:** o usuário atualiza o app (0.3.6 → 0.3.7) e valida o cartão de permissão no uso real (aba de chat em Perguntar, por exemplo um `claude mcp add`); isso também valida a TASK-105.
 
 ### TASK-098 — Apresentação do Termix para a reunião (index.html)
 

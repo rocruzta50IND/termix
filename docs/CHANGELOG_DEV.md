@@ -14,7 +14,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-107 — Versão 0.3.7** (DEV1)
 
-- Publica o cartão de permissão do chat (TASK-105). Pedido do usuário; a TASK-105 ainda aguarda a validação no uso real. Registrada também a TASK-106 no Backlog (lista prévia de permissões e aviso ao trocar o modo, vindos do feedback de um chat).
+- Release v0.3.7 publicado (https://github.com/rocruzta50IND/termix/releases/tag/v0.3.7; instalador 125.195.366 bytes, sha512 conferido; feed público mostra 0.3.7). Publica o cartão de permissão do chat (TASK-105). Pedido do usuário; a TASK-105 ainda aguarda a validação no uso real. Registrada também a TASK-106 no Backlog (lista prévia de permissões e aviso ao trocar o modo, vindos do feedback de um chat).
 
 **TASK-105 — Chat: caixa de permissão (Permitir/Negar) dentro da conversa** (DEV1)
 
