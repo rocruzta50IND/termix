@@ -136,6 +136,8 @@ function chatView(tab) {
   c.stick = true;
   root.addEventListener('click', (e) => {
     const a = e.target.closest('a[data-ext]'); if (a) { e.preventDefault(); api.webExternal(a.getAttribute('href')); return; }
+    const pm = e.target.closest('[data-pm]');
+    if (pm) { const row = pm.closest('.c-pm'), it = c.items.find((x) => x.el === row); if (it) chatDecide(tab, it, pm.dataset.pm); return; }
     const all = e.target.closest('.c-copyall');
     if (all) { // copia a resposta inteira, no texto original (Markdown), não só o que está na tela
       const row = all.closest('.c-row'), it = c.items.find((x) => x.el === row);
@@ -256,6 +258,14 @@ function chatPaintItem(it) {
     // o botão de copiar vem ANTES do texto, grudado (sticky) no canto de cima, à direita, dentro da caixa: acompanha a rolagem de respostas longas
     d.querySelector('.c-bub').innerHTML = (!it.live && it.text ? `<span class="c-cpw"><button class="c-copyall" type="button" title="Copiar a resposta inteira" aria-label="Copiar a resposta inteira">${chatIc('copy', 14)}</button></span>` : '') + chatMd(it.text) + (it.live ? '<span class="c-caret"></span>' : '');
   } else if (it.k === 'sys') { d.className = 'c-sys' + (it.err ? ' err' : ''); d.textContent = it.text; }
+  else if (it.k === 'perm') { // pedido de permissão do Claude Code (TASK-105): Permitir uma vez / sempre / Negar
+    const st = it.state, dest = ((it.rules || [])[0] || {}).destination;
+    const always = (it.rules || []).length ? (dest === 'session' ? 'Permitir nesta sessão' : dest === 'userSettings' ? 'Permitir sempre (todos os projetos)' : 'Permitir sempre neste projeto') : '';
+    const ST = { allow: 'Permitido', always: 'Permitido sempre', deny: 'Negado', gone: 'Encerrado sem resposta' };
+    d.className = 'c-pm' + (st === 'pending' ? '' : ' done ' + st);
+    d.innerHTML = `<div class="pmh"><span class="ti">!</span><b>${esc(it.title)}</b><span class="pms">${st === 'pending' ? 'Aguardando você' : ST[st]}</span></div><pre class="pmb">${esc(it.body)}</pre>${it.desc ? `<div class="pmd">${esc(it.desc)}</div>` : ''}`
+      + (st === 'pending' ? `<div class="pma"><button type="button" class="pri" data-pm="allow">Permitir uma vez</button>${always ? `<button type="button" data-pm="always">${esc(always)}</button>` : ''}<button type="button" class="neg" data-pm="deny">Negar</button></div>` : '');
+  }
   else if (it.k === 'tool') {
     const open = d.open;
     d.className = 'c-tool' + (it.done ? (it.err ? ' err' : '') : ' run');
@@ -293,8 +303,10 @@ function chatStatus(c) {
   const el = Date.now() - (c.t0 || Date.now());
   const run = [...c.items].reverse().find((it) => it.k === 'tool' && !it.done);
   const last = c.items[c.items.length - 1];
+  const pend = c.items.find((it) => it.k === 'perm' && it.state === 'pending');
   let sub;
-  if (run) { let arg = chatToolArg(run.name, run.input);
+  if (pend) sub = 'Aguardando a sua permissão · ' + (pend.title || '');
+  else if (run) { let arg = chatToolArg(run.name, run.input);
     if (!arg && run.json) { // a entrada ainda chegando pelo stream: pega o primeiro campo conhecido
       const m = /"(?:file_path|command|pattern|path|url|query|description)"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(run.json);
       if (m) arg = m[1].replace(/\\n/g, ' ').slice(0, 120);
@@ -328,7 +340,7 @@ function chatUi(tab) {
   c.root.querySelector('.c-folder em').textContent = railBranch(p) || '';
   c.mdl.textContent = c.modelName || '';
   c.perm.textContent = tab.perm === 'd' ? '⚠ bypass' : 'Perguntar';
-  c.perm.title = tab.perm === 'd' ? 'Esta aba ignora as verificações de permissão (Configurações > Chat)' : 'Edições de arquivo são aceitas; o resto é negado e o chat avisa (Configurações > Chat)';
+  c.perm.title = tab.perm === 'd' ? 'Esta aba ignora as verificações de permissão (Configurações > Chat)' : 'Edições de arquivo são aceitas; o resto pede a sua permissão aqui na conversa (Configurações > Chat)';
   c.perm.classList.toggle('w', tab.perm === 'd');
 }
 
@@ -393,6 +405,18 @@ async function chatSendMsg(tab, text, imgs = []) {
   const res = await api.chatSend(tab.id, text.trim(), imgs.map((m) => ({ mt: m.mt, data: m.data })));
   if (!res.ok) { c.busy = false; chatSys(c, 'Não consegui enviar: o processo do Claude Code não está ativo. Envie de novo para reiniciá-lo.', true); r.alive = false; setSt(tab, 'wait'); chatUi(tab); return; }
   if (!tab.started) { tab.started = true; save(); }
+}
+// resposta do usuário ao cartão de permissão: how = 'allow' | 'always' | 'deny'
+async function chatDecide(tab, it, how) {
+  if (it.state !== 'pending' || it.sending) return;
+  it.sending = true;
+  const c = chatView(tab);
+  const res = await api.chatPermit({ tabId: tab.id, requestId: it.rid, allow: how !== 'deny', input: it.input, rules: how === 'always' ? it.rules : undefined, message: 'O usuário negou esta ação no Termix. Não tente de novo da mesma forma; pergunte a ele o que prefere.' });
+  it.sending = false;
+  if (!res || !res.ok) { it.state = 'gone'; chatPaintItem(it); chatSys(c, 'Não consegui responder: o processo do Claude Code não está mais ativo. Envie uma mensagem para reiniciá-lo.', true); chatUi(tab); return; }
+  it.state = how; chatPaintItem(it);
+  if (!c.items.some((x) => x.k === 'perm' && x.state === 'pending')) setSt(tab, 'work'); // voltou a trabalhar
+  chatUi(tab);
 }
 function chatInterrupt(tab) {
   const r = RT[tab.id], c = CH[tab.id];
@@ -462,7 +486,7 @@ async function chatClearFlow(p, tab) {
 async function chatExport(tab) { // "Exportar texto" do menu da aba, para o chat
   const c = CH[tab.id];
   if (!c || !c.items.length) return;
-  const text = c.items.map((it) => (it.k === 'me' ? `Você:\n${it.text}` : it.k === 'ai' ? `Claude:\n${it.text}` : it.k === 'tool' ? `[${it.name} ${chatToolArg(it.name, it.input)}]` : `(${it.text})`)).join('\n\n') + '\n';
+  const text = c.items.map((it) => (it.k === 'me' ? `Você:\n${it.text}` : it.k === 'ai' ? `Claude:\n${it.text}` : it.k === 'tool' ? `[${it.name} ${chatToolArg(it.name, it.input)}]` : it.k === 'perm' ? `[Permissão ${it.title}: ${it.state}]` : `(${it.text})`)).join('\n\n') + '\n';
   const saved = await api.saveText(`${tab.name}.txt`, text);
   if (saved) addEvent({ c: tab.color, who: tab.name, msg: `Conversa exportada para ${saved}` });
 }
@@ -472,7 +496,7 @@ function chatForget(tab) {
   delete MET[tab.id];
 }
 function chatStopLive(c) {
-  for (const it of c.items) { if (it.live) { it.live = false; chatPaintItem(it); } if (it.k === 'tool' && !it.done) { it.done = true; chatPaintItem(it); } }
+  for (const it of c.items) { if (it.live) { it.live = false; chatPaintItem(it); } if (it.k === 'tool' && !it.done) { it.done = true; chatPaintItem(it); } if (it.k === 'perm' && it.state === 'pending') { it.state = 'gone'; chatPaintItem(it); } }
   c.byIdx = {};
 }
 
@@ -557,6 +581,25 @@ function chatEvent(f, ev) {
       }
       break;
     }
+    case 'control_request': { // o Claude Code pede permissão para uma ferramenta e espera a resposta (TASK-105)
+      const q = ev.request || {};
+      if (q.subtype !== 'can_use_tool') break;
+      if (q.tool_name === 'AskUserQuestion') { // o chat ainda não mostra perguntas com opções: devolve ao Claude para perguntar em texto
+        api.chatPermit({ tabId: tab.id, requestId: ev.request_id, allow: false, message: 'O chat do Termix ainda não mostra perguntas interativas. Faça a pergunta em texto, na sua resposta, e espere o usuário responder.' });
+        break;
+      }
+      const inp = q.input || {}, title = q.display_name || q.tool_name || 'Ferramenta';
+      const body = String(inp.command || inp.file_path || inp.path || inp.url || inp.pattern || JSON.stringify(inp, null, 1)).slice(0, 1200);
+      chatAdd(c, { k: 'perm', rid: ev.request_id, tuid: q.tool_use_id, title, input: inp, rules: Array.isArray(q.permission_suggestions) ? q.permission_suggestions : [], desc: q.description || '', body, state: 'pending' });
+      setSt(tab, 'wait'); // "Aguardando você" na barra de abas, como o pedido de permissão do terminal
+      notifyTab(p, tab, 'perm', `Permitir ${title}? ${chatToolArg(q.tool_name, inp)}`.trim());
+      break;
+    }
+    case 'control_cancel_request': { // o Claude Code desistiu do pedido (ex.: interrompido)
+      const it = c.items.find((x) => x.k === 'perm' && x.rid === ev.request_id && x.state === 'pending');
+      if (it) { it.state = 'gone'; chatPaintItem(it); if (!c.items.some((x) => x.k === 'perm' && x.state === 'pending') && c.busy) setSt(tab, 'work'); }
+      break;
+    }
     case 'rate_limit_event': { // limites de 5 h e 7 d da conta, como a status line do terminal
       const i = ev.rate_limit_info || {}, w = i.unifiedWindows || {};
       const conv = (x) => (x && typeof x.utilization === 'number' ? { used_percentage: x.utilization <= 1 ? x.utilization * 100 : x.utilization, resets_at: x.resetsAt } : null);
@@ -575,10 +618,13 @@ function chatEvent(f, ev) {
           if (c.lastUsage) chatCtx(tab, c, c.lastUsage);
         }
       }
-      for (const d of ev.permission_denials || []) chatSys(c, `Negado: ${d.tool_name} ${chatToolArg(d.tool_name, d.tool_input)}. Esta aba está em "Perguntar"; para o Claude executar isso, crie a aba em "Automático" (Configurações > Chat).`, true);
+      // negações que o próprio usuário deu no cartão já aparecem nele; aqui só o que foi negado sem pergunta (regra de permissão do projeto ou do usuário)
+      const byUser = new Set(c.items.filter((x) => x.k === 'perm' && x.state === 'deny').map((x) => x.tuid));
+      const denied = (ev.permission_denials || []).filter((d) => !byUser.has(d.tool_use_id));
+      for (const d of denied) chatSys(c, `Negado por uma regra de permissão: ${d.tool_name} ${chatToolArg(d.tool_name, d.tool_input)}.`, true);
       if (ev.is_error) chatSys(c, `O Claude Code devolveu um erro${ev.result ? ': ' + String(ev.result).slice(0, 300) : '.'}`, true);
       setSt(tab, 'wait');
-      if ((ev.permission_denials || []).length) notifyTab(p, tab, 'perm', 'Precisa de você: ' + [...new Set(ev.permission_denials.map((d) => d.tool_name))].join(', ') + ' foi negado (a aba está em "Perguntar").'); // como o pedido de permissão do terminal
+      if (denied.length) notifyTab(p, tab, 'perm', 'Precisa de você: ' + [...new Set(denied.map((d) => d.tool_name))].join(', ') + ' foi negado por uma regra de permissão.');
       notifyTab(p, tab, ev.is_error ? 'error' : 'done', ev.is_error ? 'A resposta terminou com erro.' : (c.lastAi.replace(/[#*`>_-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 160) || 'Terminou. Aguardando você.'));
       break;
     }

@@ -8,9 +8,9 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
-**TASK-105 — Registrada no Backlog: caixa de permissão não aparece no chat** (DEV1)
+**TASK-105 — Chat: caixa de permissão (Permitir/Negar) dentro da conversa** (DEV1)
 
-- Investigação: o chat roda `claude -p` sem `--permission-prompt-tool stdio`, então tudo que pede aprovação é negado em silêncio. Reproduzido; com a flag o Claude Code envia `control_request` (`can_use_tool`) e executa ao receber `control_response` com `allow`. Falha no terminal ainda sem causa conhecida (registrado o que perguntar ao usuário). Só documentação.
+- Causa: o chat rodava `claude -p` sem `--permission-prompt-tool stdio`, então tudo que pedia aprovação era negado em silêncio. Agora, na aba em "Perguntar", o Claude Code envia um pedido (`control_request`) e o chat mostra um cartão com **Permitir uma vez**, **Permitir sempre neste projeto** e **Negar**; a aba fica em "Aguardando você" e notifica. Pedido pendente fecha ao interromper, reiniciar ou se o processo cair. `AskUserQuestion` ainda volta como negativa (o Claude pergunta em texto). Testado por CDP com o Claude Code real. A falha relatada no terminal continua sem causa conhecida (aguarda respostas do usuário).
 
 **TASK-104 — Registrada no Backlog: terminal em modo administrador** (DEV1)
 

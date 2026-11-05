@@ -16,8 +16,10 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
     stop(tabId);
     const args = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--include-partial-messages', '--verbose',
       ...(resume ? ['--resume', sessionId] : ['--session-id', sessionId]),
-      // Automático: ignora as verificações de permissão (como a aba "Dangerously"); Perguntar: só edições de arquivo são aceitas e o resto é negado (o app avisa)
-      ...(perm === 'd' ? ['--dangerously-skip-permissions'] : ['--permission-mode', 'acceptEdits']),
+      // Automático: ignora as verificações de permissão (como a aba "Dangerously"). Perguntar: edições de arquivo são aceitas e o resto vira um pedido
+      // (`control_request` no stdout) que o chat mostra como cartão Permitir/Negar; a resposta volta pelo stdin (`permit`). Sem o `--permission-prompt-tool stdio`
+      // o modo `-p` negaria tudo em silêncio (TASK-105).
+      ...(perm === 'd' ? ['--dangerously-skip-permissions'] : ['--permission-mode', 'acceptEdits', '--permission-prompt-tool', 'stdio']),
       '--append-system-prompt', hint];
     const isCmd = claude.toLowerCase().endsWith('.cmd');
     let child;
@@ -60,6 +62,17 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
       ? [...imgs.map((m) => ({ type: 'image', source: { type: 'base64', media_type: m.mt, data: m.data } })), ...(String(text).trim() ? [{ type: 'text', text: String(text) }] : [])]
       : String(text);
     rec.child.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content } }) + '\n');
+    return { ok: true };
+  }
+
+  /* resposta a um pedido de permissão (`can_use_tool`): allow (com a entrada original e, se for "sempre", as regras sugeridas) ou deny com o motivo */
+  function permit({ tabId, requestId, allow, input, rules, message }) {
+    const rec = procs.get(tabId);
+    if (!rec || !rec.child.stdin.writable || typeof requestId !== 'string') return { ok: false };
+    const response = allow
+      ? { behavior: 'allow', updatedInput: input && typeof input === 'object' ? input : {}, ...(Array.isArray(rules) && rules.length ? { updatedPermissions: rules } : {}) }
+      : { behavior: 'deny', message: String(message || 'O usuário negou esta ação no Termix.').slice(0, 500) };
+    rec.child.stdin.write(JSON.stringify({ type: 'control_response', response: { subtype: 'success', request_id: requestId, response } }) + '\n');
     return { ok: true };
   }
 
@@ -119,5 +132,5 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
     } catch { return { items: [], model: '', usage: null }; }
   }
 
-  return { start, send, stop, stopAll, history };
+  return { start, send, permit, stop, stopAll, history };
 };

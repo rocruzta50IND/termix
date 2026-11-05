@@ -42,7 +42,7 @@ Uma janela só para todas as suas conversas com o **Claude Code**. O Termix orga
 - O botão **+** da barra de abas cria uma aba no modo escolhido em **Configurações > Chat** (Chat é o padrão); o menu ao lado do **+** tem os dois modos.
 - No rodapé, **Clear** começa uma conversa nova na aba, **Reiniciar** reinicia o processo mantendo a conversa e o botão **Terminal/Chat** abre a mesma aba no outro modo.
 - No chat, digite `/` no começo da mensagem para escolher uma skill ou comando, e cole ou arraste imagens para a caixa.
-- Para o Claude executar sem pedir permissão, use as abas em **Automático**; para só aceitar edições de arquivo, **Perguntar** (em Configurações > Chat). No terminal, a opção **Dangerously** ignora as verificações de permissão e não tem isolamento do sistema: use com cuidado.
+- Para o Claude executar sem pedir permissão, use as abas em **Automático**; para aceitar edições de arquivo e perguntar o resto na conversa, **Perguntar** (em Configurações > Chat). No terminal, a opção **Dangerously** ignora as verificações de permissão e não tem isolamento do sistema: use com cuidado.
 
 ## Limites conhecidos
 
@@ -50,7 +50,7 @@ Uma janela só para todas as suas conversas com o **Claude Code**. O Termix orga
 - Só Windows por enquanto; o Windows 10 não foi testado.
 - O Codex e outras ferramentas de agente aparecem como "Em breve".
 - No navegador embutido, o login com Google não funciona (o Google bloqueia); entre por GitHub ou e-mail e senha.
-- No chat em modo **Perguntar**, o Claude Code só nega o que não é edição de arquivo e o chat avisa; ainda não há um cartão para aprovar na hora.
+- No chat em modo **Perguntar**, o que não é edição de arquivo aparece na conversa como um cartão: **Permitir uma vez**, **Permitir sempre neste projeto** (grava a regra em `.claude/settings.local.json` do projeto) ou **Negar**.
 - Os limites de 5 horas e de 7 dias, e o cache, chegam pela status line do Claude Code: em um projeto que só tem abas de chat esses anéis ficam sem dado (eles vêm das abas de terminal).
 - Várias abas na mesma pasta não têm proteção contra edições simultâneas.
 

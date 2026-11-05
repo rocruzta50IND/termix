@@ -336,7 +336,8 @@ ipcMain.handle('chat:start', (_e, a) => {
   return chat.start({ tabId: a.tabId, cwd: a.cwd, sessionId: a.sessionId, resume: !!a.resume, perm: a.perm === 'd' ? 'd' : 'n' });
 });
 ipcMain.handle('chat:send', (_e, a) => (a && typeof a.tabId === 'string' && typeof a.text === 'string' ? chat.send(a) : { ok: false }));
-ipcMain.on('chat:stop', (_e, a) => { if (a && typeof a.tabId === 'string') chat.stop(a.tabId); });
+ipcMain.handle('chat:permit', (_e, a) => (a && typeof a.tabId === 'string' && typeof a.requestId === 'string' ? chat.permit(a) : { ok: false }));
+ipcMain.on('chat:stop',(_e, a) => { if (a && typeof a.tabId === 'string') chat.stop(a.tabId); });
 ipcMain.handle('chat:history', (_e, a) => (a && typeof a.cwd === 'string' ? chat.history(a) : { items: [], model: '', usage: null }));
 
 /* ---------- IPC: projetos ---------- */
