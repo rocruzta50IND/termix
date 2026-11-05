@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-05
 
+**TASK-104 — Cancelada** (DEV1)
+
+- Decisão do usuário: descartar, porque abrir o app como administrador já eleva todas as abas. Só documentação.
+
 **TASK-104 — Avaliação: reabrir como administrador sob demanda** (DEV1)
 
 - Conclusão registrada: com o app elevado todas as abas sobem elevadas (o filho herda o nível), então o padrão continua normal; recomendada a opção D (botão Reabrir como administrador, selo ADMIN e voltar ao normal), reaproveitando restauração de abas e o auxiliar de troca. Ressalva principal: só serve se a conta do usuário é administradora. Só documentação.
