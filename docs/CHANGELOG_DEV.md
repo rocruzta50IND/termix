@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-06
 
+**TASK-113 e TASK-114 — Registradas no Backlog: botão da pasta do projeto no rail e anexar arquivos no chat** (DEV1)
+
+- TASK-113: avaliada a lista de arquivos gerados pelo Claude e descartada por complexidade; ficou só um botão no rail que abre a pasta do projeto (a ação já existe). TASK-114 (pós-MVP): o chat só aceita imagens ao arrastar/colar (`chat.js` filtra `image/*`) e ignora o resto sem avisar; avaliar anexar arquivos. Só documentação.
+
 **TASK-111 e TASK-112 — Registradas no Backlog (conhecimento): Rocruzta Hub e Automidia** (DEV1)
 
 - TASK-111: ideia do app central (repositório próprio) que hospeda o Termix e outros apps, todos com repositório próprio; arquitetura em 4 peças (hub, apps, contrato), modelos A/B/C comparados e recomendação de fases (1: janelas próprias coordenadas; 2: modo hospedado). TASK-112: Automidia (controlador de redes sociais, Instagram primeiro); depende de o usuário trazer o relatório dos testes do motor Claude + Instagram para análise e validação da ideia. Só documentação; sem código.

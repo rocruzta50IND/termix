@@ -296,6 +296,27 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-114 — Chat: anexar arquivos arrastando (hoje só imagens entram)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — para **avaliar depois**; falta reproduzir o relato com o usuário.
+- **Prioridade:** Pós-MVP — pedido do usuário em 2026-11-06: ao arrastar um arquivo para o chat, ele não pega; hoje não dá para anexar arquivos no chat.
+- **Causa provável (lida no código, não testada no app):** em `src/renderer/chat.js` (linhas 127–131) a colagem e o `drop` aceitam **só imagens** (`filter(f => /^image\//.test(f.type))`); qualquer outro arquivo é ignorado em silêncio, sem aviso. Não existe caminho para anexar arquivo que não seja imagem.
+- **A avaliar:** (1) o que o usuário arrasta (`.md`, `.txt`, PDF, planilha, pasta?); (2) como entregar ao Claude Code no modo `-p` com `stream-json`: imagem vai como bloco da mensagem; para outros arquivos o caminho natural é **referenciar o caminho** no texto (o Claude lê com a ferramenta `Read`) e/ou copiar o arquivo para a pasta do projeto; (3) mostrar o anexo na caixa de mensagem (chip com nome e tamanho, remover) e na bolha enviada; (4) mínimo útil: **avisar** quando o arquivo solto não é aceito, em vez de ignorar; (5) segurança e custo: limite de tamanho, tipos, arquivo fora do projeto, executáveis, pastas; (6) se o arrastar também falha no modo terminal (não verificado).
+- **Relacionada:** TASK-113 (botão que abre a pasta do projeto, onde também se poderia soltar arquivos).
+- **Próximo passo:** nenhum agora; avaliar no pós-MVP, começando por reproduzir com o usuário e decidir o formato do anexo.
+
+### TASK-113 — Botão no rail que abre a pasta do projeto (acesso rápido aos arquivos gerados)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — escopo simplificado pelo usuário em 2026-11-06; ainda sem prioridade definida.
+- **Contexto:** hoje não há atalho no app para achar o que o Claude gerou; o usuário vai à pasta do projeto pelo sistema. Foi avaliada uma lista própria dos arquivos gerados (fontes: conversas gravadas em `~/.claude/projects`, eventos do chat, vigilância de pasta; painel flutuante com pré-visualização só de leitura) e **descartada por ser complexa demais**.
+- **Decisão do usuário (2026-11-06):** simples: **um botão no rail** que, ao clicar, **abre a pasta do projeto** (no Explorer do Windows); dali ele pega os arquivos e também pode **soltar arquivos** na pasta.
+- **O que já existe:** a ação de abrir a pasta do projeto (`api.openFolder` → IPC `project:open` → `shell.openPath`, `src/main.js:414`, usada no menu do projeto em `src/renderer/app.js:1854`). A tarefa é só o botão no rail, para o projeto da aba em foco.
+- **A definir no desenho:** onde fica o botão no rail e como convive com a cápsula de anéis e o esmaecimento (`docs/DESIGN.md`, Rail); ícone e dica ("Abrir a pasta do projeto"); aba de projeto sem pasta (mensagem em vez de falha silenciosa; `shell.openPath` devolve um texto de erro que hoje ninguém lê); se também deve existir no modo chat (o rail é igual nos dois modos, TASK-058).
+- **Ideias que ficaram de fora (podem voltar):** lista dos arquivos gerados pelo Claude com pré-visualização; arquivos criados por comando; arrastar para fora do app.
+- **Próximo passo:** priorizar com o usuário; é pequena (botão + ícone + documentação em `DESIGN.md`).
+
 ### TASK-112 — Automidia (app de redes sociais, Instagram primeiro): analisar o relatório dos testes do motor e validar a ideia do app
 
 - **Responsável:** A definir (DEV1 + usuário)
