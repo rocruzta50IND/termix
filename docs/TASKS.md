@@ -296,6 +296,29 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-112 — Automidia (app de redes sociais, Instagram primeiro): analisar o relatório dos testes do motor e validar a ideia do app
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — tarefa de **conhecimento** (sem código). Espera o usuário trazer o relatório.
+- **Prioridade:** A definir — pedido do usuário em 2026-11-06. O usuário está montando um fluxo do **Claude com o Instagram** (o "motor") e quer, depois de validar que ele funciona, transformá-lo num app chamado **Automidia**: um controlador de redes sociais, só Instagram por enquanto. Ele ficaria num repositório próprio e, mais adiante, dentro do Rocruzta Hub (TASK-111).
+- **O que fazer:** (1) o usuário traz o **relatório dos testes** do motor (como foi feito, o que abrangeu, o que funcionou e o que não); (2) analisar o relatório com ele: o que já está provado, o que falta provar, riscos (Graph API da Meta, conta Business/Creator, revisão do app pela Meta, tokens, limites de publicação, custo); (3) **validar com o usuário** se vale criar o app e qual é o recorte da primeira versão; (4) só então abrir as tarefas de construção (repositório próprio, `/fluxo:init`, stack, contrato com o hub).
+- **Perguntas em aberto (levantadas em 2026-11-06):** o motor já existe e roda em que stack? O que ele faz hoje (gerar legenda/imagem, agendar, publicar, métricas)? Quem usa (só o usuário ou o time de 5)? O app será Electron como os outros ou web/local? O repositório pode ser privado (o hub precisaria de credencial para baixar) ou fica público? Segredos e tokens nunca vão para o repositório.
+- **Não é:** desenvolvimento do app, nem mudança no Termix.
+- **Próximo passo:** o usuário entrega o relatório; analisar e validar a ideia (esta tarefa) antes de qualquer construção.
+
+### TASK-111 — Rocruzta Hub (app central que hospeda o Termix, o Automidia e outros): estruturar a ideia
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — tarefa de **conhecimento** (sem código). Ideia estruturada em 2026-11-06; a avaliação detalhada fica para depois da TASK-112.
+- **Prioridade:** A definir — pedido do usuário em 2026-11-06: um app isolado, o **Rocruzta Hub**, com **repositório próprio**, que centraliza as ferramentas (Termix, Automidia e as futuras), cada uma também com **repositório próprio**, e permite alternar entre elas dentro do hub. **Todos do time baixam só o hub**; os apps ficam dentro dele.
+- **Arquitetura proposta (a avaliar):** quatro peças, cada uma com repositório: (1) **Hub** — único instalador do time; barra lateral, **catálogo** de apps, instalador e atualizador dos apps (baixa o pacote do Release de cada repositório, confere o hash, guarda em `%APPDATA%\Rocruzta\apps\<app>\<versão>`), serviços compartilhados (notificações, configurações, login); (2) **Termix**, no repositório atual, vira app do catálogo; (3) **Automidia**; (4) **Contrato Hub ↔ App**, documento versionado no repositório do hub (manifesto do app, ciclo de vida, serviços do hub, versão do contrato) — a única coisa compartilhada entre os repositórios. Cada app publica o próprio Release; atualizar um app não exige novo hub.
+- **Modelos de integração comparados:** A) lançador (apps em janelas próprias; barato, sem unidade visual); B) casca com apps hospedados (parece um app só, cada app com ciclo próprio; o Termix precisa aprender a rodar hospedado); C) plugins no mesmo processo (acopla os repositórios; descartado). **Recomendação:** começar pela **Fase 1** (hub instala, atualiza e abre cada app em janela própria, com aparência coordenada; o Termix entra sem mudança) já com o contrato desenhado para a **Fase 2** (modo hospedado: o `main.js` do Termix exporta um `start(host)` em vez de criar a janela; o hub fixa a versão do Electron e os módulos nativos como o `node-pty` precisam ser compilados para ela; cada app declara a versão do contrato que aceita). Embutir a janela de outro Electron dentro do hub não é suportado de forma limpa no Windows.
+- **Fluxo de trabalho:** o mesmo em cada repositório (`/fluxo:init`, `WORKFLOW.md`, `TASKS.md`, IDs próprios; tarefa que cruza repositórios é citada como `hub#TASK-003`). O contrato tem dono: o hub. O hub precisa de "carregar app de uma pasta local" para desenvolver sem publicar Release. Uma sessão do Claude por repositório; o contexto compartilhado fica no contrato, não na conversa.
+- **Riscos:** (1) repositório **público** (decisão atual do Termix, ver `docs/DECISOES.md`) x app do Automidia com regras e marketing da empresa — privado exige credencial no hub; (2) **Smart App Control**: os apps baixados pelo hub também são executáveis novos; testar cedo se o Windows bloqueia; (3) a Fase 2 mexe no Termix, que o time já usa: tarefa própria, com cuidado e modo opcional; (4) o hub não pode atrasar o pós-MVP do Termix.
+- **Decisões que faltam (do usuário):** Fase 1 primeiro e Fase 2 depois? O hub tem interface própria (barra lateral, catálogo, configurações) ou é um menu fino? Aparência: glassmorphism do Termix ou design system da Rocruzta? O Termix continua com instalador próprio para quem não usa o hub? Privado ou público para o Automidia? Prioridade em relação ao pós-MVP do Termix.
+- **Depende de:** TASK-112 (validar o motor e a ideia do Automidia antes de decidir a construção do hub).
+- **Próximo passo:** nenhum agora. Retomar depois da TASK-112; então transformar em visão curta, rascunho do contrato e fases, e só aí abrir as tarefas de construção.
+
 ### TASK-110 — Termix não aparece no Snap Assist do Windows (encaixar ao lado de outra janela)
 
 - **Responsável:** A definir (DEV1 + usuário)
