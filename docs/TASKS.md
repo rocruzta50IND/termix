@@ -296,6 +296,23 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-115 — Integração com o Codex (OpenAI): avaliar e desenhar
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** BACKLOG — tarefa de **conhecimento** (sem código); avaliação e desenho antes de qualquer construção.
+- **Prioridade:** A definir (pós-MVP) — pedido do usuário em 2026-11-06. Verificado nesse dia que **não havia nenhuma tarefa** de Codex: só a decisão de produto "Claude Code primeiro; Codex e outras ferramentas depois" (`docs/DECISOES.md:7`), o item **Codex "Em breve"** desabilitado no menu do "+" (`src/renderer/app.js:1672`), o cartão "Planejado para uma próxima fase" em Configurações (`app.js:1495`) e a linha do README.
+- **A avaliar (com testes reais, como nas TASK-105/109):**
+  1. **Terminal:** como o Codex CLI sobe num PTY do Termix (instalação, caminho do executável, login, variáveis de ambiente, Windows nativo ou WSL), retomada de conversa pelo ID (o Termix retoma pelo ID do Claude Code) e onde ele grava as conversas.
+  2. **Chat:** o Codex tem um modo programático parecido com o `claude -p --output-format stream-json` (eventos, entrada por stdin, interrupção)? Se não tiver, o chat do Codex pode ficar só em terminal no começo.
+  3. **Permissões:** modos de aprovação e sandbox do Codex x o cartão Permitir/Negar do chat (TASK-105/109) e o selo de modo na aba.
+  4. **Consumo e limites:** o Codex não manda a status line do Claude Code; de onde vêm contexto, limites e custo para o rail e a tela Consumo (ou o rail some/muda nas abas do Codex).
+  5. **Projetos e abas:** como as abas de agentes diferentes convivem no mesmo projeto (ícone/selo por agente, notificações "terminou" e "precisa de você", Clear).
+  6. **Plugins, skills e MCPs:** as telas hoje leem só o que o Claude Code enxerga (`docs/DECISOES.md`); o Codex tem os seus próprios (arquivos e CLI diferentes). Decidir se entram ou ficam fora.
+  7. **Arquitetura:** hoje o código assume o Claude Code em vários pontos (`src/chat.js`, `findClaude`, wrappers de status line e hooks); avaliar uma camada de "agente" (um adaptador por ferramenta) antes de acrescentar a segunda.
+- **Relacionada:** TASK-101 (Workflow ORQ e DEV: hoje só Claude; a pergunta aberta 3 trata de deixar espaço para Codex); TASK-111 (Hub: o Termix continua sendo o app dos agentes de programação).
+- **Riscos:** o Codex muda rápido e o formato de saída pode não ser estável; custo e limites de outra conta/assinatura; dobra a superfície de teste do app; o time só usa Claude hoje, então validar se há demanda real antes de construir.
+- **Próximo passo:** nenhum agora. Quando priorizada: instalar o Codex CLI, testar terminal e modo programático em instância isolada, e registrar o resultado antes de decidir a construção.
+
 ### TASK-114 — Chat: anexar arquivos arrastando (hoje só imagens entram)
 
 - **Responsável:** A definir (DEV1 + usuário)

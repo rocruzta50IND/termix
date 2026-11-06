@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-06
 
+**TASK-115 — Registrada no Backlog: integração com o Codex (avaliação e desenho)** (DEV1)
+
+- Conferido que não existia tarefa de Codex (só a decisão "Claude Code primeiro", o item "Em breve" no menu do "+" e em Configurações, o README e uma ressalva da TASK-101). Registrados os pontos a avaliar: terminal, modo programático para o chat, permissões, consumo e limites, convivência de abas, plugins/skills/MCPs e uma camada de adaptador por agente. Só documentação.
+
 **TASK-113 e TASK-114 — Registradas no Backlog: botão da pasta do projeto no rail e anexar arquivos no chat** (DEV1)
 
 - TASK-113: avaliada a lista de arquivos gerados pelo Claude e descartada por complexidade; ficou só um botão no rail que abre a pasta do projeto (a ação já existe). TASK-114 (pós-MVP): o chat só aceita imagens ao arrastar/colar (`chat.js` filtra `image/*`) e ignora o resto sem avisar; avaliar anexar arquivos. Só documentação.
