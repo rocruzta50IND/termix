@@ -517,6 +517,9 @@ ipcMain.handle('metrics:all', () => {
 // tela Consumo: tokens e custo equivalente lidos das conversas do Claude Code (leitura incremental, ver consumo.js)
 const consumo = RUN_MODE ? null : require('./consumo').create({ userData: app.getPath('userData') });
 ipcMain.handle('consumo:get', () => (consumo ? consumo.snapshot() : { updated: Date.now(), sessions: [] }));
+// módulo Vibe Coding e Mutirão (DEV2-001, experimental): isolado em src/vibe; um erro nele nunca derruba o app
+let vibe = null; try { vibe = require('./vibe').create(); } catch (e) { logError(e); }
+ipcMain.handle('vibe:status', () => { try { return vibe ? vibe.status() : null; } catch (e) { logError(e); return null; } });
 
 // branch git da pasta de um projeto (para o rail); vazio se não for repositório ou sem git
 ipcMain.handle('git:branch', (_e, cwd) => new Promise((resolve) => {

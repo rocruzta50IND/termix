@@ -176,3 +176,6 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - O instalador não tem assinatura digital (sem gasto mensal ou recorrente, decisão do usuário) e, com o **Smart App Control** ligado, o Windows pode bloqueá-lo sem botão de "executar assim mesmo" (visto no Sandbox: "Uma política de Controle de Aplicativo bloqueou este arquivo"; o resultado varia de uma tentativa para outra).
 - **Decisão:** quem tem o Smart App Control **Ativado** o desliga (cada pessoa decide sobre o próprio PC; em PC gerenciado pela TI, com autorização). O que muda e o que continua protegendo está explicado, sem prometer risco zero, em `docs/INSTALACAO.md`. Smart App Control e SmartScreen são recursos diferentes: o SmartScreen continua ligado.
 - Reavaliar a assinatura grátis para projeto de código aberto (por exemplo, programas que assinam projetos públicos sem custo) se algum PC do time não puder desligar o Smart App Control.
+
+## Vibe Coding e Mutirão (DEV2-001)
+- Módulo separado, frente exclusiva da dev2 (tarefas DEV2-xxx em `docs/TASKS_DEV2.md`). Fica atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão; desligado, nada do módulo aparece nem roda. O núcleo só faz as ligações. Desenho, arquitetura e roteiro: `docs/VIBE_MUTIRAO.md`.

@@ -1,0 +1,7 @@
+/* Módulo Vibe Coding e Mutirão (DEV2-001). Só aparece com a chave ligada em Configurações. */
+#topbar .vibebtns{-webkit-app-region:no-drag;display:inline-flex;align-items:center;gap:6px;margin-right:8px}
+#topbar .vibebtn{height:30px;padding:0 12px;border-radius:99px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text2);font-size:12.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;transition:background .14s,color .14s}
+#topbar .vibebtn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+#topbar .vibebtn i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+#topbar .vibebtn.mut i{background:#b98cff}
+.vibe-wip{display:inline-block;margin-top:4px;padding:4px 10px;border-radius:99px;border:1px dashed var(--border);color:var(--text3);font-size:12px}
