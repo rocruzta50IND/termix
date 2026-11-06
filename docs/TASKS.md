@@ -8,6 +8,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-116 — Adicionar o DEV2 ao fluxo (criar a branch dev2 e registrar devs no fluxo.json)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (2026-11-06; branch criada, falta o DEV2 configurar a máquina)
+- **Prioridade:** Alta — pedido do usuário: o DEV2 clonou o projeto e o `/fluxo:papel` não achou a `origin/dev2`.
+- **Feito:** `.claude/fluxo.json` com `devs: ["dev2"]` e `design_system.modo: "nao-se-aplica"` (decisão do usuário: o Termix não usa o DS Rocruzta; a aparência é regida por `docs/DESIGN.md`). Branch `dev2` criada a partir da `dev1` (não da `main`, para não tocar a main com 10 commits não promovidos).
+- **Próximo passo:** o DEV2 roda `/fluxo:papel` (DEV2) e valida o ambiente; depois voltar à TASK-109.
+
 ### TASK-109 — Chat: pedidos de permissão em fila (vários cartões iguais) e "Permitir tudo nesta sessão"
 
 - **Responsável:** DEV1

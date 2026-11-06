@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-06
 
+**TASK-116 — DEV2 adicionado ao fluxo** (DEV1)
+
+- `.claude/fluxo.json` passa a listar `devs: ["dev2"]` e `design_system: nao-se-aplica`; branch `dev2` criada a partir da `dev1` e enviada. Sem mudança de código do app.
+
 **TASK-115 — Registrada no Backlog: integração com o Codex (avaliação e desenho)** (DEV1)
 
 - Conferido que não existia tarefa de Codex (só a decisão "Claude Code primeiro", o item "Em breve" no menu do "+" e em Configurações, o README e uma ressalva da TASK-101). Registrados os pontos a avaliar: terminal, modo programático para o chat, permissões, consumo e limites, convivência de abas, plugins/skills/MCPs e uma camada de adaptador por agente. Só documentação.
