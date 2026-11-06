@@ -179,3 +179,4 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 
 ## Vibe Coding e Mutirão (DEV2-001)
 - Módulo separado, frente exclusiva da dev2 (tarefas DEV2-xxx em `docs/TASKS_DEV2.md`). Fica atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão; desligado, nada do módulo aparece nem roda. O núcleo só faz as ligações. Desenho, arquitetura e roteiro: `docs/VIBE_MUTIRAO.md`.
+- **Entrega do Vibe Coding (DEV2-002):** formulário engessado, não chat. Exige o fluxo desenhado e um .md com as 9 seções do modelo, e "Iniciar" só habilita com tudo completo. A entrega fica na pasta de dados do app (`vibe\<id-do-projeto>\`), nunca na pasta do projeto do usuário. Substituir pede confirmação e nunca apaga a anterior (vai para o histórico).

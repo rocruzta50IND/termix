@@ -5,3 +5,41 @@
 #topbar .vibebtn i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
 #topbar .vibebtn.mut i{background:#b98cff}
 .vibe-wip{display:inline-block;margin-top:4px;padding:4px 10px;border-radius:99px;border:1px dashed var(--border);color:var(--text3);font-size:12px}
+
+/* Tela de entrega do Vibe Coding (DEV2-002): modal largo no padrão das janelas (.dlg), campos .inp do app */
+.dlg:has(.vibe-form){width:min(760px,94vw)}
+.dlg:has(.vibe-form) .foot2 [data-vtpl]{margin-right:auto}
+.dlg:has(.vibe-form) .foot2 .btn:disabled{opacity:.45;cursor:default;filter:none;box-shadow:none}
+.vibe-form>p{margin-bottom:14px}
+.vibe-form .vf{margin:0 0 16px}
+.vibe-form .vf>label:not(.vf-chk){display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px}
+.vibe-form .vf>label:not(.vf-chk) em{font-style:normal;font-weight:500;font-size:11.5px;color:var(--accent);margin-left:6px}
+.vibe-form .vf>label em.opt{color:var(--text3)}
+.vibe-form .vf>small{display:block;margin-top:6px;font-size:12px;color:var(--text3);line-height:1.45}
+.vibe-form .vf-cnt{text-align:right}
+.vibe-form .vf-pick{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.vibe-form .vf-pick .btn{flex:none}
+.vibe-form .vf-st{flex:1;min-width:200px;padding-top:6px;font-size:13px;overflow-wrap:anywhere}
+.vibe-form .vf-file.none{color:var(--text3)}
+.vibe-form .vf-file.wait{color:var(--text2)}
+.vibe-form .vf-file.ok{color:var(--ok)}
+.vibe-form .vf-file.bad{color:var(--bad)}
+.vibe-form .vf-prob{margin-top:4px;color:#fecaca;font-size:12.5px}
+.vibe-form .vf-secs{margin:6px 0 0 18px;color:#fecaca;font-size:12.5px;line-height:1.5}
+.vibe-form .vf-secs b{color:var(--text)}
+.vibe-form .vf-chk{display:flex;align-items:center;gap:9px;margin-top:9px;font-size:13px;font-weight:400;color:var(--text2);cursor:pointer}
+.vibe-note{margin:0 0 16px;padding:10px 14px;border-radius:12px;border:1px solid rgba(91,157,255,.35);background:rgba(91,157,255,.08);color:var(--text2);font-size:13px;line-height:1.45}
+.vibe-miss{margin-top:6px;padding:12px 14px;border-radius:12px;border:1px solid rgba(251,191,36,.38);background:rgba(251,191,36,.07);font-size:13px;color:var(--text2);line-height:1.5}
+.vibe-miss b{color:var(--warn)}
+.vibe-miss ul{margin:6px 0 0 18px}
+.vibe-miss.done{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.07)}
+.vibe-miss.done b{color:var(--ok)}
+.vibe-msg:empty{display:none}
+.vibe-msg{margin-top:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);font-size:13px;color:var(--text2);line-height:1.5;overflow-wrap:anywhere}
+.vibe-msg.ok{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.07)}
+.vibe-msg.ok b{color:var(--ok)}
+.vibe-msg.warn{border-color:rgba(251,191,36,.38);background:rgba(251,191,36,.07)}
+.vibe-msg.bad{border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.07)}
+.vibe-msg ul{margin:6px 0 0 18px}
+.vibe-msg small{color:var(--text3)}
+.vibe-confirm{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}

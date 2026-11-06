@@ -37,7 +37,7 @@ contextBridge.exposeInMainWorld('termix', {
   chatStop:(tabId) => ipcRenderer.send('chat:stop', { tabId }),
   chatHistory: (cwd, sessionId) => ipcRenderer.invoke('chat:history', { cwd, sessionId }),
   consumo: () => ipcRenderer.invoke('consumo:get'),
-  vibeStatus: () => ipcRenderer.invoke('vibe:status'),
+  vibe: (ch, ...a) => ipcRenderer.invoke(`vibe:${ch}`, ...a), // módulo Vibe Coding e Mutirão: só canais 'vibe:*'
   onChatEvents: (fn) => ipcRenderer.on('chat:events', (_e, m) => fn(m)),
   onChatExit: (fn) => ipcRenderer.on('chat:exit', (_e, m) => fn(m)),
 
