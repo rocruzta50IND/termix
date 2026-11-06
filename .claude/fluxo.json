@@ -1,7 +1,13 @@
 {
   "versao_fluxo": 1,
   "projeto": "Termix",
+  "devs": [
+    "dev2"
+  ],
   "validacao": [
     "npm run check"
-  ]
+  ],
+  "design_system": {
+    "modo": "nao-se-aplica"
+  }
 }
