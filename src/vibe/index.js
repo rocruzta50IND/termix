@@ -1,9 +1,11 @@
 'use strict';
 /* Módulo Vibe Coding e Mutirão: isolado do núcleo do Termix.
    DEV2-001: casca e canal 'vibe:status'. DEV2-002: tela de entrega do Vibe Coding (recebe, confere e guarda a entrega).
+   DEV2-003: arquivos do ciclo (estado, plano, perguntas, respostas) e o texto dos pedidos ao orquestrador.
    O main.js só chama create({ ipcMain, dialog, app, getWin, logError }); os handlers 'vibe:*' são registrados aqui,
    cada um com try/catch. Nada aqui escreve em terminal, git, chat, notificação ou na pasta do projeto do usuário:
-   tudo fica em <userData>\vibe\<id-do-projeto>\. Desenho: docs/VIBE_MUTIRAO.md. */
+   tudo fica em <userData>\vibe\<id-do-projeto>\ (quem cria as abas e digita os pedidos é a interface, src/renderer/vibe).
+   Desenho: docs/VIBE_MUTIRAO.md. */
 const fs = require('fs');
 const path = require('path');
 
@@ -92,6 +94,25 @@ function checkFields(f) {
   if (!f.nadaFornecer && !t(f.acessos)) out.push('Liste os acessos e dados que o humano precisa fornecer, ou marque "Nada a fornecer".');
   return out;
 }
+
+// Arquivos de um ciclo (DEV2-003). Ao iniciar um ciclo novo, os do anterior vão para o histórico.
+const CYCLE_FILES = ['estado.json', 'plano.md', 'perguntas.json', 'respostas.json'];
+
+// Branch onde os agentes podem fazer commit e push. Projeto com fluxo Rocruzta (.claude/fluxo.json): a branch do papel,
+// lida do CLAUDE.local.md. Sem fluxo: uma branch própria vibe/<projeto>, criada a partir da atual.
+function branchOf(pasta) {
+  try {
+    if (pasta && fs.existsSync(path.join(pasta, '.claude', 'fluxo.json'))) {
+      let b = '';
+      try { const m = /^\s*branch_padrao:\s*"?([\w./-]+)"?/m.exec(fs.readFileSync(path.join(pasta, 'CLAUDE.local.md'), 'utf8')); b = m ? m[1] : ''; } catch { /* sem CLAUDE.local.md */ }
+      return b ? { nome: b, regra: `só na branch "${b}" (a do papel no CLAUDE.local.md)` } : { nome: '', regra: 'só na branch do papel definida no CLAUDE.local.md (sem ela, não faça commit)' };
+    }
+  } catch { /* segue a regra sem fluxo */ }
+  const s = norm(path.basename(String(pasta || 'projeto'))).replace(/ /g, '-') || 'projeto';
+  return { nome: `vibe/${s}`, regra: `só numa branch própria "vibe/${s}", criada a partir da atual` };
+}
+// Linhas do plano que mandam fazer commit/push na main/master (sem negação na mesma linha). Conferência do Termix, sem tokens.
+const mainCommitLines = (text) => String(text).split('\n').filter((l) => /\b(commit|push)\w*\b[^\n]{0,30}?\b(em|na|no|para|on|to|into)\s+[`"'*]*(origin\/)?(main|master)\b/i.test(l) && !/\b(nunca|n[aã]o|sem|never|proibid\w*)\b[^\n]{0,25}\b(main|master)\b/i.test(l));
 
 function create(deps = {}) {
   const { ipcMain, dialog, app, getWin, logError = () => {} } = deps;
@@ -184,6 +205,86 @@ function create(deps = {}) {
       writeJson(cur, entrega);
       return { ok: true, entrega, pasta: dir };
     },
+
+    /* ---------- ciclo (DEV2-003): agentes, plano e perguntas ----------
+       Quem conduz e espera é a interface do Termix (código, zero token); aqui só ficam os arquivos e os textos dos pedidos. */
+    cicloGet(id) {
+      if (!validId(id)) return null;
+      return { estado: readJson(path.join(dirOf(id), 'estado.json')), pasta: dirOf(id) };
+    },
+    cicloSet(id, est) {
+      if (!validId(id) || !est || typeof est !== 'object' || JSON.stringify(est).length > 20000) return false;
+      writeJson(path.join(dirOf(id), 'estado.json'), { ...est, projectId: id, atualizado: new Date().toISOString() });
+      return true;
+    },
+    // Novo ciclo: os arquivos do ciclo anterior vão para historico\ciclo-<data>\ (nada é apagado).
+    cicloNovo(id) {
+      if (!validId(id)) return false;
+      const dir = dirOf(id);
+      const names = CYCLE_FILES.filter((n) => fs.existsSync(path.join(dir, n)));
+      if (!names.length) return true;
+      const old = readJson(path.join(dir, 'estado.json')) || {};
+      const hist = path.join(dir, 'historico', `ciclo-${String(old.iniciado || new Date().toISOString()).replace(/[:.]/g, '-')}`);
+      fs.mkdirSync(hist, { recursive: true });
+      for (const n of names) fs.renameSync(path.join(dir, n), path.join(hist, n));
+      return true;
+    },
+    // Texto curto que o Termix digita no terminal do orquestrador. kind: 'plano' (primeiro pedido) ou 'fechar' (depois das respostas).
+    cicloPrompt(id, kind) {
+      if (!validId(id)) return null;
+      const e = readJson(path.join(dirOf(id), 'entrega.json'));
+      if (!e) return null;
+      const d = dirOf(id);
+      const br = branchOf(e.projeto && e.projeto.pasta);
+      if (kind === 'fechar') {
+        return `Respostas do humano em ${path.join(d, 'respostas.json')}. Atualize ${path.join(d, 'plano.md')} com elas e regrave ${path.join(d, 'perguntas.json')} com a lista vazia, a menos que reste algo realmente indispensável. Mesmas regras de antes: só planejar, não mexer no código, não escrever fora de ${d}. Ao terminar, responda apenas PLANO FECHADO e encerre o turno.`;
+      }
+      return `Você é o ORQUESTRADOR do Vibe Coding do Termix neste projeto. Nesta etapa só PLANEJE: não altere o código do projeto, não instale nada, não faça commit. A entrega do humano está em ${d}: entrega.json (objetivo, critério de pronto, o que não fazer, acessos), estrutura.md e ${e.arquivos && e.arquivos.fluxo || 'o fluxo desenhado'}. Leia só o necessário. Grave nessa mesma pasta: 1) plano.md com as tarefas até o fim do projeto, na ordem, cada uma com o título no formato "## T1 — título" (T e o número) e os itens Objetivo, Critério de pronto, Arquivos prováveis, Validação e Não fazer; 2) perguntas.json no formato {"perguntas":[{"id":"p1","texto":"...","porque":"...","opcoes":["..."]}]}, só com o que for indispensável e não estiver na entrega; grave o arquivo sempre, com {"perguntas":[]} se nada faltar ("opcoes" é opcional). Comece o plano.md com a linha "Branch de trabalho: ${br.nome || 'a do papel no CLAUDE.local.md'}". Regras do projeto, para valer no plano: commit e push ${br.regra}, nunca na main/master, nem como tarefa do plano; nada que apague dados (sem reset --hard, clean -f, force push, apagar pastas do usuário); economia de tokens (quem espera e controla o ciclo é o Termix, prompts curtos que apontam para arquivos, /clear entre tarefas, o orquestrador lê resumos e não diffs inteiros); avisar o humano só para deploy e o indispensável. Não escreva fora de ${d}. Ao terminar, responda apenas PLANO GRAVADO e encerre o turno.`;
+    },
+    // Lê o que o orquestrador gravou: plano.md (texto e nº de tarefas) e perguntas.json (lista normalizada).
+    planoLer(id) {
+      if (!validId(id)) return null;
+      const d = dirOf(id);
+      const out = { plano: { ok: false }, perguntas: { ok: false, lista: [] }, respostas: readJson(path.join(d, 'respostas.json')) };
+      const pf = path.join(d, 'plano.md');
+      if (fs.existsSync(pf)) {
+        const st = fs.statSync(pf);
+        const text = fs.readFileSync(pf, 'utf8').replace(/^﻿/, '');
+        // tarefas = IDs T1, T2... distintos no início de um título ou item de lista ("## T1 — ...", "1. **T1 — ...**", "- T1: ...").
+        // Sem IDs, o número fica desconhecido (null): melhor não mostrar do que contar seções como tarefas.
+        const ids = new Set([...text.matchAll(/^[ \t]*(?:#{1,4}[ \t]*|\d+[.)][ \t]*|[-*][ \t]+)?(?:\*\*|__)?T(\d+)\b/gm)].map((m) => m[1]));
+        const n = ids.size || null;
+        out.plano = { ok: text.trim().length > 0, text: text.slice(0, 200000), tarefas: n, mtime: st.mtimeMs, mainCommit: mainCommitLines(text).slice(0, 3) };
+      }
+      const qf = path.join(d, 'perguntas.json');
+      if (!fs.existsSync(qf)) out.perguntas.ausente = true; // a interface decide: com um plano novo, vale como "sem perguntas"
+      else {
+        try {
+          const raw = fs.readFileSync(qf, 'utf8').replace(/^﻿/, '').replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, '');
+          const j = JSON.parse(raw);
+          const arr = Array.isArray(j) ? j : Array.isArray(j && j.perguntas) ? j.perguntas : null;
+          if (!arr) throw new Error('formato');
+          out.perguntas = { ok: true, mtime: fs.statSync(qf).mtimeMs, lista: arr.slice(0, 30).map((q, i) => ({
+            id: String((q && q.id) || `p${i + 1}`).slice(0, 40),
+            texto: String((q && (q.texto || q.pergunta || q.text)) || '').slice(0, 1000),
+            porque: String((q && (q.porque || q.motivo || q.why)) || '').slice(0, 1000),
+            opcoes: Array.isArray(q && q.opcoes) ? q.opcoes.slice(0, 12).map((o) => String(o).slice(0, 300)) : [],
+          })).filter((q) => q.texto.trim()) };
+        } catch { out.perguntas = { ok: false, lista: [], erro: 'O perguntas.json não está no formato esperado.' }; }
+      }
+      return out;
+    },
+    respostasSave(id, r) {
+      if (!validId(id) || !r || !Array.isArray(r.respostas) || JSON.stringify(r).length > 100000) return false;
+      writeJson(path.join(dirOf(id), 'respostas.json'), { rodada: r.rodada || 1, data: new Date().toISOString(), respostas: r.respostas });
+      return true;
+    },
+    // Só no modo de teste: grava um perguntas.json de teste para conferir o formulário sem gastar tokens.
+    testPerguntas(id, lista) {
+      if (!TEST || !validId(id) || !Array.isArray(lista)) return false;
+      writeJson(path.join(dirOf(id), 'perguntas.json'), { perguntas: lista });
+      return true;
+    },
   };
 
   // Handlers ipc do módulo: um erro aqui é registrado no erros.log e devolve um resultado neutro (o app segue).
@@ -200,6 +301,13 @@ function create(deps = {}) {
     on('draftSet', api.draftSet, false);
     on('entregaGet', api.entregaGet);
     on('entregaSave', api.entregaSave, { ok: false, problems: ['Não foi possível gravar a entrega. Veja o erros.log.'] });
+    on('cicloGet', api.cicloGet);
+    on('cicloSet', api.cicloSet, false);
+    on('cicloNovo', api.cicloNovo, false);
+    on('cicloPrompt', api.cicloPrompt);
+    on('planoLer', api.planoLer);
+    on('respostasSave', api.respostasSave, false);
+    on('testPerguntas', api.testPerguntas, false);
   }
   return api;
 }

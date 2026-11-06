@@ -25,13 +25,13 @@
 .vibe-form .vf-file.ok{color:var(--ok)}
 .vibe-form .vf-file.bad{color:var(--bad)}
 .vibe-form .vf-prob{margin-top:4px;color:#fecaca;font-size:12.5px}
-.vibe-form .vf-secs{margin:6px 0 0 18px;color:#fecaca;font-size:12.5px;line-height:1.5}
+.vibe-form .vf-secs{margin:6px 0 0;padding-left:1.35em;color:#fecaca;font-size:12.5px;line-height:1.5}
 .vibe-form .vf-secs b{color:var(--text)}
 .vibe-form .vf-chk{display:flex;align-items:center;gap:9px;margin-top:9px;font-size:13px;font-weight:400;color:var(--text2);cursor:pointer}
 .vibe-note{margin:0 0 16px;padding:10px 14px;border-radius:12px;border:1px solid rgba(91,157,255,.35);background:rgba(91,157,255,.08);color:var(--text2);font-size:13px;line-height:1.45}
 .vibe-miss{margin-top:6px;padding:12px 14px;border-radius:12px;border:1px solid rgba(251,191,36,.38);background:rgba(251,191,36,.07);font-size:13px;color:var(--text2);line-height:1.5}
 .vibe-miss b{color:var(--warn)}
-.vibe-miss ul{margin:6px 0 0 18px}
+.vibe-miss ul{margin:6px 0 0;padding-left:1.35em}
 .vibe-miss.done{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.07)}
 .vibe-miss.done b{color:var(--ok)}
 .vibe-msg:empty{display:none}
@@ -40,6 +40,38 @@
 .vibe-msg.ok b{color:var(--ok)}
 .vibe-msg.warn{border-color:rgba(251,191,36,.38);background:rgba(251,191,36,.07)}
 .vibe-msg.bad{border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.07)}
-.vibe-msg ul{margin:6px 0 0 18px}
+.vibe-msg ul{margin:6px 0 0;padding-left:1.35em}
 .vibe-msg small{color:var(--text3)}
 .vibe-confirm{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+
+/* Ciclo do Vibe Coding (DEV2-003): dica de economia, entrega recolhível e painel de andamento */
+.vibe-form>p.vibe-tip,.vibe-tip{margin:-6px 0 14px;font-size:12px;color:var(--text3);line-height:1.45}
+.vibe-tip::before{content:"Dica: ";color:var(--accent);font-weight:600}
+.vibe-form .vf-det{margin:0 0 6px}
+.vibe-form .vf-det>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);margin:0 0 12px;list-style-position:inside}
+.vibe-form .vf-det[open]>summary{color:var(--text)}
+#vcPanel:empty{display:none}
+.vc{margin:0 0 16px;padding:12px 14px;border-radius:12px;border:1px solid rgba(167,139,250,.38);background:rgba(167,139,250,.07);font-size:13px;color:var(--text2);line-height:1.5}
+.vc.pronto{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.06)}
+.vc.erro,.vc.paused,.vc.parado{border-color:rgba(251,191,36,.38);background:rgba(251,191,36,.06)}
+.vc-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.vc-hd>b{color:var(--text)}
+.vc-steps{display:flex;gap:6px;flex-wrap:wrap;list-style:none;padding:0}
+.vc-steps li{padding:3px 10px;border-radius:99px;border:1px solid var(--border);color:var(--text3);font-size:12px}
+.vc-steps li.cur{border-color:var(--accent);color:var(--text)}
+.vc-steps li.done{border-color:rgba(74,222,128,.45);color:var(--ok)}
+.vc-line b{color:var(--text)}
+.vc.pronto .vc-line b{color:var(--ok)}
+.vc-aviso{margin-top:8px;color:var(--warn);font-size:12.5px}
+.vc-qs{margin-top:10px}
+.vc-q{margin:0 0 12px}
+.vc-q>b{display:block;color:var(--text);font-weight:600}
+.vc-q>small{display:block;margin:2px 0 6px;font-size:12px;color:var(--text3)}
+.vc-q .inp{margin-top:6px}
+.vc-ops .vf-chk{margin-top:6px}
+.vc .vibe-tip{margin:10px 0 0}
+.vc-plan{margin-top:10px}
+.vc-plan>summary{cursor:pointer;color:var(--text);font-weight:600}
+.vc-md{margin-top:8px;max-height:300px;overflow:auto;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.18);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.vc-md .vh{color:var(--text);font-weight:600;margin-top:6px}
+.vc-md .vh.h1{font-size:14px}
