@@ -93,3 +93,64 @@
 .vx-list li small{color:var(--text3);font-weight:400}
 .vx-tag{font-style:normal;font-size:10.5px;padding:0 6px;border-radius:99px;border:1px solid rgba(251,191,36,.5);color:var(--warn);margin-left:4px}
 @media (max-width:520px){.vx dl{grid-template-columns:1fr}}
+
+/* Mutirão (DEV2-005): painel ao lado do terminal (o chat com o orquestrador é a aba ao lado), aviso da parte do sócio */
+#topbar .vibebtn.part{border-color:rgba(185,140,255,.55);background:rgba(185,140,255,.14);color:var(--text)}
+#topbar .vibebtn.part i{background:#b98cff;box-shadow:0 0 0 3px rgba(185,140,255,.25)}
+#col.mut-open>.stage{margin-right:384px}
+.mutp{position:absolute;top:0;right:0;bottom:0;width:380px;display:flex;flex-direction:column;border-left:1px solid var(--border);background:rgba(14,19,30,.94);z-index:3;font-size:13px;color:var(--text2);line-height:1.5;user-select:text}
+.mutp .mp-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border)}
+.mutp .mp-hd b{color:var(--text);font-size:15px}
+.mutp .mp-hd .mclose{font-size:18px;line-height:1;width:28px;height:28px;border-radius:8px;color:var(--text2)}
+.mutp .mp-hd .mclose:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.mutp .mp-body{flex:1;overflow-y:auto;padding:12px 16px 16px}
+.mutp .vf{margin:0 0 12px}
+.mutp p{margin:0 0 10px}
+.mutp code{font-size:12px;color:var(--text)}
+.mutp .mp-small{font-size:12.5px;color:var(--text3)}
+.mutp .mp-why{font-size:12.5px;color:var(--text3)}
+.mutp .mp-ok{color:var(--ok)}
+.mutp .mp-bad,.vc .mp-bad{color:#fecaca}
+.mutp .mp-warn{margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(251,191,36,.38);background:rgba(251,191,36,.07);color:var(--warn);font-size:12.5px}
+.mutp .mp-dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:0 0 12px}
+.mutp .mp-dl dt{color:var(--text3);font-size:12px}
+.mutp .mp-dl dd{margin:0;color:var(--text);font-size:12.5px;overflow-wrap:anywhere}
+.mutp .mp-dl dd small{color:var(--text3)}
+.mutp .mp-sec{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03)}
+.mutp .mp-sec>b{color:var(--text)}
+.mutp .mp-sec>small{color:var(--text3);font-size:11.5px;margin-left:4px}
+.mutp .mp-sec>p{margin:6px 0 0}
+.mutp .mp-rows{margin-top:8px}
+.mutp .mp-row{display:grid;grid-template-columns:1fr 112px auto;gap:6px;margin-bottom:6px}
+.mutp .mp-row .inp{min-width:0;width:100%}
+.mutp .mp-left{justify-content:flex-start;flex-wrap:wrap}
+.mutp .mp-conf{margin-top:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.14)}
+.mutp .mp-conf.ok{border-color:rgba(74,222,128,.38)}
+.mutp .mp-conf.bad{border-color:rgba(251,191,36,.38)}
+.mutp .mp-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mutp .mp-h small{color:var(--text3);font-size:11.5px}
+.mutp .mp-h b{color:var(--text)}
+.mutp .mp-h b.mp-ok{color:var(--ok)}
+.mutp .mp-partes{margin:8px 0 0;padding-left:1.35em}
+.mutp .mp-partes li{margin:0 0 6px}
+.mutp .mp-partes b{color:var(--text)}
+.mutp .mp-partes details summary{cursor:pointer;font-size:12px;color:var(--text3)}
+.mutp .mp-partes details small{display:block;font-size:12px;color:var(--text2);overflow-wrap:anywhere}
+.mutp .mp-br{border-color:rgba(185,140,255,.55);color:#cdb4ff}
+.mutp .mp-probs{margin-top:8px;color:#fecaca;font-size:12.5px}
+.mutp .mp-probs b{color:#fecaca}
+.mutp .mp-probs ul{margin:4px 0 4px;padding-left:1.35em}
+.mutp .mp-probs small{color:var(--text3)}
+.mutp .mp-count{margin-top:8px}
+.mutp .mp-ent{margin:8px 0 0;padding:0;list-style:none;font-size:12.5px;color:var(--text3)}
+.mutp .mp-ent li{margin:3px 0}
+.mutp .mp-ent li.done{color:var(--ok)}
+.mutp .mp-part{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(185,140,255,.5);background:rgba(185,140,255,.09)}
+.mutp .mp-part>b{color:var(--text);display:block}
+.mutp .mp-part small{display:block;color:var(--text3);font-size:12px;margin-top:2px}
+.mutp .mp-part .vibe-tip{margin:8px 0 0}
+.mutp .mp-part.done{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.06)}
+.mutp .mp-expl p{font-size:13px}
+.mutp .mp-expl b{color:var(--text)}
+.mutp .vibe-tip{margin:4px 0 0}
+@media (max-width:900px){#col.mut-open>.stage{margin-right:0}.mutp{width:100%}}

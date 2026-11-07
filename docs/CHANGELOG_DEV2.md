@@ -4,6 +4,20 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ---
 
+## 2026-11-07
+
+**DEV2-005 — Tela do Mutirão com divisão, parte do sócio e contador de entregas** (DEV2)
+
+- Botão "Mutirão" abre um painel ao lado do terminal, só para o dono (fluxo: DEV1; sem fluxo: com o aviso de remoto git); os outros veem a explicação. O chat é a aba "Mutirão · Orquestrador", com a trava do Vibe.
+- Participantes (nome e branch); "Gerar divisão" grava o pedido em `mutirao/PEDIDO.md` e digita uma linha; o orquestrador grava `mutirao/divisao.json` e `mutirao/partes/<branch>.md`; o Termix confere no fim de cada turno e recusa arquivo em comum entre as partes.
+- "Publicar divisão": commit só de `divisao.json` e `partes/` e push só da branch do dono.
+- Sócio na branch da parte: "Sua parte do Mutirão" no cabeçalho e no sino; o Vibe abre pré-preenchido e trabalha na branch da parte; ao concluir, o Termix grava `mutirao/entregas/<branch>.json`, faz commit e push só da branch dele.
+- Contador "Entregas: k/N" com `git fetch` + `git show` (zero token), ao abrir e em "Atualizar"; em N/N, "Implementação automática" (chega na DEV2-006). Estado em `vibe\<id>\mutirao.json`.
+- Correção da DEV2-004: só os 10 backups mais recentes do `.claude.json`.
+- Núcleo: só `package.json` (`check`). Testes: 31 conferências sem tokens e uma rodada real (divisão real, 1/2 → 2/2, reabrir); ~US$ 1,1 equivalente.
+
+---
+
 ## 2026-11-06
 
 **DEV2-004 — Execução autônoma do Vibe Coding com trava em código** (DEV2)

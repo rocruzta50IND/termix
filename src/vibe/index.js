@@ -1,5 +1,5 @@
 'use strict';
-/* Módulo Vibe Coding e Mutirão: isolado do núcleo do Termix.
+/* Módulo Vibe Coding e Mutirão: isolado do núcleo do Termix. DEV2-005: Mutirão em mutirao.js (canais vibe:mut*).
    DEV2-001: casca e canal 'vibe:status'. DEV2-002: tela de entrega do Vibe Coding (recebe, confere e guarda a entrega).
    DEV2-003: arquivos do ciclo (estado, plano, perguntas, respostas) e o texto dos pedidos ao orquestrador.
    DEV2-004: execução. A trava em código das abas do Vibe (settings próprios com o hook PreToolUse de trava.js e regras
@@ -107,8 +107,8 @@ const ORQ_NAME = 'Vibe · Orquestrador', DEV_NAME = 'Vibe · Dev';
 const PROTEGIDAS = ['main', 'master'];
 
 // git sem shell, na pasta do projeto: { ok, out, err }
-function gitRun(dir, args) {
-  try { return { ok: true, out: execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 15000, windowsHide: true }).trim() }; } catch (e) { return { ok: false, out: String(e.stdout || '').trim(), err: String(e.stderr || e.message || '').trim() }; }
+function gitRun(dir, args, timeout = 15000) {
+  try { return { ok: true, out: execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout, windowsHide: true }).trim() }; } catch (e) { return { ok: false, out: String(e.stdout || '').trim(), err: String(e.stderr || e.message || '').trim() }; }
 }
 const shaOf = (dir, ref) => { const r = gitRun(dir, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]); return r.ok && r.out ? r.out : null; };
 const headOf = (dir) => { const r = gitRun(dir, ['symbolic-ref', '--short', '-q', 'HEAD']); return r.ok ? r.out : ''; };
@@ -164,6 +164,10 @@ function create(deps = {}) {
   const writeJson = (f, v) => { fs.mkdirSync(path.dirname(f), { recursive: true }); const tmp = `${f}.tmp`; fs.writeFileSync(tmp, JSON.stringify(v, null, 2)); fs.renameSync(tmp, f); };
   const entregaOf = (id) => { const e = validId(id) && readJson(path.join(dirOf(id), 'entrega.json')); return e && e.projeto && e.projeto.pasta ? e : null; };
   const samePath = (a, b) => !!a && !!b && path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+  // Mutirão (DEV2-005): divisão, parte do sócio e contador (src/vibe/mutirao.js)
+  const MUT = require('./mutirao').create({ dirOf, readJson, writeJson, gitRun, shaOf, headOf, checkStructure, validId, TEST, logError });
+  // Branch dos agentes deste projeto: a da parte do Mutirão, se o sócio abriu o Vibe por ela; senão, a regra de branchOf.
+  const branchFor = (id, pasta) => { const s = MUT.socioDe(id); return s ? { nome: s.branch, regra: `só na branch "${s.branch}" (a sua parte do Mutirão)` } : branchOf(pasta); };
 
   /* ---------- pasta confiável (DEV2-004) ----------
      O Claude Code pergunta "confia nesta pasta?" numa pasta nova e o ciclo para. Decisão do Ygor: o Termix marca sozinho,
@@ -185,6 +189,8 @@ function create(deps = {}) {
     fs.mkdirSync(bdir, { recursive: true });
     const backup = path.join(bdir, `claude-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
     fs.writeFileSync(backup, a.raw);
+    // só os 10 backups mais recentes (DEV2-005): os mais antigos saem
+    try { fs.readdirSync(bdir).filter((n) => /^claude-.*\.json$/.test(n)).sort().slice(0, -10).forEach((n) => fs.unlinkSync(path.join(bdir, n))); } catch { /* fica como está */ }
     let b;
     try { b = ler(); } catch { return { ok: false, arquivo: file, backup, motivo: 'O .claude.json mudou e não pôde ser relido; nada foi gravado.' }; }
     const k = keyIn(b.j) || key;
@@ -216,6 +222,8 @@ function create(deps = {}) {
     }
     const ni = Array.isArray(args) ? args.indexOf('--name') : -1;
     const nm = ni >= 0 ? args[ni + 1] : '';
+    const mid = MUT.idDaAba(ids, tabId, cwd, nm, samePath); // aba "Mutirão · Orquestrador" (mesma trava do Vibe)
+    if (mid) return mid;
     if (nm !== ORQ_NAME && nm !== DEV_NAME) return null;
     const id = ids.find((x) => { const e = entregaOf(x); return e && samePath(e.projeto.pasta, cwd); });
     if (id) { const f = path.join(dirOf(id), 'abas.json'); const ab = readJson(f) || { abas: [] }; ab.abas = [...(ab.abas || []), tabId].slice(-50); writeJson(f, ab); }
@@ -228,10 +236,10 @@ function create(deps = {}) {
     const base = settings && typeof settings === 'object' ? settings : {};
     try {
       const e = entregaOf(id);
-      const projeto = (e && e.projeto.pasta) || cwd;
+      const projeto = (e && e.projeto.pasta) || MUT.pastaDe(id) || cwd;
       const tdir = path.join(dirOf(id), 'trava');
       const cfgF = path.join(tdir, 'trava.json');
-      writeJson(cfgF, { projeto, vibe: dirOf(id), branch: branchOf(projeto).nome, protegidas: PROTEGIDAS, gravado: new Date().toISOString() });
+      writeJson(cfgF, { projeto, vibe: dirOf(id), branch: branchFor(id, projeto).nome, protegidas: PROTEGIDAS, gravado: new Date().toISOString() });
       const cmd = `${runner || 'node'} "${TRAVA}" "${cfgF.replace(/\\/g, '/')}"`;
       const out = { ...base, hooks: { ...(base.hooks || {}), PreToolUse: [{ matcher: '*', hooks: [{ type: 'command', command: cmd, timeout: 30 }] }] }, permissions: { deny: DENY } };
       const sf = path.join(tdir, 'settings.json');
@@ -276,7 +284,8 @@ function create(deps = {}) {
     draftGet: (id) => (validId(id) ? readJson(path.join(dirOf(id), 'rascunho.json')) : null),
     draftSet(id, d) {
       if (!validId(id) || !d || typeof d !== 'object') return false;
-      writeJson(path.join(dirOf(id), 'rascunho.json'), { ...d, projectId: id, salvo: new Date().toISOString() });
+      const old = readJson(path.join(dirOf(id), 'rascunho.json')) || {};
+      writeJson(path.join(dirOf(id), 'rascunho.json'), { ...d, ...(old.mutirao && !d.mutirao ? { mutirao: old.mutirao } : {}), projectId: id, salvo: new Date().toISOString() });
       return true;
     },
 
@@ -353,7 +362,7 @@ function create(deps = {}) {
       const e = readJson(path.join(dirOf(id), 'entrega.json'));
       if (!e) return null;
       const d = dirOf(id);
-      const br = branchOf(e.projeto && e.projeto.pasta);
+      const br = branchFor(id, e.projeto && e.projeto.pasta);
       if (kind === 'fechar') {
         return `Respostas do humano em ${path.join(d, 'respostas.json')}. Atualize ${path.join(d, 'plano.md')} com elas e regrave ${path.join(d, 'perguntas.json')} com a lista vazia, a menos que reste algo realmente indispensável. Mesmas regras de antes: só planejar, não mexer no código, não escrever fora de ${d}. Ao terminar, responda apenas PLANO FECHADO e encerre o turno.`;
       }
@@ -400,7 +409,7 @@ function create(deps = {}) {
     /* ---------- execução (DEV2-004) ----------
        O Termix (código, zero token) prepara a branch, passa as tarefas ao Dev e confere o git depois de cada uma.
        Os agentes só leem e gravam arquivos curtos: resultados\Tk.md (Dev) e revisoes\Tk.json (orquestrador). */
-    trust(id) { const e = entregaOf(id); return e ? trustFolder(e.projeto.pasta) : { ok: false, motivo: 'A entrega do projeto não foi encontrada.' }; },
+    trust(id) { const e = entregaOf(id); const pasta = (e && e.projeto.pasta) || MUT.pastaDe(id); return pasta ? trustFolder(pasta) : { ok: false, motivo: 'A entrega do projeto não foi encontrada.' }; },
     tarefas(id) {
       if (!validId(id)) return [];
       try { return tarefasDo(fs.readFileSync(path.join(dirOf(id), 'plano.md'), 'utf8')); } catch { return []; }
@@ -411,7 +420,7 @@ function create(deps = {}) {
       const dir = e && e.projeto.pasta;
       if (!dir || !fs.existsSync(dir)) return { ok: false, motivo: 'A pasta do projeto não foi encontrada.' };
       if (!gitRun(dir, ['rev-parse', '--is-inside-work-tree']).ok) return { ok: false, motivo: 'O projeto não tem git. Rode "git init" e faça um primeiro commit na pasta do projeto, depois clique em Continuar.' };
-      const br = branchOf(dir).nome;
+      const br = branchFor(id, dir).nome;
       if (!br) return { ok: false, motivo: 'O projeto usa o fluxo Rocruzta, mas o CLAUDE.local.md não tem a branch do papel (ou ela é a main/master). Defina o papel (/fluxo:papel) e clique em Continuar.' };
       const head = headOf(dir);
       if (head === br) return { ok: true, branch: br, acao: 'ja' };
@@ -425,7 +434,7 @@ function create(deps = {}) {
       const e = entregaOf(id);
       const dir = e && e.projeto.pasta;
       if (!dir || !fs.existsSync(dir)) return null;
-      const br = branchOf(dir).nome;
+      const br = branchFor(id, dir).nome;
       const heads = {};
       for (const b of PROTEGIDAS) { heads[b] = shaOf(dir, `refs/heads/${b}`); heads[`origin/${b}`] = shaOf(dir, `refs/remotes/origin/${b}`); }
       const last = br ? gitRun(dir, ['log', '-1', '--format=%h %s', `refs/heads/${br}`]) : { ok: false };
@@ -453,7 +462,7 @@ function create(deps = {}) {
       const e = entregaOf(id);
       if (!e || !/^T\d+$/.test(String(tk))) return null;
       const d = dirOf(id), plano = path.join(d, 'plano.md'), res = path.join(d, 'resultados', `${tk}.md`), rev = path.join(d, 'revisoes', `${tk}.json`);
-      const br = branchOf(e.projeto.pasta).nome;
+      const br = branchFor(id, e.projeto.pasta).nome;
       const regras = `Commit só na branch "${br}" (já é a atual); não faça push nem troque de branch. O Termix bloqueia commit/push na main/master, comandos que apagam dados e gravar fora do projeto: se algo for bloqueado, leia o motivo e siga pelo caminho permitido.`;
       const fim = `Depois grave ${res} (curto: o que fez, hash do commit, validação feita e pendências) e responda apenas ${tk} FEITA, encerrando o turno.`;
       if (kind === 'dev') return `Você é o DEV do Vibe Coding do Termix. Execute só a tarefa ${tk}: leia a seção ${tk} de ${plano} (e só o que ela exigir). Implemente, valide como a tarefa pede e faça um commit "${tk}: ..." com tudo dela. ${regras} ${fim}`;
@@ -503,6 +512,7 @@ function create(deps = {}) {
     on('resultadoLer', api.resultadoLer);
     on('revisaoLer', api.revisaoLer);
     on('execPrompt', api.execPrompt);
+    for (const [k, fn] of Object.entries(MUT.api)) on(k, fn, null); // Mutirão (DEV2-005)
   }
   api.spawnSettings = spawnSettings; // usado pelo main.js (não é canal ipc)
   return api;
