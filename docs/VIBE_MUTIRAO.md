@@ -1,6 +1,6 @@
 # Vibe Coding e Mutirão — desenho do módulo
 
-Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) e criação dos agentes com plano e perguntas (DEV2-003), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
+Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) e execução autônoma do plano com trava em código (DEV2-004), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
 
 ## Princípios e regras dos agentes (decisões do Ygor, 2026-11-06)
 
@@ -42,11 +42,11 @@ O módulo fica separado; o núcleo só faz as ligações. O botão só chama a f
 
 | Onde | O que fica |
 |---|---|
-| Núcleo `src/main.js` | Uma linha: o `require` do módulo com `create({ ipcMain, dialog, app, getWin, logError })`, protegido por try/catch (erro no módulo é registrado em `erros.log` e o app segue). O próprio módulo registra os canais `vibe:*`, cada um com try/catch. |
+| Núcleo `src/main.js` | Uma linha: o `require` do módulo com `create({ ipcMain, dialog, app, getWin, logError })`, protegido por try/catch (erro no módulo é registrado em `erros.log` e o app segue). O próprio módulo registra os canais `vibe:*`, cada um com try/catch. Desde a DEV2-004, no `pty:spawn`, a linha do `--settings` virou três: o núcleo monta os mesmos settings de sempre e pergunta ao módulo (`vibe.spawnSettings`, com try/catch) se a aba é do Vibe; sendo, passa o arquivo de settings com a trava; senão, segue igual. |
 | Núcleo `src/preload.js` | Uma ponte genérica `vibe(canal, ...)`, que só alcança canais `vibe:*`. |
 | Núcleo `src/renderer/index.html` | Um `<link>` para o CSS e um `<script>` depois do `app.js`. |
 | Núcleo `src/renderer/app.js` | Nada. |
-| Módulo `src/vibe/` (processo principal) | `index.js`: fábrica com o estado, os canais `vibe:*`, a conferência dos arquivos e a gravação da entrega. `modelo-entrega.md`: o modelo que a tela oferece para baixar. Desde a DEV2-003, também os arquivos do ciclo (estado, plano, perguntas, respostas) e o texto dos pedidos ao orquestrador. |
+| Módulo `src/vibe/` (processo principal) | `index.js`: fábrica com o estado, os canais `vibe:*`, a conferência dos arquivos e a gravação da entrega. `modelo-entrega.md`: o modelo que a tela oferece para baixar. Desde a DEV2-003, também os arquivos do ciclo (estado, plano, perguntas, respostas) e o texto dos pedidos ao orquestrador. Desde a DEV2-004: `trava.js` (o hook PreToolUse, Node sem dependências), os settings das abas do Vibe, a pasta confiável, a branch permitida, a conferência do git e os pedidos da execução. |
 | Módulo `src/renderer/vibe/` (interface) | Botões do cabeçalho, chave em Configurações, telas e o condutor do ciclo. Usa o que o `app.js` já expõe no escopo global (`S`, `save`, `modal`, `esc`, `createTab`, `findTab`, `RT`, `stOf`, `UI`, `renderAll`, `addEvent`, `notifCfg`, `showToast`, `beep`, `api`) e ouve os hooks pelo próprio `window.termix.onHook`. Se pendura no cabeçalho e na página Configurações observando o DOM. |
 
 Desligado, o módulo só é carregado: não mostra botões nem executa nada.
@@ -108,8 +108,8 @@ Com a entrega pronta, "Iniciar Vibe Coding" grava a entrega e começa um ciclo. 
    - O texto longo chega ao Claude Code como colagem e um Enter imediato é engolido; por isso o Enter vai 1 s depois e, enquanto o hook de prompt enviado não chega, é repetido (até 4 vezes, a cada 3 s; com a caixa vazia o Enter não faz nada).
 4. **Fim do turno.** Quem percebe é o Termix, pelo hook `Stop` que o app já recebe (zero token). Ele lê `plano.md` e `perguntas.json`. Sem `perguntas.json` mas com um plano gravado nesse turno, vale como "nenhuma pergunta". Sem plano: estado "erro", com aviso, notificação e "Retomar".
 5. **Perguntas.** Havendo perguntas, a tela mostra um formulário (opções viram botões de escolha, com um comentário opcional; sem opções, texto livre) e o app notifica pelo mecanismo de avisos que já existe (sino, dica, som e Windows sem foco). "Enviar respostas" exige todas respondidas, grava `respostas.json` e digita um pedido curto para o orquestrador fechar o plano ("PLANO FECHADO"). Se ele voltar com perguntas novas, abre outra rodada.
-6. **Plano pronto.** "Plano pronto, N tarefas. A execução automática chega na DEV2-004." O plano aparece na tela. N = quantidade de IDs T1, T2… distintos em títulos ou itens de lista; sem IDs, o número não aparece (não conta seções como tarefas).
-7. **Conferência do plano (zero token).** Se o plano mandar fazer commit ou push na main/master, a tela mostra um alerta. No teste real o orquestrador escreveu "Commit em master" apesar da regra: **prompt não é trava**; a trava em código fica para a DEV2-004.
+6. **Plano pronto.** "Plano pronto, N tarefas", com o botão "Executar plano" (DEV2-004). O plano aparece na tela. N = quantidade de IDs T1, T2… distintos em títulos ou itens de lista; sem IDs, o número não aparece (não conta seções como tarefas).
+7. **Conferência do plano (zero token).** Se o plano mandar fazer commit ou push na main/master, a tela mostra um alerta. No teste real o orquestrador escreveu "Commit em master" apesar da regra: **prompt não é trava**; por isso a DEV2-004 trouxe a trava em código (abaixo).
 
 ### Painel de andamento
 
@@ -126,6 +126,55 @@ Fica na tela do Vibe Coding, logo abaixo do projeto: **Preparando plano → Perg
 
 `estado.json` (Termix), `plano.md` e `perguntas.json` (orquestrador), `respostas.json` (Termix, com as respostas do humano). No modo de teste (`TERMIX_VIBE_TEST=1`), `vibeTest` também injeta um `perguntas.json` de teste, responde, para e retoma.
 
+## Execução do plano e trava em código (DEV2-004)
+
+### Trava em código (só nas abas do Vibe)
+
+No teste da DEV2-003 o orquestrador planejou "commit em master" apesar da regra, e as abas do Vibe rodam em Dangerously. Por isso a regra deixou de depender do prompt.
+
+- **Como:** ao abrir o terminal de uma aba do Vibe (registrada no ciclo, ou nova com o nome "Vibe · Orquestrador"/"Vibe · Dev" na pasta de uma entrega), o Termix grava em `vibe\<id>\trava\` o `trava.json` (pasta do projeto, pasta do Vibe, branch permitida) e um `settings.json` = os settings que o app já passa (status line e hooks) + um **hook PreToolUse** (`src/vibe/trava.js`, Node sem dependências) + regras **permissions.deny**, e abre o Claude Code com `--settings <esse arquivo>`. As outras abas do app não mudam. Nada vai para os arquivos `.claude` do projeto. Se o arquivo não puder ser gravado, a aba abre sem shell nem escrita (falha fechada).
+- **O hook nega com o motivo** (o agente lê e segue pelo caminho permitido):
+  - `git commit`, `merge`, `rebase`, `cherry-pick`, `revert`, `am` e `pull` com o HEAD em main/master, destacado ou fora da branch permitida (o hook confere a branch atual no git);
+  - `git push` para main/master ou para branch diferente da permitida, com `--force`/`-f`/`--force-with-lease`, `+refspec`, `--delete`/`:branch`, `--mirror`/`--all`;
+  - `git reset --hard`, `git clean` (menos `-n`), `git checkout --`/em arquivos/forçado, `git restore` em arquivos (`--staged` sozinho pode), `git switch` forçado, `git branch -D`, `git stash drop/clear`, `update-ref` na main/master, `filter-branch`/`filter-repo`, `reflog expire`, `gh pr merge`;
+  - apagar de forma recursiva (`rm -r`, `Remove-Item -Recurse`, `rd /s`, `del /s`, `find -delete`) em qualquer lugar, e apagar qualquer coisa fora da pasta do projeto e de `vibe\<id>` (e também a trava, o `.git` e a própria pasta do projeto);
+  - `Write`/`Edit`/`MultiEdit`/`NotebookEdit` e redirecionamentos (`>`, `tee`, `Out-File`, `Set-Content`) fora da pasta do projeto e de `vibe\<id>`, na trava, no `.git` e nos `.claude/settings*.json` do projeto (que poderiam desligar a trava);
+  - gravar em `.env` (menos os modelos `.env.example`/`.sample`/`.template`), chaves (`.pem`, `.key`, `.p12`, `id_rsa`…) e credenciais (`credentials*`, `.npmrc`, `.git-credentials`…). **Ler pode.**
+  - Também confere comandos dentro de `bash -c`, `cmd /c`, `powershell -Command` e `Invoke-Expression`; PowerShell com comando codificado é negado.
+- **Limite conhecido:** não é sandbox. Cobre os caminhos comuns (Bash, PowerShell e ferramentas de escrita); um script que o próprio agente escreva e rode poderia escapar. Por isso o Termix ainda **confere o git em código depois de cada tarefa** (main/master locais e do origin intactas).
+- **Branch permitida:** projeto com fluxo Rocruzta (`.claude/fluxo.json` e `CLAUDE.local.md`): a branch do papel (se ela for main/master, não vale e o Termix para); sem fluxo: `vibe/<pasta-do-projeto>`. Antes de executar e a cada tarefa, **o Termix** (código, não a IA) confere ou cria essa branch (`git switch`, ou `git switch -c` a partir da atual), sem descartar nada; se o working tree impedir a troca, ou o projeto não tiver git, pausa e explica.
+- **Testar sem tokens:** rodar `node src/vibe/trava.js <trava.json>` com a entrada do hook em JSON pelo stdin (código 2 = bloqueado, motivo no stderr). O teste da DEV2-004 cobre 62 casos (um permitido e um bloqueado para cada regra).
+
+### Pasta confiável (decisão do Ygor: o Termix marca sozinho)
+
+Antes de abrir as abas do Vibe (e ao executar), o Termix marca a pasta do projeto como confiável no `.claude.json` do Claude Code: **só** a chave `hasTrustDialogAccepted` da entrada daquela pasta (chave no formato `C:/caminho/da/pasta`; se já houver entrada, as outras chaves dela não mudam). Já confiável: não grava nada. Senão: backup com a data em `%APPDATA%\Termix\vibe\backup-claude-json\`, releitura imediatamente antes de gravar (as sessões abertas do Claude Code escrevem nesse arquivo), gravação atômica (temporário + rename) e conferência depois; JSON ilegível = não grava. Caminho: `CLAUDE_CONFIG_DIR\.claude.json` ou `~\.claude.json`; no modo de teste, `TERMIX_VIBE_CLAUDE_JSON` aponta para um arquivo de teste. Se não conseguir marcar, o painel avisa para escolher "Yes, I trust this folder" na aba.
+
+**Validar no real:** com o Termix fechado, copie o `~\.claude.json`; abra o Vibe num projeto novo; confira que a entrada `"C:/…/projeto": { "hasTrustDialogAccepted": true }` apareceu, que o resto do arquivo é igual à cópia (a menos do que as sessões abertas do Claude Code gravarem no meio) e que há um backup em `vibe\backup-claude-json\`; as abas abrem sem a pergunta de confiança.
+
+### Ciclo de execução (quem conduz é o Termix)
+
+Com o "Plano pronto", o painel mostra **"Executar plano"**. O Termix lê as tarefas do `plano.md` (IDs T1..Tn, com as marcas `[DEPLOY]` e `[HUMANO]` no título, que o pedido de planejamento agora exige, junto com "cada tarefa cabe num turno e termina num commit") e, para cada tarefa:
+
+1. confere a branch e fotografa o git (SHA da branch permitida e de main/master locais e do origin);
+2. dá `/clear` na aba Dev (espera o `SessionStart` de origem "clear") e digita um pedido curto: ler a seção Tk do `plano.md`, implementar, validar, commit "Tk: …" na branch permitida, gravar `vibe\<id>\resultados\Tk.md` (o que fez, commit, validação, pendências) e encerrar o turno;
+3. no hook `Stop` do Dev, confere **em código**: `Tk.md` gravado nesse turno, commit novo na branch permitida, HEAD ainda nela e main/master intactas (mudou = pausa de erro);
+4. dá `/clear` no orquestrador e pede: ler `Tk.md` (e só o `git show --stat`, se precisar), gravar `revisoes\Tk.json` com `{"veredito":"aprovado"|"refazer","motivo","ajustes"}`;
+5. aprovado: próxima tarefa. Refazer (ou o Dev não entregou `Tk.md`/commit): volta ao Dev com os ajustes, **até 2 refações** (3 tentativas); depois, pausa e pede ajuda ao humano.
+
+**Pausas** (salvas no `estado.json`, retomam de onde pararam):
+
+- **Limite:** antes de cada pedido, com a janela de 5 h em **93 %** ou mais (decisão do Ygor). Com o app aberto, o Termix retoma sozinho quando a janela virar (a hora de renovação passou) ou o número cair abaixo do teto. O 7 d aparece na tela, mas não pausa por enquanto. No modo de teste, `vibeTest.limit(93)` injeta o número.
+- **DEPLOY ou HUMANO:** antes da tarefa marcada; notifica. "Continuar" libera o Dev para executá-la; "Já fiz, pular" marca como feita pelo humano.
+- **Erro ou sem resposta:** branch que não pôde ser preparada, aba que não abriu em 60 s, `/clear` não confirmado, revisão não gravada, main/master alterada, aba fechada no meio do turno ou 20 min sem nenhum sinal do agente (hook ou saída no terminal); notifica.
+
+**Painel:** etapas Preparando plano → Perguntas → Plano pronto → Execução (feitas/N) → Concluído; tarefa atual k/n, fase (Dev trabalhando, Revisão, Pausado: motivo), branch, último commit, tentativas, limites 5 h e 7 d e a lista de tarefas (feitas com o commit, etiquetas DEPLOY/HUMANO). "Parar" interrompe (Esc nas duas abas se estiverem trabalhando) sem apagar nada. No fim: "Projeto concluído", resumo e notificação.
+
+**Reabrir o app:** a tela mostra onde parou e **não retoma sozinha** (nem a pausa por limite); só com "Continuar", que primeiro confere os arquivos e o git (zero token) e só pede de novo o que faltar.
+
+**Correções da DEV2-003:** com um ciclo em andamento (inclusive "Plano pronto"), o "Iniciar" do rodapé some; com o ciclo parado, volta como ação secundária ("Iniciar de novo"); a ação principal fica no painel ("Executar plano"/"Continuar"). O aviso "Terminou" das abas do Vibe (inclusive o falso, ao abrir a aba Dev) não vai mais ao humano: quem avisa é o Vibe (perguntas, pausas, conclusão); erros das abas continuam passando.
+
+**Arquivos novos do ciclo** em `vibe\<id>\`: `resultados\Tk.md` (Dev), `revisoes\Tk.json` (orquestrador), `trava\` (settings e configuração da trava, gravados pelo Termix), `abas.json` (abas do Vibe deste projeto). Um ciclo novo arquiva `resultados` e `revisoes` junto com o resto em `historico\ciclo-<data>\`.
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.
@@ -133,7 +182,7 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-001** — Casca isolada do módulo, chave em Configurações e duas telas "Em construção". *(feita)*
 - **DEV2-002** — Tela de entrega do Vibe Coding (formulário engessado) e .md modelo para baixar. *(feita)*
 - **DEV2-003** — Agentes (orquestrador e dev), plano e só as perguntas necessárias, sem executar o código do projeto. *(feita)*
-- **DEV2-004** — Ciclo de execução autônomo, com travas em código (branch permitida, nada que apague dados).
+- **DEV2-004** — Ciclo de execução autônomo, com travas em código (branch permitida, nada que apague dados). *(feita)*
 - **DEV2-005** — Tela do Mutirão: chat com o orquestrador, divisão por branch e contador de entregas.
 - **DEV2-006** — "Implementação automática" ao chegar em N/N.
 - **DEV2-007** — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.

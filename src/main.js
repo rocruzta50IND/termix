@@ -283,7 +283,9 @@ ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
     const hook = { hooks: [{ type: 'command', command: `${runner} "${HOOK()}"` }] };
     const hooks = {};
     for (const ev of ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Notification', 'Stop']) hooks[ev] = [hook];
-    extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd }, hooks }));
+    const sets = { statusLine: { type: 'command', command: cmd }, hooks };
+    let vibeSets = null; try { vibeSets = vibe && vibe.spawnSettings({ tabId, cwd, args, settings: sets, runner }); } catch (err) { logError(err); } // abas do Vibe: os mesmos settings + a trava (src/vibe)
+    extra.push('--settings', vibeSets || JSON.stringify(sets));
     // só nesta sessão: pede ao Claude Code que abra páginas locais pela aba Web (texto simples: passa por cmd.exe sem aspas nem símbolos)
     extra.push('--append-system-prompt', OPEN_HINT);
     const finalArgs = [...args, ...extra];

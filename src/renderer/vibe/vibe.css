@@ -75,3 +75,21 @@
 .vc-md{margin-top:8px;max-height:300px;overflow:auto;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.18);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
 .vc-md .vh{color:var(--text);font-weight:600;margin-top:6px}
 .vc-md .vh.h1{font-size:14px}
+
+/* Execução do plano (DEV2-004): andamento tarefa a tarefa */
+.vc.execucao{border-color:rgba(91,157,255,.4);background:rgba(91,157,255,.06)}
+.vc.pausado{border-color:rgba(251,191,36,.38);background:rgba(251,191,36,.06)}
+.vc.concluido{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.06)}
+.vc.concluido .vc-line b{color:var(--ok)}
+.vx{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.14)}
+.vx dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin:0}
+.vx dt{color:var(--text3);font-size:12px}
+.vx dd{margin:0;color:var(--text);font-size:12.5px;overflow-wrap:anywhere}
+.vx dd small{color:var(--text3);font-size:11.5px}
+.vx-list{margin:10px 0 0;padding:0;list-style:none;font-size:12.5px;color:var(--text3)}
+.vx-list li{margin:2px 0}
+.vx-list li.done{color:var(--ok)}
+.vx-list li.cur{color:var(--text);font-weight:600}
+.vx-list li small{color:var(--text3);font-weight:400}
+.vx-tag{font-style:normal;font-size:10.5px;padding:0 6px;border-radius:99px;border:1px solid rgba(251,191,36,.5);color:var(--warn);margin-left:4px}
+@media (max-width:520px){.vx dl{grid-template-columns:1fr}}
