@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-007 (MVP do Vibe/Mutirão e a robustez do ciclo)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-008 (MVP do Vibe/Mutirão, a robustez do ciclo e o guia de validação)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-07
 
 ## Resumo do que mudou
@@ -45,11 +45,12 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - tempo limite: agente que não termina o turno em 30 minutos (ou fica 20 sem sinal) é interrompido, o ciclo pausa e avisa quem travou;
   - "Parar" no meio do turno não deixa o ciclo inconsistente: pedido ainda não enviado é desfeito (não conta como tentativa e a caixa de texto é limpa); turno interrompido é conferido e refeito de forma limpa ao continuar;
   - envio final do Mutirão com a branch do dono mais nova no remoto (outra máquina): o Termix busca o remoto e junta antes de enviar, sem reescrever histórico nem descartar; com conflito, cancela a junção, não envia nada e explica.
+- **DEV2-008:** um guia de validação do MVP para o Ygor testar no Termix real, com caixas de marcar: preparação, custos esperados, o cuidado com o arquivo de configuração do Claude Code (o que muda, a cópia de segurança, como conferir e desfazer), um roteiro do Vibe Coding de ponta a ponta, um roteiro opcional do Mutirão com dono e sócias num único PC, o que observar, as limitações conhecidas e o modelo do veredito. Pequena correção de texto: o aviso de pausa não repete mais a instrução de continuar.
 
 ## Áreas e arquivos afetados
 
 - Módulo isolado: a pasta do processo principal ganhou o verificador da trava (DEV2-004) e a parte do Mutirão (DEV2-005); a pasta da interface ganhou o ciclo de execução, o painel do Vibe e o painel do Mutirão.
-- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. A checagem de sintaxe do projeto passou a incluir os arquivos novos. Na DEV2-005, DEV2-006 e DEV2-007, nenhuma linha do núcleo (na DEV2-005, só a checagem de sintaxe). Interface principal e ponte: nada.
+- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. A checagem de sintaxe do projeto passou a incluir os arquivos novos. Na DEV2-005 a DEV2-008, nenhuma linha do núcleo (na DEV2-005, só a checagem de sintaxe). Interface principal e ponte: nada.
 - Dados: na pasta de dados do app, por projeto (entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim.
 - Documentação: desenho do módulo, tarefas e changelog próprios da dev2 e uma linha nas decisões.
 
@@ -66,6 +67,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 
 ## Como validar
 
+- Seguir o guia de validação do MVP (documento novo da DEV2-008), no Termix real rodando da dev2.
 - Rodar a checagem de sintaxe do projeto.
 - Sem gastar tokens: rodar o verificador da trava direto com entradas simuladas (cada regra com um caso permitido e um bloqueado).
 - Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado; o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.

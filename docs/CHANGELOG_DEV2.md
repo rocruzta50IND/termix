@@ -6,6 +6,12 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-07
 
+**DEV2-008 — Guia de validação do MVP do Vibe e do Mutirão** (DEV2)
+
+- Novo `docs/VALIDACAO_MVP_VIBE.md`: roteiro com caixas de marcar para o Ygor validar no Termix real (da dev2): preparação e custos medidos, a pasta confiável no `~/.claude.json` real (o que muda, backup, conferir e desfazer), Roteiro A (Vibe Coding de ponta a ponta, com Parar/Continuar e conferência do git), Roteiro B (Mutirão com dono e duas sócias num PC, remoto local), o que observar, limitações conhecidas, o que fica para depois e o modelo do veredito.
+- Correção: o painel de pausa não repete mais "Clique em Continuar" quando o motivo já diz isso.
+- Núcleo: nenhuma linha. Sem rodadas com tokens.
+
 **DEV2-007 — Robustez do ciclo do Vibe e do Mutirão** (DEV2)
 
 - Marca `[SEM COMMIT]` no plano: tarefa de validação/conferência aceita sem commit novo quando o `Tk.md` traz "Validação: ..."; o planejamento pede a marca e a validação final do Mutirão vem marcada.

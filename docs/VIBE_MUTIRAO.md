@@ -285,7 +285,7 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-005** — Tela do Mutirão: chat com o orquestrador, divisão por branch e contador de entregas. *(feita)*
 - **DEV2-006** — "Implementação automática" ao chegar em N/N, e o pedido em arquivo como padrão do Vibe. *(feita)*
 - **DEV2-007** — Robustez do ciclo: [SEM COMMIT], limite de tentativas, tempo limite, Parar no meio do turno e push com o remoto à frente. *(feita)*
-- **DEV2-008** — Guia de validação do MVP do Vibe/Mutirão.
+- **DEV2-008** — Guia de validação do MVP do Vibe/Mutirão: `docs/VALIDACAO_MVP_VIBE.md`. *(feita)*
 - Depois — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.
 
 ## Perguntas em aberto

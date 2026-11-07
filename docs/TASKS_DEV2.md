@@ -9,6 +9,23 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-008 — Guia de validação do MVP do Vibe e do Mutirão
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
+- **Data:** 2026-11-07
+- **Pedido:** (orquestrador termix-orq-f7, autorizado pelo Ygor) criar `docs/VALIDACAO_MVP_VIBE.md`, um roteiro em português simples, com caixas de marcar, para o Ygor validar o MVP no Termix real (rodando da dev2): preparação e custos, a pasta confiável no `~/.claude.json` real, Roteiro A (Vibe), Roteiro B (Mutirão, opcional), o que observar, limitações conhecidas e como dar o veredito. Mais a correção do texto da pausa que repetia "Clique em Continuar". Sem rodadas com tokens.
+- **Feito:**
+  - `docs/VALIDACAO_MVP_VIBE.md` com 7 seções: (1) antes de começar: rodar da dev2 (`npm ci` se faltar `node_modules`, `npm start`), o que esperar, custos medidos (plano ~US$ 0,35, ciclo de 3 tarefas ~US$ 1,35, implementação automática ~US$ 1–2,5, divisão ~US$ 0,40; Roteiro A ~US$ 1,70, Roteiro B ~US$ 5–7), projeto de brinquedo com git, como desligar (Parar + chave em Configurações); (2) pasta confiável: só `hasTrustDialogAccepted` da pasta do projeto, backups (10 últimos) na pasta `backup-claude-json` dos dados do app, conferir antes/depois e desfazer restaurando o backup, com o aviso de que é a primeira vez no arquivo real; (3) Roteiro A: ligar, baixar o modelo, entrega incompleta, completa (fluxo.md e estrutura.md prontos para colar), iniciar, abas, perguntas, plano pronto, executar, Parar/Continuar, concluído e conferência do git (`vibe/<projeto>` e main intacta); (4) Roteiro B: dono e duas sócias num PC com clones e remoto bare local (comandos prontos), divisão, publicar, parte da sócia, entrega, 2/2, implementação automática e push da dev1; (5) o que observar: pedido cortado, "/clear" virando "clear", abas, notificações, custo na tela Consumo; (6) limitações (pendências da 004 a 007 em linguagem simples) e o que fica para depois (celular: Remote Control no MVP, Telegram/app sem prioridade; "tomada" oficial no `app.js` a pedir ao Rodrigo na integração); (7) modelo do veredito para o orquestrador.
+  - Correção (`src/renderer/vibe/vibe.js`, painel "pausado"): quando o motivo da pausa já diz "clique em Continuar", o texto fixo do painel não é acrescentado; os outros casos (limite, DEPLOY/HUMANO) continuam com o texto fixo.
+  - `docs/VIBE_MUTIRAO.md`: DEV2-008 marcada como feita no roteiro, com o link para o guia.
+- **Decisões:** custos citados como "equivalente na tabela da API" (como nos registros das tarefas); o Roteiro B usa projeto sem o fluxo (dono = quem abre, branch do dono = `dev1` criada pelo Termix) para não depender de `CLAUDE.local.md` nos clones; o veredito vai ao orquestrador, não ao DEV1.
+- **Arquivos tocados:** `docs/VALIDACAO_MVP_VIBE.md` (novo), `src/renderer/vibe/vibe.js` (uma condição), `docs/VIBE_MUTIRAO.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`.
+- **Como validar:** `npm run check`; ler o guia; numa pausa por tentativas, tempo limite ou erro, o painel mostra "Clique em Continuar" uma vez só.
+- **Pendências:** a correção do texto não foi vista na tela (sem rodada); os comandos do guia não foram executados nesta tarefa (sem tokens e sem mexer no ambiente real).
+- **Próximo passo:** Validação do Ygor no app real seguindo docs/VALIDACAO_MVP_VIBE.md.
+
+---
+
 ## DEV2-007 — Robustez do ciclo do Vibe e do Mutirão
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
