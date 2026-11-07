@@ -1376,4 +1376,9 @@
     } catch (e) { console.error('vibe: início', e); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  // DEV2-010: o Organizador (importar projeto com várias pastas) vem em arquivos próprios, carregados daqui (o index.html não muda)
+  try {
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'vibe/organizador.css'; document.head.appendChild(l);
+    const s = document.createElement('script'); s.src = 'vibe/organizador.js'; document.body.appendChild(s);
+  } catch (e) { console.error('vibe: organizador', e); }
 })();

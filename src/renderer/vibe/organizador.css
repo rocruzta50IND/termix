@@ -1,0 +1,28 @@
+/* Organizador (DEV2-010): importar projeto com várias pastas. Usa os tokens do app (--text2, --warn, --bad...). */
+.dlg.orgdlg{width:min(880px,94vw)}
+.orglist{display:flex;flex-direction:column;gap:6px;margin:4px 0 10px;max-height:220px;overflow:auto}
+.orgp{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+.orgp span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+#orgRows{display:flex;flex-direction:column;gap:10px;margin:6px 0 12px}
+.orgrow{padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.orgrow.amb{border-color:rgba(251,191,36,.45)}
+.orgrow.off{opacity:.55}
+.orghd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.orgck{display:flex;align-items:center;gap:8px;cursor:pointer}
+.orgpath{font-size:12px;overflow-wrap:anywhere}
+.orgchips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 6px}
+.orgchips .chip{font-size:11px;padding:2px 8px}
+.chip.orgwarn{color:var(--warn);border-color:rgba(251,191,36,.4)}
+.chip.orgbad{color:var(--bad);border-color:rgba(248,113,113,.4)}
+.orginfo{font-size:12.5px;line-height:1.55;color:var(--text2);overflow-wrap:anywhere}
+.orggrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.orggrid .f{margin:0}
+.orgret{display:flex;flex-direction:column;gap:6px;margin-top:8px;font-size:13px}
+.orgret select:disabled{opacity:.5}
+.orgav{margin-top:8px;font-size:12.5px;color:var(--warn);line-height:1.5}
+.orgav.top{padding:8px 12px;border-radius:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);margin-bottom:10px}
+.orgtips{font-size:12.5px;line-height:1.6;color:var(--text2);padding:10px 12px;border-radius:10px;background:rgba(91,157,255,.07);border:1px solid rgba(91,157,255,.2)}
+.orgtips b{color:var(--text);display:block;margin-bottom:2px}
+.btn.orgsug{border-color:rgba(251,191,36,.6);color:var(--warn)}
+pre.orgmd{white-space:pre-wrap;font-size:12.5px;line-height:1.5;max-height:60vh;overflow:auto;padding:12px;border-radius:10px;background:rgba(0,0,0,.25);user-select:text}
+@media (max-width:640px){.orggrid{grid-template-columns:1fr}}

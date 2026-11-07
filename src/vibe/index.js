@@ -1,5 +1,6 @@
 'use strict';
 /* Módulo Vibe Coding e Mutirão: isolado do núcleo do Termix. DEV2-005: Mutirão em mutirao.js (canais vibe:mut*).
+   DEV2-010: Organizador (importar projeto com várias pastas) em organizador.js (canais vibe:org*; docs/ORGANIZADOR.md).
    DEV2-001: casca e canal 'vibe:status'. DEV2-002: tela de entrega do Vibe Coding (recebe, confere e guarda a entrega).
    DEV2-003: arquivos do ciclo (estado, plano, perguntas, respostas) e o texto dos pedidos ao orquestrador.
    DEV2-004: execução. A trava em código das abas do Vibe (settings próprios com o hook PreToolUse de trava.js e regras
@@ -191,6 +192,7 @@ function create(deps = {}) {
     for (const [n, txt] of Object.entries(arquivos || {})) fs.writeFileSync(path.join(dir, n), txt);
     writeJson(path.join(dir, 'entrega.json'), entrega);
   }
+  const ORG = require('./organizador').create({ app, dialog, getWin, gitRun, TEST, logError }); // DEV2-010: importar projeto com várias pastas
   const MUT = require('./mutirao').create({ dirOf, readJson, writeJson, gitRun, shaOf, headOf, checkStructure, validId, TEST, logError, gravarEntrega });
   // Branch dos agentes deste projeto: a do dono, na implementação automática do Mutirão (DEV2-006); a da parte do Mutirão,
   // se o sócio abriu o Vibe por ela; senão, a regra de branchOf.
@@ -561,6 +563,7 @@ function create(deps = {}) {
     on('revisaoLer', api.revisaoLer);
     on('execPrompt', api.execPrompt);
     for (const [k, fn] of Object.entries(MUT.api)) on(k, fn, null); // Mutirão (DEV2-005)
+    for (const [k, fn] of Object.entries(ORG)) on(k, fn, null); // Organizador (DEV2-010): canais vibe:org*
   }
   api.spawnSettings = spawnSettings; // usado pelo main.js (não é canal ipc)
   return api;

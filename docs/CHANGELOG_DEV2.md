@@ -6,6 +6,14 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-07
 
+**DEV2-010 — Importar projeto (várias pastas) com análise e organização automática** (DEV2)
+
+- Chave própria em Configurações > Experimental (desligada por padrão); botão "Importar projeto (várias pastas)…" no diálogo Novo projeto.
+- Análise em código, zero token: git, papel do `CLAUDE.local.md`, "ORQ" no nome, fluxo, CLAUDE.md, tarefas em andamento, handoff, checkpoint e a lista das conversas do Claude Code.
+- Mapa para confirmar (papel editável, aba, retomar desmarcado, avisos de ambiguidade, dicas de economia); "Carregar" cria abas novas com o papel no nome, que se localizam por um pedido em arquivo anexado com `@` (sem pedido de permissão); "Organizar com IA" opcional com um dossiê montado em código.
+- Investigação: o núcleo abre toda aba na pasta do projeto, então cada pasta vira um projeto agrupado pelo módulo. Núcleo: nenhuma linha.
+- Testes: análise 19/19, app sem tokens 21/21, rodada real com 2 abas ≈ US$ 0,78. Desenho em `docs/ORGANIZADOR.md`.
+
 **DEV2-009 — Fechar as pendências do MVP (marcas do plano, trava em conflito)** (DEV2)
 
 - Rodada real (Vibe de brinquedo com GitHub Pages e o domínio do cliente): o planejador marcou [HUMANO], [DEPLOY] [HUMANO] e [HUMANO] [SEM COMMIT]; o pedido de planejamento não mudou.

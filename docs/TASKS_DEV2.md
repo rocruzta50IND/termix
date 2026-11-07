@@ -3,9 +3,44 @@
 Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 - Numeração própria: **DEV2-001, DEV2-002...** A sequência TASK-xxx é do DEV1 e não é usada aqui.
-- A dev2 trabalha só nas frentes **Vibe Coding** e **Mutirão** (desenho em `docs/VIBE_MUTIRAO.md`).
+- A dev2 trabalha nas frentes **Vibe Coding** e **Mutirão** (desenho em `docs/VIBE_MUTIRAO.md`) e, desde a DEV2-010, no **Organizador** (importar projeto com várias pastas, `docs/ORGANIZADOR.md`).
 - Estas tarefas não vão para `docs/TASKS.md` nem para `docs/CHANGELOG_DEV.md`; o histórico fica em `docs/CHANGELOG_DEV2.md`.
 - O DEV1 não é notificado até o MVP do Vibe/Mutirão; `docs/HANDOFF_DEV2.md` fica como "EXPERIMENTO (não entregar)".
+
+---
+
+## DEV2-010 — Importar projeto (várias pastas) com análise e organização automática
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
+- **Data:** 2026-11-07
+- **Pedido:** (orquestrador termix-orq-f7, autorizado pelo Ygor) importar um projeto com várias pastas (ex.: dev + ORQ): analisar cada pasta em código, mostrar um mapa para confirmar e carregar abas novas que se localizam por um pedido curto em arquivo; retomar conversa só como opção por pasta (desmarcada); "Organizar com IA" opcional; dicas de economia; nada movido, renomeado ou apagado.
+- **Feito:**
+  - Chave própria **Configurações > Experimental > Importar projeto com várias pastas (experimental)**, desligada por padrão; ligada, o diálogo **Novo projeto** ganha o botão "Importar projeto (várias pastas)…".
+  - Passo 1: nome do projeto e lista de pastas (várias de uma vez ou uma por vez, com "Tirar").
+  - Análise em código, zero token (`src/vibe/organizador.js`): git (branch, remoto sem credencial, 5 commits, pendentes, raiz), `CLAUDE.local.md` (papel e branch), "ORQ" no nome, `.claude/fluxo.json`, `CLAUDE.md`, `WORKFLOW.md`, títulos em andamento dos `TASKS*.md` (seção "Em andamento" ou "Status: EM ANDAMENTO"), `HANDOFF*.md` com o status, arquivos de estado/checkpoint conhecidos, e as 8 conversas mais recentes do Claude Code da pasta (data, tamanho, título ou 1º pedido; só 64 KB do começo e 16 KB do fim). Papel sugerido e avisos de ambiguidade.
+  - Mapa: papel editável (com o motivo), aba que será criada (`<Papel> · <pasta>`), abrir, retomar a conversa X (desmarcado), permissão das abas, avisos (pasta inexistente, sem git, pendentes, papel não reconhecido, papéis repetidos, sem orquestrador, mesma raiz git, já no Termix, conversa em uso ou longa), faixa de ambiguidade com "Organizar com IA" destacado e dicas de economia.
+  - Carregar: cada pasta vira um projeto (`<Projeto> · <Papel>`) ou reaproveita o existente; aba nova com o papel no nome e a cor do papel; o pedido de localização em `organizador\<grupo>\pedidos\` e uma linha digitada quando o Claude Code abre (SessionStart): `Termix: siga o pedido @<arquivo> (anexado)`; retomar abre a conversa escolhida sem pedido; o grupo fica em `grupo.json`.
+  - Organizar com IA: dossiê montado em código (poucos KB) e uma aba "Organizador" num projeto cuja pasta é a de dados do módulo; ela grava `organizacao.md` ali (sugestões só como proposta), e o Termix mostra o resultado e volta ao mapa.
+- **Decisões:**
+  - **Investigação (item 1): resposta (b).** O núcleo não permite uma aba com pasta própria: o projeto guarda uma pasta só (`p.path`) e o `launch` abre todo terminal com `cwd: p.path` (a retomada, a lista de conversas e os hooks também). Então cada pasta vira um projeto do Termix agrupado pelo módulo (nome com o mesmo prefixo, `grupo.json` com o vínculo). Agrupar na barra lateral exigiria mexer no núcleo; ficou de fora.
+  - **Núcleo: nenhuma linha** (`main.js`, `preload.js`, `index.html`, `app.js` iguais). O código fica dentro de `src/vibe` porque é o único ponto que o núcleo já liga (`require` no `main.js`, ponte `vibe:*`); a interface é carregada pelo `vibe.js`. Só o `package.json` ganhou os 2 arquivos na checagem de sintaxe.
+  - **Pedido com `@arquivo`** (achado da rodada real): lido pela ferramenta Read, o pedido (fora da pasta da aba) fez o Claude Code perguntar "Allow this read outside the working directories?" em cada aba. Com a menção `@`, o próprio Claude Code anexa o arquivo, sem perguntar (17 s contra 39 s). Caminho com espaço volta ao caminho simples.
+  - O "Organizar com IA" roda com a pasta de dados do módulo como pasta da aba: lê o dossiê e grava sem pedir permissão e sem acesso de escrita às pastas do projeto. Isso cria um projeto "Organizador · <nome>" na barra (pode ser arquivado depois).
+  - Pasta já registrada no Termix: a aba nova entra no projeto existente (não duplica).
+- **Arquivos tocados:** `src/vibe/organizador.js` (novo), `src/vibe/index.js` (2 linhas), `src/renderer/vibe/organizador.js` e `organizador.css` (novos), `src/renderer/vibe/vibe.js` (carrega os dois), `package.json` (checagem), `docs/ORGANIZADOR.md` (novo), `docs/DECISOES.md` (seção nova), `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`.
+- **Como validar:** `npm run check`. No app (com a chave ligada): Novo projeto > Importar projeto (várias pastas)… > adicionar um par `X` e `X-ORQ` > Analisar > conferir papéis e avisos no mapa > Carregar > as abas novas recebem a linha com `@` e respondem onde paramos, sem pedir permissão. Opcional: marcar "retomar" numa pasta; "Organizar com IA".
+- **Validação feita:** `npm run check` passou.
+  - Análise sem tokens: 19/19 (par `Loja` + `Loja-ORQ` com fluxo, TASKS, HANDOFF e checkpoint; `Rascunhos` sem padrão e com mudança pendente; `Planilhas` sem git; pasta inexistente; conversas falsas numa config temporária); conferido também no formato real de `docs/TASKS.md` e `docs/TASKS_DEV2.md` deste repositório (só leitura).
+  - App isolado por CDP, sem tokens: 21/21, sem erros no console, nenhuma mudança nas pastas de teste.
+  - Rodada real mínima (instância isolada: `--user-data-dir` e `CLAUDE_CONFIG_DIR` temporários, credenciais copiadas e **apagadas no fim**, `.claude.json` de teste com as 2 pastas confiáveis, um Electron por vez): "Dev · Loja" e "Orquestrador · Loja-ORQ" se localizaram certo (papel, tarefa em andamento, handoff, checkpoint, próximo passo; nada alterado); as duas pediram permissão para ler o pedido (o teste aprovou) → correção com `@`; nova rodada só com a aba Dev: sem pedido de permissão, 17 s. Gasto total ≈ **US$ 0,78** (14 respostas, 607 mil tokens de cache lido, 58 mil gravados, 4,5 mil de saída); janela de 5 h 19 % → 20 %. A conferência "terminou o turno" do roteiro falhou na 1ª rodada por um defeito do próprio roteiro (as respostas estão no log), corrigido na 2ª.
+  - Capturas (fora do repositório) em `C:\Users\CRUUUUUUUUUUUUUUUUUZ\AppData\Local\Temp\claude\c5001e4e31f92b1a\85210500-d5a3-46f7-9e3f-717112cc8496\scratchpad\shots`: `o0-chave-em-configuracoes.png`, `o1-botao-no-novo-projeto.png`, `o2-passo1-pastas.png`, `o3-mapa.png`, `o4-mapa-retomar-e-avisos.png`, `o5-mapa-dicas.png`, `o6-organizacao.png`, `o7-aba-dev-localizada.png`, `o8-aba-orq-localizada.png`, `o7-aba-dev-localizada-so-dev.png` (com `@`). Roteiro: `run10.js`; análise: `org\fake.js`.
+- **Pendências:**
+  - "Organizar com IA" com uma aba real (validado com a resposta simulada, como combinado).
+  - "Retomar" numa rodada real (usa o `launch(..., 'resume')` do núcleo).
+  - Agrupamento visual na barra lateral (exigiria o núcleo).
+  - O `sessions:scan`/`sessionExists` do núcleo ignoram `CLAUDE_CONFIG_DIR` (só afeta testes isolados).
+  - Validação do Ygor com as pastas reais dele.
+- **Próximo passo:** Revisão do Ygor no app real (ligar a chave e importar um par dev + ORQ).
 
 ---
 
