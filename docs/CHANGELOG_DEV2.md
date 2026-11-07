@@ -6,6 +6,15 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-07
 
+**DEV2-007 — Robustez do ciclo do Vibe e do Mutirão** (DEV2)
+
+- Marca `[SEM COMMIT]` no plano: tarefa de validação/conferência aceita sem commit novo quando o `Tk.md` traz "Validação: ..."; o planejamento pede a marca e a validação final do Mutirão vem marcada.
+- Limite de tentativas: 1 execução + 2 refações, depois pausa com o motivo e aviso; "Continuar" dá mais uma tentativa.
+- Tempo limite: turno sem terminar em 30 min (ou 20 min sem sinal) = Esc no agente, pausa e aviso; "Continuar" confere e refaz ou pede a revisão de novo.
+- Parar no meio do turno: pedido não enviado é desfeito (não conta, caixa limpa com Ctrl+U); turno interrompido é conferido e refeito. Ctrl+U antes de todo `/clear` (a 1ª tecla depois de um Esc se perdia).
+- Push final do Mutirão com a branch do dono à frente no remoto: fetch + merge de `origin/<dono>` (sem rebase); conflito = `merge --abort`, nada enviado, motivo na tela.
+- Núcleo: nenhuma linha. Testes: módulo 23/23, app com agente falso 23/23 (sem tokens), regressões 62/62, 23/23, 31/31, 41/41; rodada real: T1 do conflito resolvida e aprovada pelos agentes reais, validação final marcada [SEM COMMIT] (~US$ 1,3).
+
 **DEV2-006 — Implementação automática do Mutirão** (DEV2)
 
 - Em N/N, "Implementação automática": o Termix (código) confere working tree limpo e a branch do dono, faz `git fetch` e `git merge --no-ff origin/<branch>` de cada sócio ("Mutirão: integrar <branch> (<nome>)"). Conflito: `git merge --abort` sem descartar nada, registro da branch e dos arquivos; as outras entregas entram.

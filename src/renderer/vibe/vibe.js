@@ -191,10 +191,12 @@
     if (!c.est) return;
     clearTimeout(c.timer);
     c.wait = null; c.live = false;
+    const esp = c.esperando;
+    desfazPedido(c); // DEV2-007: pedido digitado e ainda não enviado = apagado da caixa e não conta como tentativa
     c.gen++; cancelWaits(c); c.esperando = null; // a execução em andamento para de conduzir
     for (const k of ['orq', 'dev']) {
       const tab = tabOf(c.est[k]);
-      try { if (tab && isAlive(tab.id) && stOf(tab) === 'work') api.write(tab.id, '\x1b'); } catch { /* aba já encerrada */ }
+      try { if (tab && isAlive(tab.id) && (stOf(tab) === 'work' || (esp && esp.tab === tab.id && esp.enviado))) api.write(tab.id, '\x1b'); } catch { /* aba já encerrada */ }
     }
     const from = ['parado', 'erro'].includes(c.est.fase) ? (c.est.antes || 'plano') : c.est.fase === 'pausado' ? 'execucao' : c.est.fase;
     c.est = { ...c.est, fase: 'parado', antes: from, parado: nowIso(), aviso: '' };
@@ -229,13 +231,23 @@
      erro ou agente sem resposta. A trava em código (src/vibe/trava.js) vale em todas as abas do Vibe. */
   const TETO_5H = 93; // decisão do Ygor: com a janela de 5 h em 93 % ou mais, pausa e retoma sozinha quando ela virar
   const MAX_REFAZER = 2; // refações por tarefa; depois disso, pausa e pede ajuda ao humano
-  const SEM_RESPOSTA = 20 * 60000; // agente sem nenhum sinal (hook ou saída no terminal) por 20 min = pausa
+  const T = { semResposta: 20 * 60000, turno: 30 * 60000 }; // sem nenhum sinal por 20 min, ou turno sem terminar em 30 min = pausa (no teste: vibeTest.tempos)
   let LIM_TEST = null; // só no modo de teste: % da janela de 5 h injetado
   const winOk = (l) => !!(l && typeof l.pct === 'number' && (!l.resets || l.resets * 1000 > Date.now()));
   const lim5 = () => { if (LIM_TEST != null) return { pct: LIM_TEST, resets: Date.now() / 1000 + 3600, teste: true }; try { return UI.limits && UI.limits.five; } catch { return null; } };
   const lim7 = () => { try { return UI.limits && UI.limits.week; } catch { return null; } };
   const limHit = () => { const l = lim5(); return winOk(l) && l.pct >= TETO_5H; };
   const ACT = {}; // último sinal de cada aba (hook)
+  // DEV2-007: o pedido em curso (c.pedindo) até o hook de prompt enviado. Parar ou pausar antes disso desfaz a tentativa
+  // (não conta) e apaga o texto da caixa (Ctrl+U), para o próximo /clear não sair grudado no pedido antigo.
+  function desfazPedido(c) {
+    const p = c.pedindo;
+    if (!p || p.enviado) return;
+    c.pedindo = null;
+    const x = c.est && c.est.exec;
+    if (x) { if (p.key === 'dev') { x.enviadoDev = null; x.tentativas = Math.max(0, (x.tentativas || 1) - 1); } else x.enviadoRev = null; }
+    try { if (p.digitado && isAlive(p.tab)) api.write(p.tab, '\x15'); } catch { /* aba já encerrada */ }
+  }
 
   // esperas por hook (promessas): resolvem com o evento, ou null ao cancelar/expirar
   const HW = [];
@@ -252,7 +264,9 @@
   // Digita um pedido e aperta Enter 1 s depois, repetindo enquanto o hook de prompt enviado não chega (ver sendPrompt).
   function typeInto(c, tab, text, g) {
     let sent = false;
-    waitHook(c, tab.id, (d) => d.event === 'UserPromptSubmit', 30000).then(() => { sent = true; });
+    if (c.pedindo) c.pedindo.digitado = true;
+    const P = c.pedindo;
+    waitHook(c, tab.id, (d) => d.event === 'UserPromptSubmit', 30000).then((d) => { sent = true; if (d && P) { P.enviado = true; if (c.esperando) c.esperando.enviado = true; } });
     api.write(tab.id, text);
     let n = 0;
     const enter = () => { if (sent || c.gen !== g || !isAlive(tab.id)) return; api.write(tab.id, '\r'); if (++n < 5) setTimeout(enter, 3000); };
@@ -263,6 +277,11 @@
     const w = waitHook(c, tab.id, (d) => d.event === 'SessionStart' && d.source === 'clear', 20000);
     let got = false;
     w.then((d) => { got = !!d; });
+    // DEV2-007: depois de um Esc (Parar ou tempo limite), a 1ª tecla seguinte pode ser engolida no caminho do terminal
+    // ("/clear" chegava como "clear" e virava um pedido). Ctrl+U antes: esvazia a caixa e é a tecla que se perde, se for o caso.
+    api.write(tab.id, '\x15');
+    await sleep(200);
+    if (c.gen !== g || !isAlive(tab.id)) return null;
     api.write(tab.id, '/clear');
     let n = 0;
     const enter = () => { if (got || c.gen !== g || !isAlive(tab.id)) return; api.write(tab.id, '\r'); if (++n < 3) setTimeout(enter, 5000); };
@@ -305,23 +324,27 @@
     if (!text) { pause(id, 'erro', 'Não foi possível montar o pedido (a entrega ou o plano não foram encontrados).'); return false; }
     // o pedido não chegou a ser digitado (aba não abriu, /clear não confirmado): não conta como tentativa, e o "Continuar"
     // manda o pedido normal em vez de "refazer" (achado na DEV2-006)
-    const naoEnviado = () => { const x = c.est && c.est.exec; if (!x) return; if (key === 'dev') { x.enviadoDev = null; x.tentativas = Math.max(0, (x.tentativas || 1) - 1); } else x.enviadoRev = null; cySave(id); };
+    const P = (c.pedindo = { key, tab: null, enviado: false, digitado: false });
+    const naoEnviado = () => { if (c.pedindo !== P) return; desfazPedido(c); cySave(id); };
     const tab = await ensureTab(id, key, g);
     if (!tab || c.gen !== g) { naoEnviado(); return false; }
+    P.tab = tab.id;
     if (!(await clearTab(c, tab, g))) { if (c.gen === g) pause(id, 'erro', `O /clear não foi confirmado na aba "${tab.name}". Confira a aba (a caixa de texto deve estar vazia) e clique em Continuar.`); naoEnviado(); return false; }
-    if (c.gen !== g) return false;
+    if (c.gen !== g) { naoEnviado(); return false; }
     const stop = waitHook(c, tab.id, (d) => d.event === 'Stop');
-    c.esperando = { tab: tab.id, desde: Date.now() };
+    c.esperando = { tab: tab.id, desde: Date.now(), key, enviado: false };
     typeInto(c, tab, text, g);
     const d = await stop;
-    c.esperando = null;
+    if (c.gen === g) { c.esperando = null; if (c.pedindo === P) c.pedindo = null; }
     return c.gen === g && !!d;
   }
 
   function pause(id, tipo, motivo, extra = {}) {
     const c = cyOf(id);
     if (!c.est || !c.est.exec) return;
+    desfazPedido(c);
     c.gen++; cancelWaits(c); c.esperando = null;
+    if (extra.interromper) { try { if (isAlive(extra.interromper)) api.write(extra.interromper, '\x1b'); } catch { /* aba já encerrada */ } delete extra.interromper; }
     c.live = tipo === 'limite'; // limite: enquanto o app estiver aberto, o Termix retoma sozinho quando a janela virar
     c.est = { ...c.est, fase: 'pausado', aviso: '' };
     c.est.exec.pausa = { tipo, motivo, desde: nowIso(), ...extra };
@@ -378,7 +401,7 @@
     if (!x) return;
     const pz = x.pausa;
     if (pz && pz.gate) x.liberadas = [...(x.liberadas || []), pz.gate]; // o humano liberou a tarefa de DEPLOY/HUMANO
-    if (pz && pz.ajuda) { x.tentativas = 0; x.retomar = false; } // depois das refações, o humano ajudou: nova rodada
+    if (pz && pz.ajuda) { x.retomar = false; x.extra = (x.extra || 0) + 1; } // limite de tentativas: o humano ajudou, mais UMA chance (DEV2-007)
     else x.retomar = true;
     x.pausa = null;
     c.est = { ...c.est, fase: 'execucao', aviso: '', retomado: auto ? 'auto' : nowIso() };
@@ -391,12 +414,15 @@
     if (!x || !x.pausa || !x.pausa.gate) return;
     const t = x.tarefas[x.k];
     x.feitas.push({ id: t.id, titulo: t.titulo, humano: true });
-    Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, refazer: null, enviadoDev: null, enviadoRev: null, pausa: null, retomar: false });
+    Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, extra: 0, refazer: null, enviadoDev: null, enviadoRev: null, pausa: null, retomar: false });
     c.est = { ...c.est, fase: 'execucao', aviso: '' };
     cySave(id);
     execLoop(id);
   }
 
+  // limite de tentativas: 1 execução + MAX_REFAZER refações; cada "Continuar" depois da pausa dá mais uma (DEV2-007)
+  const maxTent = (x) => MAX_REFAZER + 1 + (x.extra || 0);
+  const esgotou = (x) => (x.tentativas || 0) >= maxTent(x);
   async function execLoop(id) {
     const c = cyOf(id);
     const g = ++c.gen;
@@ -426,9 +452,10 @@
             x.tentativas = (x.tentativas || 0) + 1;
             x.enviadoDev = nowIso(); x.sub = 'dev';
             cySave(id);
-            const text = await call('execPrompt', id, x.refazer ? 'refazer' : 'dev', t.id, x.refazer || null);
+            const text = await call('execPrompt', id, x.refazer ? 'refazer' : 'dev', t.id, { ...(x.refazer || {}), semCommit: !!t.semCommit });
             if (!(await ask(id, g, 'dev', text))) return;
           }
+          const retomada = !!x.retomar;
           x.retomar = false;
           // conferência em código (zero token)
           const info = await call('gitInfo', id), res = await call('resultadoLer', id, t.id);
@@ -438,15 +465,19 @@
           if (mexeu.length) return pause(id, 'erro', `A ${mexeu.join(', ')} mudou durante a ${t.id}. Isso é proibido: confira o projeto antes de continuar.`);
           if (info.branch !== x.branch) return pause(id, 'erro', `O Dev terminou a ${t.id} na branch "${info.branch || '?'}" em vez de "${x.branch}". Confira e clique em Continuar.`);
           const falta = [];
-          if (!res || !res.existe || res.mtime < Date.parse(x.enviadoDev) - 2000) falta.push(`resultados\\${t.id}.md`);
-          if (!info.permitidaSha || info.permitidaSha === x.base.sha) falta.push(`um commit novo na branch ${x.branch}`);
+          const fresco = !!(res && res.existe && res.mtime >= Date.parse(x.enviadoDev) - 2000);
+          const novo = !!(info.permitidaSha && info.permitidaSha !== x.base.sha);
+          if (!fresco) falta.push(`resultados\\${t.id}.md`);
+          // [SEM COMMIT] (DEV2-007): tarefa de validação/conferência; sem commit novo vale, desde que o Tk.md traga a validação
+          if (t.semCommit) { if (fresco && !novo && !res.validacao) falta.push(`a linha "Validação: ..." em resultados\\${t.id}.md (tarefa [SEM COMMIT])`); }
+          else if (!novo) falta.push(`um commit novo na branch ${x.branch}`);
           if (falta.length) {
-            if (x.tentativas > MAX_REFAZER) return pause(id, 'humano', `A ${t.id} não ficou pronta em ${plural(x.tentativas, 'tentativa', 'tentativas')} (faltou ${falta.join(' e ')}). Veja a aba "${DEV_NAME}", ajude e clique em Continuar.`, { ajuda: true });
             x.refazer = { falta: `faltou ${falta.join(' e ')}` };
+            if (esgotou(x)) { Object.assign(x, { etapa: 'dev', enviadoDev: null }); return pause(id, 'humano', `A ${t.id} não ficou pronta em ${plural(x.tentativas, 'tentativa', 'tentativas')} (${retomada ? 'interrompida e ' : ''}faltou ${falta.join(' e ')}). Veja a aba "${DEV_NAME}", ajude e clique em Continuar (mais uma tentativa).`, { ajuda: true }); }
             cySave(id);
             continue;
           }
-          Object.assign(x, { ultimoCommit: info.ultimo, devSha: info.permitidaSha, etapa: 'revisao', enviadoRev: null });
+          Object.assign(x, { ultimoCommit: novo ? info.ultimo : x.ultimoCommit, devSha: novo ? info.permitidaSha : null, semCommitOk: !novo, etapa: 'revisao', enviadoRev: null });
           cySave(id);
           continue;
         }
@@ -454,22 +485,25 @@
           if (!(x.retomar && x.enviadoRev)) {
             x.enviadoRev = nowIso(); x.sub = 'rev';
             cySave(id);
-            const text = await call('execPrompt', id, 'revisao', t.id, { sha: x.devSha });
+            const text = await call('execPrompt', id, 'revisao', t.id, { sha: x.devSha, semCommit: !!t.semCommit });
             if (!(await ask(id, g, 'orq', text))) return;
           }
+          const retomadaRev = !!x.retomar;
           x.retomar = false;
           const rv = await call('revisaoLer', id, t.id);
           if (!alive()) return;
+          // revisão interrompida (Parar ou tempo limite) e sem veredito: pede a revisão de novo, uma vez, de forma limpa
+          if (retomadaRev && (!rv || !rv.ok || rv.mtime < Date.parse(x.enviadoRev) - 2000)) { x.enviadoRev = null; cySave(id); continue; }
           if (!rv || !rv.ok || rv.mtime < Date.parse(x.enviadoRev) - 2000) return pause(id, 'erro', `O orquestrador não gravou revisoes\\${t.id}.json com o veredito. Veja a aba "${ORQ_NAME}" e clique em Continuar.`);
           x.ultimaRevisao = { id: t.id, veredito: rv.veredito, motivo: rv.motivo.slice(0, 300) };
           if (rv.veredito === 'aprovado') {
-            x.feitas.push({ id: t.id, titulo: t.titulo, commit: x.ultimoCommit, tentativas: x.tentativas });
-            Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, refazer: null, enviadoDev: null, enviadoRev: null });
+            x.feitas.push({ id: t.id, titulo: t.titulo, commit: x.semCommitOk ? '' : x.ultimoCommit, semCommit: !!x.semCommitOk, tentativas: x.tentativas });
+            Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, extra: 0, refazer: null, enviadoDev: null, enviadoRev: null, semCommitOk: false });
             cySave(id);
             continue;
           }
-          if (x.tentativas > MAX_REFAZER) return pause(id, 'humano', `A revisão pediu para refazer a ${t.id} depois de ${plural(x.tentativas, 'tentativa', 'tentativas')}: ${rv.motivo.slice(0, 200)}. Ajude e clique em Continuar.`, { ajuda: true });
-          Object.assign(x, { refazer: { revisao: true }, etapa: 'dev', enviadoDev: null });
+          Object.assign(x, { refazer: { revisao: true }, etapa: 'dev', enviadoDev: null, enviadoRev: null });
+          if (esgotou(x)) return pause(id, 'humano', `A revisão pediu para refazer a ${t.id} depois de ${plural(x.tentativas, 'tentativa', 'tentativas')}: ${rv.motivo.slice(0, 200)}. Ajude e clique em Continuar (mais uma tentativa).`, { ajuda: true });
           cySave(id);
         }
       }
@@ -490,7 +524,10 @@
         const tid = c.esperando.tab;
         if (!isAlive(tid)) { pause(id, 'erro', 'A aba do agente fechou no meio da tarefa. Clique em Continuar para reabrir e seguir.'); continue; }
         const last = Math.max(c.esperando.desde, ACT[tid] || 0, (RT[tid] && RT[tid].lastData) || 0);
-        if (Date.now() - last > SEM_RESPOSTA) pause(id, 'erro', `O agente está sem responder há ${Math.round(SEM_RESPOSTA / 60000)} min. Veja a aba e clique em Continuar.`);
+        const quem = c.esperando.key === 'orq' ? 'O orquestrador' : 'O Dev';
+        const min = (ms) => (ms >= 60000 ? `${Math.round(ms / 60000)} min` : `${Math.round(ms / 1000)} s`);
+        if (Date.now() - c.esperando.desde > T.turno) pause(id, 'erro', `${quem} não terminou o turno em ${min(T.turno)} (tempo limite). O Termix interrompeu o agente; veja a aba e clique em Continuar para conferir e seguir.`, { interromper: tid });
+        else if (Date.now() - last > T.semResposta) pause(id, 'erro', `${quem} está sem responder há ${min(T.semResposta)}. O Termix interrompeu o agente; veja a aba e clique em Continuar.`, { interromper: tid });
       }
     }
     try { checkPart(); } catch { /* aviso da parte do Mutirão: o cabeçalho nem sempre é redesenhado ao trocar de projeto */ }
@@ -550,7 +587,7 @@
       ['Fase', esc(fase)],
       ['Branch', esc(x.branch || '—')],
       ['Último commit', esc(x.ultimoCommit || '—')],
-      ['Tentativas', e.fase === 'concluido' || !t ? '—' : `${x.tentativas || 0} de ${MAX_REFAZER + 1}`],
+      ['Tentativas', e.fase === 'concluido' || !t ? '—' : `${x.tentativas || 0} de ${maxTent(x)}`],
       ['Limites', `5 h ${pct(lim5())} · 7 d ${pct(lim7())} <small>(pausa com a janela de 5 h em ${TETO_5H}%)</small>`],
     ];
     if (x.ultimaRevisao) rows.push(['Última revisão', `${esc(x.ultimaRevisao.id)}: ${esc(x.ultimaRevisao.veredito)}${x.ultimaRevisao.motivo ? ` — ${esc(x.ultimaRevisao.motivo.slice(0, 160))}` : ''}`]);
@@ -558,8 +595,8 @@
     const list = x.tarefas.map((tt, i) => {
       const f = feita(tt.id);
       const cls = f ? 'done' : i === x.k && e.fase !== 'concluido' ? 'cur' : '';
-      const tags = `${tt.deploy ? ' <em class="vx-tag">DEPLOY</em>' : ''}${tt.humano ? ' <em class="vx-tag">HUMANO</em>' : ''}`;
-      const extra = f ? (f.humano ? ' · feita pelo humano' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
+      const tags = `${tt.deploy ? ' <em class="vx-tag">DEPLOY</em>' : ''}${tt.humano ? ' <em class="vx-tag">HUMANO</em>' : ''}${tt.semCommit ? ' <em class="vx-tag">SEM COMMIT</em>' : ''}`;
+      const extra = f ? (f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
       return `<li class="${cls}">${esc(tt.id)} — ${esc(tt.titulo)}${tags}<small>${extra}</small></li>`;
     }).join('');
     return `<div class="vx"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><ol class="vx-list">${list}</ol></div>`;
@@ -944,7 +981,7 @@
     if (a.fase === 'juntando' && MP.autoBusy) line = 'O Termix está juntando as entregas na branch do dono (git merge --no-ff, uma por participante).';
     else if (a.fase === 'erro') line = `<span class="mp-bad">A junção parou: ${esc(a.motivo || 'erro')}</span>`;
     else if (a.fase === 'push') line = `<span class="mp-bad">${esc((a.push && a.push.motivo) || 'O push da branch do dono falhou.')}</span>`;
-    else if (a.fase === 'concluido') line = `<b>Mutirão concluído na ${esc(a.branch)}.</b> Push feito pelo Termix${a.push && a.push.sha ? ` (${esc(String(a.push.sha).slice(0, 8))})` : ''}. Promover para a main é com você.`;
+    else if (a.fase === 'concluido') line = `<b>Mutirão concluído na ${esc(a.branch)}.</b> Push feito pelo Termix${a.push && a.push.sha ? ` (${esc(String(a.push.sha).slice(0, 8))})` : ''}${a.push && a.push.integrou ? `, depois de integrar a origin/${esc(a.branch)}, que estava à frente` : ''}. Promover para a main é com você.`;
     else if (e && e.fase === 'parado') line = 'O Vibe Coding foi parado. Continue pelo painel do Vibe.';
     else if (e && e.fase === 'pausado') line = `Pausado: ${esc((x && x.pausa && x.pausa.motivo) || '')}`;
     else if (e && e.fase === 'perguntas') line = 'O orquestrador tem perguntas indispensáveis: responda no painel do Vibe.';
@@ -1272,6 +1309,8 @@
       stop: () => V && stopCycle(V.id), resume: () => V && resumeCycle(V.id),
       // DEV2-004: execução. limit(93) injeta o % da janela de 5 h (null volta ao real); exec/cont/skip = botões do painel
       limit: (v) => { LIM_TEST = typeof v === 'number' ? v : null; paintCycle(); return LIM_TEST; },
+      // DEV2-007: tempos(ms) do tempo limite do turno e do silêncio (sem argumento: volta ao padrão de 30 e 20 min)
+      tempos: (o) => { T.turno = (o && o.turno) || 30 * 60000; T.semResposta = (o && o.semResposta) || 20 * 60000; return { ...T }; },
       exec: () => V && execStart(V.id), cont: () => V && resumeCycle(V.id), skip: () => V && skipTask(V.id),
       // DEV2-005: Mutirão. mut.* = os botões do painel; mutEntregar grava a entrega simulada do sócio (sem rodar o Vibe)
       mut: { open: (pid) => openMutirao(pid), close: () => closeMutirao(), rows: (r) => { if (!MP) return false; MP.rows = r; mutPaint(); return true; },

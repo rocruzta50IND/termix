@@ -410,8 +410,30 @@ function create(h) {
     if (!a) return { ok: false, motivo: 'A implementação automática não foi iniciada.' };
     const pasta = d.projeto.pasta, br = a.branch;
     if (!validBranch(br)) return { ok: false, motivo: 'A branch do dono não é válida (main/master não vale).' };
+    const falhou = (motivo, extra = {}) => { const push = { ok: false, sha: shaOf(pasta, `refs/heads/${br}`), data: new Date().toISOString(), motivo, ...extra }; autoSet(id, 'push', { push }); return { ...push, branch: br }; };
+    // DEV2-007: a branch do dono no remoto pode estar à frente (outra máquina). Antes do push, fetch; se o remoto estiver à
+    // frente, merge de origin/<dono> (sem rebase, sem descartar). Conflito = merge --abort, nada enviado, motivo na tela.
+    const fe = gitRun(pasta, ['fetch', 'origin'], 60000);
+    if (!fe.ok) return falhou(`O fetch do remoto falhou antes do push: ${linha1(fe)}`);
+    const ref = `refs/remotes/origin/${br}`;
+    let integrou = '';
+    if (shaOf(pasta, ref) && !gitRun(pasta, ['merge-base', '--is-ancestor', ref, `refs/heads/${br}`]).ok) {
+      if (headOf(pasta) !== br) return falhou(`A origin/${br} está à frente, mas o projeto não está na branch ${br}; nada foi enviado.`);
+      if (mergeEmAndamento(pasta)) return falhou('Há um merge em andamento no projeto; nada foi enviado.');
+      const st = gitRun(pasta, ['status', '--porcelain', '--untracked-files=no']);
+      if (!st.ok || st.out) return falhou(`A origin/${br} está à frente e o projeto tem mudanças sem commit (${porcelain(st.out || '').slice(0, 5).join(', ')}); nada foi enviado.`);
+      const m = gitRun(pasta, ['merge', '--no-ff', '-m', `Mutirão: integrar origin/${br} (remoto à frente)`, `origin/${br}`], 60000);
+      if (!m.ok) {
+        const u = gitRun(pasta, ['diff', '--name-only', '--diff-filter=U']);
+        const arquivos = u.ok && u.out ? u.out.split('\n').filter(Boolean).slice(0, 50) : [];
+        let extra = '';
+        if (mergeEmAndamento(pasta)) { const ab = gitRun(pasta, ['merge', '--abort']); if (!ab.ok || mergeEmAndamento(pasta)) extra = ` O merge não pôde ser cancelado (${linha1(ab)}): confira o projeto à mão.`; }
+        return falhou(`A origin/${br} estava à frente e o merge com ela ${arquivos.length ? `conflitou em ${arquivos.join(', ')}` : `falhou (${linha1(m)})`}. Merge cancelado, nada foi enviado nem descartado. Resolva o merge da origin/${br} na ${br} (ou peça ao Vibe) e clique em "Enviar a branch de novo".${extra}`, { conflito: arquivos.length > 0, arquivos });
+      }
+      integrou = shaOf(pasta, 'HEAD');
+    }
     const ps = gitRun(pasta, ['push', 'origin', `refs/heads/${br}:refs/heads/${br}`], 60000);
-    const push = { ok: ps.ok, sha: shaOf(pasta, `refs/heads/${br}`), data: new Date().toISOString(), motivo: ps.ok ? '' : `O push da ${br} falhou: ${linha1(ps)}` };
+    const push = { ok: ps.ok, sha: shaOf(pasta, `refs/heads/${br}`), data: new Date().toISOString(), integrou, motivo: ps.ok ? '' : `O push da ${br} falhou: ${linha1(ps)}` };
     autoSet(id, ps.ok ? 'concluido' : 'push', { push });
     return { ...push, branch: br };
   }

@@ -129,11 +129,15 @@ function tarefasDo(text) {
     const corpo = lines.slice(t.linha + 1, fim).join('\n');
     t.deploy = /\[\s*DEPLOY\s*\]/i.test(t.titulo) || /^\W*tipo\W*:\W*deploy/im.test(corpo);
     t.humano = /\[\s*HUMANO\s*\]/i.test(t.titulo) || /^\W*tipo\W*:\W*humano/im.test(corpo);
-    t.titulo = t.titulo.replace(/\[\s*(DEPLOY|HUMANO)\s*\]\s*/gi, '').trim() || t.id; // a marca vira etiqueta na tela
+    t.semCommit = /\[\s*SEM[\s_-]*COMMIT\s*\]/i.test(t.titulo); // DEV2-007: só valida/confere; pode terminar sem commit
+    t.titulo = t.titulo.replace(/\[\s*(DEPLOY|HUMANO|SEM[\s_-]*COMMIT)\s*\]\s*/gi, '').trim() || t.id; // a marca vira etiqueta na tela
     delete t.linha;
   }
   return out;
 }
+
+// Resultado de tarefa [SEM COMMIT]: o Tk.md precisa trazer a linha "Validação: ..." com algum conteúdo.
+const temValidacao = (t) => /^[ \t>*#_-]*valida[çc][ãa]o[*_ \t]*:[*_ \t]*\S/im.test(String(t || ''));
 
 // Branch onde os agentes podem fazer commit e push. Projeto com fluxo Rocruzta (.claude/fluxo.json): a branch do papel,
 // lida do CLAUDE.local.md. Sem fluxo: uma branch própria vibe/<projeto>, criada a partir da atual.
@@ -394,13 +398,13 @@ function create(deps = {}) {
       if (kind === 'fechar') {
         return pedido(id, 'fechar', `Respostas do humano em ${path.join(d, 'respostas.json')}. Atualize ${path.join(d, 'plano.md')} com elas e regrave ${path.join(d, 'perguntas.json')} com a lista vazia, a menos que reste algo realmente indispensável. Mesmas regras de antes: só planejar, não mexer no código, não escrever fora de ${d}. Ao terminar, responda apenas PLANO FECHADO e encerre o turno.`);
       }
-      const formato = `Grave na pasta ${d} (não na pasta pedidos): 1) plano.md com as tarefas até o fim do projeto, na ordem, cada uma com o título no formato "## T1 — título" (T e o número) e os itens Objetivo, Critério de pronto, Arquivos prováveis, Validação e Não fazer; cada tarefa deve caber num turno do dev e terminar num commit; marque no título com [DEPLOY] a tarefa de deploy/publicação e com [HUMANO] a que precisa de acesso, dado ou decisão do humano (ex.: "## T5 — [DEPLOY] publicar"); 2) perguntas.json no formato {"perguntas":[{"id":"p1","texto":"...","porque":"...","opcoes":["..."]}]}, só com o que for indispensável e não estiver na entrega; grave o arquivo sempre, com {"perguntas":[]} se nada faltar ("opcoes" é opcional). Comece o plano.md com a linha "Branch de trabalho: ${br.nome || 'a do papel no CLAUDE.local.md'}". Regras do projeto, para valer no plano: commit e push ${br.regra}, nunca na main/master, nem como tarefa do plano; nada que apague dados (sem reset --hard, clean -f, force push, apagar pastas do usuário); economia de tokens (quem espera e controla o ciclo é o Termix, prompts curtos que apontam para arquivos, /clear entre tarefas, o orquestrador lê resumos e não diffs inteiros); avisar o humano só para deploy e o indispensável. Não escreva fora de ${d}. Ao terminar, responda apenas PLANO GRAVADO e encerre o turno.`;
+      const formato = `Grave na pasta ${d} (não na pasta pedidos): 1) plano.md com as tarefas até o fim do projeto, na ordem, cada uma com o título no formato "## T1 — título" (T e o número) e os itens Objetivo, Critério de pronto, Arquivos prováveis, Validação e Não fazer; cada tarefa deve caber num turno do dev e terminar num commit; marque no título com [DEPLOY] a tarefa de deploy/publicação, com [HUMANO] a que precisa de acesso, dado ou decisão do humano (ex.: "## T5 — [DEPLOY] publicar") e com [SEM COMMIT] a que só valida ou confere e pode não mudar nada (ex.: "## T6 — [SEM COMMIT] validação final"); 2) perguntas.json no formato {"perguntas":[{"id":"p1","texto":"...","porque":"...","opcoes":["..."]}]}, só com o que for indispensável e não estiver na entrega; grave o arquivo sempre, com {"perguntas":[]} se nada faltar ("opcoes" é opcional). Comece o plano.md com a linha "Branch de trabalho: ${br.nome || 'a do papel no CLAUDE.local.md'}". Regras do projeto, para valer no plano: commit e push ${br.regra}, nunca na main/master, nem como tarefa do plano; nada que apague dados (sem reset --hard, clean -f, force push, apagar pastas do usuário); economia de tokens (quem espera e controla o ciclo é o Termix, prompts curtos que apontam para arquivos, /clear entre tarefas, o orquestrador lê resumos e não diffs inteiros); avisar o humano só para deploy e o indispensável. Não escreva fora de ${d}. Ao terminar, responda apenas PLANO GRAVADO e encerre o turno.`;
       const m = e.mutirao;
       if (m) { // implementação automática do Mutirão (DEV2-006): as entregas já estão juntadas na branch do dono
         const cf = Array.isArray(m.conflitos) ? m.conflitos : [];
         const conflitos = cf.length ? ` Primeiro, os conflitos da junção: uma tarefa para cada branch que não entrou, a começar pela T1, com o título "## T1 — Resolver o conflito da <branch>" (T2 para a segunda, e assim por diante) (${cf.map((c) => `${c.branch}: ${(c.arquivos || []).join(', ') || 'ver estrutura.md'}`).join('; ')}); nela o Dev roda "git merge --no-ff origin/<branch>" na ${m.branch}, resolve editando os arquivos em conflito (git checkout --ours/--theirs é bloqueado pelo Termix), valida e faz o commit do merge.` : '';
         const lim = m.maxTarefas ? ` Limite deste teste: no máximo ${m.maxTarefas} tarefas no total.` : '';
-        return pedido(id, 'plano', `Você é o ORQUESTRADOR do Mutirão do Termix (implementação automática) neste projeto. Todas as partes dos sócios foram entregues e o Termix já juntou as entregas na branch "${m.branch}" (a atual), uma por participante. Nesta etapa só PLANEJE: não altere o código do projeto, não faça commit nem merge. Leia ${path.join(d, 'estrutura.md')} (divisão, partes, entregas, junções e conflitos) e ${path.join(d, 'entrega.json')} (objetivo e critério de pronto) e confira a versão atual da branch ${m.branch} (git log --oneline -20, a estrutura de pastas e só os arquivos necessários; sem ler diffs inteiros). Monte as tarefas até o fim do projeto.${conflitos} Depois: ligar as partes entre si, cobrir as lacunas contra o critério de pronto e, por último, uma tarefa de validação final do projeto inteiro.${lim} ${formato}`);
+        return pedido(id, 'plano', `Você é o ORQUESTRADOR do Mutirão do Termix (implementação automática) neste projeto. Todas as partes dos sócios foram entregues e o Termix já juntou as entregas na branch "${m.branch}" (a atual), uma por participante. Nesta etapa só PLANEJE: não altere o código do projeto, não faça commit nem merge. Leia ${path.join(d, 'estrutura.md')} (divisão, partes, entregas, junções e conflitos) e ${path.join(d, 'entrega.json')} (objetivo e critério de pronto) e confira a versão atual da branch ${m.branch} (git log --oneline -20, a estrutura de pastas e só os arquivos necessários; sem ler diffs inteiros). Monte as tarefas até o fim do projeto.${conflitos} Depois: ligar as partes entre si, cobrir as lacunas contra o critério de pronto e, por último, uma tarefa de validação final do projeto inteiro, marcada [SEM COMMIT].${lim} ${formato}`);
       }
       return pedido(id, 'plano', `Você é o ORQUESTRADOR do Vibe Coding do Termix neste projeto. Nesta etapa só PLANEJE: não altere o código do projeto, não instale nada, não faça commit. A entrega do humano está em ${d}: entrega.json (objetivo, critério de pronto, o que não fazer, acessos), estrutura.md e ${e.arquivos && e.arquivos.fluxo || 'o fluxo desenhado'}. Leia só o necessário. ${formato}`);
     },
@@ -479,7 +483,7 @@ function create(deps = {}) {
     resultadoLer(id, tk) {
       if (!validId(id) || !/^T\d+$/.test(tk)) return null;
       const f = path.join(dirOf(id), 'resultados', `${tk}.md`);
-      try { const st = fs.statSync(f); return { existe: true, mtime: st.mtimeMs, texto: fs.readFileSync(f, 'utf8').slice(0, 4000) }; } catch { return { existe: false }; }
+      try { const st = fs.statSync(f), texto = fs.readFileSync(f, 'utf8').slice(0, 4000); return { existe: true, mtime: st.mtimeMs, texto, validacao: temValidacao(texto) }; } catch { return { existe: false }; }
     },
     revisaoLer(id, tk) {
       if (!validId(id) || !/^T\d+$/.test(tk)) return null;
@@ -501,13 +505,18 @@ function create(deps = {}) {
       const br = branchFor(id, e.projeto.pasta).nome;
       const regras = `Commit só na branch "${br}" (já é a atual); não faça push nem troque de branch. O Termix bloqueia commit/push na main/master, comandos que apagam dados e gravar fora do projeto: se algo for bloqueado, leia o motivo e siga pelo caminho permitido.`;
       const fim = `Depois grave ${res} (curto: o que fez, hash do commit, validação feita e pendências) e responda apenas ${tk} FEITA, encerrando o turno.`;
+      // [SEM COMMIT] (DEV2-007): tarefa de validação/conferência; commit só se corrigir algo, e o Tk.md traz o resultado
+      const sc = !!(extra && extra.semCommit);
+      const fimSc = `Depois grave ${res} (curto) com uma linha "Validação: <comandos e resultado>" (obrigatória), o hash do commit se houve correção e as pendências; responda apenas ${tk} FEITA, encerrando o turno.`;
+      if (kind === 'dev' && sc) return pedido(id, `${tk}-dev`, `Você é o DEV do Vibe Coding do Termix. Execute só a tarefa ${tk} (marcada [SEM COMMIT]: só valida ou confere): leia a seção ${tk} de ${plano} (e só o que ela exigir) e valide como ela pede. Se achar algo para corrigir, corrija e faça um commit "${tk}: ..."; se nada mudar, não faça commit. ${regras} ${fimSc}`);
       if (kind === 'dev') return pedido(id, `${tk}-dev`, `Você é o DEV do Vibe Coding do Termix. Execute só a tarefa ${tk}: leia a seção ${tk} de ${plano} (e só o que ela exigir). Implemente, valide como a tarefa pede e faça um commit "${tk}: ..." com tudo dela. ${regras} ${fim}`);
       if (kind === 'refazer') {
         const ajuste = extra && extra.revisao ? `a revisão pediu ajustes: leia ${rev}` : `o Termix não aceitou a entrega: ${String((extra && extra.falta) || 'faltou o resultado ou o commit').slice(0, 400)}`;
+        if (sc) return pedido(id, `${tk}-refazer`, `Você é o DEV do Vibe Coding do Termix. Refaça a tarefa ${tk} (marcada [SEM COMMIT]) da seção ${tk} de ${plano}: ${ajuste}. Valide de novo; commit "${tk}: ..." só se corrigir algo. ${regras} ${fimSc}`);
         return pedido(id, `${tk}-refazer`, `Você é o DEV do Vibe Coding do Termix. Refaça a tarefa ${tk} da seção ${tk} de ${plano}: ${ajuste}. Corrija e faça um commit novo "${tk}: ...". ${regras} ${fim}`);
       }
       if (kind === 'revisao') {
-        const sha = extra && extra.sha ? ` (commit ${String(extra.sha).slice(0, 12)})` : '';
+        const sha = extra && extra.sha ? ` (commit ${String(extra.sha).slice(0, 12)})` : sc ? ' (marcada [SEM COMMIT]: sem commit novo, vale o resultado da validação)' : '';
         return pedido(id, `${tk}-revisao`, `Você é o ORQUESTRADOR do Vibe Coding do Termix. Revise a tarefa ${tk}${sha}: leia ${res} e o critério de pronto da seção ${tk} de ${plano}; se precisar, use só "git show --stat" do commit, sem ler diffs inteiros. Não altere o código. Grave ${rev} com {"veredito":"aprovado" ou "refazer","motivo":"...","ajustes":"o que corrigir, se refazer"} e responda apenas REVISADO, encerrando o turno.`);
       }
       return null;

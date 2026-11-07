@@ -1,6 +1,6 @@
 # Vibe Coding e Mutirão — desenho do módulo
 
-Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005) e a implementação automática do Mutirão, com o pedido em arquivo como padrão (DEV2-006), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
+Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005) a implementação automática do Mutirão, com o pedido em arquivo como padrão (DEV2-006), e a robustez do ciclo (DEV2-007), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
 
 ## Princípios e regras dos agentes (decisões do Ygor, 2026-11-06)
 
@@ -159,13 +159,13 @@ Com o "Plano pronto", o painel mostra **"Executar plano"**. O Termix lê as tare
 2. dá `/clear` na aba Dev (espera o `SessionStart` de origem "clear") e digita um pedido curto: ler a seção Tk do `plano.md`, implementar, validar, commit "Tk: …" na branch permitida, gravar `vibe\<id>\resultados\Tk.md` (o que fez, commit, validação, pendências) e encerrar o turno;
 3. no hook `Stop` do Dev, confere **em código**: `Tk.md` gravado nesse turno, commit novo na branch permitida, HEAD ainda nela e main/master intactas (mudou = pausa de erro);
 4. dá `/clear` no orquestrador e pede: ler `Tk.md` (e só o `git show --stat`, se precisar), gravar `revisoes\Tk.json` com `{"veredito":"aprovado"|"refazer","motivo","ajustes"}`;
-5. aprovado: próxima tarefa. Refazer (ou o Dev não entregou `Tk.md`/commit): volta ao Dev com os ajustes, **até 2 refações** (3 tentativas); depois, pausa e pede ajuda ao humano.
+5. aprovado: próxima tarefa. Refazer (ou o Dev não entregou `Tk.md`/commit): volta ao Dev com os ajustes, **até 2 refações** (3 tentativas); depois, pausa e pede ajuda ao humano; cada "Continuar" dá mais uma tentativa (DEV2-007). Tarefa `[SEM COMMIT]` não exige commit novo (ver "Robustez do ciclo").
 
 **Pausas** (salvas no `estado.json`, retomam de onde pararam):
 
 - **Limite:** antes de cada pedido, com a janela de 5 h em **93 %** ou mais (decisão do Ygor). Com o app aberto, o Termix retoma sozinho quando a janela virar (a hora de renovação passou) ou o número cair abaixo do teto. O 7 d aparece na tela, mas não pausa por enquanto. No modo de teste, `vibeTest.limit(93)` injeta o número.
 - **DEPLOY ou HUMANO:** antes da tarefa marcada; notifica. "Continuar" libera o Dev para executá-la; "Já fiz, pular" marca como feita pelo humano.
-- **Erro ou sem resposta:** branch que não pôde ser preparada, aba que não abriu em 60 s, `/clear` não confirmado, revisão não gravada, main/master alterada, aba fechada no meio do turno ou 20 min sem nenhum sinal do agente (hook ou saída no terminal); notifica.
+- **Erro ou sem resposta:** branch que não pôde ser preparada, aba que não abriu em 60 s, `/clear` não confirmado, revisão não gravada, main/master alterada, aba fechada no meio do turno 20 min sem nenhum sinal do agente (hook ou saída no terminal) ou turno sem terminar em 30 min (DEV2-007: o Termix interrompe o agente); notifica.
 
 **Painel:** etapas Preparando plano → Perguntas → Plano pronto → Execução (feitas/N) → Concluído; tarefa atual k/n, fase (Dev trabalhando, Revisão, Pausado: motivo), branch, último commit, tentativas, limites 5 h e 7 d e a lista de tarefas (feitas com o commit, etiquetas DEPLOY/HUMANO). "Parar" interrompe (Esc nas duas abas se estiverem trabalhando) sem apagar nada. No fim: "Projeto concluído", resumo e notificação.
 
@@ -264,6 +264,16 @@ Abaixo do contador, um quadro "Implementação automática" com as fases **Junta
 
 No teste da DEV2-005, um pedido longo digitado na aba chegou cortado. Desde a DEV2-006, **todo pedido do Termix aos agentes** (planejamento, fechar o plano, Dev, refação e revisão) é gravado em `vibe\<id>\pedidos\<nome>.md` (`plano`, `fechar`, `Tk-dev`, `Tk-refazer`, `Tk-revisao`) e o Termix digita só uma linha: **"Vibe do Termix: leia e siga `<caminho>`"** (menos de 200 caracteres). O Mutirão já fazia assim (`mutirao/PEDIDO.md`). Menos risco de corte e menos texto no terminal. Um ciclo novo arquiva a pasta `pedidos` no histórico com o resto.
 
+## Robustez do ciclo (DEV2-007)
+
+Pontos fracos achados nas rodadas das DEV2-004 a 006, corrigidos e testados (a maior parte sem tokens, com um Claude Code falso no PATH do teste).
+
+- **Marca `[SEM COMMIT]`.** O pedido de planejamento pede `[SEM COMMIT]` no título da tarefa que só valida ou confere (no Mutirão, a validação final vem marcada). O Dev recebe "commit só se corrigir algo" e precisa gravar no `resultados\Tk.md` uma linha **"Validação: <comandos e resultado>"**. A conferência do Termix aceita a tarefa sem commit novo quando a marca existe e essa linha está lá; sem a linha (e sem commit), vira refação com o motivo. A revisão é avisada de que não há commit. Na tela, a etiqueta SEM COMMIT e "validada, sem commit" na lista.
+- **Limite de tentativas.** 1 execução + 2 refações (pela conferência ou pela revisão). Na 3ª falha o ciclo pausa ("Pausado: precisa de você"), notifica e mostra o motivo (o que faltou ou o motivo da revisão). **"Continuar" dá mais UMA tentativa** (a refação com o mesmo motivo), não uma rodada nova; "Tentativas" mostra k de n.
+- **Tempo limite do turno.** Se o Dev ou o orquestrador não terminar o turno em **30 min** (desde o pedido), ou ficar **20 min sem nenhum sinal** (hook ou saída no terminal), o Termix interrompe o agente (Esc), pausa, notifica e diz quem travou. "Continuar" confere o que ficou pronto (Dev: arquivo e commit; sem isso, refação) ou pede a revisão de novo, uma vez. No modo de teste, `vibeTest.tempos({turno, semResposta})` encurta os tempos.
+- **Parar no meio do turno.** O Termix guarda se o pedido chegou a ser enviado (hook de prompt enviado). Parado **antes** do envio: a tentativa é desfeita (não conta) e a caixa de texto da aba é limpa (Ctrl+U), para o próximo `/clear` não sair grudado no pedido antigo. Parado **durante** o turno: Esc ao agente; "Continuar" confere e segue pela refação (o que já ficou commitado vale). Revisão parada sem veredito: "Continuar" pede a revisão de novo.
+- **Push final com o remoto à frente** (Mutirão). Antes do push da branch do dono, o Termix faz `git fetch`; se a `origin/<dono>` estiver à frente (outra máquina), faz `git merge --no-ff origin/<dono>` ("Mutirão: integrar origin/<dono> (remoto à frente)"), sem rebase e sem descartar. Sem conflito, envia; a tela diz que integrou. Com conflito: `git merge --abort`, nada é enviado nem descartado, a tela lista os arquivos e explica; depois de resolver, "Enviar a branch de novo". Com mudança sem commit ou fora da branch do dono, recusa e explica.
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.
@@ -274,7 +284,9 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-004** — Ciclo de execução autônomo, com travas em código (branch permitida, nada que apague dados). *(feita)*
 - **DEV2-005** — Tela do Mutirão: chat com o orquestrador, divisão por branch e contador de entregas. *(feita)*
 - **DEV2-006** — "Implementação automática" ao chegar em N/N, e o pedido em arquivo como padrão do Vibe. *(feita)*
-- **DEV2-007** — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.
+- **DEV2-007** — Robustez do ciclo: [SEM COMMIT], limite de tentativas, tempo limite, Parar no meio do turno e push com o remoto à frente. *(feita)*
+- **DEV2-008** — Guia de validação do MVP do Vibe/Mutirão.
+- Depois — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.
 
 ## Perguntas em aberto
 
