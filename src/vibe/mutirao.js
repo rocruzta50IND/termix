@@ -25,6 +25,9 @@ function normPath(p) {
   if (w >= 0) s = s.slice(0, w).replace(/[^/]*$/, '');
   return s.replace(/\/+$/, '').toLowerCase();
 }
+// Nomes do git status --porcelain. O gitRun tira o espaço do início da 1ª linha (" M x" chega como "M x"): por isso o
+// prefixo de 1 ou 2 letras de estado é tirado por expressão, não por posição (DEV2-006).
+const porcelain = (out) => String(out || '').split('\n').map((l) => l.replace(/^[ MADRCUT?!]{1,2} /, '').trim()).filter(Boolean);
 // Arquivos em comum entre as partes: iguais, ou um dentro da pasta do outro. Caminho vazio/"."/fora da raiz = o projeto todo.
 function conflitos(partes) {
   const out = [];
@@ -113,7 +116,7 @@ function create(h) {
   }
   function pedidoTexto(d) {
     const lista = d.participantes.map((p) => `${p.nome} (branch ${p.branch})`).join(', ');
-    return `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto. Divida o trabalho que falta entre: ${lista}. Leia só o necessário (CLAUDE.md, README, docs e a estrutura de pastas; sem ler o código inteiro). Grave, sem escrever nada fora da pasta mutirao/ do projeto: 1) mutirao/divisao.json = {"branchDono":"${d.branchDono}","participantes":[{"nome":"...","branch":"..."}],"partes":[{"branch":"...","titulo":"...","objetivo":"até 300 caracteres","criterio":"como saber que a parte acabou","arquivos":["arquivos ou pastas, relativos à raiz"]}]}, uma parte por participante, SEM nenhum arquivo ou pasta em comum entre as partes (uma pasta conta como tudo dentro dela; o Termix confere e recusa); 2) mutirao/partes/<branch>.md de cada um, com as 9 seções preenchidas: Objetivo, Público e usuários, Funcionalidades, Fora do escopo (inclua os arquivos das outras partes), Telas e fluxos, Dados e regras de negócio, Integrações e acessos, Tecnologia, Critério de pronto. Não altere o código nem este PEDIDO.md, não faça commit nem push: quem publica é o Termix. Ao terminar, responda apenas DIVISÃO GRAVADA e um resumo de até 3 linhas.`;
+    return `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto. Divida o trabalho que falta entre: ${lista}. Leia só o necessário (CLAUDE.md, README, docs e a estrutura de pastas; sem ler o código inteiro). Grave, sem escrever nada fora da pasta mutirao/ do projeto: 1) mutirao/divisao.json = {"branchDono":"${d.branchDono}","objetivo":"objetivo do projeto inteiro, até 300 caracteres","criterio":"critério de pronto do projeto inteiro","participantes":[{"nome":"...","branch":"..."}],"partes":[{"branch":"...","titulo":"...","objetivo":"até 300 caracteres","criterio":"como saber que a parte acabou","arquivos":["arquivos ou pastas, relativos à raiz"]}]}, uma parte por participante, SEM nenhum arquivo ou pasta em comum entre as partes (uma pasta conta como tudo dentro dela; o Termix confere e recusa); 2) mutirao/partes/<branch>.md de cada um, com as 9 seções preenchidas: Objetivo, Público e usuários, Funcionalidades, Fora do escopo (inclua os arquivos das outras partes), Telas e fluxos, Dados e regras de negócio, Integrações e acessos, Tecnologia, Critério de pronto. Não altere o código nem este PEDIDO.md, não faça commit nem push: quem publica é o Termix. Ao terminar, responda apenas DIVISÃO GRAVADA e um resumo de até 3 linhas.`;
   }
 
   // Conferência do Termix (zero token): formato, uma parte por participante, as 9 seções e nenhum arquivo em comum.
@@ -150,7 +153,7 @@ function create(h) {
     // o orquestrador só deveria ter gravado em mutirao/: o Termix avisa o que mudou fora (e publica só a pasta mutirao/)
     const st = gitRun(pasta, ['status', '--porcelain', '--untracked-files=all']);
     if (st.ok) {
-      const fora = st.out.split('\n').map((l) => l.slice(3).trim()).filter((f) => f && !/^"?mutirao\//.test(f));
+      const fora = porcelain(st.out).filter((f) => !/^"?mutirao\//.test(f));
       if (fora.length) r.avisos.push(`Há mudanças fora de mutirao/ no projeto (${fora.slice(0, 5).join(', ')}${fora.length > 5 ? '…' : ''}). O Termix publica só a pasta mutirao/.`);
     }
     r.ok = !r.problemas.length;
@@ -282,8 +285,144 @@ function create(h) {
   }
   const pastaDe = (id) => { const d = ler(id).dono; return d && d.projeto ? d.projeto.pasta : ''; };
 
+  /* ---------- Implementação automática (DEV2-006) ----------
+     Em N/N, o Termix (código, zero token) junta as entregas na branch do dono: working tree limpo, HEAD na branch do dono
+     (nunca main/master), git fetch e, para cada participante, git merge --no-ff origin/<b>. Conflito: git merge --abort
+     (nada é descartado: o que já entrou fica), e o conflito vira a primeira tarefa do plano. Depois monta a "entrega
+     sintética" do Vibe em vibe\<id>\ e a interface segue o ciclo do Vibe (plano, execução) na branch do dono. No fim, o
+     Termix faz push só da branch do dono. Estado em mutirao.json: dono.auto. */
+  const mergeEmAndamento = (pasta) => !!shaOf(pasta, 'MERGE_HEAD');
+  const linha1 = (r) => String((r && (r.err || r.out)) || '').split('\n').filter(Boolean).slice(0, 2).join(' ').slice(0, 300);
+  function entregaDe(pasta, b) {
+    const s = gitRun(pasta, ['show', `refs/remotes/origin/${b}:mutirao/entregas/${b}.json`]);
+    return s.ok ? parseJson(s.out) : null;
+  }
+  function autoPrep(id) {
+    const d = ler(id).dono;
+    if (!d || !d.publicado) return { ok: false, motivo: 'Publique a divisão antes da implementação automática.' };
+    const pasta = d.projeto.pasta;
+    const pp = papel(pasta);
+    if (!pp.pode) return { ok: false, motivo: pp.motivo || 'Só o dono do projeto usa a implementação automática.' };
+    const br = pp.branchDono;
+    if (!validBranch(br)) return { ok: false, motivo: 'A branch do dono não é válida (main/master não vale).' };
+    if (mergeEmAndamento(pasta)) return { ok: false, motivo: 'Há um merge em andamento no projeto. Termine ou cancele (git merge --abort) e tente de novo.' };
+    const st = gitRun(pasta, ['status', '--porcelain', '--untracked-files=no']);
+    if (!st.ok) return { ok: false, motivo: `Não foi possível ler o git do projeto (${linha1(st)}).` };
+    if (st.out) {
+      const fs2 = porcelain(st.out);
+      return { ok: false, sujo: true, motivo: `O projeto tem mudanças sem commit (${fs2.slice(0, 5).join(', ')}${fs2.length > 5 ? '…' : ''}). Faça commit ou guarde (stash) antes: a junção só mexe no que está commitado.` };
+    }
+    if (headOf(pasta) !== br) {
+      if (!shaOf(pasta, `refs/heads/${br}`)) return { ok: false, motivo: `A branch do dono "${br}" não existe neste projeto.` };
+      const sw = gitRun(pasta, ['switch', br]);
+      if (!sw.ok || headOf(pasta) !== br) return { ok: false, motivo: `O Termix não conseguiu ir para a branch "${br}" sem descartar nada (${linha1(sw)}).` };
+    }
+    const fe = gitRun(pasta, ['fetch', 'origin', '--quiet'], 60000);
+    if (!fe.ok) return { ok: false, motivo: `git fetch falhou: ${linha1(fe)}` };
+    const parts = (d.participantes || []).map((p) => ({ nome: p.nome, branch: p.branch }));
+    const faltam = parts.filter((p) => !entregaDe(pasta, p.branch));
+    if (!parts.length || faltam.length) return { ok: false, motivo: `Ainda faltam entregas: ${faltam.map((p) => `${p.nome} (${p.branch})`).join(', ') || 'nenhum participante'}.` };
+    const heads = {};
+    for (const b of PROTEGIDAS) { heads[b] = shaOf(pasta, `refs/heads/${b}`); heads[`origin/${b}`] = shaOf(pasta, `refs/remotes/origin/${b}`); }
+    const auto = { fase: 'juntando', branch: br, base: shaOf(pasta, 'HEAD'), heads, k: 0, n: parts.length, juncoes: [], iniciado: new Date().toISOString() };
+    grava(id, 'dono', { ...ler(id).dono, auto });
+    return { ok: true, branch: br, participantes: parts };
+  }
+  function autoJuntar(id, b) {
+    const d = ler(id).dono, a = d && d.auto;
+    if (!a || a.fase !== 'juntando') return { ok: false, motivo: 'A junção não foi preparada.' };
+    const pasta = d.projeto.pasta;
+    const p = (d.participantes || []).find((x) => x.branch === b);
+    if (!p) return { ok: false, motivo: `A branch ${b} não é de um participante.` };
+    const fim = (j, parar) => {
+      const juncoes = [...a.juncoes.filter((x) => x.branch !== b), j];
+      const k = juncoes.length;
+      const fase = parar ? 'erro' : k >= a.n ? 'juntado' : 'juntando';
+      const auto = { ...a, juncoes, k, fase, motivo: parar ? j.motivo : '' };
+      grava(id, 'dono', { ...ler(id).dono, auto });
+      return { ok: !parar, juncao: j, auto };
+    };
+    if (headOf(pasta) !== a.branch || PROTEGIDAS.includes(headOf(pasta).toLowerCase())) return fim({ branch: b, nome: p.nome, status: 'erro', motivo: `O projeto saiu da branch "${a.branch}"; a junção parou.` }, true);
+    const ref = `refs/remotes/origin/${b}`;
+    if (!shaOf(pasta, ref)) return fim({ branch: b, nome: p.nome, status: 'erro', motivo: `A branch ${b} não foi encontrada no remoto.` });
+    if (gitRun(pasta, ['merge-base', '--is-ancestor', ref, 'HEAD']).ok) return fim({ branch: b, nome: p.nome, status: 'ja', sha: shaOf(pasta, 'HEAD') });
+    const m = gitRun(pasta, ['merge', '--no-ff', '-m', `Mutirão: integrar ${b} (${p.nome})`, `origin/${b}`], 60000);
+    if (m.ok) return fim({ branch: b, nome: p.nome, status: 'ok', sha: shaOf(pasta, 'HEAD') });
+    // conflito ou erro: para o merge sem descartar nada (o que já entrou continua) e registra a branch e os arquivos
+    const u = gitRun(pasta, ['diff', '--name-only', '--diff-filter=U']);
+    const arquivos = u.ok && u.out ? u.out.split('\n').filter(Boolean).slice(0, 100) : [];
+    let parar = false, motivo = linha1(m);
+    if (mergeEmAndamento(pasta)) {
+      const ab = gitRun(pasta, ['merge', '--abort']);
+      if (!ab.ok || mergeEmAndamento(pasta)) { parar = true; motivo = `O merge da ${b} não pôde ser cancelado (${linha1(ab)}). Confira o projeto à mão.`; }
+    }
+    return fim({ branch: b, nome: p.nome, status: arquivos.length ? 'conflito' : 'erro', arquivos, motivo: arquivos.length ? `Conflito em ${arquivos.length} arquivo(s).` : motivo }, parar);
+  }
+  // Entrega sintética do Vibe: objetivo e critério da divisão; estrutura = divisão + partes + entregas + junções e conflitos.
+  function autoEntrega(id, opts) {
+    const d = ler(id).dono, a = d && d.auto;
+    if (!a || a.fase !== 'juntado') return { ok: false, motivo: 'A junção ainda não terminou.' };
+    const pasta = d.projeto.pasta, br = a.branch;
+    const div = parseJson(readText(path.join(pasta, 'mutirao', 'divisao.json')) || '') || {};
+    const partes = Array.isArray(div.partes) ? div.partes : [];
+    const conflitos = a.juncoes.filter((j) => j.status === 'conflito' || j.status === 'erro');
+    const titulos = (d.participantes || []).map((p) => (partes.find((x) => x && x.branch === p.branch) || {}).titulo || p.branch);
+    const objetivo = String(div.objetivo || `Concluir o projeto ${d.projeto.nome || ''} ligando as partes do Mutirão: ${titulos.join('; ')}`).replace(/\s+/g, ' ').trim().slice(0, 300);
+    const crit = [div.criterio ? String(div.criterio) : '', ...partes.filter(Boolean).map((pt) => `- Parte ${pt.branch}${pt.titulo ? ` (${pt.titulo})` : ''}: ${String(pt.criterio || 'ver mutirao/partes/' + pt.branch + '.md').replace(/\s+/g, ' ').slice(0, 600)}`),
+      `- Todas as partes integradas na branch ${br}${conflitos.length ? ` (inclusive ${conflitos.map((c) => c.branch).join(', ')}, que tiveram conflito)` : ''} e ligadas entre si.`, '- A validação final do projeto passa.'].filter(Boolean).join('\n').slice(0, 4000);
+    const md = [`# Mutirão: entrega sintética para a implementação automática (gerada pelo Termix)`, '',
+      `Projeto: ${d.projeto.nome || ''} (${pasta}). Branch do dono: ${br}. Todas as partes foram entregues; o Termix já juntou as entregas na ${br} com git merge --no-ff (uma por participante).`, '',
+      '## Objetivo', '', objetivo, '',
+      '## Divisão', '', `- ${pasta}${path.sep}mutirao${path.sep}divisao.json (na branch ${br}).`, `- Partes: mutirao/partes/<branch>.md de cada participante (as 9 seções).`, '',
+      '## Partes, entregas e junções', ''];
+    for (const p of d.participantes || []) {
+      const pt = partes.find((x) => x && x.branch === p.branch) || {};
+      const en = entregaDe(pasta, p.branch) || {};
+      const j = a.juncoes.find((x) => x.branch === p.branch) || {};
+      const jt = j.status === 'ok' ? `integrada (commit ${String(j.sha || '').slice(0, 10)})` : j.status === 'ja' ? 'já estava integrada' : j.status === 'conflito' ? `NÃO integrada: conflito em ${(j.arquivos || []).join(', ')}` : `NÃO integrada: ${j.motivo || 'erro'}`;
+      md.push(`### ${p.nome} (branch ${p.branch})${pt.titulo ? ` — ${pt.titulo}` : ''}`, '',
+        `- Objetivo da parte: ${String(pt.objetivo || '').replace(/\s+/g, ' ')}`, `- Arquivos da parte: ${(Array.isArray(pt.arquivos) ? pt.arquivos : []).join(', ')}`,
+        `- Parte completa: mutirao/partes/${p.branch}.md`, `- Entrega (${en.data || 's/ data'}): ${String(en.resumo || '').replace(/\s+/g, ' ').slice(0, 600)}`,
+        `- Tarefas entregues: ${(Array.isArray(en.tarefas) ? en.tarefas : []).map((t) => `${t.id} ${t.titulo || ''}`.trim()).join('; ') || '—'}`,
+        `- Junção na ${br}: ${jt}`, '');
+    }
+    md.push('## Conflitos da junção', '', conflitos.length ? conflitos.map((c) => `- ${c.branch} (${c.nome}): ${c.status === 'conflito' ? `conflito em ${(c.arquivos || []).join(', ')}` : c.motivo}. O merge foi cancelado sem descartar nada; refazer com git merge --no-ff origin/${c.branch} na ${br} e resolver.`).join('\n') : 'Nenhum: todas as entregas entraram sem conflito.', '',
+      '## Critério de pronto', '', crit, '');
+    const no = (s) => String(s || '').replace(/["[\]{}()<>|]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+    const fluxo = ['# Fluxo do Mutirão (gerado pelo Termix)', '', '```mermaid', 'flowchart LR', `  D["Divisão (${no(br)})"]`,
+      ...(d.participantes || []).map((p, i) => `  D --> P${i}["${no(p.nome)} · ${no(p.branch)}"] --> J["Junção na ${no(br)}"]`),
+      '  J --> F["Plano final"] --> X["Execução"] --> C["Concluído e push da ' + no(br) + '"]', '```', ''].join('\n');
+    const lim = opts && Number.isInteger(opts.maxTarefas) && opts.maxTarefas > 0 && opts.maxTarefas < 50 ? opts.maxTarefas : null;
+    const entrega = { versao: 1, status: 'pronta', data: new Date().toISOString(), projeto: { id, nome: d.projeto.nome || '', pasta }, objetivo, criterioDePronto: crit,
+      naoPodem: 'Não alterar a main/master nem fazer push (quem envia a branch do dono no fim é o Termix). Não desfazer as partes entregues pelos sócios.', acessos: [], nadaAFornecer: true,
+      arquivos: { fluxo: 'fluxo.md', estrutura: 'estrutura.md' }, origem: { mutirao: true },
+      mutirao: { branch: br, juncoes: a.juncoes, conflitos: conflitos.map((c) => ({ branch: c.branch, nome: c.nome, status: c.status, arquivos: c.arquivos || [] })), maxTarefas: lim } };
+    h.gravarEntrega(id, entrega, { 'fluxo.md': fluxo, 'estrutura.md': md.join('\n') });
+    grava(id, 'dono', { ...ler(id).dono, auto: { ...a, fase: 'planejando', entrega: entrega.data } });
+    return { ok: true, conflitos: entrega.mutirao.conflitos, branch: br };
+  }
+  // Mutirão em execução (para a branch dos agentes do Vibe do dono): a branch do dono.
+  const autoDe = (id) => { const d = ler(id).dono; return d && d.auto && d.auto.fase !== 'juntando' && validBranch(d.auto.branch) ? d.auto : null; };
+  function autoSet(id, fase, extra) { const d = ler(id).dono; if (!d || !d.auto) return null; return grava(id, 'dono', { ...d, auto: { ...d.auto, fase: String(fase).slice(0, 20), ...(extra || {}) } }).auto; }
+  // Fim: o Termix (código) faz push só da branch do dono. Nunca main/master.
+  function autoFim(id) {
+    const d = ler(id).dono, a = d && d.auto;
+    if (!a) return { ok: false, motivo: 'A implementação automática não foi iniciada.' };
+    const pasta = d.projeto.pasta, br = a.branch;
+    if (!validBranch(br)) return { ok: false, motivo: 'A branch do dono não é válida (main/master não vale).' };
+    const ps = gitRun(pasta, ['push', 'origin', `refs/heads/${br}:refs/heads/${br}`], 60000);
+    const push = { ok: ps.ok, sha: shaOf(pasta, `refs/heads/${br}`), data: new Date().toISOString(), motivo: ps.ok ? '' : `O push da ${br} falhou: ${linha1(ps)}` };
+    autoSet(id, ps.ok ? 'concluido' : 'push', { push });
+    return { ...push, branch: br };
+  }
+
   const api = {
     mutEstado: (id, pasta) => (validId(id) ? estado(id, pasta) : null),
+    mutAutoPrep: (id) => (validId(id) ? autoPrep(id) : { ok: false, motivo: 'Projeto inválido.' }),
+    mutAutoJuntar: (id, b) => (validId(id) && validBranch(b) ? autoJuntar(id, b) : { ok: false, motivo: 'Branch inválida.' }),
+    mutAutoEntrega: (id, opts) => (validId(id) ? autoEntrega(id, opts) : { ok: false, motivo: 'Projeto inválido.' }),
+    mutAutoSet: (id, fase) => (validId(id) && ['planejando', 'executando', 'parado', 'erro'].includes(fase) ? autoSet(id, fase) : null),
+    mutAutoFim: (id) => (validId(id) ? autoFim(id) : { ok: false, motivo: 'Projeto inválido.' }),
     mutIniciar: iniciar,
     mutAba: setAba,
     mutPedido: setGerado,
@@ -295,7 +434,7 @@ function create(h) {
     mutAplicar: (id, pasta) => (validId(id) ? aplicar(id, pasta) : { ok: false, motivo: 'Projeto inválido.' }),
     mutEntregar: (id, info) => (validId(id) ? entregar(id, info) : { ok: false, motivo: 'Projeto inválido.' }),
   };
-  return { api, socioDe, idDaAba, pastaDe, MUT_NAME };
+  return { api, socioDe, autoDe, idDaAba, pastaDe, MUT_NAME };
 }
 
 module.exports = { create, conflitos, normPath, validBranch, MUT_NAME };

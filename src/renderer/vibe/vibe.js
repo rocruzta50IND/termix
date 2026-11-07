@@ -48,7 +48,7 @@
     if (c.est) await cyRead(id);
     return c;
   }
-  function cySave(id) { const c = cyOf(id); if (c.est) call('cicloSet', id, c.est); paintCycle(); }
+  function cySave(id) { const c = cyOf(id); if (c.est) call('cicloSet', id, c.est); paintCycle(); if (MP && MP.id === id && c.est && c.est.auto) mutPaint(); }
 
   // Aviso ao humano pelo mecanismo de notificações do app (painel do sino, dica, som e Windows sem foco).
   function notifyHuman(p, tab, msg) {
@@ -63,7 +63,8 @@
   }
 
   // Inicia um ciclo novo: arquiva o anterior, cria as duas abas (Dangerously: trabalham sem pedir aprovação) e espera o orquestrador abrir.
-  async function startCycle(id) {
+  // auto (DEV2-006): ciclo da implementação automática do Mutirão ({ mutirao, executar, conflitos, branch })
+  async function startCycle(id, auto) {
     const p = projOf(id);
     if (!p) return false;
     const c = cyOf(id);
@@ -78,7 +79,7 @@
     createTab(p, 'd', { name: DEV_NAME, color: '#34D399' }); // nesta etapa o dev só é criado e fica parado
     const dev = p.activeTab;
     p.activeTab = orq; save(); renderAll();
-    c.est = { versao: 1, fase: 'abrindo', rodada: 0, orq, dev, iniciado: nowIso(), aviso: tr && !tr.ok ? `O Termix não marcou a pasta como confiável (${tr.motivo || 'erro'}). Se o Claude Code perguntar na aba, escolha "Yes, I trust this folder".` : '' };
+    c.est = { versao: 1, fase: 'abrindo', rodada: 0, orq, dev, iniciado: nowIso(), ...(auto ? { auto } : {}), aviso: tr && !tr.ok ? `O Termix não marcou a pasta como confiável (${tr.motivo || 'erro'}). Se o Claude Code perguntar na aba, escolha "Yes, I trust this folder".` : '' };
     c.live = true;
     const w = (c.wait = { tab: orq, ev: 'SessionStart', since: Date.now() - 2000 });
     c.timer = setTimeout(() => {
@@ -147,7 +148,25 @@
       c.live = false;
       c.est = { ...c.est, fase: 'pronto', tarefas: r.plano.tarefas, aviso: branchAlert(r), pronto: nowIso() };
       cySave(id);
+      autoGo(id);
     }
+  }
+  // Implementação automática do Mutirão (DEV2-006): com o plano pronto, o Termix executa sozinho. Antes confere (zero token)
+  // que as primeiras tarefas são os conflitos da junção; se não forem, para em "Plano pronto" com um aviso.
+  function autoGo(id) {
+    const c = cyOf(id), a = c.est && c.est.auto;
+    if (!a || !a.executar || c.est.fase !== 'pronto' || c.est.aviso) return;
+    setTimeout(async () => {
+      if (!c.est || c.est.fase !== 'pronto') return;
+      const cf = a.conflitos || [];
+      if (cf.length) {
+        const ts = (await call('tarefas', id)) || [];
+        const primeiras = ts.slice(0, cf.length).map((t) => t.titulo.toLowerCase());
+        const falta = cf.filter((b) => !primeiras.some((t) => t.includes(String(b).toLowerCase())));
+        if (falta.length) { c.est.aviso = `O plano não começa pelos conflitos da junção (${falta.join(', ')}). Confira o plano; para seguir assim mesmo, clique em "Executar plano".`; cySave(id); return; }
+      }
+      if (c.est.fase === 'pronto') execStart(id);
+    }, 1500);
   }
   // o Termix confere o plano (zero token): commit ou push na main/master é proibido e vira alerta na tela
   function branchAlert(r) {
@@ -194,6 +213,7 @@
       if (c.perguntas.length) { c.live = true; c.est = { ...c.est, fase: 'perguntas', rodada: Math.max(1, c.est.rodada || 0), nPerguntas: c.perguntas.length, aviso: '' }; }
       else { c.live = false; c.est = { ...c.est, fase: 'pronto', tarefas: r.plano.tarefas, aviso: branchAlert(r), pronto: nowIso() }; }
       cySave(id);
+      autoGo(id);
       return;
     }
     if (r && r.plano.ok && r.perguntas.ok && prev === 'fechando' && !c.perguntas.length) { c.live = false; c.est = { ...c.est, fase: 'pronto', tarefas: r.plano.tarefas, aviso: branchAlert(r), pronto: nowIso() }; cySave(id); return; }
@@ -266,8 +286,12 @@
       w = waitHook(c, tab.id, (d) => d.event === 'SessionStart', 60000);
       c.est[key] = tab.id; if (keep) p.activeTab = keep; save(); renderAll(); cySave(id);
     } else {
+      // Aba do Vibe parada (ex.: o app foi reaberto): volta na mesma aba com uma conversa nova. Cada pedido começa com
+      // /clear, então não há contexto a perder; e retomar uma conversa que nunca recebeu mensagem não abre no Claude Code
+      // (achado na DEV2-006: a aba Dev criada e nunca usada ficou parada e o ciclo pausou em 60 s).
       w = waitHook(c, tab.id, (d) => d.event === 'SessionStart', 60000);
-      launch(p, tab, 'resume');
+      tab.sessionId = crypto.randomUUID(); tab.started = false; save();
+      launch(p, tab, 'new');
     }
     const d = await w;
     if (c.gen !== g) return null;
@@ -279,9 +303,12 @@
   async function ask(id, g, key, text) {
     const c = cyOf(id);
     if (!text) { pause(id, 'erro', 'Não foi possível montar o pedido (a entrega ou o plano não foram encontrados).'); return false; }
+    // o pedido não chegou a ser digitado (aba não abriu, /clear não confirmado): não conta como tentativa, e o "Continuar"
+    // manda o pedido normal em vez de "refazer" (achado na DEV2-006)
+    const naoEnviado = () => { const x = c.est && c.est.exec; if (!x) return; if (key === 'dev') { x.enviadoDev = null; x.tentativas = Math.max(0, (x.tentativas || 1) - 1); } else x.enviadoRev = null; cySave(id); };
     const tab = await ensureTab(id, key, g);
-    if (!tab || c.gen !== g) return false;
-    if (!(await clearTab(c, tab, g))) { if (c.gen === g) pause(id, 'erro', `O /clear não foi confirmado na aba "${tab.name}". Confira a aba (a caixa de texto deve estar vazia) e clique em Continuar.`); return false; }
+    if (!tab || c.gen !== g) { naoEnviado(); return false; }
+    if (!(await clearTab(c, tab, g))) { if (c.gen === g) pause(id, 'erro', `O /clear não foi confirmado na aba "${tab.name}". Confira a aba (a caixa de texto deve estar vazia) e clique em Continuar.`); naoEnviado(); return false; }
     if (c.gen !== g) return false;
     const stop = waitHook(c, tab.id, (d) => d.event === 'Stop');
     c.esperando = { tab: tab.id, desde: Date.now() };
@@ -307,8 +334,18 @@
     c.gen++; c.live = false;
     c.est = { ...c.est, fase: 'concluido', concluido: nowIso(), aviso: '' };
     cySave(id);
+    if (c.est.auto && c.est.auto.mutirao) { mutFim(id); return; } // implementação automática do Mutirão (DEV2-006)
     notifyHuman(projOf(id), tabOf(c.est.orq), `Projeto concluído: ${plural(x.feitas.length, 'tarefa', 'tarefas')} na branch ${x.branch || ''}.`);
     mutEntrega(id); // Mutirão (DEV2-005): sendo a parte de um sócio, o Termix grava e envia a entrega
+  }
+  // Mutirão concluído (DEV2-006): o Termix (código) faz push só da branch do dono e avisa. Promover para a main é do humano.
+  async function mutFim(id) {
+    const c = cyOf(id), p = projOf(id);
+    const r = await call('mutAutoFim', id);
+    if (c.est) { c.est.mutFim = r ? { ok: !!r.ok, branch: r.branch, sha: r.sha, motivo: r.motivo || '' } : { ok: false, motivo: 'Erro ao enviar a branch do dono.' }; cySave(id); }
+    notifyHuman(p, tabOf(c.est && c.est.orq), r && r.ok ? `Mutirão concluído na ${r.branch}. Promover para a main é com você.` : `Mutirão: ${(r && r.motivo) || 'o push da branch do dono falhou.'}`);
+    if (MP && MP.id === id) mutReload(id);
+    return r;
   }
   async function mutEntrega(id, teste) {
     const c = cyOf(id), p = projOf(id);
@@ -331,6 +368,7 @@
     await call('trust', id);
     c.est = { ...c.est, fase: 'execucao', aviso: '', exec: { tarefas: ts, k: 0, etapa: 'dev', tentativas: 0, feitas: [], liberadas: [], iniciado: nowIso() } };
     cySave(id);
+    if (c.est.auto && c.est.auto.mutirao) call('mutAutoSet', id, 'executando');
     execLoop(id);
     return true;
   }
@@ -565,13 +603,14 @@
       pronto: `<b>Plano pronto${e.tarefas ? `, ${plural(e.tarefas, 'tarefa', 'tarefas')}` : ''}.</b> "Executar plano" passa as tarefas ao Dev uma a uma, com revisão do orquestrador. Commits só na branch permitida; a main/master fica intacta.`,
       execucao: x ? `<b>Executando o plano.</b> ${x.etapa === 'revisao' ? 'O orquestrador está revisando' : 'O Dev está trabalhando'} na ${esc((x.tarefas[x.k] || {}).id || '')}. O Termix avisa se precisar de você.` : '',
       pausado: x && x.pausa ? `<b>${esc(PAUSA_TIT[x.pausa.tipo] || 'Pausado')}.</b> ${esc(x.pausa.motivo || '')}${x.pausa.tipo === 'limite' && c.live ? '' : x.pausa.gate ? ' Clique em "Continuar" para o Dev executar a tarefa, ou em "Já fiz, pular" se você mesmo a fez.' : ' Clique em "Continuar" quando quiser seguir.'}` : '',
-      concluido: (x ? `<b>Projeto concluído.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}. A main/master não foi alterada.` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
+      concluido: (e.auto && e.auto.mutirao && e.mutFim ? (e.mutFim.ok ? `<b>Mutirão concluído na ${esc(e.mutFim.branch || '')}.</b> Push feito pelo Termix (commit ${esc(String(e.mutFim.sha || '').slice(0, 8))}). Promover para a main é com você. ` : `<span class="mp-bad">O push da branch do dono falhou: ${esc(e.mutFim.motivo || '')}</span> `) : '') + (x ? `<b>Projeto concluído.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}. A main/master não foi alterada.` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
       parado: `<b>Vibe Coding parado em "${esc(stepName)}".</b> Nada foi apagado e as abas continuam abertas. Clique em "${go}" para seguir.`,
       erro: `<b>O plano não ficou pronto.</b>`,
     }[e.fase] || '';
     const acts = [];
     if (e.fase === 'abrindo' && e.aviso && c.live) acts.push('<button class="btn sm" data-vc="send">Enviar o pedido agora</button>');
     if (e.fase === 'pronto') acts.push('<button class="btn sm pri" data-vc="exec">Executar plano</button>');
+    if (e.fase === 'concluido' && e.mutFim && !e.mutFim.ok) acts.push('<button class="btn sm pri" data-vc="mutfim">Enviar a branch de novo</button>');
     if (e.fase === 'concluido' && e.mutirao && !e.mutirao.ok) acts.push('<button class="btn sm pri" data-vc="mutent">Enviar a entrega de novo</button>');
     if (paused || ['parado', 'erro'].includes(e.fase) || (e.fase === 'pausado' && !(x && x.pausa && x.pausa.tipo === 'limite' && c.live))) acts.push(`<button class="btn sm pri" data-vc="resume">${go}</button>`);
     if (e.fase === 'pausado' && x && x.pausa && x.pausa.gate) acts.push('<button class="btn sm" data-vc="skip">Já fiz, pular</button>');
@@ -640,7 +679,7 @@
     const dis = V.id ? '' : 'disabled';
     const f = V.f;
     const mutNote = V.mut ? `<div class="vibe-note">Entrega pré-preenchida pela sua <b>parte do Mutirão</b> (branch ${esc(V.mut)}): a estrutura é a parte gravada pelo dono. Complete o que faltar (ex.: o fluxo desenhado) e inicie. Os agentes trabalham só na branch ${esc(V.mut)}.</div>` : '';
-    const ent = V.entrega ? `<div class="vibe-note">Este projeto já tem uma entrega pronta, de ${esc(fmtDate(V.entrega.data))}. Ela continua guardada. Ao clicar em "Iniciar Vibe Coding", o Termix pede confirmação antes de gravar a versão nova.</div>` : '';
+    const ent = V.entrega && V.entrega.mutirao ? `<div class="vibe-note">Entrega gerada pelo Termix na <b>implementação automática do Mutirão</b> (branch ${esc(V.entrega.mutirao.branch || '')}, ${esc(fmtDate(V.entrega.data))}): divisão, partes, entregas e conflitos da junção. O andamento está no painel acima.</div>` : V.entrega ? `<div class="vibe-note">Este projeto já tem uma entrega pronta, de ${esc(fmtDate(V.entrega.data))}. Ela continua guardada. Ao clicar em "Iniciar Vibe Coding", o Termix pede confirmação antes de gravar a versão nova.</div>` : '';
     return `<div class="vibe-form">
       <p>Entregue o projeto completo de uma vez. Com tudo preenchido, o Termix cria um orquestrador e um dev que trabalham sozinhos até o fim. Quanto mais claro, menos retrabalho. O que você preencher fica salvo como rascunho.</p>
       <p class="vibe-tip">Entregas completas evitam perguntas e gastam menos tokens.</p>
@@ -813,7 +852,7 @@
           if (vc && V && V.id) {
             const k = vc.dataset.vc, id = V.id;
             if (k === 'stop') stopCycle(id); else if (k === 'resume') resumeCycle(id); else if (k === 'send') sendPrompt(id, 'plano'); else if (k === 'answers') sendAnswers(id);
-            else if (k === 'exec') execStart(id); else if (k === 'skip') skipTask(id); else if (k === 'mutent') mutEntrega(id);
+            else if (k === 'exec') execStart(id); else if (k === 'skip') skipTask(id); else if (k === 'mutent') mutEntrega(id); else if (k === 'mutfim') mutFim(id);
           }
         });
         // respostas das perguntas: guardadas na memória enquanto a pessoa digita (sem redesenhar o painel)
@@ -854,6 +893,8 @@
     MP.rows = d && d.participantes && d.participantes.length ? d.participantes.map((x) => ({ ...x })) : (MP.rows && MP.rows.length ? MP.rows : [{ nome: '', branch: 'dev2' }]);
     MP.conf = d && d.conferencia ? d.conferencia : null;
     MP.cont = d && d.contador ? d.contador : null;
+    if (d && d.auto) await cyLoad(id); // implementação automática: as fases de plano e execução vêm do ciclo do Vibe
+    if (!MP || MP.id !== id) return;
     mutPaint();
     if (d && d.publicado && MP.est.papel && MP.est.papel.dono) mutCount(id); // contador ao abrir a tela
   }
@@ -877,8 +918,86 @@
     if (!d || !d.publicado) return '';
     const head = `<div class="mp-h"><b>Entregas: ${ct ? `${ct.k}/${ct.n}` : '…'}</b> <button class="btn sm" data-mp="count" ${MP.counting ? 'disabled' : ''}>${MP.counting ? 'Atualizando…' : 'Atualizar'}</button></div>`;
     const lst = ct ? `<ul class="mp-ent">${ct.lista.map((x) => `<li class="${x.entregue ? 'done' : ''}">${esc(x.nome)} <em class="vx-tag mp-br">${esc(x.branch)}</em> ${x.entregue ? `entregou em ${esc(fmtDate(x.data))}${x.commits ? ` · ${plural(x.commits, 'commit', 'commits')}` : ''}` : 'ainda não entregou'}</li>`).join('')}</ul>${ct.fetch ? `<div class="vc-aviso">git fetch: ${esc(ct.fetch)}</div>` : ''}` : '';
-    const auto = ct && ct.n && ct.k === ct.n ? '<div class="vibe-confirm mp-left"><button class="btn sm pri" data-mp="auto">Implementação automática</button></div>' : '';
-    return `<div class="mp-count">${head}${lst}${auto}</div>`;
+    const a = d.auto;
+    const pode = ct && ct.n && ct.k === ct.n && !MP.autoBusy && !cycleActive(MP.id) && !(a && a.fase === 'push');
+    const auto = pode ? `<div class="vibe-confirm mp-left"><button class="btn sm pri" data-mp="auto">${a ? 'Implementação automática de novo' : 'Implementação automática'}</button></div>` : '';
+    return `<div class="mp-count">${head}${lst}${auto}</div>${mutAutoHtml(d)}`;
+  }
+
+  /* Implementação automática (DEV2-006): Juntando entregas (k/N) → Conflitos: X → Planejando → Executando k/n → Concluído.
+     A junção é do Termix (git em código); o plano e a execução são o ciclo do Vibe na branch do dono ("Ver no Vibe"). */
+  function mutAutoHtml(d) {
+    const a = d && d.auto;
+    if (!a) return '';
+    const c = CY[MP.id], e = c && c.est && c.est.auto && c.est.auto.mutirao ? c.est : null;
+    const ruins = (a.juncoes || []).filter((j) => j.status === 'conflito' || j.status === 'erro');
+    const base = e ? (['parado', 'erro'].includes(e.fase) ? (e.antes || 'plano') : e.fase) : '';
+    const x = e && e.exec;
+    const steps = [{ k: 'j', l: `Juntando entregas (${a.k || 0}/${a.n || 0})` }];
+    if (ruins.length) steps.push({ k: 'c', l: `Conflitos: ${ruins.length}` });
+    steps.push({ k: 'p', l: base === 'pronto' ? 'Plano pronto' : 'Planejando' }, { k: 'x', l: x ? `Executando ${Math.min(x.feitas.length, x.tarefas.length)}/${x.tarefas.length}` : 'Executando' }, { k: 'f', l: 'Concluído' });
+    const at = a.fase === 'concluido' || a.fase === 'push' || base === 'concluido' ? 'f' : ['execucao', 'pausado'].includes(base) ? 'x' : e ? 'p' : ['juntando', 'erro'].includes(a.fase) ? 'j' : 'p';
+    const ai = steps.map((t) => t.k).indexOf(at);
+    const lis = steps.map((t, i) => `<li class="${i < ai || (t.k === 'f' && a.fase === 'concluido') ? 'done' : i === ai ? 'cur' : ''}">${esc(t.l)}</li>`).join('');
+    const jlist = (a.juncoes || []).map((j) => `<li class="${j.status === 'ok' || j.status === 'ja' ? 'done' : ''}">${esc(j.nome || '')} <em class="vx-tag mp-br">${esc(j.branch)}</em> ${j.status === 'ok' ? `integrada (${esc(String(j.sha || '').slice(0, 8))})` : j.status === 'ja' ? 'já estava integrada' : j.status === 'conflito' ? `<span class="mp-bad">conflito: ${esc((j.arquivos || []).join(', '))}</span> — vira a primeira tarefa do plano` : `<span class="mp-bad">${esc(j.motivo || 'erro')}</span>`}</li>`).join('');
+    let line = '';
+    if (a.fase === 'juntando' && MP.autoBusy) line = 'O Termix está juntando as entregas na branch do dono (git merge --no-ff, uma por participante).';
+    else if (a.fase === 'erro') line = `<span class="mp-bad">A junção parou: ${esc(a.motivo || 'erro')}</span>`;
+    else if (a.fase === 'push') line = `<span class="mp-bad">${esc((a.push && a.push.motivo) || 'O push da branch do dono falhou.')}</span>`;
+    else if (a.fase === 'concluido') line = `<b>Mutirão concluído na ${esc(a.branch)}.</b> Push feito pelo Termix${a.push && a.push.sha ? ` (${esc(String(a.push.sha).slice(0, 8))})` : ''}. Promover para a main é com você.`;
+    else if (e && e.fase === 'parado') line = 'O Vibe Coding foi parado. Continue pelo painel do Vibe.';
+    else if (e && e.fase === 'pausado') line = `Pausado: ${esc((x && x.pausa && x.pausa.motivo) || '')}`;
+    else if (e && e.fase === 'perguntas') line = 'O orquestrador tem perguntas indispensáveis: responda no painel do Vibe.';
+    else if (e && e.fase === 'pronto') line = e.aviso ? esc(e.aviso) : 'Plano pronto.';
+    else if (e) line = base === 'execucao' ? 'O Dev e o orquestrador estão trabalhando na branch do dono.' : 'O orquestrador do dono está montando o plano final.';
+    const acts = [];
+    if (e) acts.push('<button class="btn sm" data-mp="vervibe">Ver no Vibe</button>');
+    if (a.fase === 'push') acts.push('<button class="btn sm pri" data-mp="autopush">Enviar a branch de novo</button>');
+    return `<div class="mp-auto"><div class="mp-h"><b>Implementação automática</b> <small>branch ${esc(a.branch || '')}</small></div><ol class="vc-steps">${lis}</ol>${line ? `<div class="mp-small">${line}</div>` : ''}${jlist ? `<ul class="mp-ent">${jlist}</ul>` : ''}${acts.length ? `<div class="vibe-confirm mp-left">${acts.join('')}</div>` : ''}</div>`;
+  }
+  async function mutReload(id) {
+    const p = projOf(id);
+    const est = await call('mutEstado', id, p && p.path);
+    if (MP && MP.id === id && est) { MP.est = est; mutPaint(); }
+    return est;
+  }
+  // "Implementação automática": junção em código (k/N), entrega sintética e o ciclo do Vibe na branch do dono.
+  // opts (só o teste usa): { maxTarefas, executar: false = para em "Plano pronto" }.
+  async function mutAuto(id, opts = {}) {
+    if (!MP || MP.autoBusy) return null;
+    if (cycleActive(id)) { mutMsg('warn', 'Há um Vibe Coding em andamento neste projeto. Pare-o no painel do Vibe antes.'); return null; }
+    MP.autoBusy = true; mutMsg('', 'Conferindo o projeto e buscando as entregas (git fetch)…');
+    try {
+      const pr = await call('mutAutoPrep', id);
+      if (!pr || !pr.ok) { mutMsg('bad', esc((pr && pr.motivo) || 'Não foi possível preparar a junção.')); return pr; }
+      await mutReload(id);
+      let last = null;
+      for (const pt of pr.participantes) {
+        mutMsg('', `Juntando a entrega de ${esc(pt.nome)} (${esc(pt.branch)})…`);
+        last = await call('mutAutoJuntar', id, pt.branch);
+        if (MP && MP.id === id && MP.est && MP.est.dono && last && last.auto) { MP.est.dono = { ...MP.est.dono, auto: last.auto }; mutPaint(); }
+        if (!last || !last.ok) { mutMsg('bad', esc((last && (last.motivo || (last.juncao && last.juncao.motivo))) || 'A junção parou.')); return last; }
+      }
+      const en = await call('mutAutoEntrega', id, { maxTarefas: opts.maxTarefas });
+      if (!en || !en.ok) { mutMsg('bad', esc((en && en.motivo) || 'Não foi possível montar a entrega do plano final.')); return en; }
+      const conf = en.conflitos.map((x) => x.branch);
+      const ok = await startCycle(id, { mutirao: true, executar: opts.executar !== false, conflitos: conf, branch: en.branch });
+      await mutReload(id);
+      mutMsg(ok ? 'ok' : 'bad', ok ? `<b>Entregas juntadas na ${esc(en.branch)}${conf.length ? ` (conflito em ${esc(conf.join(', '))})` : ''}.</b> O orquestrador está montando o plano final; acompanhe em "Ver no Vibe".` : 'A entrega foi montada, mas o projeto não foi encontrado para criar os agentes.');
+      return { ...en, iniciado: ok };
+    } finally { if (MP) { MP.autoBusy = false; mutPaint(); } }
+  }
+  function mutVerVibe(id) {
+    try { S.settings.vibe = { ...(S.settings.vibe || {}), last: id }; save(); } catch { /* sem preferência */ }
+    openVibe();
+  }
+  async function mutAutoPush(id) {
+    const r = await call('mutAutoFim', id);
+    const c = CY[id];
+    if (c && c.est && c.est.mutFim) { c.est.mutFim = { ok: !!(r && r.ok), branch: r && r.branch, sha: r && r.sha, motivo: (r && r.motivo) || '' }; cySave(id); }
+    await mutReload(id);
+    mutMsg(r && r.ok ? 'ok' : 'bad', r && r.ok ? `Branch ${esc(r.branch)} enviada.` : esc((r && r.motivo) || 'O push falhou.'));
+    return r;
   }
 
   function mutPartHtml(pt) {
@@ -1064,7 +1183,7 @@
     if (MP) { if (id && MP.id !== id) mutSwitch(id); return; }
     const root = document.createElement('aside');
     root.className = 'mutp glass';
-    MP = { id, root, est: null, conf: null, cont: null, rows: [], msg: null, busy: false, gerando: false, counting: false };
+    MP = { id, root, est: null, conf: null, cont: null, rows: [], msg: null, busy: false, gerando: false, counting: false, autoBusy: false };
     col.appendChild(root); col.classList.add('mut-open');
     root.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') closeMutirao(); });
     root.addEventListener('input', (e) => { if (e.target.dataset.mrn != null || e.target.dataset.mrb != null) mutRowsRead(); });
@@ -1083,7 +1202,9 @@
       else if (k === 'pub') mutPublicar(id2);
       else if (k === 'count') mutCount(id2);
       else if (k === 'vibe') mutVibe(id2);
-      else if (k === 'auto') mutMsg('warn', '<b>Implementação automática:</b> chega na DEV2-006.');
+      else if (k === 'auto') mutAuto(id2);
+      else if (k === 'vervibe') mutVerVibe(id2);
+      else if (k === 'autopush') mutAutoPush(id2);
     });
     mutPaint();
     if (id) mutLoad(id);
@@ -1110,16 +1231,22 @@
     if (!p) { paintPart(null); return; }
     const k = PART[p.id];
     if (k && Date.now() - k.at < 15000) { paintPart(p); return; }
+    paintPart(p); // sem leitura recente deste projeto: o botão de outro projeto sai já, antes de ler a pasta
     partBusy = true;
     const r = await call('mutParte', p.path);
     partBusy = false;
     PART[p.id] = { at: Date.now(), r: r || { tem: false } };
-    paintPart(p);
+    let agora = null;
+    try { agora = UI.cur && UI.cur.p ? projOf(UI.cur.p) : null; } catch { /* sem projeto */ }
+    paintPart(agora); // o projeto em foco pode ter mudado durante a leitura
+    if (agora !== p) return;
     if (r && r.tem && !r.entregue && !PART_SEEN.has(`${p.id}|${r.branch}`)) {
       PART_SEEN.add(`${p.id}|${r.branch}`);
       try { const ev = { c: '#b98cff', who: `Mutirão · ${p.name}`, msg: `Você tem uma parte do Mutirão na branch ${r.branch}${r.titulo ? `: ${r.titulo}` : ''}. Abra pelo botão no cabeçalho.`, kind: 'perm' }; addEvent(ev); showToast(ev); } catch { /* sem aviso */ }
     }
   }
+  // troca de projeto por clique: confere a parte logo depois (o cabeçalho nem sempre é redesenhado)
+  document.addEventListener('click', () => { if (on()) setTimeout(() => { try { checkPart(); } catch { /* sem aviso */ } }, 80); }, true);
   function paintPart(p) {
     const top = document.getElementById('topbar'), box = top && top.querySelector('.vibebtns');
     if (!box) return;
@@ -1149,6 +1276,7 @@
       // DEV2-005: Mutirão. mut.* = os botões do painel; mutEntregar grava a entrega simulada do sócio (sem rodar o Vibe)
       mut: { open: (pid) => openMutirao(pid), close: () => closeMutirao(), rows: (r) => { if (!MP) return false; MP.rows = r; mutPaint(); return true; },
         state: () => (MP ? { id: MP.id, est: MP.est, conf: MP.conf, cont: MP.cont, rows: MP.rows, msg: MP.msg && MP.msg.html, gerando: MP.gerando } : null),
+        auto: (o) => MP && mutAuto(MP.id, o || {}), autoPush: () => MP && mutAutoPush(MP.id), verVibe: () => MP && mutVerVibe(MP.id),
         gerar: () => MP && mutGerar(MP.id), conferir: () => MP && mutConferir(MP.id), publicar: () => MP && mutPublicar(MP.id), contar: () => MP && mutCount(MP.id), vibe: () => MP && mutVibe(MP.id),
         parte: async () => { for (const k of Object.keys(PART)) delete PART[k]; await checkPart(); const p = UI.cur && projOf(UI.cur.p); return p && PART[p.id] ? PART[p.id].r : null; } },
       mutEntregar: (id) => mutEntrega(id || (V && V.id), true) };

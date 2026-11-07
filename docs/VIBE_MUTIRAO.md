@@ -1,6 +1,6 @@
 # Vibe Coding e Mutirão — desenho do módulo
 
-Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) e a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
+Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005) e a implementação automática do Mutirão, com o pedido em arquivo como padrão (DEV2-006), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
 
 ## Princípios e regras dos agentes (decisões do Ygor, 2026-11-06)
 
@@ -46,7 +46,7 @@ O módulo fica separado; o núcleo só faz as ligações. O botão só chama a f
 | Núcleo `src/preload.js` | Uma ponte genérica `vibe(canal, ...)`, que só alcança canais `vibe:*`. |
 | Núcleo `src/renderer/index.html` | Um `<link>` para o CSS e um `<script>` depois do `app.js`. |
 | Núcleo `src/renderer/app.js` | Nada. |
-| Módulo `src/vibe/` (processo principal) | `index.js`: fábrica com o estado, os canais `vibe:*`, a conferência dos arquivos e a gravação da entrega. `modelo-entrega.md`: o modelo que a tela oferece para baixar. Desde a DEV2-003, também os arquivos do ciclo (estado, plano, perguntas, respostas) e o texto dos pedidos ao orquestrador. Desde a DEV2-004: `trava.js` (o hook PreToolUse, Node sem dependências), os settings das abas do Vibe, a pasta confiável, a branch permitida, a conferência do git e os pedidos da execução. Desde a DEV2-005: `mutirao.js` (quem é o dono, conferência da divisão, publicar, parte do sócio, entrega e contador; canais `vibe:mut*`). |
+| Módulo `src/vibe/` (processo principal) | `index.js`: fábrica com o estado, os canais `vibe:*`, a conferência dos arquivos e a gravação da entrega. `modelo-entrega.md`: o modelo que a tela oferece para baixar. Desde a DEV2-003, também os arquivos do ciclo (estado, plano, perguntas, respostas) e o texto dos pedidos ao orquestrador. Desde a DEV2-004: `trava.js` (o hook PreToolUse, Node sem dependências), os settings das abas do Vibe, a pasta confiável, a branch permitida, a conferência do git e os pedidos da execução. Desde a DEV2-005: `mutirao.js` (quem é o dono, conferência da divisão, publicar, parte do sócio, entrega e contador; canais `vibe:mut*`). Desde a DEV2-006: a junção das entregas, a entrega sintética e o push final (canais `vibe:mutAuto*`) e os pedidos em arquivo (`vibe\<id>\pedidos\`). |
 | Módulo `src/renderer/vibe/` (interface) | Botões do cabeçalho, chave em Configurações, telas e o condutor do ciclo. Usa o que o `app.js` já expõe no escopo global (`S`, `save`, `modal`, `esc`, `createTab`, `findTab`, `RT`, `stOf`, `UI`, `renderAll`, `addEvent`, `notifCfg`, `showToast`, `beep`, `api`) e ouve os hooks pelo próprio `window.termix.onHook`. Se pendura no cabeçalho e na página Configurações observando o DOM. |
 
 Desligado, o módulo só é carregado: não mostra botões nem executa nada.
@@ -104,7 +104,7 @@ Com a entrega pronta, "Iniciar Vibe Coding" grava a entrega e começa um ciclo. 
 
 1. **Abas.** O Termix cria no projeto duas abas de Claude Code do próprio app, pelo mesmo mecanismo do "+": **"Vibe · Orquestrador"** e **"Vibe · Dev"**, as duas em **Dangerously** (trabalham sem pedir aprovação; o ⚠ aparece na aba). O Dev só é criado e fica parado. O app passa a mostrar o projeto, com o orquestrador em foco.
 2. **Abertura.** O Termix espera o hook `SessionStart` do orquestrador. Numa pasta nova, o Claude Code pergunta antes se a pessoa confia nela (o padrão é "No, exit"): isso é do humano. Se o orquestrador não abrir em 30 s, o painel explica e o Termix notifica; quando ele abre, o pedido sai sozinho (ou pelo botão "Enviar o pedido agora").
-3. **Pedido do plano.** O Termix digita no terminal do orquestrador um pedido curto (uma linha) que aponta para os arquivos da entrega em `vibe\<id>\` e pede, na mesma pasta: `plano.md` (começa com "Branch de trabalho: …"; tarefas até o fim, na ordem, cada uma "## T1 — título" com Objetivo, Critério de pronto, Arquivos prováveis, Validação e Não fazer) e `perguntas.json` (`{"perguntas":[{"id","texto","porque","opcoes"}]}`, só o indispensável, gravado sempre, mesmo vazio). O pedido traz as regras de autonomia e de economia acima, proíbe mexer no código e escrever fora dessa pasta e manda encerrar o turno com "PLANO GRAVADO".
+3. **Pedido do plano.** O Termix grava o pedido em `vibe\<id>\pedidos\plano.md` e digita no terminal do orquestrador só uma linha que aponta para ele (desde a DEV2-006; ver "Pedido em arquivo"). O pedido aponta para os arquivos da entrega em `vibe\<id>\` e pede, na mesma pasta: `plano.md` (começa com "Branch de trabalho: …"; tarefas até o fim, na ordem, cada uma "## T1 — título" com Objetivo, Critério de pronto, Arquivos prováveis, Validação e Não fazer) e `perguntas.json` (`{"perguntas":[{"id","texto","porque","opcoes"}]}`, só o indispensável, gravado sempre, mesmo vazio). O pedido traz as regras de autonomia e de economia acima, proíbe mexer no código e escrever fora dessa pasta e manda encerrar o turno com "PLANO GRAVADO".
    - O texto longo chega ao Claude Code como colagem e um Enter imediato é engolido; por isso o Enter vai 1 s depois e, enquanto o hook de prompt enviado não chega, é repetido (até 4 vezes, a cada 3 s; com a caixa vazia o Enter não faz nada).
 4. **Fim do turno.** Quem percebe é o Termix, pelo hook `Stop` que o app já recebe (zero token). Ele lê `plano.md` e `perguntas.json`. Sem `perguntas.json` mas com um plano gravado nesse turno, vale como "nenhuma pergunta". Sem plano: estado "erro", com aviso, notificação e "Retomar".
 5. **Perguntas.** Havendo perguntas, a tela mostra um formulário (opções viram botões de escolha, com um comentário opcional; sem opções, texto livre) e o app notifica pelo mecanismo de avisos que já existe (sino, dica, som e Windows sem foco). "Enviar respostas" exige todas respondidas, grava `respostas.json` e digita um pedido curto para o orquestrador fechar o plano ("PLANO FECHADO"). Se ele voltar com perguntas novas, abre outra rodada.
@@ -192,7 +192,7 @@ O botão **Mutirão** abre um **painel ao lado do terminal** (não um modal, par
 1. **Participantes**: nome e branch de cada sócio (dev2, dev3…). Não vale main/master, a branch do dono nem branch repetida.
 2. **Divisão com o orquestrador**: "Abrir o chat" cria (ou retoma) a aba; **"Gerar divisão"** grava as instruções em `mutirao/PEDIDO.md` e digita só uma linha ("leia e siga mutirao/PEDIDO.md"). O orquestrador lê só os documentos e a estrutura e grava `mutirao/divisao.json` e `mutirao/partes/<branch>.md`. No fim de **cada** turno dessa aba (inclusive depois de um ajuste pedido no chat), o Termix confere sozinho e mostra o resumo; "Conferir" refaz à mão.
 3. **Publicar**: commit só de `mutirao/divisao.json` e `mutirao/partes/` na branch do dono e push só dela. Nunca main/master; o que estiver fora disso no projeto não entra e não é descartado.
-4. **Entregas** (depois de publicar): "Entregas: k/N", quem entregou e quando. Ao abrir a tela e no botão "Atualizar" (sem laço). Em N/N aparece **"Implementação automática"**, que por enquanto só avisa "chega na DEV2-006".
+4. **Entregas** (depois de publicar): "Entregas: k/N", quem entregou e quando. Ao abrir a tela e no botão "Atualizar" (sem laço). Em N/N aparece **"Implementação automática"** (ver DEV2-006).
 
 **Conferência do Termix** (recusa e explica): `divisao.json` ausente ou fora do formato; parte sem branch, repetida, de quem não é participante ou faltando; parte sem arquivos; `partes/<branch>.md` ausente ou sem as 9 seções do modelo com conteúdo; **arquivo em comum** entre partes (mesmo caminho, ou um dentro da pasta do outro; curinga vale como a pasta antes dele; "." ou caminho fora do projeto = projeto inteiro). Mudanças fora de `mutirao/` viram aviso.
 
@@ -220,6 +220,50 @@ O botão **Mutirão** abre um **painel ao lado do terminal** (não um modal, par
 
 **Correção da DEV2-004:** a pasta de backups do `.claude.json` guarda só os 10 mais recentes.
 
+## Implementação automática do Mutirão (DEV2-006)
+
+Em **N/N**, o botão **"Implementação automática"** junta as entregas na branch do dono e segue em Vibe Coding até concluir o projeto. Quem junta, confere, espera e envia é o **Termix** (código, zero token); a IA só planeja, implementa e revisa.
+
+### 1. Junção (código, sem IA)
+
+1. O Termix confere: Mutirão publicado, todas as entregas no remoto, nenhum merge em andamento e **working tree limpo** (só arquivos versionados; não versionados como o `mutirao/PEDIDO.md` não contam). Sujo: recusa e lista os arquivos ("Faça commit ou guarde (stash) antes"), sem mexer em nada.
+2. HEAD na **branch do dono** (nunca main/master): se estiver em outra, `git switch` para ela, sem descartar nada.
+3. `git fetch origin` e, para cada participante, na ordem: `git merge --no-ff origin/<branch>` com a mensagem "Mutirão: integrar `<branch>` (`<nome>`)". Já integrada: "já estava integrada", sem commit novo.
+4. **Conflito**: nada é descartado. O Termix registra a branch e os arquivos (`git diff --diff-filter=U`) e para aquele merge com `git merge --abort`; as outras entregas continuam entrando. Se o `--abort` falhar, a junção para e pede ajuda ao humano.
+5. O conflito vira a **primeira tarefa** do plano: o Dev refaz `git merge --no-ff origin/<branch>` na branch do dono e resolve editando os arquivos (a trava libera merge e commit na branch do dono e continua bloqueando main/master; `git checkout --ours/--theirs` continua bloqueado).
+
+### 2. Plano final
+
+O Termix monta uma **entrega sintética** do Vibe em `vibe\<id>\` (a entrega anterior vai para o histórico, como sempre):
+
+- `entrega.json`: objetivo e critério de pronto vindos da divisão (`divisao.json` agora pede `objetivo` e `criterio` do projeto inteiro; sem eles, o Termix compõe com os títulos e os critérios das partes), "nada a fornecer", o que não fazer (main/master, push, desfazer as partes) e o bloco `mutirao` (branch, junções, conflitos);
+- `estrutura.md`: divisão, cada parte (objetivo, arquivos, caminho do `.md`), cada entrega (resumo e tarefas), o resultado de cada junção, os conflitos e o critério de pronto. Aponta para os arquivos em vez de colar o conteúdo;
+- `fluxo.md`: o fluxo do Mutirão em Mermaid.
+
+Depois, o mesmo ciclo do Vibe (DEV2-003): abas "Vibe · Orquestrador" e "Vibe · Dev" no projeto do dono, pedido do plano e só as perguntas indispensáveis. O pedido manda analisar as entregas e a versão atual da branch do dono e gravar `plano.md` até o fim: primeiro os conflitos ("## T1 — Resolver o conflito da `<branch>`"), depois ligar as partes, as lacunas contra o critério de pronto e, por último, a validação final.
+
+**Conferência do Termix (zero token):** com conflitos, as primeiras tarefas precisam citar as branches em conflito; se não citarem (ou se o plano citar commit na main/master), o ciclo para em "Plano pronto" com o aviso, e o humano decide se executa.
+
+### 3. Execução
+
+Sem perguntas e com o plano conferido, o Termix clica sozinho em "Executar plano": o mesmo ciclo da DEV2-004 (Dev → conferência em código → Revisão → próxima; pausas em 93 % da janela de 5 h, DEPLOY/HUMANO, erro), na branch do dono, que passa a ser a branch permitida da trava e da conferência (também em projetos sem fluxo).
+
+### 4. Final
+
+Em "Projeto concluído", **o Termix** (código) faz push só da branch do dono (`refs/heads/<branch>`, nunca main/master) e notifica: **"Mutirão concluído na `<branch>`. Promover para a main é com você."** Push que falhar: aviso, notificação e "Enviar a branch de novo". Promover para a main continua sendo do humano.
+
+### 5. Tela do Mutirão
+
+Abaixo do contador, um quadro "Implementação automática" com as fases **Juntando entregas (k/N) → Conflitos: X** (só se houver) **→ Planejando** (ou "Plano pronto") **→ Executando k/n → Concluído**, a lista das junções (integrada, já estava, conflito com os arquivos) e o link **"Ver no Vibe"**, que abre o painel de execução do Vibe. Com um ciclo em andamento, o botão some; parado, concluído ou com erro, volta como "Implementação automática de novo" (as junções já feitas viram "já estava integrada").
+
+**Estado:** `mutirao.json` → `dono.auto` (fase, branch, junções, k/N, entrega, push). As fases de plano e execução vêm do `estado.json` do ciclo (marcado com `auto`).
+
+**Modo de teste:** `vibeTest.mut.auto({ maxTarefas, executar })` (`maxTarefas` vai para o pedido do plano; `executar: false` para em "Plano pronto"), `vibeTest.mut.verVibe()` e `vibeTest.mut.autoPush()`.
+
+## Pedido em arquivo (padrão do Vibe e do Mutirão, DEV2-006)
+
+No teste da DEV2-005, um pedido longo digitado na aba chegou cortado. Desde a DEV2-006, **todo pedido do Termix aos agentes** (planejamento, fechar o plano, Dev, refação e revisão) é gravado em `vibe\<id>\pedidos\<nome>.md` (`plano`, `fechar`, `Tk-dev`, `Tk-refazer`, `Tk-revisao`) e o Termix digita só uma linha: **"Vibe do Termix: leia e siga `<caminho>`"** (menos de 200 caracteres). O Mutirão já fazia assim (`mutirao/PEDIDO.md`). Menos risco de corte e menos texto no terminal. Um ciclo novo arquiva a pasta `pedidos` no histórico com o resto.
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.
@@ -229,7 +273,7 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-003** — Agentes (orquestrador e dev), plano e só as perguntas necessárias, sem executar o código do projeto. *(feita)*
 - **DEV2-004** — Ciclo de execução autônomo, com travas em código (branch permitida, nada que apague dados). *(feita)*
 - **DEV2-005** — Tela do Mutirão: chat com o orquestrador, divisão por branch e contador de entregas. *(feita)*
-- **DEV2-006** — "Implementação automática" ao chegar em N/N.
+- **DEV2-006** — "Implementação automática" ao chegar em N/N, e o pedido em arquivo como padrão do Vibe. *(feita)*
 - **DEV2-007** — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.
 
 ## Perguntas em aberto

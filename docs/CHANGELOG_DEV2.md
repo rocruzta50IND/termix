@@ -6,6 +6,16 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-07
 
+**DEV2-006 — Implementação automática do Mutirão** (DEV2)
+
+- Em N/N, "Implementação automática": o Termix (código) confere working tree limpo e a branch do dono, faz `git fetch` e `git merge --no-ff origin/<branch>` de cada sócio ("Mutirão: integrar <branch> (<nome>)"). Conflito: `git merge --abort` sem descartar nada, registro da branch e dos arquivos; as outras entregas entram.
+- Entrega sintética do Vibe em `vibe\<id>\` (objetivo e critério da divisão; divisão, partes, entregas, junções e conflitos) e o mesmo fluxo de planejamento: primeiro os conflitos, depois ligar as partes, lacunas e validação final. Com o plano conferido e sem perguntas, a execução da DEV2-004 começa sozinha na branch do dono.
+- Em "Projeto concluído", o Termix faz push só da branch do dono e avisa "Mutirão concluído na <branch>. Promover para a main é com você.".
+- Tela do Mutirão: Juntando entregas (k/N) → Conflitos: X → Planejando → Executando k/n → Concluído, as junções e "Ver no Vibe".
+- Pedido em arquivo como padrão do Vibe: planejamento, fechar, Dev, refação e revisão em `vibe\<id>\pedidos\pedido-<nome>.md`, com uma linha curta digitada.
+- Correções: botão "Sua parte do Mutirão" sai na hora ao trocar de projeto; lista do `git status` perdia a 1ª letra; regra `Write(**/.env)` inútil removida; aba do Vibe parada volta com conversa nova (retomar uma conversa vazia não abria); pedido que não chegou ao Dev não conta como tentativa.
+- Núcleo: nenhuma linha. Testes: 41 conferências sem tokens; rodada real com Caso A até "Concluído" e push da dev1 e Caso B com o conflito como T1; ~US$ 2,4 equivalente.
+
 **DEV2-005 — Tela do Mutirão com divisão, parte do sócio e contador de entregas** (DEV2)
 
 - Botão "Mutirão" abre um painel ao lado do terminal, só para o dono (fluxo: DEV1; sem fluxo: com o aviso de remoto git); os outros veem a explicação. O chat é a aba "Mutirão · Orquestrador", com a trava do Vibe.

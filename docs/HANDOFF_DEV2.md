@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006 (fecha o MVP do Vibe/Mutirão)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-07
 
 ## Resumo do que mudou
@@ -31,12 +31,20 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - o sócio que abre o projeto na branch dele, depois de sincronizar, vê o aviso da parte e abre o Vibe Coding já preenchido por ela; ao concluir, o Termix grava a entrega e envia só a branch do sócio;
   - o dono vê um contador de entregas lido do remoto (sem custo de IA); com todas entregues aparece o botão da implementação automática, que fica para a próxima tarefa;
   - pequena correção: as cópias de segurança da configuração do Claude Code ficam limitadas às 10 mais recentes.
+- **DEV2-006:** a implementação automática do Mutirão, última peça do MVP:
+  - com todas as entregas, o dono aperta um botão e o próprio Termix (sem IA) confere que o projeto não tem mudanças pendentes e está na branch do dono, busca o remoto e junta a entrega de cada sócio na branch do dono, uma por vez; se uma entrega conflitar, o Termix cancela só aquela junção sem descartar nada, registra a branch e os arquivos, e as outras continuam entrando;
+  - o Termix monta, a partir da divisão, das partes, das entregas e dos conflitos, uma entrega pronta para o Vibe Coding, e o orquestrador do dono planeja até o fim (primeiro os conflitos, depois ligar as partes, lacunas e validação final), com as perguntas só do indispensável;
+  - sem perguntas e com o plano conferido, a execução segue sozinha no mesmo ciclo da etapa anterior, na branch do dono (a trava passa a permitir juntar branches nela e continua barrando a principal);
+  - no fim, o Termix envia só a branch do dono e avisa que promover para a principal é com o humano;
+  - a tela do Mutirão mostra as fases (juntando, conflitos, planejando, executando, concluído), o resultado de cada junção e um atalho para o painel do Vibe;
+  - padronização: todo pedido do Termix aos agentes do Vibe passa a ir num arquivo, e só uma linha curta é digitada (como o Mutirão já fazia);
+  - correções: o botão da parte do sócio sai na hora ao trocar para outro projeto; a lista de arquivos alterados lida do git perdia a primeira letra do primeiro arquivo; uma regra de bloqueio que o Claude Code acusava como inútil saiu (o bloqueio continua pelo verificador).
 
 ## Áreas e arquivos afetados
 
 - Módulo isolado: a pasta do processo principal ganhou o verificador da trava (DEV2-004) e a parte do Mutirão (DEV2-005); a pasta da interface ganhou o ciclo de execução, o painel do Vibe e o painel do Mutirão.
-- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. A checagem de sintaxe do projeto passou a incluir os arquivos novos. Na DEV2-005, nenhuma linha do núcleo além da checagem de sintaxe. Interface principal e ponte: nada.
-- Dados: na pasta de dados do app, por projeto (entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio).
+- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. A checagem de sintaxe do projeto passou a incluir os arquivos novos. Na DEV2-005 e na DEV2-006, nenhuma linha do núcleo (na DEV2-005, só a checagem de sintaxe). Interface principal e ponte: nada.
+- Dados: na pasta de dados do app, por projeto (entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim.
 - Documentação: desenho do módulo, tarefas e changelog próprios da dev2 e uma linha nas decisões.
 
 ## Impacto e riscos
@@ -45,8 +53,9 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - A trava cobre os caminhos comuns, mas **não é uma sandbox**: um script escrito e rodado pelo próprio agente poderia escapar. Por isso o Termix também confere o git depois de cada tarefa e pausa se a branch principal mudar.
 - **Arquivo de configuração do Claude Code:** o Termix grava nele uma única marca por projeto do Vibe. Leitura e gravação cuidadosas (cópia de segurança, releitura, troca atômica, nada se o arquivo não for lido), mas as sessões abertas do Claude Code também escrevem nele. No teste foi usado um arquivo de teste; falta validar no real.
 - Apagar de forma recursiva é recusado até dentro do projeto (escolha conservadora).
-- Ainda não testados com tokens: refação pedida pela revisão, pausa depois de três tentativas, agente sem resposta e parar no meio de um turno.
+- Ainda não testados com tokens: resolução de um conflito pelo Dev (o teste com conflito parou no plano), entrega real do Vibe de um sócio, pausa depois de três tentativas, agente sem resposta e parar no meio de um turno.
 - **Mutirão:** o Termix faz commit e envia ao remoto (só a pasta do Mutirão, só na branch do dono ou do sócio, nunca na principal). No teste, um pedido longo digitado na aba recém-aberta chegou cortado; por isso o pedido do Mutirão vai num arquivo e só uma linha é digitada. O Vibe do sócio não rodou até o fim no teste (a entrega foi simulada).
+- **Implementação automática:** o Termix junta branches e envia a branch do dono ao remoto sem perguntar (só ela, nunca a principal; nada é descartado, e uma junção com conflito é cancelada e vira tarefa). Ela só começa com o projeto sem mudanças pendentes. No teste, as entregas dos sócios foram feitas por script, não pelo Vibe deles.
 - Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
 
 ## Como validar
@@ -56,6 +65,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado; o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.
 - No real: conferir que a marca de pasta confiável apareceu só na entrada do projeto e que existe a cópia de segurança.
 - Mutirão, sem custo de IA: o teste do módulo com um remoto local (dono e dois sócios) cobre papel, conferência (inclusive a recusa de arquivo em comum), publicação, parte do sócio, entrega e contador. Com IA, numa instância isolada: o dono gera a divisão com o orquestrador, publica; cada sócio sincroniza, vê a parte e abre o Vibe preenchido; o contador vai de 0 a N e mostra o botão da implementação automática.
+- Implementação automática, sem custo de IA: o teste do módulo com um remoto local cobre projeto com mudanças pendentes (recusado), junção sem conflito, junção com conflito (cancelada sem perder nada, a outra entra), a entrega montada para o plano, os pedidos em arquivo, a trava (juntar na branch do dono pode, na principal não) e o envio só da branch do dono. Com IA, numa instância isolada: com duas entregas, o botão leva até "Concluído" e a branch do dono chega ao remoto com a principal intacta; com conflito, o plano começa pela tarefa do conflito.
 
 ## Decisão do DEV1 / usuário
 
