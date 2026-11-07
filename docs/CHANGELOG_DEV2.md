@@ -6,6 +6,16 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-07
 
+**DEV2-009 — Fechar as pendências do MVP (marcas do plano, trava em conflito)** (DEV2)
+
+- Rodada real (Vibe de brinquedo com GitHub Pages e o domínio do cliente): o planejador marcou [HUMANO], [DEPLOY] [HUMANO] e [HUMANO] [SEM COMMIT]; o pedido de planejamento não mudou.
+- Correção: alarme falso de main/master numa linha de "Não fazer" (a negação vale até 80 caracteres antes); no Mutirão ele travaria a execução automática.
+- Novo aviso em código: plano sem nenhuma [DEPLOY] e com título de publicação/deploy.
+- Mutirão: a entrega sintética traz o objetivo e o critério do projeto inteiro e a seção "Publicação, deploy e passos do humano" (divisão, partes, README/ROADMAP/DEPLOY); o pedido do plano final pede essas tarefas com as marcas.
+- Esc no meio do turno num Claude Code real seguido do /clear do ciclo: chegou inteiro.
+- Trava: `git checkout --ours|--theirs` e `git restore ... --ours|--theirs` só com merge em andamento, na branch permitida, em arquivo ainda em conflito.
+- Núcleo: nenhuma linha. Testes: trava 79/79, DEV2-009 16/16, regressões 23/23, 31/31, 41/41, 23/23 e app com agente falso 23/23; rodada real ~US$ 1,5.
+
 **DEV2-008 — Guia de validação do MVP do Vibe e do Mutirão** (DEV2)
 
 - Novo `docs/VALIDACAO_MVP_VIBE.md`: roteiro com caixas de marcar para o Ygor validar no Termix real (da dev2): preparação e custos medidos, a pasta confiável no `~/.claude.json` real (o que muda, backup, conferir e desfazer), Roteiro A (Vibe Coding de ponta a ponta, com Parar/Continuar e conferência do git), Roteiro B (Mutirão com dono e duas sócias num PC, remoto local), o que observar, limitações conhecidas, o que fica para depois e o modelo do veredito.

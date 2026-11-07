@@ -7,6 +7,8 @@ Roteiro para testar o Vibe Coding e o Mutirão **no seu Termix de verdade**, rod
 
 Desenho completo do módulo, para consulta: `docs/VIBE_MUTIRAO.md`.
 
+**Já fechado na DEV2-009 (não precisa testar):** as marcas `[DEPLOY]`/`[HUMANO]`/`[SEM COMMIT]` saindo de um planejamento real; o `/clear` depois de um Esc num Claude Code real (chega inteiro, com a barra); `git checkout --ours/--theirs` liberado só com merge em andamento; o alarme falso de main/master numa linha de "Não fazer". O que sobra abaixo é o que só você pode ver no seu app e nos seus projetos.
+
 ---
 
 ## 1. Antes de começar
@@ -36,7 +38,7 @@ npm start
 
 | O quê | Custo medido |
 |---|---|
-| Plano do Vibe (orquestrador escreve e fecha o plano) | ~US$ 0,35 |
+| Plano do Vibe (orquestrador escreve e fecha o plano) | ~US$ 0,35 a 1,50 (o de 6 tarefas com 2 perguntas da DEV2-009 deu ~US$ 1,5) |
 | Execução de um plano de 3 tarefas (Dev + revisões) | ~US$ 1,35 |
 | Implementação automática do Mutirão (plano + execução) | ~US$ 1 a 2,5 |
 | Divisão do Mutirão (1 turno do orquestrador) | ~US$ 0,40 |
@@ -206,7 +208,7 @@ Preencha: objetivo ("Lista de tarefas em um index.html, em no máximo 3 tarefas"
 
 - [ ] Painel: **"Plano pronto, N tarefas"**, com o plano visível (recolhível).
 - [ ] O plano começa com "Branch de trabalho: vibe/vibe-brinquedo" e não manda fazer nada na main/master (se mandar, a tela mostra um alerta: anote).
-- [ ] Anote se alguma tarefa veio marcada `[DEPLOY]`, `[HUMANO]` ou `[SEM COMMIT]` (o planejador real nunca foi visto marcando `[DEPLOY]`/`[HUMANO]`).
+- [ ] Se aparecer o aviso "o plano parece ter publicação ou deploy sem a marca [DEPLOY]", confira o plano e anote (o brinquedo deste roteiro não tem publicação, então o aviso não deve aparecer).
 
 ### A.8 Executar e acompanhar
 
@@ -222,7 +224,6 @@ Durante uma tarefa (com "Dev trabalhando"):
 
 - [ ] **"Parar"**: o Dev é interrompido (Esc), o painel diz "parado", nada é apagado, as abas continuam abertas.
 - [ ] **"Continuar"**: o Termix confere o que ficou pronto e segue (se a tarefa não terminou, vira uma nova tentativa da mesma tarefa).
-- [ ] Na volta, o `/clear` chega sozinho na caixa de texto, **não grudado** num pedido antigo, e **com a barra** (não "clear").
 - [ ] Opcional: feche o Termix no meio e reabra. A tela mostra onde parou e **nada recomeça sozinho**; só segue com "Continuar".
 
 ### A.10 Concluído
@@ -336,7 +337,6 @@ git log --oneline --graph origin/dev1 -15   # as junções e os commits das tare
 ## 5. O que observar e reportar
 
 - [ ] **Pedido cortado:** toda linha que o Termix digita nas abas do Vibe/Mutirão chega **inteira** (`Vibe do Termix: leia e siga …`). Se chegar só o final, anote em qual aba e em que momento (aba recém-aberta?). A causa já foi vista uma vez e não foi isolada.
-- [ ] **"/clear" virando "clear":** depois de um Esc (Parar, tempo limite), a primeira tecla pode se perder e o agente receber "clear" como texto. Anote se acontecer.
 - [ ] **Abas:** só as esperadas ("Vibe · Orquestrador", "Vibe · Dev", "Mutirão · Orquestrador"), sem duplicadas; fechar e reabrir o app as restaura sem mandar pedido.
 - [ ] **Notificações:** só nas perguntas, nas pausas e na conclusão (e no fim do Mutirão). Muitas, poucas ou nenhuma: anote.
 - [ ] **Custo real:** anote a janela de 5 h antes e depois de cada roteiro e o que a tela **Consumo** mostrar. Compare com a tabela da seção 1.3.
@@ -349,8 +349,9 @@ git log --oneline --graph origin/dev1 -15   # as junções e os commits das tare
 Coisas que já se sabe e que **não** precisam ser reportadas como erro (mas anote se atrapalharem):
 
 - **A trava não é uma "caixa fechada".** Ela barra os caminhos comuns (comandos e gravações do agente), mas um script escrito e rodado pelo próprio agente poderia escapar. Por isso o Termix também confere o git depois de cada tarefa e pausa se a main/master mudar.
-- **Apagar pastas inteiras é recusado até dentro do projeto** (escolha conservadora). Resolver conflito com `git checkout --ours/--theirs` também é recusado: o Dev resolve editando os arquivos.
-- **Marcas de publicação/humano:** o planejador real ainda não foi visto marcando `[DEPLOY]`/`[HUMANO]`; se uma tarefa de publicação vier sem a marca, o Termix não pausa antes dela.
+- **Apagar pastas inteiras é recusado até dentro do projeto** (escolha conservadora). Resolver conflito escolhendo um lado (`git checkout --ours/--theirs -- <arquivo>`) só passa com um merge em andamento, na branch permitida e em arquivo ainda em conflito; fora disso, é recusado.
+- **Marcas de publicação/humano:** o planejador marca `[DEPLOY]`/`[HUMANO]` (visto na DEV2-009). Se um plano vier sem nenhuma `[DEPLOY]` e algum título falar em publicar/deploy, o painel avisa, mas o Termix só pausa antes de uma tarefa **marcada**.
+- **Indicador da aba depois de "Parar":** a aba interrompida continua como "trabalhando" até o próximo pedido (o Claude Code não avisa o fim do turno numa interrupção). O ciclo não depende disso.
 - **Limites de uso:** pausa só pela janela de 5 h (93 %). O 7 d aparece na tela, mas não pausa.
 - **Reabrir o app não retoma sozinho** (de propósito): é sempre com "Continuar".
 - **Aviso "Terminou" silenciado** em qualquer aba cujo nome comece com "Vibe · ", mesmo que não seja do ciclo.
@@ -360,7 +361,6 @@ Coisas que já se sabe e que **não** precisam ser reportadas como erro (mas ano
   - a tela não sincroniza a branch do sócio com a do dono: é um passo do sócio (o `git merge origin/dev1` do B.4, ou `/fluxo:sincronizar` em projetos com o fluxo);
   - "Sua parte do Mutirão" só aparece com o projeto aberto no Termix na branch da parte;
   - o Vibe de um sócio nunca tinha rodado até o fim com IA real (nos testes a entrega foi simulada).
-- **Não visto com o Claude Code real:** a limpeza da caixa de texto antes do `/clear` e a tecla perdida depois do Esc (testados só com um agente falso). O item A.9 cobre isso.
 
 ### O que fica para depois
 
@@ -384,7 +384,7 @@ Roteiro A (Vibe): PASSOU / PASSOU COM RESSALVAS / FALHOU
 Roteiro B (Mutirão): PASSOU / PASSOU COM RESSALVAS / FALHOU / NÃO FEITO
   - divisão, publicar, parte das sócias, 2/2, implementação automática, push da dev1: <ok/problema em cada>
 Pasta confiável (~/.claude.json): só a marca mudou? backup existe? sim/não
-Pedido cortado: não/sim (onde) · "/clear" virou "clear": não/sim
+Pedido cortado: não/sim (onde)
 Notificações: ok / demais / faltaram (quais)
 Custo: janela 5 h de <x>% para <y>% (A) e <y>% para <z>% (B); Consumo mostrou <valores>
 Textos confusos: <lista>

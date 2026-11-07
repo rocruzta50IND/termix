@@ -1,6 +1,6 @@
 # Vibe Coding e Mutirão — desenho do módulo
 
-Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005) a implementação automática do Mutirão, com o pedido em arquivo como padrão (DEV2-006), e a robustez do ciclo (DEV2-007), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
+Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005) a implementação automática do Mutirão, com o pedido em arquivo como padrão (DEV2-006), a robustez do ciclo (DEV2-007) e o fechamento das pendências do MVP (DEV2-009: marcas do plano vistas numa rodada real, conferência de deploy sem marca, plano final do Mutirão com o projeto inteiro e conflito resolvido por lado), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
 
 ## Princípios e regras dos agentes (decisões do Ygor, 2026-11-06)
 
@@ -136,14 +136,15 @@ No teste da DEV2-003 o orquestrador planejou "commit em master" apesar da regra,
 - **O hook nega com o motivo** (o agente lê e segue pelo caminho permitido):
   - `git commit`, `merge`, `rebase`, `cherry-pick`, `revert`, `am` e `pull` com o HEAD em main/master, destacado ou fora da branch permitida (o hook confere a branch atual no git);
   - `git push` para main/master ou para branch diferente da permitida, com `--force`/`-f`/`--force-with-lease`, `+refspec`, `--delete`/`:branch`, `--mirror`/`--all`;
-  - `git reset --hard`, `git clean` (menos `-n`), `git checkout --`/em arquivos/forçado, `git restore` em arquivos (`--staged` sozinho pode), `git switch` forçado, `git branch -D`, `git stash drop/clear`, `update-ref` na main/master, `filter-branch`/`filter-repo`, `reflog expire`, `gh pr merge`;
+  - `git reset --hard`, `git clean` (menos `-n`), `git checkout --`/em arquivos/forçado, `git restore` em arquivos (`--staged` sozinho pode; exceção da DEV2-009 logo abaixo), `git switch` forçado, `git branch -D`, `git stash drop/clear`, `update-ref` na main/master, `filter-branch`/`filter-repo`, `reflog expire`, `gh pr merge`;
   - apagar de forma recursiva (`rm -r`, `Remove-Item -Recurse`, `rd /s`, `del /s`, `find -delete`) em qualquer lugar, e apagar qualquer coisa fora da pasta do projeto e de `vibe\<id>` (e também a trava, o `.git` e a própria pasta do projeto);
   - `Write`/`Edit`/`MultiEdit`/`NotebookEdit` e redirecionamentos (`>`, `tee`, `Out-File`, `Set-Content`) fora da pasta do projeto e de `vibe\<id>`, na trava, no `.git` e nos `.claude/settings*.json` do projeto (que poderiam desligar a trava);
   - gravar em `.env` (menos os modelos `.env.example`/`.sample`/`.template`), chaves (`.pem`, `.key`, `.p12`, `id_rsa`…) e credenciais (`credentials*`, `.npmrc`, `.git-credentials`…). **Ler pode.**
+  - **Exceção para resolver conflito (DEV2-009):** `git checkout --ours|--theirs [--] <arquivo>` e `git restore [--source=<ref>|-s <ref>] [--worktree] --ours|--theirs [--] <arquivo>` passam **só** com um merge em andamento (`MERGE_HEAD`), o HEAD na branch permitida e cada arquivo ainda em conflito (sem `.`, curinga, `-f`, `-p` ou `--staged`). Fora disso, continuam bloqueados.
   - Também confere comandos dentro de `bash -c`, `cmd /c`, `powershell -Command` e `Invoke-Expression`; PowerShell com comando codificado é negado.
 - **Limite conhecido:** não é sandbox. Cobre os caminhos comuns (Bash, PowerShell e ferramentas de escrita); um script que o próprio agente escreva e rode poderia escapar. Por isso o Termix ainda **confere o git em código depois de cada tarefa** (main/master locais e do origin intactas).
 - **Branch permitida:** projeto com fluxo Rocruzta (`.claude/fluxo.json` e `CLAUDE.local.md`): a branch do papel (se ela for main/master, não vale e o Termix para); sem fluxo: `vibe/<pasta-do-projeto>`. Antes de executar e a cada tarefa, **o Termix** (código, não a IA) confere ou cria essa branch (`git switch`, ou `git switch -c` a partir da atual), sem descartar nada; se o working tree impedir a troca, ou o projeto não tiver git, pausa e explica.
-- **Testar sem tokens:** rodar `node src/vibe/trava.js <trava.json>` com a entrada do hook em JSON pelo stdin (código 2 = bloqueado, motivo no stderr). O teste da DEV2-004 cobre 62 casos (um permitido e um bloqueado para cada regra).
+- **Testar sem tokens:** rodar `node src/vibe/trava.js <trava.json>` com a entrada do hook em JSON pelo stdin (código 2 = bloqueado, motivo no stderr). O teste da DEV2-004 cobre 62 casos (um permitido e um bloqueado para cada regra); a DEV2-009 somou 17 do conflito resolvido por lado (79).
 
 ### Pasta confiável (decisão do Ygor: o Termix marca sozinho)
 
@@ -230,17 +231,17 @@ Em **N/N**, o botão **"Implementação automática"** junta as entregas na bran
 2. HEAD na **branch do dono** (nunca main/master): se estiver em outra, `git switch` para ela, sem descartar nada.
 3. `git fetch origin` e, para cada participante, na ordem: `git merge --no-ff origin/<branch>` com a mensagem "Mutirão: integrar `<branch>` (`<nome>`)". Já integrada: "já estava integrada", sem commit novo.
 4. **Conflito**: nada é descartado. O Termix registra a branch e os arquivos (`git diff --diff-filter=U`) e para aquele merge com `git merge --abort`; as outras entregas continuam entrando. Se o `--abort` falhar, a junção para e pede ajuda ao humano.
-5. O conflito vira a **primeira tarefa** do plano: o Dev refaz `git merge --no-ff origin/<branch>` na branch do dono e resolve editando os arquivos (a trava libera merge e commit na branch do dono e continua bloqueando main/master; `git checkout --ours/--theirs` continua bloqueado).
+5. O conflito vira a **primeira tarefa** do plano: o Dev refaz `git merge --no-ff origin/<branch>` na branch do dono e resolve editando os arquivos ou escolhendo um lado com `git checkout --ours/--theirs -- <arquivo>` (a trava libera merge e commit na branch do dono e continua bloqueando main/master; o `--ours/--theirs` só passa com o merge em andamento, DEV2-009).
 
 ### 2. Plano final
 
 O Termix monta uma **entrega sintética** do Vibe em `vibe\<id>\` (a entrega anterior vai para o histórico, como sempre):
 
 - `entrega.json`: objetivo e critério de pronto vindos da divisão (`divisao.json` agora pede `objetivo` e `criterio` do projeto inteiro; sem eles, o Termix compõe com os títulos e os critérios das partes), "nada a fornecer", o que não fazer (main/master, push, desfazer as partes) e o bloco `mutirao` (branch, junções, conflitos);
-- `estrutura.md`: divisão, cada parte (objetivo, arquivos, caminho do `.md`), cada entrega (resumo e tarefas), o resultado de cada junção, os conflitos e o critério de pronto. Aponta para os arquivos em vez de colar o conteúdo;
+- `estrutura.md`: **objetivo e critério de pronto do projeto inteiro** em seções próprias (DEV2-009), a seção **"Publicação, deploy e passos do humano"** (linhas com deploy, publicar, produção, FTP, GitHub Pages, Vercel, Netlify, hospedagem, domínio, DNS, senha ou credencial achadas no objetivo e no critério da divisão, nas partes e no `README.md`, `ROADMAP.md`, `docs/ROADMAP.md`, `DEPLOY.md` e `docs/DEPLOY.md` do projeto; até 12), a divisão, cada parte (objetivo, arquivos, caminho do `.md`), cada entrega (resumo e tarefas), o resultado de cada junção, os conflitos e o critério de pronto (começando por "Projeto inteiro: ..."). Aponta para os arquivos em vez de colar o conteúdo;
 - `fluxo.md`: o fluxo do Mutirão em Mermaid.
 
-Depois, o mesmo ciclo do Vibe (DEV2-003): abas "Vibe · Orquestrador" e "Vibe · Dev" no projeto do dono, pedido do plano e só as perguntas indispensáveis. O pedido manda analisar as entregas e a versão atual da branch do dono e gravar `plano.md` até o fim: primeiro os conflitos ("## T1 — Resolver o conflito da `<branch>`"), depois ligar as partes, as lacunas contra o critério de pronto e, por último, a validação final.
+Depois, o mesmo ciclo do Vibe (DEV2-003): abas "Vibe · Orquestrador" e "Vibe · Dev" no projeto do dono, pedido do plano e só as perguntas indispensáveis. O pedido manda analisar as entregas e a versão atual da branch do dono e gravar `plano.md` até o fim: primeiro os conflitos ("## T1 — Resolver o conflito da `<branch>`"), depois ligar as partes, as lacunas contra o critério de pronto **do projeto inteiro**, a validação final `[SEM COMMIT]` e, sem deixar de fora, a publicação/deploy (`[DEPLOY]`, depois da validação final) e o que depende do humano (`[HUMANO]`) — DEV2-009: na rodada real da DEV2-007, o passo de publicação do roadmap tinha ficado fora do plano.
 
 **Conferência do Termix (zero token):** com conflitos, as primeiras tarefas precisam citar as branches em conflito; se não citarem (ou se o plano citar commit na main/master), o ciclo para em "Plano pronto" com o aviso, e o humano decide se executa.
 
@@ -274,6 +275,14 @@ Pontos fracos achados nas rodadas das DEV2-004 a 006, corrigidos e testados (a m
 - **Parar no meio do turno.** O Termix guarda se o pedido chegou a ser enviado (hook de prompt enviado). Parado **antes** do envio: a tentativa é desfeita (não conta) e a caixa de texto da aba é limpa (Ctrl+U), para o próximo `/clear` não sair grudado no pedido antigo. Parado **durante** o turno: Esc ao agente; "Continuar" confere e segue pela refação (o que já ficou commitado vale). Revisão parada sem veredito: "Continuar" pede a revisão de novo.
 - **Push final com o remoto à frente** (Mutirão). Antes do push da branch do dono, o Termix faz `git fetch`; se a `origin/<dono>` estiver à frente (outra máquina), faz `git merge --no-ff origin/<dono>` ("Mutirão: integrar origin/<dono> (remoto à frente)"), sem rebase e sem descartar. Sem conflito, envia; a tela diz que integrou. Com conflito: `git merge --abort`, nada é enviado nem descartado, a tela lista os arquivos e explica; depois de resolver, "Enviar a branch de novo". Com mudança sem commit ou fora da branch do dono, recusa e explica.
 
+## Conferências do plano e pendências fechadas (DEV2-009)
+
+- **Marcas vistas numa rodada real.** Vibe comum de brinquedo (cardápio publicado no GitHub Pages com o domínio do cliente, que só o cliente informa): o planejador real marcou `[HUMANO]` no CNAME com o domínio, `[DEPLOY] [HUMANO]` na publicação e `[HUMANO] [SEM COMMIT]` na validação final no domínio, e perguntou o domínio e o repositório (respondido "ainda não informado"). O pedido de planejamento não mudou.
+- **Deploy sem marca (zero token).** Se o plano não tiver nenhuma tarefa `[DEPLOY]` mas algum título falar em deploy, publicar/publicação, produção, go-live, GitHub Pages, Vercel, Netlify, FTP ou hospedagem, o painel mostra um aviso ("sem a marca, o Termix não pausa antes dela") e, no Mutirão, a execução automática não começa sozinha. Com pelo menos uma tarefa `[DEPLOY]`, não avisa (evita alarme em "README com instruções de publicação").
+- **Alarme falso de main/master corrigido.** A conferência de "commit/push na main/master" ignorava a negação só até 25 caracteres antes; a linha real "**Não fazer:** nada de push em main/master" virava alerta (e, no Mutirão, travaria a execução automática). Agora a negação (não, nunca, nada de, sem, jamais, evite, proibido, bloqueado, never, don't) vale em até 80 caracteres antes.
+- **/clear depois de Esc num Claude Code real.** Na mesma rodada: "Parar" no meio do turno do planejamento → "Interrupted" na aba → o `/clear` do ciclo (com o Ctrl+U antes) chegou inteiro (SessionStart "clear"; nada de "clear" sem a barra virando pedido). Observação: depois do Esc, o indicador da aba continua "trabalhando" até o próximo turno, porque o Claude Code não dispara o hook Stop numa interrupção.
+- **Modo de teste:** `vibeTest.clear('orq'|'dev')` chama o `/clear` do ciclo numa aba do Vibe (true = o SessionStart "clear" chegou).
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.
@@ -286,6 +295,7 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-006** — "Implementação automática" ao chegar em N/N, e o pedido em arquivo como padrão do Vibe. *(feita)*
 - **DEV2-007** — Robustez do ciclo: [SEM COMMIT], limite de tentativas, tempo limite, Parar no meio do turno e push com o remoto à frente. *(feita)*
 - **DEV2-008** — Guia de validação do MVP do Vibe/Mutirão: `docs/VALIDACAO_MVP_VIBE.md`. *(feita)*
+- **DEV2-009** — Pendências do MVP: marcas do plano numa rodada real, aviso de deploy sem marca, alarme falso de main/master, plano final do Mutirão com o projeto inteiro e a publicação, /clear depois de Esc real e `--ours/--theirs` só com merge em andamento. *(feita)*
 - Depois — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.
 
 ## Perguntas em aberto

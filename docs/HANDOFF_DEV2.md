@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-008 (MVP do Vibe/Mutirão, a robustez do ciclo e o guia de validação)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-009 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação e o fechamento das pendências)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-07
 
 ## Resumo do que mudou
@@ -46,11 +46,18 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - "Parar" no meio do turno não deixa o ciclo inconsistente: pedido ainda não enviado é desfeito (não conta como tentativa e a caixa de texto é limpa); turno interrompido é conferido e refeito de forma limpa ao continuar;
   - envio final do Mutirão com a branch do dono mais nova no remoto (outra máquina): o Termix busca o remoto e junta antes de enviar, sem reescrever histórico nem descartar; com conflito, cancela a junção, não envia nada e explica.
 - **DEV2-008:** um guia de validação do MVP para o Ygor testar no Termix real, com caixas de marcar: preparação, custos esperados, o cuidado com o arquivo de configuração do Claude Code (o que muda, a cópia de segurança, como conferir e desfazer), um roteiro do Vibe Coding de ponta a ponta, um roteiro opcional do Mutirão com dono e sócias num único PC, o que observar, as limitações conhecidas e o modelo do veredito. Pequena correção de texto: o aviso de pausa não repete mais a instrução de continuar.
+- **DEV2-009:** fechamento das pendências do MVP que não dependiam do Ygor:
+  - numa rodada real de planejamento (projeto de brinquedo com publicação e um dado que só o cliente tem), o planejador marcou sozinho as tarefas de publicação, as que dependem do humano e a validação final; o pedido não precisou mudar;
+  - correção de um alarme falso: uma linha do plano que **proibia** enviar para a branch principal era lida como ordem de enviar (no Mutirão, isso também impediria a execução automática);
+  - nova conferência sem custo de IA: plano sem nenhuma tarefa de publicação marcada, mas com título que fala em publicar ou fazer deploy, mostra um aviso;
+  - Mutirão: a entrega montada para o plano final traz o objetivo e o critério de pronto do projeto inteiro e os passos de publicação e do humano achados na divisão e nos documentos do projeto, e o pedido manda planejá-los com as marcas;
+  - visto com um Claude Code real: parar o agente no meio do turno e limpar o contexto em seguida funciona (o comando chega inteiro);
+  - a trava passa a permitir resolver um conflito escolhendo um lado, só com uma junção em andamento, na branch permitida e em arquivo ainda em conflito.
 
 ## Áreas e arquivos afetados
 
 - Módulo isolado: a pasta do processo principal ganhou o verificador da trava (DEV2-004) e a parte do Mutirão (DEV2-005); a pasta da interface ganhou o ciclo de execução, o painel do Vibe e o painel do Mutirão.
-- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. A checagem de sintaxe do projeto passou a incluir os arquivos novos. Na DEV2-005 a DEV2-008, nenhuma linha do núcleo (na DEV2-005, só a checagem de sintaxe). Interface principal e ponte: nada.
+- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. A checagem de sintaxe do projeto passou a incluir os arquivos novos. Na DEV2-005 a DEV2-009, nenhuma linha do núcleo (na DEV2-005, só a checagem de sintaxe). Interface principal e ponte: nada.
 - Dados: na pasta de dados do app, por projeto (entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim.
 - Documentação: desenho do módulo, tarefas e changelog próprios da dev2 e uma linha nas decisões.
 
@@ -60,7 +67,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - A trava cobre os caminhos comuns, mas **não é uma sandbox**: um script escrito e rodado pelo próprio agente poderia escapar. Por isso o Termix também confere o git depois de cada tarefa e pausa se a branch principal mudar.
 - **Arquivo de configuração do Claude Code:** o Termix grava nele uma única marca por projeto do Vibe. Leitura e gravação cuidadosas (cópia de segurança, releitura, troca atômica, nada se o arquivo não for lido), mas as sessões abertas do Claude Code também escrevem nele. No teste foi usado um arquivo de teste; falta validar no real.
 - Apagar de forma recursiva é recusado até dentro do projeto (escolha conservadora).
-- Testados sem tokens (com um Claude Code falso no teste, DEV2-007): limite de tentativas, tempo limite, parar antes e durante o turno, tarefa sem commit e envio final com o remoto à frente. Com tokens: a resolução de um conflito pelo dev e pela revisão reais. Ainda não testados com tokens: entrega real do Vibe de um sócio e a marcação de publicação/humano pelo planejador real (na rodada, o planejador do Mutirão deixou de fora o passo de publicação).
+- Testados sem tokens (com um Claude Code falso no teste, DEV2-007): limite de tentativas, tempo limite, parar antes e durante o turno, tarefa sem commit e envio final com o remoto à frente. Com tokens: a resolução de um conflito pelo dev e pela revisão reais. Ainda não testados com tokens: entrega real do Vibe de um sócio e o plano final do Mutirão com os passos de publicação (validado pelo pedido gerado). A marcação de publicação/humano pelo planejador real foi vista na DEV2-009 (Vibe comum). Depois de parar um agente, o indicador da aba fica "trabalhando" até o próximo pedido (só visual).
 - **Mutirão:** o Termix faz commit e envia ao remoto (só a pasta do Mutirão, só na branch do dono ou do sócio, nunca na principal). No teste, um pedido longo digitado na aba recém-aberta chegou cortado; por isso o pedido do Mutirão vai num arquivo e só uma linha é digitada. O Vibe do sócio não rodou até o fim no teste (a entrega foi simulada).
 - **Implementação automática:** o Termix junta branches e envia a branch do dono ao remoto sem perguntar (só ela, nunca a principal; nada é descartado, e uma junção com conflito é cancelada e vira tarefa). Ela só começa com o projeto sem mudanças pendentes. No teste, as entregas dos sócios foram feitas por script, não pelo Vibe deles.
 - Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
@@ -69,6 +76,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 
 - Seguir o guia de validação do MVP (documento novo da DEV2-008), no Termix real rodando da dev2.
 - Rodar a checagem de sintaxe do projeto.
+- DEV2-009, sem custo de IA: o verificador da trava com os casos de conflito (escolher um lado passa só com junção em andamento, na branch permitida, em arquivo em conflito) e o teste do módulo das conferências do plano e da entrega do Mutirão.
 - Sem gastar tokens: rodar o verificador da trava direto com entradas simuladas (cada regra com um caso permitido e um bloqueado).
 - Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado; o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.
 - No real: conferir que a marca de pasta confiável apareceu só na entrada do projeto e que existe a cópia de segurança.

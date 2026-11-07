@@ -168,10 +168,13 @@
       if (c.est.fase === 'pronto') execStart(id);
     }, 1500);
   }
-  // o Termix confere o plano (zero token): commit ou push na main/master é proibido e vira alerta na tela
+  // o Termix confere o plano (zero token): commit ou push na main/master é proibido e vira alerta na tela;
+  // DEV2-009: publicação/deploy sem a marca [DEPLOY] (o Termix não pausaria antes dela) também vira alerta
   function branchAlert(r) {
     const l = r && r.plano && r.plano.mainCommit && r.plano.mainCommit[0];
-    return l ? `Atenção: o plano cita commit ou push na main/master ("${l.trim().slice(0, 100)}"). Isso é proibido: a execução só usa a branch permitida e a trava do Termix bloqueia commit e push na main/master.` : '';
+    const d = (r && r.plano && r.plano.deploySemMarca) || [];
+    return [l ? `Atenção: o plano cita commit ou push na main/master ("${l.trim().slice(0, 100)}"). Isso é proibido: a execução só usa a branch permitida e a trava do Termix bloqueia commit e push na main/master.` : '',
+      d.length ? `Atenção: o plano parece ter publicação ou deploy sem a marca [DEPLOY] (${d.join('; ')}). Sem a marca, o Termix não pausa antes dela: confira o plano e marque a tarefa com [DEPLOY] no título antes de executar.` : ''].filter(Boolean).join(' ');
   }
 
   const answerOf = (c, q) => { const a = c.ans[q.id] || {}; return [a.op, (a.tx || '').trim()].filter(Boolean).join(' — '); };
@@ -1307,6 +1310,8 @@
       inject: async (lista) => { const id = V && V.id, c = id && CY[id]; if (!c || !c.est) return false; if (!(await call('testPerguntas', id, lista))) return false; c.est.fase = 'plano'; await afterTurn(id); return c.est.fase; },
       answer: (map) => { const c = V && CY[V.id]; if (!c) return false; c.ans = map; return sendAnswers(V.id); },
       stop: () => V && stopCycle(V.id), resume: () => V && resumeCycle(V.id),
+      // DEV2-009: o /clear do ciclo (com o Ctrl+U antes) numa aba do Vibe ('orq' ou 'dev'); true = o SessionStart "clear" chegou
+      clear: async (k) => { const c = V && CY[V.id], tab = c && c.est && tabOf(c.est[k || 'orq']); return tab ? !!(await clearTab(c, tab, c.gen)) : null; },
       // DEV2-004: execução. limit(93) injeta o % da janela de 5 h (null volta ao real); exec/cont/skip = botões do painel
       limit: (v) => { LIM_TEST = typeof v === 'number' ? v : null; paintCycle(); return LIM_TEST; },
       // DEV2-007: tempos(ms) do tempo limite do turno e do silêncio (sem argumento: volta ao padrão de 30 e 20 min)

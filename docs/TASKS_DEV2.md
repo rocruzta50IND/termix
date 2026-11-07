@@ -9,6 +9,39 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-009 — Fechar as pendências do MVP (marcas do plano, trava em conflito)
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
+- **Data:** 2026-11-07
+- **Pedido:** (orquestrador termix-orq-f7, autorizado pelo Ygor) fechar as pendências do MVP que não dependem do Ygor: (1) ver as marcas [DEPLOY]/[HUMANO]/[SEM COMMIT] saírem de UMA rodada real de planejamento num Vibe comum de brinquedo com deploy e dado só do humano, parando em "Plano pronto", e ajustar se não viessem; (2) plano final do Mutirão com o objetivo e o critério do projeto inteiro explícitos e as marcas pedidas; (3) /clear depois de Esc num Claude Code real, na mesma rodada; (4) liberar `git checkout --ours|--theirs -- <arq>` e `git restore ... --ours/--theirs` só com merge em andamento na branch permitida; (5) regressões sem tokens; (6) atualizar `docs/VALIDACAO_MVP_VIBE.md`.
+- **Feito:**
+  - **(1) Rodada real** (instância isolada): Vibe "Cardápio do Restaurante Sabor", site publicado no GitHub Pages com o domínio do cliente (só o cliente informa). O planejador perguntou o domínio e o repositório (respondido "ainda não informado") e o plano de 6 tarefas veio com T4 `[HUMANO]` (CNAME com o domínio), T5 `[DEPLOY] [HUMANO]` (publicar no GitHub Pages) e T6 `[HUMANO] [SEM COMMIT]` (validação final no domínio). O pedido de planejamento não precisou mudar. **Achado e corrigido:** alarme falso de main/master — a linha "**Não fazer:** nada de push em main/master" virava alerta, porque a negação só valia até 25 caracteres antes (no Mutirão, o alerta também impede a execução automática). Agora vale em até 80 caracteres e com mais palavras (nada de, jamais, evite, bloqueado, don't). **Conferência nova, em código:** plano sem nenhuma tarefa `[DEPLOY]` e com título de publicação/deploy (deploy, publicar/publicação, produção, go-live, GitHub Pages, Vercel, Netlify, FTP, hospedagem) = aviso no painel (`deploySemMarca`), que também segura a execução automática do Mutirão.
+  - **(2) Mutirão** (`src/vibe/mutirao.js`, `autoEntrega`; `src/vibe/index.js`): `estrutura.md` ganhou as seções "Objetivo do projeto inteiro", "Critério de pronto do projeto inteiro" e "Publicação, deploy e passos do humano" (linhas achadas no objetivo/critério da divisão, nas partes e no README/ROADMAP/DEPLOY do projeto, até 12); o critério do `entrega.json` começa por "Projeto inteiro: ...". O pedido do plano final manda planejar até o critério do projeto inteiro e não deixar de fora a publicação (`[DEPLOY]`, depois da validação final) nem o que depende do humano (`[HUMANO]`).
+  - **(3) Esc + /clear real:** na mesma rodada, "Parar" 12 s depois de o orquestrador começar o turno → "Interrupted" na aba → `/clear` do ciclo (Ctrl+U antes) chegou inteiro: SessionStart "clear" recebido, "❯ /clear" no terminal, nenhum "clear" sem a barra. Depois, "Retomar" pediu o plano de novo e seguiu normal. Gancho de teste novo `vibeTest.clear('orq'|'dev')` (só com `TERMIX_VIBE_TEST=1`) chama o `clearTab` real.
+  - **(4) Trava** (`src/vibe/trava.js`, `lado`): `git checkout --ours|--theirs [--] <arq>` e `git restore [--source=<ref>|-s <ref>] [-W] --ours|--theirs [--] <arq>` passam só com `MERGE_HEAD`, HEAD na branch permitida (não main/master) e cada arquivo ainda em conflito (`git diff --diff-filter=U`; caminhos comparados pelo nome longo, por causa dos nomes curtos do Windows). `.`, curinga, `-f`, `-p`, `--staged` e arquivo sem conflito continuam bloqueados. O pedido do Mutirão para o conflito agora cita essa opção.
+  - **(6)** `docs/VALIDACAO_MVP_VIBE.md`: nota do que foi fechado; saíram do roteiro o item do `/clear` depois do Esc, a observação "/clear virando clear", a marca nunca vista e a recusa do `--ours/--theirs`; entraram a observação do indicador da aba depois de Parar e o aviso de deploy sem marca. `docs/VIBE_MUTIRAO.md` atualizado (trava, plano final, nova seção da DEV2-009, roteiro).
+- **Decisões:**
+  - **Núcleo: nenhuma linha** (`main.js`, `preload.js`, `index.html`, `app.js`, `package.json` iguais).
+  - Pedido de planejamento sem mudança: as marcas vieram na 1ª rodada real; a conferência em código fica como rede de segurança.
+  - O aviso de deploy sem marca só aparece quando o plano não tem nenhuma `[DEPLOY]` (com uma marcada, "README com instruções de publicação" não gera alarme). É aviso, não pausa: o Termix só pausa antes de tarefa marcada.
+  - `--ours/--theirs` exige arquivo ainda em conflito (não basta haver merge), para não virar um "descartar mudanças" genérico durante o merge.
+  - Esc encaixado no 1º turno do planejamento (não no "fechar"), para gastar menos: o turno interrompido só tinha lido o pedido.
+- **Arquivos tocados:** `src/vibe/trava.js`, `src/vibe/index.js`, `src/vibe/mutirao.js`, `src/renderer/vibe/vibe.js`, `docs/VIBE_MUTIRAO.md`, `docs/VALIDACAO_MVP_VIBE.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`.
+- **Como validar:** `npm run check`. Sem tokens: suíte da trava (79 casos, com os 17 do conflito: permitido com merge em andamento na branch permitida em arquivo em conflito; bloqueado sem merge, fora da branch, com `.`, curinga, `-f`, `--staged`, arquivo sem conflito e sem arquivo); teste do módulo da DEV2-009 (plano real sem alarme falso, ordem de commit na main ainda alerta, aviso de deploy sem marca, entrega sintética e pedido do plano final do Mutirão). No app: reabrir a instância da rodada (sem credenciais), Parar + Retomar → "Plano pronto, 6 tarefas" sem o alerta.
+- **Validação feita:** `npm run check` passou.
+  - **Rodada real:** 8 de 9 conferências (Parar no meio do turno → parado; "Interrupted" na aba; `/clear` inteiro com SessionStart "clear"; nada de "clear" sem barra; plano pronto; [DEPLOY]; [HUMANO]; master intacta e nada executado). A que falhou é do teste: a aba continuava "trabalhando" 4 s depois do Esc — o Claude Code não dispara o hook Stop numa interrupção; o ciclo não depende disso (registrado como limitação). Gasto (config de teste): 19 respostas, 889 mil tokens de cache lido, 58 mil gravados, 26 mil de saída ≈ **US$ 1,5** equivalente (US$ 5/25 por milhão de entrada/saída, 0,50 leitura e 6,25 gravação de cache); janela de 5 h de 8 % para 10 %, 7 d em 54 %. Sem erros no console.
+  - **Sem tokens:** trava 79/79 (62 antigos + 17 novos); DEV2-009 16/16; regressões DEV2-004 23/23, DEV2-005 31/31, DEV2-006 41/41, DEV2-007 23/23 (módulo) e 23/23 (app com agente falso, sem erros no console); reabertura da rodada real: plano pronto sem o alarme falso.
+  - Teste isolado: `--user-data-dir` e `CLAUDE_CONFIG_DIR` temporários, `.claude.json` de teste, projeto local sem remoto, um Electron por vez; credenciais copiadas e **apagadas no fim** (a reabertura rodou sem elas).
+  - Capturas (fora do repositório) em `C:\Users\CRUUUUUUUUUUUUUUUUUZ\AppData\Local\Temp\claude\c5001e4e31f92b1a\3930b0a9-11a1-4f74-83ac-22907209c8ab\scratchpad\shots`: `h1-parado-no-meio-do-planejamento.png`, `h2-plano-pronto-com-marcas.png` (com o alarme falso, antes da correção), `h3-plano-pronto-sem-alarme-falso.png`, e `r7-*.png` da regressão com o agente falso. Scripts: `run9.js` (rodada real), `run9b.js` (reabertura), `trava9.js`, `mod9.js`.
+- **Pendências:**
+  - Depois de um Esc, o indicador da aba fica "trabalhando" até o próximo pedido (o Claude Code não avisa o fim do turno numa interrupção). Só visual; vale tratar se incomodar.
+  - O plano final do Mutirão com a seção de publicação não passou por uma rodada real (validado pelo pedido gerado, sem tokens, como combinado).
+  - `--ours/--theirs` não foi usado por um Dev real (só a suíte da trava).
+  - Herdadas, só o Ygor pode ver: pasta confiável no `~/.claude.json` real; Vibe de um sócio até o fim; custos e notificações no uso real.
+- **Próximo passo:** Validação do Ygor no app real.
+
+---
+
 ## DEV2-008 — Guia de validação do MVP do Vibe e do Mutirão
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)

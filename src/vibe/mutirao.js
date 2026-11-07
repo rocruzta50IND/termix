@@ -368,11 +368,22 @@ function create(h) {
     const conflitos = a.juncoes.filter((j) => j.status === 'conflito' || j.status === 'erro');
     const titulos = (d.participantes || []).map((p) => (partes.find((x) => x && x.branch === p.branch) || {}).titulo || p.branch);
     const objetivo = String(div.objetivo || `Concluir o projeto ${d.projeto.nome || ''} ligando as partes do Mutirão: ${titulos.join('; ')}`).replace(/\s+/g, ' ').trim().slice(0, 300);
-    const crit = [div.criterio ? String(div.criterio) : '', ...partes.filter(Boolean).map((pt) => `- Parte ${pt.branch}${pt.titulo ? ` (${pt.titulo})` : ''}: ${String(pt.criterio || 'ver mutirao/partes/' + pt.branch + '.md').replace(/\s+/g, ' ').slice(0, 600)}`),
+    // DEV2-009: objetivo e critério do projeto inteiro explícitos, e os passos de publicação/deploy e do humano achados na
+    // divisão e nos documentos do projeto (o planejador lia só as partes e deixava a publicação de fora)
+    const critProj = String(div.criterio || '').trim();
+    const pub = [];
+    const PUB_RX = /\b(deploy\w*|publica(r|[çc][ãa]o)|publique|produ[çc][ãa]o|go[- ]live|github pages|vercel|netlify|ftp|hospedagem|hospedar|dom[íi]nio|dns|senha|credencia\w*)\b/i;
+    const achar = (fonte, texto) => { for (const l of String(texto || '').replace(/\r/g, '').split('\n')) { const s = l.replace(/\s+/g, ' ').trim(); if (s && PUB_RX.test(s) && pub.length < 12 && !pub.some((x) => x.endsWith(s.slice(0, 200)))) pub.push(`- ${fonte}: ${s.slice(0, 200)}`); } };
+    achar('objetivo do projeto', div.objetivo); achar('critério do projeto', critProj);
+    for (const pt of partes) if (pt) { achar(`parte ${pt.branch}`, pt.objetivo); achar(`parte ${pt.branch}`, pt.criterio); }
+    for (const f of ['README.md', 'ROADMAP.md', path.join('docs', 'ROADMAP.md'), path.join('docs', 'DEPLOY.md'), 'DEPLOY.md']) { const t = readText(path.join(pasta, f)); if (t) achar(f.replace(/\\/g, '/'), t.slice(0, 20000)); }
+    const crit = [critProj ? `Projeto inteiro: ${critProj}` : '', ...partes.filter(Boolean).map((pt) => `- Parte ${pt.branch}${pt.titulo ? ` (${pt.titulo})` : ''}: ${String(pt.criterio || 'ver mutirao/partes/' + pt.branch + '.md').replace(/\s+/g, ' ').slice(0, 600)}`),
       `- Todas as partes integradas na branch ${br}${conflitos.length ? ` (inclusive ${conflitos.map((c) => c.branch).join(', ')}, que tiveram conflito)` : ''} e ligadas entre si.`, '- A validação final do projeto passa.'].filter(Boolean).join('\n').slice(0, 4000);
     const md = [`# Mutirão: entrega sintética para a implementação automática (gerada pelo Termix)`, '',
       `Projeto: ${d.projeto.nome || ''} (${pasta}). Branch do dono: ${br}. Todas as partes foram entregues; o Termix já juntou as entregas na ${br} com git merge --no-ff (uma por participante).`, '',
-      '## Objetivo', '', objetivo, '',
+      '## Objetivo do projeto inteiro', '', objetivo, '',
+      '## Critério de pronto do projeto inteiro', '', critProj || 'A divisão não trouxe um critério do projeto inteiro: use o objetivo acima, o README e o roadmap do projeto, se houver.', '',
+      '## Publicação, deploy e passos do humano', '', pub.length ? `Achados pelo Termix (viram tarefas do plano: publicação/deploy com [DEPLOY]; o que depende de acesso, dado ou decisão do humano com [HUMANO]):\n${pub.join('\n')}` : 'Nenhum passo de publicação ou deploy achado na divisão, no README nem no roadmap. Se o objetivo pedir, inclua-o mesmo assim, marcado [DEPLOY].', '',
       '## Divisão', '', `- ${pasta}${path.sep}mutirao${path.sep}divisao.json (na branch ${br}).`, `- Partes: mutirao/partes/<branch>.md de cada participante (as 9 seções).`, '',
       '## Partes, entregas e junções', ''];
     for (const p of d.participantes || []) {

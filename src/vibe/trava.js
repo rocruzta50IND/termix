@@ -89,6 +89,35 @@ function git(dir, args) {
 const isRepo = (dir) => git(dir, ['rev-parse', '--git-dir']) !== null;
 const headOf = (dir) => git(dir, ['symbolic-ref', '--short', '-q', 'HEAD']);
 
+// DEV2-009: resolver conflito escolhendo um lado (git checkout --ours|--theirs -- <arq>, git restore [--source=..] --ours|--theirs <arq>).
+// Só com merge em andamento (MERGE_HEAD), o HEAD na branch permitida e cada arquivo ainda em conflito; fora disso, bloqueado.
+function lado(sub, rest, dir, allowed, prot) {
+  const NAO = `git ${sub} --ours/--theirs só é permitido pelo Termix para resolver um conflito de merge em andamento, na branch permitida, citando os arquivos em conflito (ex.: git checkout --theirs -- src/a.js). Fora disso, edite os arquivos.`;
+  if (!isRepo(dir) || git(dir, ['rev-parse', '-q', '--verify', 'MERGE_HEAD']) === null) return NAO;
+  const head = headOf(dir);
+  if (!head || !allowed || head !== allowed || prot.includes(head)) return NAO;
+  const files = [];
+  let dd = false;
+  for (let k = 0; k < rest.length; k++) {
+    const a = rest[k];
+    if (!dd && a === '--') { dd = true; continue; }
+    if (!dd && ['--ours', '--theirs', '--worktree', '-W'].includes(a)) continue;
+    if (!dd && sub === 'restore' && /^--source=./.test(a)) continue;
+    if (!dd && sub === 'restore' && ['-s', '--source'].includes(a) && rest[k + 1]) { k++; continue; }
+    if (!dd && a.startsWith('-')) return NAO; // -f, -p, --staged, --merge, --conflict...: fora do caso permitido
+    files.push(a);
+  }
+  if (!files.length) return NAO;
+  const real = (p) => { try { return fs.realpathSync.native(p); } catch { return p; } }; // nomes curtos do Windows (ex.: CRUUUU~1)
+  const top = real(git(dir, ['rev-parse', '--show-toplevel']) || dir);
+  const un = (git(dir, ['diff', '--name-only', '--diff-filter=U']) || '').split('\n').filter(Boolean).map((f) => lc(path.resolve(top, f)));
+  for (const f of files) {
+    if (/[*?[\]]/.test(f) || unresolved(f)) return NAO;
+    if (!un.includes(lc(real(resolveP(f, dir))))) return `${NAO} "${f}" não está em conflito.`;
+  }
+  return null;
+}
+
 function checkGit(args, dir, cfg) {
   // opções globais do git antes do subcomando
   let i = 0;
@@ -147,6 +176,11 @@ function checkGit(args, dir, cfg) {
   }
   if (sub === 'reset' && has('--hard', '--merge')) return why('git reset --hard é bloqueado pelo Termix (descarta trabalho). Faça um commit novo que desfaça a mudança (git revert) ou peça ao humano.');
   if (sub === 'clean' && !has('-n', '--dry-run')) return why('git clean é bloqueado pelo Termix (apaga arquivos não versionados). Peça ao humano se for mesmo necessário.');
+  if ((sub === 'checkout' || sub === 'restore') && has('--ours', '--theirs')) {
+    const r = lado(sub, rest, dir, allowed, prot);
+    if (r === null) return null;
+    return why(r);
+  }
   if (sub === 'checkout') {
     if (has('--', '-f', '--force', '.', '-p', '--patch') || rest.some((a) => /^-[a-zA-Z]*f[a-zA-Z]*$/.test(a) && a !== '-b')) return why('git checkout em arquivos (ou forçado) é bloqueado pelo Termix (descarta mudanças). Para trocar de branch use git switch <branch>.');
     if (has('-B') && rest.some((a) => prot.includes(a))) return why('git checkout -B na main/master é bloqueado pelo Termix.');

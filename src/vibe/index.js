@@ -154,7 +154,10 @@ function branchOf(pasta) {
   return { nome: `vibe/${s}`, regra: `só numa branch própria "vibe/${s}", criada a partir da atual` };
 }
 // Linhas do plano que mandam fazer commit/push na main/master (sem negação na mesma linha). Conferência do Termix, sem tokens.
-const mainCommitLines = (text) => String(text).split('\n').filter((l) => /\b(commit|push)\w*\b[^\n]{0,30}?\b(em|na|no|para|on|to|into)\s+[`"'*]*(origin\/)?(main|master)\b/i.test(l) && !/\b(nunca|n[aã]o|sem|never|proibid\w*)\b[^\n]{0,25}\b(main|master)\b/i.test(l));
+const mainCommitLines = (text) => String(text).split('\n').filter((l) => /\b(commit|push)\w*\b[^\n]{0,30}?\b(em|na|no|para|on|to|into)\s+[`"'*]*(origin\/)?(main|master)\b/i.test(l) && !/\b(nunca|n[aã]o|nada de|sem|jamais|evit\w*|never|don'?t|do not|proibid\w*|bloquead\w*)\b[^\n]{0,80}\b(main|master)\b/i.test(l));
+// DEV2-009: plano sem nenhuma tarefa [DEPLOY], mas com título de publicação/deploy = a marca pode ter faltado (aviso na tela).
+const DEPLOY_RX = /\b(deploy\w*|publica(r|[çc][ãa]o)|publique|produ[çc][ãa]o|go[- ]live|github pages|vercel|netlify|ftp|hospedagem|hospedar)\b/i;
+const deploySemMarca = (text) => { const ts = tarefasDo(text); return ts.some((t) => t.deploy) ? [] : ts.filter((t) => DEPLOY_RX.test(t.titulo)).map((t) => `${t.id} ${t.titulo}`.slice(0, 120)); };
 
 function create(deps = {}) {
   const { ipcMain, dialog, app, getWin, logError = () => {} } = deps;
@@ -402,9 +405,9 @@ function create(deps = {}) {
       const m = e.mutirao;
       if (m) { // implementação automática do Mutirão (DEV2-006): as entregas já estão juntadas na branch do dono
         const cf = Array.isArray(m.conflitos) ? m.conflitos : [];
-        const conflitos = cf.length ? ` Primeiro, os conflitos da junção: uma tarefa para cada branch que não entrou, a começar pela T1, com o título "## T1 — Resolver o conflito da <branch>" (T2 para a segunda, e assim por diante) (${cf.map((c) => `${c.branch}: ${(c.arquivos || []).join(', ') || 'ver estrutura.md'}`).join('; ')}); nela o Dev roda "git merge --no-ff origin/<branch>" na ${m.branch}, resolve editando os arquivos em conflito (git checkout --ours/--theirs é bloqueado pelo Termix), valida e faz o commit do merge.` : '';
+        const conflitos = cf.length ? ` Primeiro, os conflitos da junção: uma tarefa para cada branch que não entrou, a começar pela T1, com o título "## T1 — Resolver o conflito da <branch>" (T2 para a segunda, e assim por diante) (${cf.map((c) => `${c.branch}: ${(c.arquivos || []).join(', ') || 'ver estrutura.md'}`).join('; ')}); nela o Dev roda "git merge --no-ff origin/<branch>" na ${m.branch}, resolve os arquivos em conflito (editando, ou com git checkout --ours/--theirs -- <arquivo>, que o Termix só permite com o merge em andamento), valida e faz o commit do merge.` : '';
         const lim = m.maxTarefas ? ` Limite deste teste: no máximo ${m.maxTarefas} tarefas no total.` : '';
-        return pedido(id, 'plano', `Você é o ORQUESTRADOR do Mutirão do Termix (implementação automática) neste projeto. Todas as partes dos sócios foram entregues e o Termix já juntou as entregas na branch "${m.branch}" (a atual), uma por participante. Nesta etapa só PLANEJE: não altere o código do projeto, não faça commit nem merge. Leia ${path.join(d, 'estrutura.md')} (divisão, partes, entregas, junções e conflitos) e ${path.join(d, 'entrega.json')} (objetivo e critério de pronto) e confira a versão atual da branch ${m.branch} (git log --oneline -20, a estrutura de pastas e só os arquivos necessários; sem ler diffs inteiros). Monte as tarefas até o fim do projeto.${conflitos} Depois: ligar as partes entre si, cobrir as lacunas contra o critério de pronto e, por último, uma tarefa de validação final do projeto inteiro, marcada [SEM COMMIT].${lim} ${formato}`);
+        return pedido(id, 'plano', `Você é o ORQUESTRADOR do Mutirão do Termix (implementação automática) neste projeto. Todas as partes dos sócios foram entregues e o Termix já juntou as entregas na branch "${m.branch}" (a atual), uma por participante. Nesta etapa só PLANEJE: não altere o código do projeto, não faça commit nem merge. Leia ${path.join(d, 'estrutura.md')} (objetivo e critério de pronto do projeto inteiro, publicação/deploy e passos do humano, divisão, partes, entregas, junções e conflitos) e ${path.join(d, 'entrega.json')} e confira a versão atual da branch ${m.branch} (git log --oneline -20, a estrutura de pastas e só os arquivos necessários; sem ler diffs inteiros). Monte as tarefas até o fim do projeto inteiro (o critério de pronto do projeto, não só o das partes).${conflitos} Depois: ligar as partes entre si, cobrir as lacunas contra o critério de pronto do projeto inteiro e uma tarefa de validação final do projeto inteiro, marcada [SEM COMMIT]. Não deixe de fora a publicação/deploy nem o que depende do humano (seção "Publicação, deploy e passos do humano" de estrutura.md e o objetivo): cada passo vira tarefa, marcada [DEPLOY] (publicação, depois da validação final) e/ou [HUMANO] (acesso, dado ou decisão do humano).${lim} ${formato}`);
       }
       return pedido(id, 'plano', `Você é o ORQUESTRADOR do Vibe Coding do Termix neste projeto. Nesta etapa só PLANEJE: não altere o código do projeto, não instale nada, não faça commit. A entrega do humano está em ${d}: entrega.json (objetivo, critério de pronto, o que não fazer, acessos), estrutura.md e ${e.arquivos && e.arquivos.fluxo || 'o fluxo desenhado'}. Leia só o necessário. ${formato}`);
     },
@@ -421,7 +424,7 @@ function create(deps = {}) {
         // Sem IDs, o número fica desconhecido (null): melhor não mostrar do que contar seções como tarefas.
         const ids = new Set([...text.matchAll(/^[ \t]*(?:#{1,4}[ \t]*|\d+[.)][ \t]*|[-*][ \t]+)?(?:\*\*|__)?T(\d+)\b/gm)].map((m) => m[1]));
         const n = ids.size || null;
-        out.plano = { ok: text.trim().length > 0, text: text.slice(0, 200000), tarefas: n, mtime: st.mtimeMs, mainCommit: mainCommitLines(text).slice(0, 3) };
+        out.plano = { ok: text.trim().length > 0, text: text.slice(0, 200000), tarefas: n, mtime: st.mtimeMs, mainCommit: mainCommitLines(text).slice(0, 3), deploySemMarca: deploySemMarca(text).slice(0, 3) };
       }
       const qf = path.join(d, 'perguntas.json');
       if (!fs.existsSync(qf)) out.perguntas.ausente = true; // a interface decide: com um plano novo, vale como "sem perguntas"
@@ -563,4 +566,4 @@ function create(deps = {}) {
   return api;
 }
 
-module.exports = { create, checkStructure, tarefasDo, SECTIONS };
+module.exports = { create, checkStructure, tarefasDo, SECTIONS, mainCommitLines, deploySemMarca };
