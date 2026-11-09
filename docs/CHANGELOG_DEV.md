@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**TASK-120 — Versão 0.3.9** (DEV1)
+
+- Versão 0.3.9 com a TASK-119 (shell novo, modais novos, Workflow base). TASK-119 aprovada pelo usuário.
+
 **TASK-119 — Modal "Novo projeto" com modo de trabalho e permissão** (DEV1)
 
 - Modal maior com cartões: Chat, Terminal e Workflow (em breve) e a permissão da primeira aba; testado por CDP (primeira aba criada conforme a escolha). Aguarda validação.

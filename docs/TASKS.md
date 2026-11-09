@@ -8,6 +8,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-120 — Publicar a versão 0.3.9 (novo shell, Workflow base e modais novos)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (2026-11-09; pedido explícito do usuário: "pode mandar a release nova")
+- **Entra nesta versão:** TASK-119 (modais novos, barra lateral com + Chat/+ Workflow e seletor, tela de novo projeto ao lado, Workflow base com Começar Brainstorm e dois chats fixos em Dangerously, sem a função ainda).
+- **Passos:** versão 0.3.9; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.9`.
+- **Próximo passo:** o usuário atualiza o app (0.3.8 → 0.3.9) e confere.
+
 ### TASK-116 — Adicionar o DEV2 ao fluxo (criar a branch dev2 e registrar devs no fluxo.json)
 
 - **Responsável:** DEV1
@@ -191,18 +199,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Passos:** versão 0.2.4; promoção dev1 → main; `npm run dist`; conferir o `latest.yml`; `gh release create v0.2.4`; o usuário atualiza (0.2.3 → 0.2.4), vê a janelinha e me passa o resumo do aviso verde.
 
 ## Aguardando validação DEV1
-
-### TASK-119 — Modal "Novo projeto" maior, com modo de trabalho e permissão
-
-- **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (2026-11-09)
-- **Pedido:** modais mais bonitos; o de criação ganha escolha entre Chat e Workflow (função futura) e a permissão já na criação.
-- **Feito:** modal mais largo (660 px) com cartões de modo (Chat; Workflow "Em breve", desabilitado) e cartões visuais de permissão (Perguntar, com escudo; Automático, com raio e destaque laranja). A primeira aba do projeto novo é sempre um Chat com a permissão escolhida (terminal continua pelo "+" da barra). Ajuste pedido pelo usuário: só Chat/Workflow no modo. Também refeito o modal do botão direito no projeto: caminho, etiqueta de origem e ações em linhas com ícone e descrição (Abrir pasta, Renomear, Arquivar; Remover do app e Excluir pasta em vermelho).
-- **Workflow (layout preparado, sem a função):** projeto com `kind: "workflow"` e categoria própria "Workflow" na barra lateral. Primeira tela limpa, só com o botão **Começar Brainstorm** (`wfStarted`); depois abre sempre dois chats fixos lado a lado (`wf: 1|2`, Dangerously, criados por `wfEnsure` sem subir processo até a primeira mensagem), com a barra de guias (Terminal 1 / Terminal 2, sem fechar nem "+") e split sempre fixo; clicar numa guia só leva o foco ao chat dela. O rodapé tem só o ícone Workflow e a Web. Escolhido na criação ou na importação de pasta. Os outros projetos não mudam.
-- **Shell (pedido do usuário):** no topo da barra lateral ficam fixos os botões **+ Chat** e **+ Workflow**, que abrem ao lado a tela de configuração (nome, pasta nova ou existente, permissão) no lugar do modal; um seletor **Chat | Workflow** (com contagem) mostra só os projetos do tipo escolhido (segue o projeto aberto ao trocar de projeto; na barra recolhida, três ícones). Saíram o "Novo projeto" do rodapé da barra e os modais de criar/importar.
-- **Arquivos:** `src/renderer/app.js` (`goNew`, `newPageHTML`, `npSubmit`, `renderSide`, `wfEnsure`, `addProject`, ícone `workflow`), `chat.js`, `web.js`, `styles.css`, `src/renderer/styles.css`.
-- **Como validar:** + Novo projeto → escolher Chat/Terminal e a permissão → Criar; a primeira aba segue a escolha. Workflow aparece desabilitado.
-- **Próximo passo:** o usuário aprova; depois, melhorar os outros modais (pedido: "melhorar os modais do app") e implementar o Workflow.
 
 ### TASK-105 — Chat: caixa de permissão (Permitir/Negar) não aparece; tudo que pede aprovação é negado
 
@@ -656,6 +652,18 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** confirmar uma vez (com a contagem) em "Fechar outras guias/à direita" e "Restaurar padrões"; toast também para erros que não são de aba (hoje só o selo do sino); alternar "Sim/Não" das Configurações sem refazer a página (perde o foco); roxo remanescente (cursor e seleção do terminal, cor padrão de evento, palavras-chave do chat) contra a regra "sem roxo" do DESIGN; vocabulário único ("aba" × "guia" × "sessão"; traduzir "Rail" e "Dangerously"); "Nenhum(a) skill encontrado(a)"; esconder as colunas Tokens/Custo "indisponível" da página Consumo; `backdrop-filter` do modal sobre terminais.
 
 ## Concluídas
+
+### TASK-119 — Modal "Novo projeto" maior, com modo de trabalho e permissão
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (aprovada pelo usuário em 2026-11-09 pelo uso do app de teste; publicada na 0.3.9, TASK-120)
+- **Pedido:** modais mais bonitos; o de criação ganha escolha entre Chat e Workflow (função futura) e a permissão já na criação.
+- **Feito:** modal mais largo (660 px) com cartões de modo (Chat; Workflow "Em breve", desabilitado) e cartões visuais de permissão (Perguntar, com escudo; Automático, com raio e destaque laranja). A primeira aba do projeto novo é sempre um Chat com a permissão escolhida (terminal continua pelo "+" da barra). Ajuste pedido pelo usuário: só Chat/Workflow no modo. Também refeito o modal do botão direito no projeto: caminho, etiqueta de origem e ações em linhas com ícone e descrição (Abrir pasta, Renomear, Arquivar; Remover do app e Excluir pasta em vermelho).
+- **Workflow (layout preparado, sem a função):** projeto com `kind: "workflow"` e categoria própria "Workflow" na barra lateral. Primeira tela limpa, só com o botão **Começar Brainstorm** (`wfStarted`); depois abre sempre dois chats fixos lado a lado (`wf: 1|2`, Dangerously, criados por `wfEnsure` sem subir processo até a primeira mensagem), com a barra de guias (Terminal 1 / Terminal 2, sem fechar nem "+") e split sempre fixo; clicar numa guia só leva o foco ao chat dela. O rodapé tem só o ícone Workflow e a Web. Escolhido na criação ou na importação de pasta. Os outros projetos não mudam.
+- **Shell (pedido do usuário):** no topo da barra lateral ficam fixos os botões **+ Chat** e **+ Workflow**, que abrem ao lado a tela de configuração (nome, pasta nova ou existente, permissão) no lugar do modal; um seletor **Chat | Workflow** (com contagem) mostra só os projetos do tipo escolhido (segue o projeto aberto ao trocar de projeto; na barra recolhida, três ícones). Saíram o "Novo projeto" do rodapé da barra e os modais de criar/importar.
+- **Arquivos:** `src/renderer/app.js` (`goNew`, `newPageHTML`, `npSubmit`, `renderSide`, `wfEnsure`, `addProject`, ícone `workflow`), `chat.js`, `web.js`, `styles.css`, `src/renderer/styles.css`.
+- **Como validar:** + Novo projeto → escolher Chat/Terminal e a permissão → Criar; a primeira aba segue a escolha. Workflow aparece desabilitado.
+- **Fechamento:** aprovada ("podemos manter assim mesmo"). Em aberto, já registrado: os anéis de métricas por cima do Terminal 2 e a função do Workflow (papéis dos dois terminais e comunicação).
 
 ### TASK-118 — Publicar a versão 0.3.8 (Clear instantâneo com resumo nativo)
 
