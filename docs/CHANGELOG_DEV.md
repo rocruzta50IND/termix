@@ -15,9 +15,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Medido (3 repetições, `claude -p`, Sonnet): ~US$ 0,008 contra ~US$ 0,072 da retomada antiga, 1 chamada ao modelo contra 6, sem ler o `TASKS.md`; as respostas sabiam os arquivos alterados na conversa. Testado em chat e terminal reais (PTY e CDP numa cópia isolada do app), com modelo personalizado e restaurar. Validado pelo usuário no uso real (3 tarefas seguidas).
 - Observação: o Electron de desenvolvimento está bloqueado pelo Controle de Aplicativo do Windows nesta máquina; os testes de interface usaram uma cópia do Termix instalado com o código novo.
 
-**TASK-118 — Release 0.3.8 bloqueada no instalador** (DEV1)
+**TASK-118 — Publicar a versão 0.3.8** (DEV1)
 
-- Versão 0.3.8 e promoção feitas; `npm run dist` falhou no NSIS com `spawn UNKNOWN` (política de Controle de Aplicativo do Windows nesta máquina, causa provável; mesma que bloqueou o Electron de desenvolvimento). Nada foi publicado e o feed segue em 0.3.7. Detalhes e próximo passo na TASK-118.
+- Release v0.3.8 publicado (instalador 125.196.500 bytes, sha512 conferido, `latest.yml` e `.blockmap`); promoção dev1 → main `21adec6`. Leva o Clear instantâneo com resumo nativo (TASK-117).
+- No caminho, `npm run dist` falhou no NSIS com `spawn UNKNOWN`: o **Smart App Control** (que estava em Avaliação em 05/11) passou a ligado e barrava o instalador recém-gerado e o Electron de `node_modules` (log Code Integrity, ids 3033/3077). O usuário desligou o Smart App Control pelo Windows (irreversível sem reinstalar); o build passou. Assinatura de código e build por GitHub Actions ficam como ideias.
 
 **Promoção dev1 → main (versão 0.3.8)** (DEV1)
 
