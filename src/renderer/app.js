@@ -1540,6 +1540,7 @@ function renderPage() {
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML, 'Novo chat': () => newPageHTML('chat'), 'Novo workflow': () => newPageHTML('workflow') }[UI.cur.page]();
   else if (m === 'page') html = resPageHTML(UI.cur.page);
   $('#page').innerHTML = html;
+  $('#page').classList.toggle('wfpage', m === 'workflow'); // tela inicial do Workflow ocupa o palco inteiro, sem moldura
   layout(); // o recorte do vidro depende do tipo de tela
   if (UI.cur.p === '_' && UI.cur.page === 'Configurações') api.appInfo(S.settings.projectsRoot).then((i) => { const c = $('#rootChip'); if (c) { c.textContent = i.root; c.title = i.root; } const n = $('#rootNote'); if (n && i.rootAuto) n.textContent = 'Automática: o disco com mais espaço livre, para não encher o C:. Projetos importados ficam onde já estão.'; });
 }
