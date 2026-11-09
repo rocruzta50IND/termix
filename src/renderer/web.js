@@ -67,7 +67,7 @@ function webTabsHTML(p) {
   return w.tabs.map((t) => {
     const loading = WEB[t.id] && WEB[t.id].loading;
     const label = t.title || (t.url ? t.url.replace(/^https?:\/\//i, '') : 'Nova aba');
-    return `<div class="tab ${t.id === (curWebTab(p) || {}).id ? 'active' : ''}" style="--c:#5B9DFF" data-wtab="${t.id}" title="${esc(t.url || 'Nova aba')}">
+    return `<div class="tab ${t.id === (curWebTab(p) || {}).id ? 'active' : ''}" style="--c:#3B82F6" data-wtab="${t.id}" title="${esc(t.url || 'Nova aba')}">
       ${loading ? '<i class="dot s-restart"></i>' : ''}<span class="nm">${esc(label)}</span><button class="x" data-wx="${t.id}" title="Fechar aba">${ic('x', 13)}</button></div>`;
   }).join('') + '<button class="plus" data-wnew title="Nova aba web">+</button>';
 }

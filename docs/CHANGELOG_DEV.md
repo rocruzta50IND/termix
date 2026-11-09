@@ -8,6 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**TASK-121 — Identidade visual do Rocruzta Hub no Termix** (DEV1)
+
+- Só aparência: tokens, fonte Inter (embutida), fundo azul-marinho, painéis de vidro flutuantes (barra lateral e notificações separadas, palco como painel de conteúdo), cabeçalho e rodapé soltos (dock), abas com sublinhado na cor da aba, itens da barra lateral, botões e controles com os raios do Hub, botão primário invertido. Nada do Hub entrou como função. Referência: `rocruzta-hub` commit `3a9638a`. Só tema escuro (claro: TASK-122).
+- Mexeu em `app.js` só na geometria (`FR`, `framePath`, `layout`), na cor padrão das abas e no tema do xterm. Testado por CDP em instância isolada (terminal, chat real, Web, telas, recolhida, notificações, modal); `npm run check` ok. Aguarda validação do usuário.
+
 **TASK-120 — Versão 0.3.9** (DEV1)
 
 - Versão 0.3.9 com a TASK-119 (shell novo, modais novos, Workflow base). TASK-119 aprovada pelo usuário.

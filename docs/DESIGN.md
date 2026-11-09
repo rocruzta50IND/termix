@@ -2,6 +2,17 @@
 
 Decisões de aparência tomadas com o usuário. Atualize este arquivo quando o visual mudar. Valores de geometria estão em `src/renderer/app.js` (objeto `FR`) e as cores em `src/renderer/styles.css` (`:root`).
 
+## Identidade do Rocruzta Hub (TASK-121) — vale sobre o resto deste arquivo
+O Termix adota **só a identidade visual** do Rocruzta Hub (projeto separado, que no futuro abre e controla o Termix de fora). Objetivo: os dois não divergirem quando o Hub ficar pronto. Referência: repositório `rocruzta50IND/rocruzta-hub`, `base/index.html` e `docs/DESIGN.md`, commit `3a9638a` (2026-11-09). Nada do Hub entra como funcionalidade (seletor de apps, selo "Em breve", notícias, equipe).
+- **Tokens (`:root` em `styles.css`):** azul `#3B82F6` (`--accent`/`--brand`), apoio `#60BEFA`, fundo `#0A0C10` com manchas só em azul-marinho (`.bg`), texto `#ECECEA` / `#A3A3A0` / `#7B7B78`, linhas brancas a 8,5 % / 16 %, verde `#4CC38A`, âmbar `#E5A63B`, vermelho `#EC5D5D`. Raios: 6 (`--r-s`), 8 (`--r-m`), 12 (`--r-l`), 18 (`--r`, painéis e modais). Fonte **Inter** 400/500/600, embutida em `src/renderer/fonts/` (licença OFL ao lado); mono: `ui-monospace`/Cascadia.
+- **Layout:** cabeçalho de 44 px **solto** sobre o fundo (logo, nome, versão, limites 5 h/7 d, sino, controles da janela); **barra lateral** e **notificações** são painéis de vidro separados (um recorte `clip-path` só, em `#glass`); o **palco** (`#col`: terminal, chat, Web e telas) é o painel de conteúdo, com vidro próprio (`--sheet`); vão de 10 px entre painéis e até a borda; rodapé de funções como a *dock* do Hub (cápsula de 10 px de raio, item ativo neutro com anel fino). A geometria está em `app.js` (`FR`: `GAP`, `RP`, `HEAD`, `BOT`; `layout()`, `framePath()`).
+- **Barra lateral:** itens como o Hub (`.sub`, `.p-row`, `.av`): linha de 6 px de raio, ativo com fundo leve e barra azul de 2 px à esquerda, avatar do projeto quadrado de 22 px **tingido** na cor do projeto (sem degradê), subtelas com linha de árvore.
+- **Abas (terminal, chat e Web):** altura 40 px, linha embaixo do conjunto, aba ativa com **sublinhado de 2 px na cor da aba** (a cor continua sendo escolha do usuário); acabou o recorte encaixado com "orelhas" (as máscaras de `fuseBar` seguem no código, mas o fundo da barra é desligado por CSS).
+- **Controles:** botões de 8 px de raio e 34/30 px de altura; **botão primário invertido** (fundo claro, texto escuro, como o `.btn.pri` do Hub); alternadores `.seg` com raio 8; chips e tags em pílula; botão de atualizar em azul chapado (sem degradê nem brilho).
+- **Sem `backdrop-filter`** nos painéis (regra de desempenho do Termix): o vidro é um preenchimento translúcido sobre o fundo suave, que fica igual ao do Hub.
+- **Tema:** só escuro por enquanto. O tema claro do Hub não foi trazido (seria funcionalidade nova); os tokens ficam em `:root` para uma tarefa futura.
+- **Histórico:** "Moldura em U", "Abas encaixadas", cápsula/rodapé e valores de raio/cor descritos adiante são do visual **anterior**; onde houver conflito, vale esta seção.
+
 ## Estilo geral
 - **Glassmorphism escuro**: preto e cinza com **azul bem sutil**. **Sem roxo.** Vidro forte, "de vídeo", com degradê premium.
 - Fundo padrão: degradê quase preto com bolhas de cor estáticas (a animação foi retirada; TASK-007).

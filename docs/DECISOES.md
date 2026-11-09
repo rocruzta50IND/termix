@@ -159,6 +159,10 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Trocar entre os dois **reabre o app**, porque o tipo da janela só é definido na criação e os terminais fecham (melhoria: TASK-008).
 - Maximizado, o app ocupa a tela toda, sem margem nem cantos arredondados.
 
+## Identidade visual do Rocruzta Hub (TASK-121)
+- O Termix segue a **identidade visual** do Rocruzta Hub (cores, fonte Inter, raios, painéis de vidro flutuantes, abas e rodapé). **Só aparência**: o Hub é outro projeto, com repositório próprio; ele vai abrir e controlar o Termix de fora e **nada do Hub vira função do Termix**. Detalhes e origem da referência em `docs/DESIGN.md`.
+- Tema claro do Hub **fora de escopo** (seria um recurso novo); fica como tarefa futura no Backlog.
+
 ## Fluxo de trabalho do projeto
 - Metodologia DEV2 → DEV1 → MAIN (`WORKFLOW.md`). Esta máquina é **DEV1**. A `dev2` não foi criada (trabalho individual).
 - O `/clear` só é dado quando uma tarefa termina e o usuário aprova; o estado vive em `docs/TASKS.md` e `docs/CHANGELOG_DEV.md`. Comandos do projeto: `/retomar` e `/encerrar-tarefa`.

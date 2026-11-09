@@ -1,8 +1,8 @@
 'use strict';
 const api = window.termix;
 
-const DEFAULT_COLOR = '#5B9DFF'; // cor principal do sistema (azul): toda aba nova começa com ela
-const COLORS = ['#5B9DFF', '#7C8CFF', '#34D399', '#F472B6', '#FBBF24', '#22D3EE', '#FB923C', '#A78BFA', '#F87171', '#84CC16', '#38BDF8'];
+const DEFAULT_COLOR = '#3B82F6'; // cor principal do sistema (azul): toda aba nova começa com ela
+const COLORS = ['#3B82F6', '#7C8CFF', '#34D399', '#F472B6', '#FBBF24', '#22D3EE', '#FB923C', '#A78BFA', '#F87171', '#84CC16', '#38BDF8'];
 const GRADS = [['#60a5fa', '#22d3ee'], ['#94a3b8', '#64748b'], ['#38bdf8', '#6366f1'], ['#a5b4fc', '#60a5fa'], ['#67e8f9', '#34d399']];
 const GLOBALS = [['Consumo', 'gauge'], ['Integrações', 'link'], ['Configurações', 'gear']];
 // o desenho de cada ícone ocupa uma parte diferente do quadro (a engrenagem é grande, o link é pequeno): o tamanho de cada um é ajustado para os três terem o mesmo peso visual (~13 px de desenho)
@@ -166,7 +166,7 @@ const pending = () => UI.events.filter((e) => !e.seen && !e.done).length;
 
 /* ---------- terminais ---------- */
 function termTheme() {
-  return { background: 'rgba(0,0,0,0)', foreground: '#dcd9ee', cursor: '#8B7BFF', selectionBackground: 'rgba(139,123,255,.35)', scrollbarSliderBackground: 'rgba(255,255,255,.14)', scrollbarSliderHoverBackground: 'rgba(255,255,255,.28)', scrollbarSliderActiveBackground: 'rgba(255,255,255,.38)' };
+  return { background: 'rgba(0,0,0,0)', foreground: '#ececea', cursor: '#60befa', selectionBackground: 'rgba(59,130,246,.38)', scrollbarSliderBackground: 'rgba(255,255,255,.14)', scrollbarSliderHoverBackground: 'rgba(255,255,255,.28)', scrollbarSliderActiveBackground: 'rgba(255,255,255,.38)' };
 }
 
 function ensureRT(tab) {
@@ -2101,20 +2101,22 @@ setInterval(async () => {
 
 // dois modos: 'gradient' (Degradê) e 'blur' (Ofuscado); valores antigos 'acrylic'/'mica' contam como Ofuscado
 const bgMode = () => (['blur', 'acrylic', 'mica'].includes(S.settings.bg) ? 'blur' : 'gradient');
-/* ---------- moldura em "U": geometria do vidro ---------- */
-const FR = { R: 22, RI: 14, HEAD: 46, BOT: 38, SIDE_OPEN: 252, SIDE_MINI: 70, ARM_OPEN: 346, ARM_CLOSED: 12 };
-const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base de vidro não engrossa
+/* ---------- geometria do vidro: painéis flutuantes, como no Rocruzta Hub (TASK-121) ----------
+   Cabeçalho e rodapé ficam soltos sobre o fundo; a barra lateral e o braço de notificações são painéis de vidro (um recorte só, em #glass);
+   o palco (#col) é o painel de conteúdo, com vidro próprio. GAP = vão entre painéis e até a borda; RP = raio dos painéis. */
+const FR = { R: 22, RP: 18, GAP: 10, HEAD: 44, BOT: 38, SIDE_OPEN: 260, SIDE_MINI: 88, ARM_OPEN: 360, ARM_CLOSED: 10 };
+const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base não engrossa
 const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN);
 const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
 
-// anel fechado: contorno externo arredondado + recorte (o terminal) com os quatro cantos suavizados
-// telas que não são terminal nem chat (Plugins, Skills, MCPs, Consumo, Integrações, Configurações, sem projeto): sem recorte, contínuas com o vidro do app (TASK-042)
+// telas que não são terminal nem chat (Plugins, Skills, MCPs, Consumo, Integrações, Configurações, sem projeto): o painel de conteúdo desce até perto da base e sem o rodapé de funções (TASK-042)
 const flatMode = () => ['page', 'empty'].includes(mode());
-function framePath(W, H, S_, A, flat) {
-  const { R, RI, HEAD: h } = FR, b = GEO.bot;
-  const outer = `M${R} 0H${W - R}A${R} ${R} 0 0 1 ${W} ${R}V${H - R}A${R} ${R} 0 0 1 ${W - R} ${H}H${R}A${R} ${R} 0 0 1 0 ${H - R}V${R}A${R} ${R} 0 0 1 ${R} 0Z`;
-  const hole = `M${S_} ${h + RI}A${RI} ${RI} 0 0 1 ${S_ + RI} ${h}H${W - A - RI}A${RI} ${RI} 0 0 1 ${W - A} ${h + RI}V${H - b - RI}A${RI} ${RI} 0 0 1 ${W - A - RI} ${H - b}H${S_ + RI}A${RI} ${RI} 0 0 1 ${S_} ${H - b - RI}Z`;
-  return flat ? outer : outer + hole;
+const rrect = (x, y, w, h, r) => { r = Math.max(0, Math.min(r, w / 2, h / 2)); return `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`; };
+function framePath(W, H, S_, A) {
+  const { RP, GAP, HEAD: h } = FR;
+  const side = rrect(GAP, h, S_ - 2 * GAP, H - h - GAP, RP);
+  const aw = A - 2 * GAP; // painel de notificações: cresce junto com o braço
+  return aw > 2 ? side + rrect(W - A + GAP, h, aw, H - h - GAP, RP) : side;
 }
 
 function layout() {
@@ -2123,15 +2125,15 @@ function layout() {
   if (!W || !H) return;
   const flat = flatMode();
   if (flat !== document.body.classList.contains('flatpage')) { document.body.classList.toggle('flatpage', flat); setTimeout(() => { if (typeof fitActive === 'function') fitActive(); }, 0); } // o palco muda de altura: reajusta o terminal
-  const d = framePath(W, H, GEO.sideW, GEO.armW, flat);
+  const d = framePath(W, H, GEO.sideW, GEO.armW);
   $('#glass').style.clipPath = `path(evenodd, '${d}')`;
   $('#edgePath').setAttribute('d', d);
   document.documentElement.style.setProperty('--head', `${FR.HEAD}px`);
-  $('#side').style.width = `${GEO.sideW}px`;
-  $('#arm').style.width = `${GEO.armW}px`;
+  Object.assign($('#side').style, { left: `${FR.GAP}px`, width: `${GEO.sideW - 2 * FR.GAP}px` });
+  Object.assign($('#arm').style, { right: `${FR.GAP}px`, width: `${Math.max(0, GEO.armW - 2 * FR.GAP)}px` });
   $('#arm').classList.toggle('open', UI.actOpen && GEO.armW > 200);
-  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${flat ? 0 : GEO.bot}px` });
-  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: '0px', height: `${GEO.bot}px` }); // rodapé: dentro da base de vidro, sob o palco
+  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${flat ? FR.GAP : GEO.bot}px` });
+  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: '0px', height: `${GEO.bot}px` }); // rodapé: faixa solta sob o palco
 }
 
 let tweening = 0; // durante a animação: sem sombra pesada e sem refazer o tamanho do terminal a cada quadro

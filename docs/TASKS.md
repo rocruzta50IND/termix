@@ -16,6 +16,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Passos:** versão 0.3.9; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.9`.
 - **Próximo passo:** o usuário atualiza o app (0.3.8 → 0.3.9) e confere.
 
+### TASK-121 — Identidade visual do Rocruzta Hub no Termix (só aparência)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (2026-11-09; pedido do usuário: clonar o layout/identidade do Rocruzta Hub para o Termix e **garantir que tudo que funciona continue igual**).
+- **Escopo:** só visual (tokens, fonte Inter, raios, vidro, janela, barra lateral, abas, controles, modais, temas). **Nada** de funcionalidade do Hub (seletor de apps, selo "Em breve", notícias, equipe). O Hub é outro projeto; o Termix só adota a identidade para os dois não divergirem. Origem da referência: repositório `rocruzta50IND/rocruzta-hub`, commit `3a9638a`, `base/index.html` e `docs/DESIGN.md` (lidos em clone temporário; o repositório do Hub não é alterado).
+- **Regra:** ids e classes usados por `app.js`/`chat.js`/`web.js` ficam; mudança de HTML/JS só onde a estrutura visual exigir; `npm run check` e teste por CDP (abas, chat, terminal, Web, modais, tema) antes de fechar.
+- **Feito:** fonte Inter embutida (`src/renderer/fonts/`); tokens do Hub em `:root`; fundo azul-marinho; geometria nova em `app.js` (`FR`, `framePath`, `layout`: barra lateral e notificações viram painéis de vidro, o palco é o painel de conteúdo, cabeçalho e rodapé soltos); bloco "Identidade do Rocruzta Hub" no fim do `styles.css` (barra lateral, abas com sublinhado, dock do rodapé, botões, controles, cartões, modais, chat); cores do terminal e da cor padrão das abas (`#3B82F6`).
+- **Decisões:** só tema escuro (o claro do Hub seria recurso novo: Backlog); sem `backdrop-filter` (regra de desempenho do Termix); botão primário invertido como no Hub; `--text3` um pouco mais claro que o do Hub (`#7B7B78`) para manter a leitura.
+- **Arquivos tocados:** `src/renderer/styles.css`, `app.js`, `web.js`, `fonts/*`, `docs/DESIGN.md`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
+- **Como validar:** `npm run check` (passou). Testado por CDP em instância isolada (perfil temporário, porta 9333): terminal com Claude Code vivo, chat com resposta real (markdown, código, anéis de limites), Web, Plugins, Consumo, Configurações, novo chat, barra recolhida, painel de notificações, modal. Para o usuário: abrir o app (`npm start`) e percorrer as telas; conferir arrastar abas, maximizar e o modo Ofuscado (não testados por mim).
+- **Pendências:** validação visual do usuário; modo Ofuscado e janela maximizada sem teste; ajustes finos de espaçamento a pedido.
+- **Próximo passo:** o usuário avalia o visual; ajustar o que pedir; com a aprovação, fechar (`/encerrar-tarefa TASK-121`). Versão/Release só se ele pedir.
+
 ### TASK-116 — Adicionar o DEV2 ao fluxo (criar a branch dev2 e registrar devs no fluxo.json)
 
 - **Responsável:** DEV1
@@ -311,6 +324,13 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ## Prontas
 
 ## Backlog
+
+### TASK-122 — Tema claro no Termix (identidade do Hub)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG — surgiu na TASK-121 (o Hub tem tema claro e escuro; o Termix ficou só escuro).
+- **Escopo:** alternador de tema e variáveis do tema claro em `:root[data-theme="light"]`; hoje muitas cores do `styles.css` e do xterm são escuras e fixas, então exige revisão geral. Só depois do visual do Hub estar fechado.
+- **Próximo passo:** nenhum agora.
 
 ### TASK-115 — Integração com o Codex (OpenAI): avaliar e desenhar
 
