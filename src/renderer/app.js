@@ -365,8 +365,6 @@ api.onExit(({ tabId, code }) => {
 // métricas da status line: limites da conta (5h e 7d) e contexto por sessão
 function onMetric({ tabId, data }) {
   MET[tabId] = data;
-  const c = RT[tabId] && RT[tabId].cost; // base da conversa nova: leitura mais recente antes do pedido de retomada
-  if (c && c.phase === 'cleared' && data.updated >= c.clearedAt && ctxTok(data) !== null) c.base = ctxTok(data);
   const rl = data.rate_limits;
   if (rl && (!UI.limits || data.updated >= UI.limits.updated)) {
     const w = (x) => (x && typeof x.used_percentage === 'number' ? { pct: x.used_percentage, resets: x.resets_at } : null);
@@ -436,22 +434,19 @@ api.onHook(({ tabId, data }) => {
     case 'UserPromptSubmit': case 'PostToolUse':
       setSt(tab, 'work');
       if (data.event === 'UserPromptSubmit' && UI.events.some((e) => e.kind === 'cache' && e.tabId === tab.id)) { UI.events = UI.events.filter((e) => !(e.kind === 'cache' && e.tabId === tab.id)); renderAct(); renderTop(); } // mandou mensagem: o cache foi renovado, o aviso perdeu o sentido
-      if (data.event === 'UserPromptSubmit' && r.cost && r.cost.phase === 'cleared') r.cost.phase = 'resumed'; // o pedido de retomada entrou: a base fica congelada
       break;
     case 'SessionStart':
       setSt(tab, 'wait');
       if (data.source === 'clear') { r.term.write('\x1b[2J\x1b[3J\x1b[H'); api.write(tab.id, '\x0c'); } // apaga a tela e o histórico visível e pede o redesenho (Ctrl+L)
-      if (data.source === 'clear' && r.cost && r.cost.phase === 'clearing') { r.cost.phase = 'cleared'; r.cost.clearedAt = Date.now(); }
       if (r.flow && r.flow.step === 'clearing' && data.source === 'clear') {
-        const resume = r.flow.resume;
+        const fl = r.flow;
         r.flow = null;
-        if (resume) setTimeout(() => typeTo(tab, resume), 900);
+        addEvent({ c: tab.color, who: tab.name, msg: fl.chars ? `Contexto limpo · resumo de ${fl.chars} caracteres (~${fmtTok(Math.round(fl.chars / 3.4))} tokens) entregue ao agente` : 'Contexto limpo' });
         renderRail();
       }
       break;
     case 'Stop':
       setSt(tab, 'wait');
-      if (r.cost && r.cost.phase === 'resumed') { r.cost.phase = 'ending'; setTimeout(() => finishCost(tab), 2500); } // dá tempo da status line gravar o fim da resposta
       notifyTab(p, tab, 'done', lastLine(data.last) || 'Terminou · aguarda você');
       break;
     case 'Notification':
@@ -461,69 +456,16 @@ api.onHook(({ tabId, data }) => {
   }
 });
 
-/* ---------- botão Clear (alternador): fechar a tarefa, /clear e retomar ---------- */
-const CLEAR_MARK = 'TERMIX-CLEAR-OK';
-const GENERIC_CLOSE = 'Vou fechar esta tarefa. Faça nesta ordem: 1) confirme que o trabalho está aprovado por mim; se não estiver, resuma o que foi feito e pare, sem escrever o aviso final. 2) Rode a validação do projeto e corrija se falhar. 3) Registre a tarefa no arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir): o que foi feito, arquivos alterados, padrão seguido, decisões e pendências, em até 6 linhas. 4) Não faça commit nem push. 5) Só se tudo isso foi concluído, termine escrevendo exatamente ' + CLEAR_MARK + '.';
-const GENERIC_RESUME = 'Estou retomando o trabalho depois de um /clear. Leia o CLAUDE.md, o arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir) e os últimos commits. Resuma em poucas linhas onde paramos e o que está pendente. Antes de mexer em algo de uma tarefa já encerrada, leia a entrada dela e siga o mesmo padrão. Se faltar informação, pergunte em vez de supor. Não leia arquivos além do necessário.';
+/* ---------- botão Clear (alternador): limpa o contexto e entrega ao agente o resumo da conversa (TASK-117) ---------- */
 const CLEAR_DEF = {
-  v: 2, alert: 15, // alert: % de contexto a partir do qual o botão pulsa (0 = nunca)
-  flow: true, commit: true, // flow: usar os pedidos do fluxo Rocruzta nos projetos que o têm; commit: fechar com commit e push na branch do papel
-  closePrompt: '', resumePrompt: '', // vazio = automático (fluxo ou genérico, conforme o projeto)
+  v: 3, alert: 15, // alert: % de contexto a partir do qual o botão pulsa (0 = nunca)
+  template: null, // modelo do resumo entregue ao agente depois do Clear: null = o padrão do app; '' = só limpar, sem resumo
 };
-// pedidos para projetos no fluxo Rocruzta: só o que o fluxo exige, lendo o mínimo (nada de abrir o TASKS.md inteiro)
-const AUX_ROLES = ['DEV2', 'DEV3', 'DEV4', 'DEV5'];
-const flowResume = (i) => 'Estou retomando o trabalho depois de um /clear; a conversa anterior foi apagada, não dependa dela. '
-  + `Papel desta máquina: ${i.role || 'veja o CLAUDE.local.md'}${i.branch ? `, branch ${i.branch}` : ''}. `
-  + 'Leia o CLAUDE.md e o CLAUDE.local.md (o WORKFLOW.md só se precisar do passo a passo). '
-  + 'Do docs/TASKS.md NÃO abra o arquivo inteiro: ache os títulos com Grep -n "^## " e leia só as seções "Em andamento" e "Aguardando validação DEV1" (Read com offset e limit); das demais tarefas veja só os títulos (Grep -n "^### TASK"). '
-  + 'Do docs/CHANGELOG_DEV.md leia só a entrada mais recente (as primeiras ~40 linhas). '
-  + 'Leia docs/DECISOES.md ou docs/DESIGN.md só se a tarefa em andamento mexer no comportamento do produto ou na aparência, e apenas a seção relevante. '
-  + 'Confira git status -sb e git log --oneline -5. '
-  + (AUX_ROLES.includes(i.role) ? 'Confira se a dev1 tem commits que a sua branch ainda não tem (git log ..origin/dev1 --oneline) e avise antes de seguir. ' : i.role === 'DEV1' ? 'Não consulte as branches dev2 a dev5 (trava de contexto do fluxo). ' : '')
-  + 'Responda em poucas linhas: onde paramos, o que depende de mim e o próximo passo. Não comece a desenvolver até eu confirmar.';
-const flowClose = (i, commit) => {
-  const aux = AUX_ROLES.includes(i.role);
-  const val = i.validacao && i.validacao.length ? i.validacao.join(' e ') : 'a validação do projeto (.claude/fluxo.json)';
-  return 'Vou fechar a tarefa em andamento. Faça nesta ordem, lendo só o necessário: '
-    + '1) confirme que o resultado foi aprovado por mim nesta conversa; se não foi, resuma o que foi feito e como testar e pare, sem escrever o aviso final. '
-    + `2) rode ${val}; se falhar, corrija. `
-    + `3) em docs/TASKS.md edite só a entrada da tarefa ativa (ache-a com Grep -n e leia só esse trecho; não abra o arquivo inteiro): preencha Feito até agora, Decisões, Arquivos tocados, Como validar, Pendências e Próximo passo, mude o status para ${aux ? 'AGUARDANDO VALIDAÇÃO DEV1' : 'VALIDADA EM DEV1'} e mova a entrada para a seção correspondente. `
-    + '4) acrescente a entrada de hoje no topo de docs/CHANGELOG_DEV.md. '
-    + '5) o que surgiu fora do escopo vira tarefa no Backlog. '
-    + (aux ? `6) reescreva docs/HANDOFF_${i.role}.md (resumo em alto nível, sem colar código). ` : '')
-    + (commit ? `${aux ? '7' : '6'}) faça o commit "TASK-XXX: descrição curta no imperativo" e o push somente para origin/${i.branch || 'a branch do seu papel'}; nunca promova para a main. ` : `${aux ? '7' : '6'}) não faça commit nem push. `)
-    + `${aux ? '8' : '7'}) só se tudo isso foi concluído, termine escrevendo exatamente ${CLEAR_MARK}.`;
-};
-// textos efetivos para um projeto: o que a pessoa escreveu nas configurações vale sempre; vazio = automático
-async function clearPrompts(p) {
-  const c = clearCfg();
-  const info = c.flow ? await api.flowInfo(p.path) : { on: false };
-  const fl = !!info.on;
-  return { fl, info, canClose: !(fl && info.role === 'GERENTE'),
-    close: c.closePrompt || (fl ? flowClose(info, c.commit) : GENERIC_CLOSE),
-    resume: c.resumePrompt || (fl ? flowResume(info) : GENERIC_RESUME) };
-}
+let HANDOFF_DEF = ''; // modelo padrão do resumo (vem do processo principal, que o usa para montar o resumo)
 const clearCfg = () => S.settings.clear || CLEAR_DEF;
+const clearTemplate = () => (typeof clearCfg().template === 'string' ? clearCfg().template : null);
 const connCfg = () => S.settings.connectors || { v: 1, newProject: 'auto' };
 const typeTo = (tab, text) => { api.write(tab.id, text); setTimeout(() => api.write(tab.id, '\r'), 150); };
-// tokens no contexto agora (soma do uso atual; o used_percentage vem em inteiro e a 1M de janela cada 1 % são 10 mil tokens)
-const ctxTok = (m) => { const u = m && m.context_window && m.context_window.current_usage; return u ? (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0) : null; };
-// custo da retomada: antes do /clear → base da conversa nova (antes do pedido de retomada) → fim da primeira resposta
-function finishCost(tab) {
-  const r = RT[tab.id], c = r && r.cost;
-  if (!c || c.phase !== 'ending') return;
-  c.after = ctxTok(MET[tab.id]); c.phase = 'done';
-  if (c.after === null) return;
-  const parts = [c.base !== null ? `base ${fmtTok(c.base)} → ${fmtTok(c.after)}` : `contexto depois da retomada ${fmtTok(c.after)}`];
-  if (c.before !== null) parts.push(`antes do /clear ${fmtTok(c.before)}`);
-  addEvent({ c: tab.color, who: tab.name, msg: `${c.base !== null ? `A retomada custou ~${fmtTok(Math.max(0, c.after - c.base))} tokens` : 'Retomada concluída'} · ${parts.join(' · ')}` });
-  renderRail();
-}
-function markCount(term) { // quantas vezes o aviso final aparece no texto do terminal (linhas quebradas são unidas)
-  const b = term.buffer.active; let t = '';
-  for (let i = 0; i < b.length; i++) { const l = b.getLine(i); if (l) t += (l.isWrapped ? '' : '\n') + l.translateToString(true); }
-  return (t.match(new RegExp(CLEAR_MARK, 'g')) || []).length;
-}
 // estado do botão no alternador: off = desabilitado, pulse = contexto passou do limite configurado
 function clearDockState(p) {
   const tab = p && curTab(p), r = tab && RT[tab.id];
@@ -543,54 +485,34 @@ function clearDockState(p) {
     rst: { spin: st === 'restart', off: st === 'restart' || !!(r && r.flow), tip: st === 'end' ? 'Retomar a conversa' : st === 'fail' ? 'Tentar de novo' : 'Reiniciar com a conversa atual' } };
 }
 function dockRestart() { const p = curProject(), tab = p && curTab(p); if (tab) restartTab(p, tab); }
+const clearModal = () => ({
+  title: 'Limpar o contexto?',
+  body: clearTemplate() === '' ? '<p>O Termix limpa a conversa e começa uma <b>conversa nova, sem resumo</b> (o modelo do resumo está vazio em Configurações). A conversa atual continua guardada pelo Claude Code.</p>'
+    : '<p>O Termix limpa a conversa e já entrega ao agente um <b>resumo do ponto em que vocês estavam</b> (último pedido, arquivos alterados, git e tarefa ativa), para ele continuar sem reler o projeto. A conversa atual continua guardada pelo Claude Code. O modelo do resumo pode ser editado em Configurações.</p>',
+  buttons: [['Cancelar', null], ['Confirmar', 'ok', 'pri']],
+});
 async function clearFlow() {
   const p = curProject(), tab = p && curTab(p), r = tab && RT[tab.id];
   if (tab && tab.kind === 'chat') return chatClearFlow(p, tab);
   if (!r || !r.alive || r.st !== 'wait' || r.flow) return;
-  const pr = await clearPrompts(p);
-  if (!r.alive || r.st !== 'wait' || r.flow) return;
-  const nota = pr.fl ? `<p class="meta">Projeto no fluxo Rocruzta${pr.info.role ? ` · papel ${esc(pr.info.role)}` : ''}: o fechamento e a retomada seguem o fluxo e leem só o necessário.</p>` : '';
-  const c = await modal({
-    title: 'Limpar o contexto?',
-    body: '<p>O <code>/clear</code> apaga o contexto e começa uma conversa nova. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, limpa e manda ele retomar pelos arquivos do projeto.</p>' + nota,
-    buttons: pr.canClose ? [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']] : [['Cancelar', null], ['Só limpar', 'only', 'pri']],
-  });
-  if (!c.value || !r.alive || r.st !== 'wait' || r.flow) return;
-  if (c.value === 'only') { doClear(tab, ''); return; }
-  r.flow = { step: 'closing', t0: Date.now(), saw: false, base: null, resumeText: pr.resume };
-  typeTo(tab, pr.close);
-  setTimeout(() => { if (r.flow && r.flow.base === null) r.flow.base = markCount(r.term); }, 1500);
-  addEvent({ c: tab.color, who: tab.name, msg: 'Fechando a tarefa antes do /clear…' });
-  renderRail();
+  const c = await modal(clearModal());
+  if (c.value !== 'ok' || !r.alive || r.st !== 'wait' || r.flow) return;
+  doClearNative(p, tab);
 }
-function doClear(tab, resumeText) { // resumeText vazio = só limpar, sem pedir a retomada
-  const r = RT[tab.id];
-  r.flow = { step: 'clearing', t0: Date.now(), resume: resumeText };
-  r.cost = resumeText ? { phase: 'clearing', before: ctxTok(MET[tab.id]), base: null, after: null } : null; // só mede quando há retomada
+// o app monta o resumo, deixa gravado e dá o /clear; o hook de início de sessão (hook-wrapper) o entrega ao agente. Nenhuma volta do Claude.
+async function doClearNative(p, tab) {
+  const r = RT[tab.id], tpl = clearTemplate();
+  r.flow = { step: 'preparing', t0: Date.now() }; renderRail();
+  let h = null;
+  if (tpl === '') api.handoffDrop(tab.id); else h = await api.handoffPrepare({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, template: tpl });
+  if (!r.alive || r.st !== 'wait' || !r.flow || r.flow.step !== 'preparing') { api.handoffDrop(tab.id); if (r.flow && r.flow.step === 'preparing') { r.flow = null; renderRail(); } return; }
+  r.flow = { step: 'clearing', t0: Date.now(), chars: h && h.ok ? h.chars : 0 };
   typeTo(tab, '/clear');
   renderRail();
 }
-async function clearClosed(tab) { // o agente terminou de fechar a tarefa: limpa se o aviso final apareceu; senão pergunta
-  const r = RT[tab.id];
-  const text = r.flow.resumeText;
-  if (markCount(r.term) > r.flow.base) { doClear(tab, text); return; }
-  r.flow = { step: 'asking', t0: Date.now() };
-  renderRail();
-  const c = await modal({
-    title: 'A tarefa foi registrada?',
-    body: '<p>Não encontrei o aviso de que o fechamento terminou (o agente pode ter pedido sua aprovação ou deixado algo pendente). Olhe o terminal antes de decidir.</p>',
-    buttons: [['Não limpar', null], ['Limpar e retomar mesmo assim', 'ok', 'pri']],
-  });
-  if (c.value === 'ok' && r.alive) doClear(tab, text); else { r.flow = null; renderRail(); }
-}
-function clearTick(tab) { // chamado a cada 700 ms para cada aba viva
+function clearTick(tab) { // chamado a cada 700 ms para cada aba viva: desiste se o /clear não chegou ao agente
   const r = RT[tab.id], f = r.flow;
-  if (!f) return;
-  if (f.step === 'closing') {
-    if (r.st === 'work') f.saw = true;
-    if (!f.saw && Date.now() - f.t0 > 10000) { r.flow = null; renderRail(); } // o agente não recebeu o pedido
-    else if (f.saw && r.st === 'wait' && f.base !== null) clearClosed(tab);
-  } else if (f.step === 'clearing' && Date.now() - f.t0 > 12000) { r.flow = null; renderRail(); }
+  if (f && f.step === 'clearing' && Date.now() - f.t0 > 12000) { api.handoffDrop(tab.id); r.flow = null; renderRail(); }
 }
 
 // heurística de reserva: sem saída por 2,5 s = aguardando você. Com hooks, só cobre o caso de interrupção
@@ -770,10 +692,8 @@ function railHTML(p, tab) {
   // contexto
   const cw = m.context_window || {};
   const cp = typeof cw.used_percentage === 'number' ? cw.used_percentage : null;
-  const rc = (RT[tab.id] || {}).cost; // última retomada medida: base (CLAUDE.md, plugins, skills) e custo
-  const cost = rc && rc.phase === 'done' && rc.after !== null ? ` · ${rc.base !== null ? `base ${fmtTok(rc.base)}, retomada custou ~${fmtTok(Math.max(0, rc.after - rc.base))}` : `após a retomada ${fmtTok(rc.after)}`}` : '';
   const ctx = cp !== null
-    ? ring('CTX', cp, Math.round(cp), `Contexto · ${Math.round(cp)}%`, (cw.total_input_tokens ? `${fmtTok(cw.total_input_tokens)}${cw.context_window_size ? ` de ${fmtTok(cw.context_window_size)}` : ''} tokens` : 'desta conversa') + cost)
+    ? ring('CTX', cp, Math.round(cp), `Contexto · ${Math.round(cp)}%`, (cw.total_input_tokens ? `${fmtTok(cw.total_input_tokens)}${cw.context_window_size ? ` de ${fmtTok(cw.context_window_size)}` : ''} tokens` : 'desta conversa'))
     : ring('CTX', null, '—', 'Contexto', noData);
 
   // cache de prompt: tempo até esfriar (o TTL vem do Claude Code: 1 h na assinatura, 5 min com créditos extras ou chave de API).
@@ -1495,7 +1415,6 @@ function integHTML() {
     <div class="card"><h5>Codex</h5><p>Planejado para uma próxima fase.</p><div class="tags"><span class="tag">Em breve</span></div></div></div></div>`;
 }
 
-const yn = (k) => `<div class="seg"><button class="${clearCfg()[k] ? 'sel' : ''}" data-clrflag="${k}|1">Sim</button><button class="${clearCfg()[k] ? '' : 'sel'}" data-clrflag="${k}|0">Não</button></div>`;
 const ynN = (k) => `<div class="seg"><button class="${notifCfg()[k] ? 'sel' : ''}" data-ntf="${k}|1">Sim</button><button class="${notifCfg()[k] ? '' : 'sel'}" data-ntf="${k}|0">Não</button></div>`;
 function confHTML() {
   const arch = S.projects.filter((p) => p.archived);
@@ -1519,11 +1438,7 @@ function confHTML() {
     <h5 style="margin:22px 0 8px">Botão Clear (base da janela)</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row"><div class="grow">Pulsar quando o contexto chegar a<small>% do anel CTX a partir da qual o botão Clear pisca. 0 desliga o aviso. Sugestão: 15 para tarefas pequenas, 35 para tarefas longas.</small></div><div class="numf" data-min="0" data-max="100"><button type="button" data-step="-1" aria-label="Diminuir">−</button><input id="clrAlert" type="text" inputmode="numeric" maxlength="3" value="${clearCfg().alert}"><button type="button" data-step="1" aria-label="Aumentar">+</button></div><span class="unit">%</span></div>
-    <div class="row"><div class="grow">Usar o fluxo Rocruzta nos projetos que o têm<small>Detecta .claude/fluxo.json e usa pedidos enxutos que seguem o fluxo (papel, validação, TASKS e CHANGELOG, sem abrir os arquivos inteiros)</small></div>${yn('flow')}</div>
-    <div class="row"><div class="grow">Commit e push ao fechar a tarefa (projetos do fluxo)<small>Commit "TASK-XXX: ..." e push só na branch do seu papel; nunca promove para a main</small></div>${yn('commit')}</div>
-    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Vazio = automático (fluxo ou genérico, conforme o projeto). Para o app limpar sozinho, o texto deve terminar pedindo que o agente escreva ${CLEAR_MARK}; sem isso o app pergunta antes de limpar.</small></div><textarea class="inp ta" id="clrClose" rows="5" placeholder="Automático">${esc(clearCfg().closePrompt)}</textarea></div>
-    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de retomada<small>Enviado depois do /clear, na conversa nova. Vazio = automático. Pode ser um comando seu, como /retomar.</small></div><textarea class="inp ta" id="clrResume" rows="5" placeholder="Automático">${esc(clearCfg().resumePrompt)}</textarea></div>
-    <div class="row"><div class="grow">Restaurar os textos padrão</div><button class="btn sm" data-clrreset>Restaurar</button></div></div>
+    <div class="row" style="align-items:flex-start;flex-wrap:wrap"><div class="grow">Resumo entregue ao agente depois do Clear<small>É o texto que o agente recebe na conversa nova, para continuar sem reler o projeto. Pode editar à vontade; os marcadores entre chaves são trocados pelo app na hora do Clear e somem quando não há o que mostrar: <code>{{PROJETO}}</code> projeto, papel e branch · <code>{{PEDIDOS}}</code> últimos pedidos do usuário · <code>{{RESPOSTA}}</code> fim da última resposta do Claude · <code>{{ARQUIVOS}}</code> arquivos alterados · <code>{{GIT}}</code> git status e últimos commits · <code>{{TAREFA}}</code> tarefa ativa do docs/TASKS.md. Apagar tudo = só limpar, sem resumo.</small></div><textarea class="inp ta" id="clrTpl" rows="14" spellcheck="false" style="width:100%;flex-basis:100%;margin-top:8px;font-family:Consolas,monospace;font-size:12px;line-height:1.45">${esc(clearTemplate() ?? HANDOFF_DEF)}</textarea><div class="tags" style="margin-top:8px;flex-basis:100%"><button class="btn sm" data-clrreset>Restaurar o padrão do Termix</button></div></div>
     <h5 style="margin:22px 0 8px">Notificações</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row"><div class="grow">Terminou<small>Aviso quando um terminal termina a resposta e aguarda você (só se você não estiver olhando para ele)</small></div>${ynN('done')}</div>
@@ -1943,9 +1858,8 @@ document.addEventListener('click', async (e) => {
     renderMenu(); renderRail(); return;
   }
   if ((el = q('[data-railset]'))) { const [k, v] = el.dataset.railset.split('|'); railCfg()[k] = v === '1'; save(); renderPage(); renderRail(); renderTop(); dockRefresh(); return; }
-  if ((el = q('[data-clrflag]'))) { const [k, v] = el.dataset.clrflag.split('|'); S.settings.clear[k] = v === '1'; save(); renderPage(); return; }
   if ((el = q('[data-conn]'))) { S.settings.connectors = { v: 1, newProject: el.dataset.conn }; save(); renderPage(); return; }
-  if (q('[data-clrreset]')) { S.settings.clear = { ...CLEAR_DEF }; save(); renderPage(); renderRail(); return; }
+  if (q('[data-clrreset]')) { S.settings.clear.template = null; save(); renderPage(); return; }
   if ((el = q('[data-rail]'))) {
     const k = el.dataset.rail; railCfg()[k] = !railCfg()[k]; save();
     renderMenu(); renderRail(); renderTop(); return;
@@ -2061,10 +1975,10 @@ document.addEventListener('focusout', (e) => {
 document.addEventListener('input', (e) => {
   const id = e.target.id;
   if (id === 'resq' && UI.res) { UI.res.q = e.target.value; repaintRes(); return; }
-  if (id === 'clrAlert' || id === 'clrClose' || id === 'clrResume') {
+  if (id === 'clrTpl') { S.settings.clear.template = e.target.value === HANDOFF_DEF ? null : e.target.value; save(); return; } // igual ao padrão = continua "padrão do app" (acompanha melhorias futuras)
+  if (id === 'clrAlert') {
     const c = S.settings.clear;
-    if (id === 'clrAlert') { const d = e.target.value.replace(/\D/g, '').slice(0, 3); if (d !== e.target.value) e.target.value = d; c.alert = Math.min(100, Math.max(0, parseInt(d, 10) || 0)); }
-    else c[id === 'clrClose' ? 'closePrompt' : 'resumePrompt'] = e.target.value;
+    const d = e.target.value.replace(/\D/g, '').slice(0, 3); if (d !== e.target.value) e.target.value = d; c.alert = Math.min(100, Math.max(0, parseInt(d, 10) || 0));
     save(); renderRail(); return;
   }
   if (id === 'ntfCache' || id === 'ntfToast') {
@@ -2175,9 +2089,8 @@ async function applyBg() {
   const saved = await api.loadState();
   if (saved && Array.isArray(saved.projects)) S = { ...saved, settings: { termOp: 88, sideCollapsed: false, ...(saved.settings || {}) } };
   S.settings.rail = S.settings.rail && S.settings.rail.v === RAIL_DEF.v ? { ...RAIL_DEF, ...S.settings.rail } : { ...RAIL_DEF };
-  S.settings.clear = { ...CLEAR_DEF, ...(S.settings.clear || {}), v: CLEAR_DEF.v };
-  if (S.settings.clear.closePrompt === GENERIC_CLOSE) S.settings.clear.closePrompt = ''; // a versão 1 gravava o texto genérico; agora vazio = automático
-  if (S.settings.clear.resumePrompt === GENERIC_RESUME) S.settings.clear.resumePrompt = '';
+  { const sc = S.settings.clear || {}; S.settings.clear = { v: CLEAR_DEF.v, alert: typeof sc.alert === 'number' ? sc.alert : CLEAR_DEF.alert, template: typeof sc.template === 'string' ? sc.template : null }; } // descarta os campos do modelo antigo (pedidos de fechar e retomar)
+  HANDOFF_DEF = await api.handoffTemplate();
   S.settings.notif = { ...NOTIF_DEF, ...(S.settings.notif || {}), v: NOTIF_DEF.v };
   if (S.lastLimits && !UI.limits) UI.limits = S.lastLimits; // últimos limites de 5 h / 7 d conhecidos (vindos do chat ou de um terminal); janelas já vencidas não aparecem (liveWin)
   for (const p of S.projects) {

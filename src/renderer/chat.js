@@ -381,14 +381,14 @@ function chatOpen(p, tab) { // chamado por launch(): a aba de chat não sobe pro
 async function chatSpawn(p, tab) {
   const r = chatEnsure(tab), c = chatView(tab);
   const resume = !!tab.started && await api.sessionExists(p.path, tab.sessionId); // sem histórico gravado não há o que retomar
-  const res = await api.chatStart({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, resume, perm: tab.perm });
+  const res = await api.chatStart({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, resume, perm: tab.perm, handoff: !!c.handoff && !resume }); // c.handoff: resumo do Clear nativo à espera da conversa nova
   if (!res.ok) {
     r.alive = false; setSt(tab, 'fail');
     chatSys(c, res.error, true);
     addEvent({ c: tab.color, who: tab.name, msg: res.error, kind: 'error', acts: [['Tentar de novo', 'restart', tab.id]] });
     return false;
   }
-  r.alive = true; r.killing = false; r.spawnAt = Date.now(); sendSummary();
+  r.alive = true; r.killing = false; r.spawnAt = Date.now(); c.handoff = false; sendSummary();
   return true;
 }
 async function chatSendMsg(tab, text, imgs = []) {
@@ -443,45 +443,26 @@ async function chatNew(p, tab) {
   c.items = []; c.byIdx = {}; c.busy = false; c.seen = new Set(); c.loaded = true; c.modelName = '';
   chatRenderAll(c); delete MET[tab.id]; setSt(tab, 'wait'); chatUi(tab); renderRail();
 }
-// Clear do chat com as mesmas opções do terminal: "Só limpar" (conversa nova) ou "Fechar a tarefa e limpar" (o agente registra o que fez,
-// a conversa nova começa e ele retoma pelos arquivos do projeto). Aqui sabemos exatamente quando o agente terminou (evento `result`).
+// Clear do chat: um modal com Confirmar; o app monta o resumo, abre a conversa nova e o agente já o recebe (sem volta do Claude)
 async function chatClearFlow(p, tab) {
   const c = chatView(tab);
   if (c.busy || c.flow) return;
-  const pr = await clearPrompts(p);
+  const ch = await modal(clearModal());
+  if (ch.value !== 'ok') return;
+  await chatClearNative(p, tab);
+}
+// Clear nativo (TASK-117): o app monta o resumo antes de trocar a conversa e o entrega ao processo novo (`--append-system-prompt-file`); nenhuma volta do Claude
+async function chatClearNative(p, tab) {
+  const c = chatView(tab);
   if (c.busy || c.flow) return;
-  const nota = pr.fl ? `<p class="meta">Projeto no fluxo Rocruzta${pr.info.role ? ` · papel ${esc(pr.info.role)}` : ''}: o fechamento e a retomada seguem o fluxo e leem só o necessário.</p>` : '';
-  const ch = await modal({
-    title: 'Limpar o contexto?',
-    body: '<p>Uma <b>conversa nova</b> começa vazia; a atual continua guardada pelo Claude Code e pode ser retomada pelo ID. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, começa a conversa nova e manda ele retomar pelos arquivos do projeto.</p>' + nota,
-    buttons: pr.canClose ? [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']] : [['Cancelar', null], ['Só limpar', 'only', 'pri']],
-  });
-  if (ch.value === 'only') { chatNew(p, tab); return; }
-  if (ch.value !== 'full') return;
-  c.flow = { step: 'closing', t0: Date.now() }; const n0 = c.items.length; // só vale o aviso final escrito DEPOIS deste pedido
-  renderRail(); dockRefresh();
-  addEvent({ c: tab.color, who: tab.name, msg: 'Fechando a tarefa antes de limpar…' });
-  try {
-    await chatSendMsg(tab, pr.close);
-    const t0 = Date.now();
-    while (c.busy && Date.now() - t0 < 20 * 60 * 1000) await new Promise((r) => setTimeout(r, 500)); // espera o agente terminar (teto de 20 min)
-    if (!c.flow || !CH[tab.id]) return; // a aba foi fechada ou o fluxo cancelado
-    const marcou = c.items.slice(n0).some((it) => it.k === 'ai' && it.text.includes(CLEAR_MARK)); // o agente escreveu o aviso final combinado
-    if (!marcou) { // sem o aviso final (pediu aprovação, deu erro, negou algo ou foi interrompido): pergunta, como no terminal
-      c.flow = { step: 'asking', t0: Date.now() }; dockRefresh();
-      const ask = await modal({
-        title: 'A tarefa foi registrada?',
-        body: '<p>Não encontrei o aviso de que o fechamento terminou (o agente pode ter pedido a sua aprovação, ter sido interrompido, ter tido um erro ou ter deixado algo pendente). Olhe a conversa antes de decidir.</p>',
-        buttons: [['Não limpar', null], ['Limpar e retomar mesmo assim', 'ok', 'pri']],
-      });
-      if (ask.value !== 'ok') return;
-    }
-    c.flow = { step: 'clearing', t0: Date.now() }; dockRefresh();
-    await chatNew(p, tab);
-    await chatSendMsg(tab, pr.resume);
-  } finally {
-    c.flow = null; renderRail(); dockRefresh();
-  }
+  const tpl = clearTemplate();
+  const h = tpl === '' ? null : await api.handoffPrepare({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, template: tpl }); // antes do chatNew, que troca o ID da conversa
+  if (c.busy || c.flow) { api.handoffDrop(tab.id); return; }
+  await chatNew(p, tab);
+  const n = h && h.ok ? h.chars : 0;
+  c.handoff = n > 0;
+  chatSys(c, n ? `Contexto limpo. O Claude já recebe um resumo do ponto em que vocês estavam (${n} caracteres, ~${fmtTok(Math.round(n / 3.4))} tokens) e continua sem reler o projeto.` : tpl === '' ? 'Contexto limpo. Conversa nova, sem resumo (o modelo está vazio em Configurações).' : 'Contexto limpo. Não havia histórico para resumir.');
+  addEvent({ c: tab.color, who: tab.name, msg: n ? `Contexto limpo · resumo de ${n} caracteres (~${fmtTok(Math.round(n / 3.4))} tokens) entregue ao agente` : 'Contexto limpo' });
 }
 async function chatExport(tab) { // "Exportar texto" do menu da aba, para o chat
   const c = CH[tab.id];

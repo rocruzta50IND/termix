@@ -107,6 +107,8 @@ function findInPath(names) {
 
 const METRICS_DIR = () => path.join(app.getPath('userData'), 'metrics');
 const BIN_DIR = () => path.join(__dirname, 'bin');
+// resumo de retomada do Clear (TASK-117): o app grava aqui e o Claude Code o lê na conversa nova (hook no terminal, arquivo no chat)
+const HANDOFF_FILE = (tabId) => path.join(METRICS_DIR(), `handoff-${String(tabId).replace(/[^\w-]/g, '')}.txt`);
 const OPEN_HINT = 'Se o comando termix-open existir, voce esta dentro do app Termix: para abrir paginas locais, como um index.html ou um servidor em localhost, use termix-open seguido do caminho do arquivo ou do endereco local, por exemplo termix-open index.html ou termix-open http://localhost:3000, em vez de start, open ou do navegador padrao. Se o comando nao existir, abra do jeito normal.';
 // ambiente do terminal do Termix: comando termix-open no PATH e BROWSER apontando para ele, só nesta sessão (terminais fora do app não mudam)
 function sessionEnv(tabId) {
@@ -239,6 +241,25 @@ ipcMain.handle('flow:info', (_e, dir) => {
     return { on: true, role: role.toUpperCase(), branch, validacao: Array.isArray(cfg.validacao) ? cfg.validacao.filter((x) => typeof x === 'string') : [] };
   } catch { return { on: false }; }
 });
+// resumo de retomada (TASK-117): monta e deixa gravado para a conversa nova ler; `drop` apaga se o Clear não aconteceu
+ipcMain.handle('handoff:prepare', (_e, a) => {
+  try {
+    if (!a || typeof a.tabId !== 'string' || typeof a.cwd !== 'string' || !/^[0-9a-f-]{36}$/i.test(String(a.sessionId))) return { ok: false };
+    let info = null;
+    try {
+      const loc = fs.readFileSync(path.join(a.cwd, 'CLAUDE.local.md'), 'utf8');
+      info = { role: ((/^\s*papel:\s*"?([A-Za-z0-9]+)/m.exec(loc) || [])[1] || '').toUpperCase(), branch: (/^\s*branch_padrao:\s*"?([\w/.-]*)/m.exec(loc) || [])[1] || '' };
+    } catch { /* sem papel definido */ }
+    const h = require('./handoff').buildHandoff({ cwd: a.cwd, sessionId: a.sessionId, info, template: typeof a.template === 'string' ? a.template : null });
+    const file = HANDOFF_FILE(a.tabId);
+    if (!h) { try { fs.unlinkSync(file); } catch { /* nada a apagar */ } return { ok: true, text: '', chars: 0 }; }
+    fs.mkdirSync(METRICS_DIR(), { recursive: true });
+    fs.writeFileSync(file, h.text, 'utf8');
+    return { ok: true, text: h.text, chars: h.chars, task: h.task, files: h.files };
+  } catch (err) { return { ok: false, error: String((err && err.message) || err) }; }
+});
+ipcMain.handle('handoff:template', () => require('./handoff').DEFAULT_TEMPLATE);
+ipcMain.on('handoff:drop', (_e, a) => { if (a && typeof a.tabId === 'string') { try { fs.unlinkSync(HANDOFF_FILE(a.tabId)); } catch { /* já consumido */ } } });
 ipcMain.handle('clip:read', () => clipboard.readText());
 ipcMain.on('clip:write', (_e, t) => clipboard.writeText(String(t)));
 // aviso do Windows quando o app está em segundo plano; clicar nele traz a janela e abre a aba
@@ -327,13 +348,13 @@ ipcMain.on('pty:kill', (_e, { tabId }) => { const p = procs.get(tabId); if (p) {
 
 /* ---------- IPC: modo Chat (claude -p em stream-json, sem terminal) ---------- */
 const chat = require('./chat')({
-  findClaude, sessionEnv, hint: OPEN_HINT,
+  findClaude, sessionEnv, hint: OPEN_HINT, handoffFile: HANDOFF_FILE,
   emit: (channel, msg) => { if (!quitting && win && !win.isDestroyed()) win.webContents.send(channel, msg); },
 });
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 ipcMain.handle('chat:start', (_e, a) => {
   if (!a || typeof a.tabId !== 'string' || !UUID_RE.test(String(a.sessionId)) || typeof a.cwd !== 'string') return { ok: false, error: 'Pedido inválido.' };
-  return chat.start({ tabId: a.tabId, cwd: a.cwd, sessionId: a.sessionId, resume: !!a.resume, perm: a.perm === 'd' ? 'd' : 'n' });
+  return chat.start({ tabId: a.tabId, cwd: a.cwd, sessionId: a.sessionId, resume: !!a.resume, perm: a.perm === 'd' ? 'd' : 'n', handoff: !!a.handoff });
 });
 ipcMain.handle('chat:send', (_e, a) => (a && typeof a.tabId === 'string' && typeof a.text === 'string' ? chat.send(a) : { ok: false }));
 ipcMain.handle('chat:permit', (_e, a) => (a && typeof a.tabId === 'string' && typeof a.requestId === 'string' ? chat.permit(a) : { ok: false }));
@@ -500,7 +521,7 @@ function cleanOldMetrics() {
   try {
     const dir = METRICS_DIR(), lim = Date.now() - 7 * 864e5;
     for (const f of fs.readdirSync(dir)) {
-      if (!/^(tab|hook|open)-.*\.json$/.test(f)) continue;
+      if (!/^(tab|hook|open)-.*\.json$/.test(f) && !/^handoff-.*\.txt$/.test(f)) continue;
       const full = path.join(dir, f);
       try { if (fs.statSync(full).mtimeMs < lim) fs.unlinkSync(full); } catch { /* ignora */ }
     }

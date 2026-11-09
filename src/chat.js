@@ -6,10 +6,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
+module.exports = function createChat({ findClaude, sessionEnv, emit, hint, handoffFile }) {
   const procs = new Map(); // tabId -> { child, killed, err }
 
-  function start({ tabId, cwd, sessionId, resume, perm }) {
+  function start({ tabId, cwd, sessionId, resume, perm, handoff }) {
     const claude = findClaude();
     if (!claude) return { ok: false, error: 'Claude Code não foi encontrado neste computador. Instale-o (claude.com/claude-code), abra o Termix de novo e tente de novo.' };
     if (!fs.existsSync(cwd)) return { ok: false, error: `A pasta do projeto não existe: ${cwd}` };
@@ -21,6 +21,9 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
       // o modo `-p` negaria tudo em silêncio (TASK-105).
       ...(perm === 'd' ? ['--dangerously-skip-permissions'] : ['--permission-mode', 'acceptEdits', '--permission-prompt-tool', 'stdio']),
       '--append-system-prompt', hint];
+    // depois de um Clear: o resumo montado pelo app entra como instrução da conversa nova (arquivo: evita aspas e quebras de linha no cmd.exe)
+    const hfile = handoff && !resume && handoffFile ? handoffFile(tabId) : '';
+    if (hfile && fs.existsSync(hfile)) args.push('--append-system-prompt-file', hfile);
     const isCmd = claude.toLowerCase().endsWith('.cmd');
     let child;
     try {
@@ -34,6 +37,7 @@ module.exports = function createChat({ findClaude, sessionEnv, emit, hint }) {
     const flush = () => { timer = null; if (batch.length) { const evs = batch; batch = []; emit('chat:events', { tabId, evs }); } };
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (d) => {
+      if (hfile) { try { fs.unlinkSync(hfile); } catch { /* já apagado */ } } // o Claude Code já leu o arquivo ao subir
       buf += d;
       let i;
       while ((i = buf.indexOf('\n')) >= 0) {

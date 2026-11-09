@@ -6,6 +6,15 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-09
+
+**TASK-117 — Clear instantâneo com resumo nativo** (DEV1)
+
+- O botão Clear deixou de pedir ao Claude para fechar a tarefa e retomar. Um modal só com **Confirmar** limpa na hora e o app entrega ao agente um resumo que ele mesmo monta (`src/handoff.js`: últimos pedidos, fim da última resposta, arquivos alterados, git e tarefa ativa; ~80 ms, ~700 tokens). No terminal o resumo entra pelo hook de início de sessão depois do `/clear`; no chat, por `--append-system-prompt-file`.
+- Configurações > Botão Clear mostra o **modelo completo do resumo**, editável, com "Restaurar o padrão do Termix" (apagar tudo = só limpar). Saíram "Fechar a tarefa e limpar", os pedidos de fechar e retomar, o `TERMIX-CLEAR-OK` e a medição da retomada.
+- Medido (3 repetições, `claude -p`, Sonnet): ~US$ 0,008 contra ~US$ 0,072 da retomada antiga, 1 chamada ao modelo contra 6, sem ler o `TASKS.md`; as respostas sabiam os arquivos alterados na conversa. Testado em chat e terminal reais (PTY e CDP numa cópia isolada do app), com modelo personalizado e restaurar. Validado pelo usuário no uso real (3 tarefas seguidas).
+- Observação: o Electron de desenvolvimento está bloqueado pelo Controle de Aplicativo do Windows nesta máquina; os testes de interface usaram uma cópia do Termix instalado com o código novo.
+
 ## 2026-11-06
 
 **TASK-116 — DEV2 adicionado ao fluxo** (DEV1)
