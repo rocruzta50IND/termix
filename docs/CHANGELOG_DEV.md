@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**TASK-119 — Modal "Novo projeto" com modo de trabalho e permissão** (DEV1)
+
+- Modal maior com cartões: Chat, Terminal e Workflow (em breve) e a permissão da primeira aba; testado por CDP (primeira aba criada conforme a escolha). Aguarda validação.
+
 **TASK-118 — Fechamento: versão 0.3.8 validada** (DEV1)
 
 - O usuário validou o Clear no app instalado (0.3.8). TASK-118 movida para Concluídas.
