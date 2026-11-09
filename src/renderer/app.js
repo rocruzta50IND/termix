@@ -775,6 +775,7 @@ function mode() {
   if (!p) return 'empty';
   if (UI.cur.page !== 'Terminais') return 'page';
   if (UI.surface === 'web') return 'web'; // navegador embutido (TASK-022)
+  if (p.kind === 'workflow') return 'workflow';
   return curTab(p) ? 'term' : 'noterm';
 }
 
@@ -841,7 +842,10 @@ function renderSide() {
   const top = keep && same ? keep.scrollTop : 0; // a rolagem da lista não volta ao topo a cada redesenho (só ao trocar de modo)
   side.dataset.mode = col ? 'mini' : 'open';
   side.classList.toggle('mini', col);
-  const ps = visibleProjects();
+  const ps = visibleProjects().slice().sort((x, y) => (x.kind === 'workflow') - (y.kind === 'workflow')); // Workflow é outra categoria, depois dos projetos
+  const firstWf = ps.find((x) => x.kind === 'workflow');
+  const wfHead = (p) => (firstWf && p.id === firstWf.id ? `<div class="label wfl">${ic('workflow', 13)} Workflow</div>` : '');
+  const wfHeadMini = (p) => (firstWf && p.id === firstWf.id ? '<span class="rsep"></span>' : '');
   const isCur = (p, n) => UI.cur.p === p && UI.cur.page === n;
   const toggle = `<button class="tbtn" data-togside title="${col ? 'Abrir' : 'Fechar'} barra lateral">${ic('panel', 19)}</button>`;
   if (col) {
@@ -849,7 +853,7 @@ function renderSide() {
       const g = GRADS[(p.g || 0) % GRADS.length];
       const n = openTabs(p).length;
       const dotc = projDot(p), letter = projLetter(p);
-      return `<div class="pg ${p.open !== false && UI.cur.p === p.id ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
+      return `${wfHeadMini(p)}<div class="pg ${p.open !== false && UI.cur.p === p.id ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
         <div class="subs"><div class="subs-in"><div class="tray">${subsOf(p, true, isCur)}</div></div></div></div>`;
     }).join('');
     side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
@@ -858,7 +862,7 @@ function renderSide() {
       <div class="sfoot"><span class="rsep"></span>${GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('')}</div>`;
   } else {
     side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
-      <div class="sscroll">${ps.map((p) => `<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
+      <div class="sscroll">${ps.map((p) => `${wfHead(p)}<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
         <div class="prow"><button class="ph" data-ph="${p.id}"><span class="pav" style="--c1:${GRADS[(p.g || 0) % GRADS.length][0]};--c2:${GRADS[(p.g || 0) % GRADS.length][1]}">${projLetter(p)}${projDot(p) ? `<span class="st" style="background:${projDot(p)}"></span>` : ''}</span><span class="pn">${esc(p.name)}</span><span class="chev">${ic('chevr', 12)}</span></button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
         <div class="subs"><div class="subs-in"><div class="subs-pad">${subsOf(p, false, isCur)}</div></div></div></div>`).join('')}
       </div>
@@ -1499,11 +1503,19 @@ function noTermHTML(p) {
   return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}<div class="row2"><button class="btn pri" data-newtab="${chatNewKey()}">${chatCfg().mode === 'chat' ? '+ Chat' : '+ Terminal'}</button></div></div>`;
 }
 
+// Workflow (prévia, ainda sem função): sempre dois terminais fixos, já em Dangerously
+function workflowHTML(p) {
+  const pane = (n) => `<div class="wfpane"><div class="wfph"><span class="wfn">${ic('terminal', 16)} Terminal ${n}</span><span class="wftag">${ic('alert', 12)} Dangerously</span></div>
+    <div class="wfbody"><div class="wfsoon">${ic('terminal', 30)}<b>Terminal ${n}</b><small>O Claude Code roda aqui, sem pedir permissão.</small></div></div></div>`;
+  return `<div class="wfwrap"><div class="wfhead"><div><h2>${ic('workflow', 20)} Workflow · ${esc(p.name)}</h2><p class="meta">Dois terminais fixos, sempre em Dangerously (sem pedir permissão e sem isolamento do sistema).</p></div><span class="pjtag">Prévia · ainda sem função</span></div>
+    <div class="wfgrid">${pane(1)}${pane(2)}</div></div>`;
+}
 function renderPage() {
   const m = mode();
   let html = '';
   if (m === 'empty') html = emptyHTML();
   else if (m === 'noterm') html = noTermHTML(curProject());
+  else if (m === 'workflow') html = workflowHTML(curProject());
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML }[UI.cur.page]();
   else if (m === 'page') html = resPageHTML(UI.cur.page);
   $('#page').innerHTML = html;
@@ -1611,39 +1623,41 @@ function renderAll() {
 }
 
 /* ---------- ações de projeto e abas ---------- */
-// modos de trabalho do projeto novo (o Workflow chega depois: aparece, mas ainda não dá para escolher)
+// modos de trabalho do projeto novo. Workflow: dois terminais fixos, sempre em Dangerously (a função em si vem depois: hoje é só a tela)
 const NP_MODES = [
   { k: 'chat', icon: 'sparkles', t: 'Chat', d: 'Conversa em bolhas com o Claude Code, sem terminal.' },
-  { k: 'workflow', icon: 'workflow', t: 'Workflow', d: 'Tarefas encadeadas por etapas.', soon: true },
+  { k: 'workflow', icon: 'workflow', t: 'Workflow', d: 'Dois terminais fixos, já em Dangerously, trabalhando em etapas.' },
 ];
 const NP_PERMS = [
   ['n', 'shield', 'Perguntar', 'Aceita edições de arquivo e pede a sua aprovação para o resto, na conversa.'],
   ['d', 'bolt', 'Automático', 'Executa tudo sem pedir permissão. Mais rápido, com menos controle.'],
 ];
+const npFields = (mode, perm) => `<div class="f"><label>Modo de trabalho</label><div class="npmodes">${NP_MODES.map((m) => `<button type="button" class="npm" data-npm="${m.k}">${ic(m.icon, 26)}<b>${m.t}</b><small>${m.d}</small></button>`).join('')}</div></div>
+  <div class="f" data-npchat><label>Permissão</label><div class="npmodes">${NP_PERMS.map(([v, i, l, d]) => `<button type="button" class="npm ${v === 'd' ? 'warn' : ''}" data-npp="${v}">${ic(i, 26)}<b>${l}</b><small>${d}</small></button>`).join('')}</div></div>
+  <p class="meta hide" data-npwf>${ic('alert', 14)} O Workflow usa sempre dois terminais fixos em Dangerously: sem pedir permissão e sem isolamento do sistema.</p>
+  <input type="hidden" data-f="mode" value="${mode}"><input type="hidden" data-f="perm" value="${perm}">`;
+function npWire(root, mode, perm) {
+  const paint = () => {
+    root.querySelectorAll('[data-npm]').forEach((x) => x.classList.toggle('sel', x.dataset.npm === mode));
+    root.querySelectorAll('[data-npp]').forEach((x) => x.classList.toggle('sel', x.dataset.npp === perm));
+    root.querySelector('[data-npchat]').classList.toggle('hide', mode === 'workflow');
+    root.querySelector('[data-npwf]').classList.toggle('hide', mode !== 'workflow');
+    root.querySelector('[data-f=mode]').value = mode; root.querySelector('[data-f=perm]').value = perm;
+  };
+  root.addEventListener('click', (e) => {
+    const x = e.target.closest('[data-npm]'); const y = e.target.closest('[data-npp]');
+    if (x) { mode = x.dataset.npm; paint(); }
+    if (y) { perm = y.dataset.npp; paint(); }
+  });
+  paint();
+}
 async function newProjectFlow() {
-  let mode = 'chat';
-  let perm = chatPermFor();
   const r = await modal({
     title: 'Novo projeto',
     body: `<p>O Termix cria e organiza a pasta do projeto. Informe o nome e como quer trabalhar.</p>
-      <div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="name" placeholder="Meu SaaS" maxlength="60"></div>
-      <div class="f"><label>Modo de trabalho</label><div class="npmodes">${NP_MODES.map((m) => `<button type="button" class="npm ${m.k === mode ? 'sel' : ''}" data-npm="${m.k}" ${m.soon ? 'disabled' : ''}>${ic(m.icon, 26)}<b>${m.t}</b><small>${m.d}</small>${m.soon ? '<em>Em breve</em>' : ''}</button>`).join('')}</div></div>
-      <div class="f"><label>Permissão</label><div class="npmodes">${NP_PERMS.map(([v, i, l, d]) => `<button type="button" class="npm ${v === 'd' ? 'warn' : ''}" data-npp="${v}">${ic(i, 26)}<b>${l}</b><small>${d}</small></button>`).join('')}</div></div>
-      <input type="hidden" data-f="mode" value="${mode}"><input type="hidden" data-f="perm" value="${perm}">`,
+      <div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="name" placeholder="Meu SaaS" maxlength="60"></div>${npFields('chat', chatPermFor())}`,
     buttons: [['Cancelar', null], ['Importar pasta existente…', 'import'], ['Criar projeto', 'ok', 'pri']],
-    onOpen: (root) => {
-      const paint = () => {
-        root.querySelectorAll('[data-npm]').forEach((x) => x.classList.toggle('sel', x.dataset.npm === mode));
-        root.querySelectorAll('[data-npp]').forEach((x) => x.classList.toggle('sel', x.dataset.npp === perm));
-        root.querySelector('[data-f=mode]').value = mode; root.querySelector('[data-f=perm]').value = perm;
-      };
-      root.addEventListener('click', (e) => {
-        const x = e.target.closest('[data-npm]'); const y = e.target.closest('[data-npp]');
-        if (x && !x.disabled) { mode = x.dataset.npm; paint(); }
-        if (y) { perm = y.dataset.npp; paint(); }
-      });
-      paint();
-    },
+    onOpen: (root) => npWire(root, 'chat', chatPermFor()),
   });
   if (r.value === 'import') return importFlow();
   if (r.value !== 'ok') return;
@@ -1657,7 +1671,7 @@ async function newProjectFlow() {
     $('#modalRoot').innerHTML = '';
     note = out.ok ? `Projeto limpo: ${out.plugins} plugin${out.plugins === 1 ? '' : 's'} e ${out.mcps} MCP${out.mcps === 1 ? '' : 's'}/conectores desligados aqui.${out.userSkills ? ` ${out.userSkills} skill(s) de usuário continuam valendo (limite do Claude Code).` : ''}` : `Não consegui deixar o projeto limpo: ${out.message}`;
   }
-  addProject({ name, path, imported: false, first: { kind: 'chat', perm: r.form.perm === 'd' ? 'd' : 'n' } });
+  addProject({ name, path, imported: false, workflow: r.form.mode === 'workflow', first: { kind: 'chat', perm: r.form.perm === 'd' ? 'd' : 'n' } });
   if (note) addEvent({ who: name, msg: note });
 }
 async function importFlow() {
@@ -1666,8 +1680,18 @@ async function importFlow() {
   if (S.projects.some((p) => p.path.toLowerCase() === dir.toLowerCase() && !p.archived)) { addEvent({ who: 'Projetos', msg: 'Essa pasta já está registrada.' }); return; }
   const name = projNameClip(dir.split(/[\\/]/).filter(Boolean).pop()) || 'Projeto';
   const found = (await api.scanSessions(dir)).length;
-  const p = addProject({ name, path: dir, imported: true, noTab: found > 0 });
-  if (found) await importSessionsFlow(p, true);
+  const m = await modal({
+    title: 'Importar pasta existente',
+    body: `<p>O Termix só registra a pasta, sem copiar nem mover nada. Escolha como quer trabalhar nela.</p>
+      <div class="f"><label>Pasta</label><div class="pjpath" style="user-select:text" title="${esc(dir)}">${ic('folder', 16)}<span>${esc(dir)}</span></div></div>
+      <div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="name" value="${esc(name)}" maxlength="60"></div>${npFields('chat', chatPermFor())}`,
+    buttons: [['Cancelar', null], ['Importar', 'ok', 'pri']],
+    onOpen: (root) => npWire(root, 'chat', chatPermFor()),
+  });
+  if (m.value !== 'ok') return;
+  const wf = m.form.mode === 'workflow';
+  const p = addProject({ name: projNameClip(m.form.name) || name, path: dir, imported: true, noTab: found > 0, workflow: wf, first: { kind: 'chat', perm: m.form.perm === 'd' ? 'd' : 'n' } });
+  if (found && !wf) await importSessionsFlow(p, true);
 }
 
 function agoText(ms) {
@@ -1710,12 +1734,12 @@ async function importSessionsFlow(p, fromImport = false) {
   UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
   for (const t of p.tabs.slice(-picked.length)) await launch(p, t, 'resume');
 }
-function addProject({ name, path, imported, noTab, first }) {
-  const p = { id: uuid(), name, path, imported, archived: false, tabs: [], activeTab: null, g: S.projects.length, open: true };
+function addProject({ name, path, imported, noTab, first, workflow }) {
+  const p = { id: uuid(), name, path, imported, archived: false, tabs: [], activeTab: null, g: S.projects.length, open: true, ...(workflow ? { kind: 'workflow' } : {}) };
   S.projects.push(p);
   UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.res = null;
   save(); renderAll();
-  if (!noTab) { if (first && first.kind === 'chat') createTab(p, first.perm, { kind: 'chat' }); else createTab(p, first ? first.perm : 'n'); }
+  if (!noTab && !workflow) { if (first && first.kind === 'chat') createTab(p, first.perm, { kind: 'chat' }); else createTab(p, first ? first.perm : 'n'); }
   return p;
 }
 
