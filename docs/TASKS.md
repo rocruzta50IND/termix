@@ -11,11 +11,12 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-118 — Publicar a versão 0.3.8 (Clear instantâneo com resumo nativo)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO (2026-11-09; pedido explícito do usuário: "pode subir a release", depois de validar a TASK-117 no uso real)
+- **Status:** BLOQUEADA no passo do instalador (2026-11-09; pedido explícito do usuário: "pode subir a release", depois de validar a TASK-117 no uso real). Feitos: versão 0.3.8 e promoção dev1 → main (`21adec6`, fast-forward). **Não publicado:** nenhum Release v0.3.8 existe; o feed (`latest.yml` do GitHub) continua em 0.3.7, então os apps instalados não são afetados.
 - **Prioridade:** Alta — leva o novo botão Clear ao time.
 - **Entra nesta versão:** TASK-117 (Clear com resumo nativo, modelo do resumo editável em Configurações), TASK-116 (DEV2 no fluxo) e as tarefas de documentação do Backlog (111 a 115).
 - **Passos:** versão 0.3.8 (`package.json` e `package-lock.json`); promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.8`.
-- **Próximo passo:** executar os passos e, depois, o usuário atualiza o app (0.3.7 → 0.3.8) e valida o Clear no app instalado.
+- **Problema:** `npm run dist` falha na etapa do NSIS (`computeScriptAndSignUninstaller`) com `spawn UNKNOWN`, e deixou um instalador de 356 KB (só o stub), sem `latest.yml` novo; os parciais foram apagados. É o mesmo erro (`UNKNOWN`) que, na mesma máquina e no mesmo dia, o Windows deu ao tentar rodar o Electron de `node_modules` ("uma política de Controle de Aplicativo bloqueou este arquivo"). A 0.3.7 foi gerada aqui em 2026-11-05, então a política mudou depois. Causa exata do passo do NSIS **não confirmada** (o executável roda numa pasta temporária); não foi feita nenhuma tentativa de contornar a política.
+- **Próximo passo:** o usuário roda `npm run dist` num terminal dele (`! npm run dist` aqui na sessão) para ver se a política também bloqueia o terminal dele; se gerar o `Termix-Setup-0.3.8.exe` (~125 MB) e o `latest.yml` com versão 0.3.8, eu confiro tamanho e sha512 e publico (`gh release create v0.3.8`). Se bloquear, resolver a política do Windows (Controle de Aplicativo / Smart App Control) ou gerar o instalador em outra máquina.
 
 ### TASK-116 — Adicionar o DEV2 ao fluxo (criar a branch dev2 e registrar devs no fluxo.json)
 

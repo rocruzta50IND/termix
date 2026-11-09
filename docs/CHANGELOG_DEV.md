@@ -15,6 +15,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 - Medido (3 repetições, `claude -p`, Sonnet): ~US$ 0,008 contra ~US$ 0,072 da retomada antiga, 1 chamada ao modelo contra 6, sem ler o `TASKS.md`; as respostas sabiam os arquivos alterados na conversa. Testado em chat e terminal reais (PTY e CDP numa cópia isolada do app), com modelo personalizado e restaurar. Validado pelo usuário no uso real (3 tarefas seguidas).
 - Observação: o Electron de desenvolvimento está bloqueado pelo Controle de Aplicativo do Windows nesta máquina; os testes de interface usaram uma cópia do Termix instalado com o código novo.
 
+**TASK-118 — Release 0.3.8 bloqueada no instalador** (DEV1)
+
+- Versão 0.3.8 e promoção feitas; `npm run dist` falhou no NSIS com `spawn UNKNOWN` (política de Controle de Aplicativo do Windows nesta máquina, causa provável; mesma que bloqueou o Electron de desenvolvimento). Nada foi publicado e o feed segue em 0.3.7. Detalhes e próximo passo na TASK-118.
+
 **Promoção dev1 → main (versão 0.3.8)** (DEV1)
 
 - Promovidas 14 commits: TASK-117 (Clear instantâneo com resumo nativo, o único com código), TASK-116 (DEV2 no fluxo) e o registro no Backlog das TASK-104, 108, 109, 110, 111 a 115. A TASK-118 acompanha a publicação da versão. A `main` não tinha commits fora da `dev1`; promoção em fast-forward.
