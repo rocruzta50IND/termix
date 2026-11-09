@@ -8,6 +8,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-118 — Publicar a versão 0.3.8 (Clear instantâneo com resumo nativo)
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (2026-11-09; pedido explícito do usuário: "pode subir a release", depois de validar a TASK-117 no uso real)
+- **Prioridade:** Alta — leva o novo botão Clear ao time.
+- **Entra nesta versão:** TASK-117 (Clear com resumo nativo, modelo do resumo editável em Configurações), TASK-116 (DEV2 no fluxo) e as tarefas de documentação do Backlog (111 a 115).
+- **Passos:** versão 0.3.8 (`package.json` e `package-lock.json`); promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.8`.
+- **Próximo passo:** executar os passos e, depois, o usuário atualiza o app (0.3.7 → 0.3.8) e valida o Clear no app instalado.
+
 ### TASK-116 — Adicionar o DEV2 ao fluxo (criar a branch dev2 e registrar devs no fluxo.json)
 
 - **Responsável:** DEV1
