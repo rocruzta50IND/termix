@@ -238,6 +238,7 @@ const FICON = {
   term: '<path d="M7.5 4.5h10a3.5 3.5 0 0 1 3.5 3.5v8"/><rect x="3" y="8" width="15" height="12" rx="3"/><path d="M7 12.4l2.4 1.9L7 16.2M11.6 16.4h3"/>',
   clear: '<circle cx="12" cy="12" r="8.5"/><path d="M9 9l6 6M15 9l-6 6"/>',
   refresh: '<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4.5H15"/>',
+  workflow: '<rect x="3" y="4" width="6" height="6" rx="1.6"/><rect x="15" y="14" width="6" height="6" rx="1.6"/><path d="M9 7h3.5a2.5 2.5 0 0 1 2.5 2.5V14"/>',
   web: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5z"/>',
 };
 const ficon = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${FICON[n]}</svg>`;
@@ -255,7 +256,8 @@ function renderFoot(st, p, m) {
   foot.classList.toggle('hide', !show);
   foot.classList.toggle('fade', !!st.fade);
   const c = st.clear;
-  const html = !show ? '' : `<button class="${st.mode === 'term' ? 'on' : ''}" data-fm="term">${ficon('term')}Terminais${st.terms ? `<span class="n ${st.attention ? 'att' : ''}">${st.terms}</span>` : ''}</button>`
+  const wf = show && p.kind === 'workflow'; // Workflow: só a função (ícone) e a Web
+  const html = !show ? '' : wf ? `<button class="${st.mode === 'term' ? 'on' : ''}" data-fm="term">${ficon('workflow')}Workflow</button><button class="${st.mode === 'web' ? 'on' : ''}" data-fm="web">${ficon('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>` : `<button class="${st.mode === 'term' ? 'on' : ''}" data-fm="term">${ficon('term')}Terminais${st.terms ? `<span class="n ${st.attention ? 'att' : ''}">${st.terms}</span>` : ''}</button>`
     + `<button class="${st.mode === 'web' ? 'on' : ''}" data-fm="web">${ficon('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>`
     + (c ? `<i class="sep"></i><button class="clr ${c.pulse ? 'pulse ' : ''}${c.busy ? 'busy' : ''}" data-fm="clear" ${c.off ? 'disabled' : ''}>${ficon('clear')}Clear</button>`
       + `<button class="rst ${c.rst.spin ? 'spin' : ''}" data-fm="restart" ${c.rst.off ? 'disabled' : ''} title="${c.rst.tip}" aria-label="${c.rst.tip}">${ficon('refresh')}Reiniciar</button>` : '')

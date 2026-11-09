@@ -347,7 +347,7 @@ function chatUi(tab) {
 function showChat(tab) {
   const c = chatView(tab), f = findTab(tab.id);
   chatEnsure(tab);
-  $('#termHost').classList.add('hide'); $('#chatHost').classList.remove('hide'); $('#sess').classList.add('chatmode');
+  $('#termHost').classList.add('hide'); $('#chatHost').classList.remove('hide', 'wf2'); $('#sess').classList.add('chatmode');
   $('#chatHost').querySelectorAll('.c-root').forEach((el) => el.classList.toggle('on', el === c.root));
   if (!c.loaded) {
     c.loaded = true;
@@ -373,6 +373,17 @@ function showChat(tab) {
 }
 
 /* ---------- ciclo de vida ---------- */
+// Workflow: os dois chats fixos aparecem lado a lado, cada um com o seu título e a etiqueta Dangerously
+function showWorkflow(p) {
+  const ts = p.tabs.filter((t) => t.wf).sort((x, y) => x.wf - y.wf);
+  ts.slice().reverse().forEach((t) => showChat(t)); // o Terminal 1 fica com o foco
+  ts.forEach((t) => {
+    const c = chatView(t);
+    c.root.classList.add('on');
+    if (!c.root.querySelector('.c-wfh')) c.root.insertAdjacentHTML('afterbegin', `<div class="c-wfh"><b>Terminal ${t.wf}</b><em>${chatIc('alert', 12)} Dangerously</em></div>`);
+  });
+  $('#chatHost').classList.add('wf2');
+}
 function chatOpen(p, tab) { // chamado por launch(): a aba de chat não sobe processo até a primeira mensagem
   chatEnsure(tab); chatView(tab);
   setSt(tab, 'wait');

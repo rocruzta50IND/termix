@@ -775,7 +775,7 @@ function mode() {
   if (!p) return 'empty';
   if (UI.cur.page !== 'Terminais') return 'page';
   if (UI.surface === 'web') return 'web'; // navegador embutido (TASK-022)
-  if (p.kind === 'workflow') return 'workflow';
+  if (p.kind === 'workflow') { wfEnsure(p); return 'term'; } // Workflow sempre tem os dois chats
   return curTab(p) ? 'term' : 'noterm';
 }
 
@@ -900,7 +900,7 @@ if (typeof ResizeObserver !== 'undefined') window.addEventListener('DOMContentLo
 function renderTabs() {
   if (UI.tabDragging) return; // redesenhar no meio do arraste soltaria a aba do mouse; o soltar refaz
   const p = curProject();
-  if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
+  if (!p || mode() !== 'term' || p.kind === 'workflow') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
   const st = stOf(cur), [sc, sl] = STATES[st];
@@ -1503,19 +1503,21 @@ function noTermHTML(p) {
   return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}<div class="row2"><button class="btn pri" data-newtab="${chatNewKey()}">${chatCfg().mode === 'chat' ? '+ Chat' : '+ Terminal'}</button></div></div>`;
 }
 
-// Workflow (prévia, ainda sem função): sempre dois terminais fixos, já em Dangerously
-function workflowHTML(p) {
-  const pane = (n) => `<div class="wfpane"><div class="wfph"><span class="wfn">${ic('terminal', 16)} Terminal ${n}</span><span class="wftag">${ic('alert', 12)} Dangerously</span></div>
-    <div class="wfbody"><div class="wfsoon">${ic('terminal', 30)}<b>Terminal ${n}</b><small>O Claude Code roda aqui, sem pedir permissão.</small></div></div></div>`;
-  return `<div class="wfwrap"><div class="wfhead"><div><h2>${ic('workflow', 20)} Workflow · ${esc(p.name)}</h2><p class="meta">Dois terminais fixos, sempre em Dangerously (sem pedir permissão e sem isolamento do sistema).</p></div><span class="pjtag">Prévia · ainda sem função</span></div>
-    <div class="wfgrid">${pane(1)}${pane(2)}</div></div>`;
+// Workflow: sempre dois chats fixos, lado a lado, já em Dangerously (a função em si vem depois)
+function wfEnsure(p) {
+  let made = false;
+  for (const n of [1, 2]) {
+    if (p.tabs.some((t) => t.wf === n)) continue;
+    const t = { id: uuid(), sessionId: uuid(), agent: 'claude', name: `Terminal ${n}`, color: DEFAULT_COLOR, perm: 'd', started: false, open: true, live: false, archived: false, kind: 'chat', wf: n };
+    p.tabs.push(t); made = true; launch(p, t, 'new');
+  }
+  if (made) { if (!p.tabs.some((t) => t.id === p.activeTab)) p.activeTab = (p.tabs.find((t) => t.wf === 1) || p.tabs[0]).id; save(); }
 }
 function renderPage() {
   const m = mode();
   let html = '';
   if (m === 'empty') html = emptyHTML();
   else if (m === 'noterm') html = noTermHTML(curProject());
-  else if (m === 'workflow') html = workflowHTML(curProject());
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML }[UI.cur.page]();
   else if (m === 'page') html = resPageHTML(UI.cur.page);
   $('#page').innerHTML = html;
@@ -1614,12 +1616,12 @@ function renderChrome() { renderSide(); renderTabs(); renderTop(); renderRail();
 function renderAll() {
   const m = mode();
   renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu(); renderRail();
-  $('#tabsRow').classList.toggle('hide', m !== 'term');
+  $('#tabsRow').classList.toggle('hide', m !== 'term' || (curProject() || {}).kind === 'workflow');
   $('#sess').classList.toggle('hide', m !== 'term');
   $('#page').classList.toggle('hide', m === 'term' || m === 'web');
   if (window.webRender) webRender(m);
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
-  if (m === 'term') { const t = curTab(curProject()); if (t.kind === 'chat') showChat(t); else showTab(t); }
+  if (m === 'term') { const cp = curProject(); if (cp.kind === 'workflow') showWorkflow(cp); else { const t = curTab(cp); if (t.kind === 'chat') showChat(t); else showTab(t); } }
 }
 
 /* ---------- ações de projeto e abas ---------- */
