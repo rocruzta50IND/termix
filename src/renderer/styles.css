@@ -834,3 +834,23 @@ table.t tr.dim td{color:var(--text2)}
 .npwf{display:flex;gap:8px;align-items:flex-start;color:#f0a35e}
 .npwf svg{flex:none;margin-top:2px}
 .npage .row2{margin-top:22px}
+/* barra lateral v2: ações em destaque + abas planas para alternar o tipo */
+.snew button.nw{color:var(--text);background:rgba(91,157,255,.12);border:1px solid rgba(91,157,255,.38)}
+.snew button.nw svg{color:var(--accent)}
+.snew button.nw:hover{background:rgba(91,157,255,.22)}
+.snew button.nw.active{background:rgba(91,157,255,.28);border-color:var(--accent)}
+.snew.mini{gap:8px}
+.snew.mini .ci.nw{position:relative;width:42px;height:42px}
+.snew.mini .ci.nw::after{content:'+';position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;line-height:1;color:#fff;background:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.skind{background:none;border:0;border-bottom:1px solid var(--border);border-radius:0;padding:0;margin:2px 0 10px}
+.skind button{border-radius:0;padding:8px 6px;font-size:13px;color:var(--text3);border-bottom:2px solid transparent;margin-bottom:-1px}
+.skind button:hover{color:var(--text2)}
+.skind button.sel{background:none;box-shadow:none;color:var(--text);border-bottom-color:var(--accent)}
+.skind button.sel svg{color:var(--accent)}
+.skind button small{padding:1px 7px;border-radius:99px;background:var(--glass);font-size:11px}
+.skind.mini{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;margin:2px 0 8px}
+.skind.mini .ksel{position:relative;width:42px;height:42px;border-radius:14px;border:1px solid transparent;margin:0;color:var(--text3)}
+.skind.mini .ksel.sel{background:var(--glass2);color:var(--text);border-color:var(--border2)}
+.skind.mini .ksel.sel svg{color:var(--accent)}
+.skind.mini .kn{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:600;color:var(--text);background:var(--glass2);border:1px solid var(--border2)}
+.snew:not(.mini) button{min-width:0;padding:9px 6px;font-size:13px;gap:6px;overflow:hidden}.snew:not(.mini) button span{overflow:hidden;text-overflow:ellipsis}

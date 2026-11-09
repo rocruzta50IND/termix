@@ -849,10 +849,13 @@ function renderSide() {
   const kind = S.settings.sideKind === 'workflow' ? 'workflow' : 'chat';
   const ps = all.filter((p) => kindOf(p) === kind);
   const onNew = UI.cur.p === '_' && /^Novo /.test(UI.cur.page);
+  const nChat = all.filter((p) => kindOf(p) === 'chat').length, nWf = all.filter((p) => kindOf(p) === 'workflow').length;
   const newBtns = col
-    ? `<div class="snew mini"><button class="ci add ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo chat">${ic('sparkles', 17)}</button><button class="ci add ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo workflow">${ic('workflow', 17)}</button><button class="ci" data-sidekind="${kind === 'chat' ? 'workflow' : 'chat'}" data-tip="Mostrando: ${kind === 'chat' ? 'Chat' : 'Workflow'} (clique para alternar)">${ic(kind === 'chat' ? 'sparkles' : 'workflow', 17)}</button></div>`
-    : `<div class="snew"><button class="${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('plus', 15)}<span>Chat</span></button><button class="${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('plus', 15)}<span>Workflow</span></button></div>
-      <div class="skind"><button class="${kind === 'chat' ? 'sel' : ''}" data-sidekind="chat">${ic('sparkles', 14)}Chat<small>${all.filter((p) => kindOf(p) === 'chat').length}</small></button><button class="${kind === 'workflow' ? 'sel' : ''}" data-sidekind="workflow">${ic('workflow', 14)}Workflow<small>${all.filter((p) => kindOf(p) === 'workflow').length}</small></button></div>`;
+    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo chat">${ic('sparkles', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo workflow">${ic('workflow', 18)}</button></div>
+      <span class="rsep"></span>
+      <div class="skind mini"><button class="ci ksel ${kind === 'chat' ? 'sel' : ''}" data-sidekind="chat" data-tip="Mostrar os chats (${nChat})">${ic('sparkles', 17)}<i class="kn">${nChat}</i></button><button class="ci ksel ${kind === 'workflow' ? 'sel' : ''}" data-sidekind="workflow" data-tip="Mostrar os workflows (${nWf})">${ic('workflow', 17)}<i class="kn">${nWf}</i></button></div>`
+    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('sparkles', 16)}<span>+ Chat</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('workflow', 16)}<span>+ Workflow</span></button></div>
+      <div class="skind"><button class="${kind === 'chat' ? 'sel' : ''}" data-sidekind="chat">${ic('sparkles', 15)}<span>Chats</span><small>${nChat}</small></button><button class="${kind === 'workflow' ? 'sel' : ''}" data-sidekind="workflow">${ic('workflow', 15)}<span>Workflows</span><small>${nWf}</small></button></div>`;
   const isCur = (p, n) => UI.cur.p === p && UI.cur.page === n;
   const toggle = `<button class="tbtn" data-togside title="${col ? 'Abrir' : 'Fechar'} barra lateral">${ic('panel', 19)}</button>`;
   if (col) {
@@ -864,7 +867,8 @@ function renderSide() {
         <div class="subs"><div class="subs-in"><div class="tray">${subsOf(p, true, isCur)}</div></div></div></div>`;
     }).join('');
     side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
-      ${newBtns}<span class="rsep"></span>
+      ${newBtns}
+      <span class="rsep"></span>
       <div class="sscroll">${list}</div>
       <div class="sfoot"><span class="rsep"></span>${GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('')}</div>`;
   } else {
