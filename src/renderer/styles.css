@@ -854,3 +854,17 @@ table.t tr.dim td{color:var(--text2)}
 .skind.mini .ksel.sel svg{color:var(--accent)}
 .skind.mini .kn{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:600;color:var(--text);background:var(--glass2);border:1px solid var(--border2)}
 .snew:not(.mini) button{min-width:0;padding:9px 6px;font-size:13px;gap:6px;overflow:hidden}.snew:not(.mini) button span{overflow:hidden;text-overflow:ellipsis}
+/* barra lateral v3: criar em lista (um embaixo do outro, sem pílulas) e recolhida mais limpa */
+.snew:not(.mini){flex-direction:column;gap:2px;padding:0 0 6px}
+.snew:not(.mini) button.nw{justify-content:flex-start;gap:12px;padding:8px 10px;background:none;border:1px solid transparent;color:var(--text2);font-weight:500;border-radius:12px}
+.snew:not(.mini) button.nw svg{margin:0 5px 0 5px}
+.snew:not(.mini) button.nw:hover{background:var(--glass);color:var(--text)}
+.snew:not(.mini) button.nw.active{background:var(--glass2);color:var(--text);border-color:var(--border2)}
+.snew.mini{gap:4px}
+.snew.mini .ci.nw{width:36px;height:36px;border-radius:12px;background:none;border:0;color:var(--text2)}
+.snew.mini .ci.nw:hover{background:var(--glass);color:var(--text)}
+.snew.mini .ci.nw.active{background:var(--glass2);color:var(--text)}
+.snew.mini .ci.nw::after{top:-1px;right:-1px;width:14px;height:14px;font-size:11px}
+.skind.mini{gap:2px;padding:3px;margin:2px 0 8px;border-radius:16px;background:var(--glass);border:1px solid var(--border)}
+.skind.mini .ksel{width:32px;height:32px;border-radius:12px}
+.skind.mini .kn{display:none}
