@@ -1,16 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 3 72 60">
-  <!-- marca do cabeçalho: só o prompt, sem caixa, com brilho (o ícone do app e da barra de tarefas mantém o quadrado) -->
-  <defs>
-    <linearGradient id="p" gradientUnits="userSpaceOnUse" x1="8" y1="14" x2="58" y2="52">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#7dd3fc"/>
-    </linearGradient>
-    <filter id="b" filterUnits="userSpaceOnUse" x="-10" y="-10" width="90" height="90"><feGaussianBlur stdDeviation="2.6"/></filter>
-  </defs>
-  <g filter="url(#b)" opacity=".85">
-    <path d="M10 15l22 17-22 17" fill="none" stroke="#38bdf8" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M37 51h19" fill="none" stroke="#38bdf8" stroke-width="8.5" stroke-linecap="round"/>
-  </g>
-  <path d="M10 15l22 17-22 17" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M37 51h19" fill="none" stroke="url(#p)" stroke-width="7.5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 40">
+  <!-- marca do cabeçalho e da abertura (TASK-121): só o símbolo >_ em azul claro, sem caixa; o ícone do app mantém o quadrado -->
+  <path d="M6 6l16 14L6 34" fill="none" stroke="#8cc0ff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M27 34h15" fill="none" stroke="#8cc0ff" stroke-width="5.5" stroke-linecap="round"/>
 </svg>

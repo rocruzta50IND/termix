@@ -89,7 +89,10 @@ const CHAT_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const CHAT_ICON = {
   copy: '<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
-  send: '<path d="M12 19V5M5 12l7-7 7 7"/>',
+  send: '<path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  clip: '<path d="M21.4 11.05l-9.2 9.2a6 6 0 0 1-8.5-8.5l8.6-8.6a4 4 0 0 1 5.7 5.7l-8.6 8.6a2 2 0 0 1-2.8-2.8l8.5-8.5"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
   stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>',
   laptop: '<rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 20h20"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -105,8 +108,8 @@ function chatView(tab) {
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
     <div class="c-scroll"><div class="c-thread"><div class="c-typing"><span class="c-av">${CHAT_MARK}</span><div class="c-st"><div class="c-st1"><b class="v"></b><span class="t"></span></div><div class="c-st2"></div></div></div></div></div>
     <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>
-      <div class="c-in"><div class="c-thumbs"></div><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
-        <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
+      <div class="c-in"><div class="c-thumbs"></div><button class="c-soon c-attach" type="button" data-soon="Em breve" aria-label="Anexar arquivo (em breve)" aria-disabled="true" tabindex="-1">${chatIc('plus', 20)}</button><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
+        <button class="c-soon c-mic" type="button" data-soon="Em breve" aria-label="Falar (em breve)" aria-disabled="true" tabindex="-1">${chatIc('mic', 18)}</button><button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send', 20)}</button>
         <button class="c-stop" type="button" title="Parar a resposta" aria-label="Parar">${chatIc('stop')}</button></div>
       <div class="c-meta"><span class="c-env">${chatIc('laptop', 15)}Este computador</span><span class="c-env c-folder">${chatIc('folder', 15)}<span></span><em></em></span><span class="sp"></span><span class="c-mdl"></span><span class="c-perm"></span></div>
     </div></div>`;

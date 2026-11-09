@@ -162,6 +162,10 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 ## Identidade visual do Rocruzta Hub (TASK-121)
 - O Termix segue a **identidade visual** do Rocruzta Hub (cores, fonte Inter, raios, painéis de vidro flutuantes, abas e rodapé). **Só aparência**: o Hub é outro projeto, com repositório próprio; ele vai abrir e controlar o Termix de fora e **nada do Hub vira função do Termix**. Detalhes e origem da referência em `docs/DESIGN.md`.
 - Tema claro do Hub **fora de escopo** (seria um recurso novo); fica como tarefa futura no Backlog.
+- **Barra lateral em pastas (Chats / Workflows):** a hierarquia é pasta > projeto > função. Substitui o seletor de abas Chats/Workflows. Clicar no nome do projeto **só abre/fecha** as funções dele, sem trocar de tela (antes o primeiro clique trocava de projeto e o segundo fechava).
+- **Rail inferior de ponta a ponta:** o dock de funções se estica entre a barra lateral e a borda direita (modos à esquerda, ações no centro, ajustes à direita). Consumo, Integrações e Configurações continuam no fim da barra lateral.
+- **Campo de envio:** anexar arquivo e falar (áudio) aparecem como **"Em breve"** (ainda não existem); enviar é só um ícone neutro. Azul vivo chapado deixa de ser usado em botões de ação; o primário é claro (como o do Hub).
+- **Logo:** só o símbolo no cabeçalho; o ícone do app e da tela de nova conversa é o quadrado azul-marinho com o prompt.
 
 ## Fluxo de trabalho do projeto
 - Metodologia DEV2 → DEV1 → MAIN (`WORKFLOW.md`). Esta máquina é **DEV1**. A `dev2` não foi criada (trabalho individual).

@@ -26,8 +26,10 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Decisões:** só tema escuro (o claro do Hub seria recurso novo: Backlog); sem `backdrop-filter` (regra de desempenho do Termix); botão primário invertido como no Hub; `--text3` um pouco mais claro que o do Hub (`#7B7B78`) para manter a leitura.
 - **Arquivos tocados:** `src/renderer/styles.css`, `app.js`, `web.js`, `fonts/*`, `docs/DESIGN.md`, `docs/DECISOES.md`, `docs/TASKS.md`, `docs/CHANGELOG_DEV.md`.
 - **Como validar:** `npm run check` (passou). Testado por CDP em instância isolada (perfil temporário, porta 9333): terminal com Claude Code vivo, chat com resposta real (markdown, código, anéis de limites), Web, Plugins, Consumo, Configurações, novo chat, barra recolhida, painel de notificações, modal. Para o usuário: abrir o app (`npm start`) e percorrer as telas; conferir arrastar abas, maximizar e o modo Ofuscado (não testados por mim).
-- **Pendências:** validação visual do usuário; modo Ofuscado e janela maximizada sem teste; ajustes finos de espaçamento a pedido.
-- **Próximo passo:** o usuário avalia o visual; ajustar o que pedir; com a aprovação, fechar (`/encerrar-tarefa TASK-121`). Versão/Release só se ele pedir.
+- **Refinamentos feitos depois da revisão do usuário (2026-11-09):** logo só com o símbolo e ícone do app novo; barra lateral recolhida de 64 px e minimalista; barra lateral em árvore de pastas (Chats/Workflows); clique único no projeto abre/fecha as funções; rail inferior de ponta a ponta em três grupos; vão único de 10 px; abas rentes ao campo; sem azul chapado nos botões; campo de envio estreito com "+" (anexar) e microfone "Em breve"; ícones novos. Detalhes em `docs/DESIGN.md` e `docs/DECISOES.md`.
+- **Regressão por CDP (instância isolada, 0 erros de JavaScript):** terminal vivo (Claude Code v2.1.321), chat, troca Terminal/Chat (com o modal de "agente trabalhando"), modo Web e volta, nova aba, barra aberta e recolhida, pastas Chats/Workflows, funções do projeto (Plugins, Skills, MCPs), Consumo, Integrações, Configurações, novo chat, novo workflow, notificações (geometria com o painel aberto), avatares na barra recolhida, campo de envio (digitar; "+" e microfone sem efeito), arrastar abas (ordem trocada), janela maximizada e restaurada (geometria conferida).
+- **Pendências:** modo Ofuscado e envio de mensagem real depois dos ajustes finais do campo (o chat real foi testado antes deles) sem teste; promoção para a main só com versão consolidada e instalador testado (regra do projeto).
+- **Próximo passo:** usuário aprovou o visual em 2026-11-09 ("ficou ótimo") e pediu para migrar para o layout novo; commit na `dev1`. Promoção à `main`/versão (0.3.10) só quando ele pedir, com instalador testado.
 
 ### TASK-116 — Adicionar o DEV2 ao fluxo (criar a branch dev2 e registrar devs no fluxo.json)
 
@@ -324,6 +326,13 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ## Prontas
 
 ## Backlog
+
+### TASK-123 — Chat: anexar arquivo e falar (áudio)
+
+- **Responsável:** A definir
+- **Status:** BACKLOG — surgiu na TASK-121: o campo de envio já tem o "+" (anexar) e o microfone (falar) como **"Em breve"**, só visuais.
+- **Escopo:** ligar o "+" a um seletor de arquivos/imagens (hoje o chat já aceita imagens por colar/arrastar) e o microfone a ditado por voz. Definir antes onde os arquivos vão e como o Claude Code os recebe.
+- **Próximo passo:** nenhum agora.
 
 ### TASK-122 — Tema claro no Termix (identidade do Hub)
 

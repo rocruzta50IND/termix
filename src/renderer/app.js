@@ -8,7 +8,7 @@ const GLOBALS = [['Consumo', 'gauge'], ['Integrações', 'link'], ['Configuraç�
 // o desenho de cada ícone ocupa uma parte diferente do quadro (a engrenagem é grande, o link é pequeno): o tamanho de cada um é ajustado para os três terem o mesmo peso visual (~13 px de desenho)
 const GLOBAL_ICON = { gauge: 19, link: 21, gear: 16 };
 const gIc = (name, base) => ic(name, Math.round(base * (GLOBAL_ICON[name] || 19) / 19 * 10) / 10);
-const SUBS = [['Terminais', 'terminal'], ['Plugins', 'plug'], ['Skills', 'sparkles'], ['MCPs', 'network']];
+const SUBS = [['Terminais', 'sterm'], ['Plugins', 'splug'], ['Skills', 'sparkles'], ['MCPs', 'network']];
 
 // engrenagem de 8 dentes, gerada por pontos para não depender de um desenho externo
 function gearPath() {
@@ -24,7 +24,13 @@ function gearPath() {
 
 // ícones de traço, todos no mesmo estilo
 const ICONS = {
-  panel: '<rect x="3" y="4.5" width="18" height="15" rx="3.5"/><path d="M9.5 4.5v15"/>',
+  panel: '<rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="M9 3.5v17"/>',
+  newchat: '<path d="M12 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-6"/><path d="M18.4 2.6a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/>',
+  newwf: '<rect x="3" y="3" width="8" height="8" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h2"/><path d="M17 13v8M13 17h8"/>',
+  bubble: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  wfnodes: '<rect x="3" y="3" width="8" height="8" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect x="13" y="13" width="8" height="8" rx="2"/>',
+  sterm: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7.5 10 2.5 2-2.5 2M12.5 15h4"/>',
+  splug: '<path d="M12 21v-4.5M9 7.5V3M15 7.5V3"/><path d="M18 7.5v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4v-5z"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
   bell: '<path d="M6 10a6 6 0 0 1 12 0c0 4.6 1.8 6 1.8 6H4.2S6 14.6 6 10z"/><path d="M10 19.2a2.2 2.2 0 0 0 4 0"/>',
   chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
@@ -835,6 +841,9 @@ function projDot(p) {
 }
 const projLetter = (p) => esc(p.name.trim()[0] ? p.name.trim()[0].toUpperCase() : '?');
 
+// pastas da barra lateral (Chats e Workflows): abertas por padrão; a escolha fica salva
+const catOpen = (k) => !(S.settings.sideCats && S.settings.sideCats[k] === false);
+const setCatOpen = (k, v) => { S.settings.sideCats = { ...(S.settings.sideCats || {}), [k]: v }; };
 function renderSide() {
   hideSideTip(); // a barra é redesenhada: o ícone sobre o qual estava o mouse pode ter saído
   const col = S.settings.sideCollapsed;
@@ -845,39 +854,43 @@ function renderSide() {
   side.classList.toggle('mini', col);
   const all = visibleProjects();
   const cp = curProject();
-  if (cp && UI.kindFor !== cp.id) { UI.kindFor = cp.id; S.settings.sideKind = kindOf(cp); } // abriu outro projeto (por aviso, por exemplo): o seletor vai até o tipo dele; depois disso a escolha manual vale
-  const kind = S.settings.sideKind === 'workflow' ? 'workflow' : 'chat';
-  const ps = all.filter((p) => kindOf(p) === kind);
+  if (cp && UI.kindFor !== cp.id) { UI.kindFor = cp.id; S.settings.sideKind = kindOf(cp); setCatOpen(kindOf(cp), true); } // abriu outro projeto (por aviso, por exemplo): a pasta dele (Chats ou Workflows) abre
   const onNew = UI.cur.p === '_' && /^Novo /.test(UI.cur.page);
-  const nChat = all.filter((p) => kindOf(p) === 'chat').length, nWf = all.filter((p) => kindOf(p) === 'workflow').length;
+  const CATS = [['chat', 'Chats', 'bubble', 'Nenhum chat ainda.'], ['workflow', 'Workflows', 'wfnodes', 'Nenhum workflow ainda.']];
+  const byKind = (k) => all.filter((p) => kindOf(p) === k);
   const newBtns = col
-    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo chat">${ic('sparkles', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo workflow">${ic('workflow', 18)}</button></div>
-      <span class="rsep"></span>
-      <div class="skind mini"><button class="ci ksel ${kind === 'chat' ? 'sel' : ''}" data-sidekind="chat" data-tip="Mostrar os chats (${nChat})">${ic('sparkles', 17)}<i class="kn">${nChat}</i></button><button class="ci ksel ${kind === 'workflow' ? 'sel' : ''}" data-sidekind="workflow" data-tip="Mostrar os workflows (${nWf})">${ic('workflow', 17)}<i class="kn">${nWf}</i></button></div>`
-    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('sparkles', 16)}<span>+ Chat</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('workflow', 16)}<span>+ Workflow</span></button></div>
-      <div class="skind"><button class="${kind === 'chat' ? 'sel' : ''}" data-sidekind="chat">${ic('sparkles', 15)}<span>Chats</span><small>${nChat}</small></button><button class="${kind === 'workflow' ? 'sel' : ''}" data-sidekind="workflow">${ic('workflow', 15)}<span>Workflows</span><small>${nWf}</small></button></div>`;
+    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo chat">${ic('newchat', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo workflow">${ic('newwf', 18)}</button></div>`
+    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('newchat', 16)}<span>Novo chat</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('newwf', 16)}<span>Novo workflow</span></button></div>`;
   const isCur = (p, n) => UI.cur.p === p && UI.cur.page === n;
   const toggle = `<button class="tbtn" data-togside title="${col ? 'Abrir' : 'Fechar'} barra lateral">${ic('panel', 19)}</button>`;
-  if (col) {
-    const list = ps.map((p) => {
-      const g = GRADS[(p.g || 0) % GRADS.length];
-      const n = openTabs(p).length;
-      const dotc = projDot(p), letter = projLetter(p);
-      return `<div class="pg ${p.open !== false && UI.cur.p === p.id ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
+  const projMini = (p) => {
+    const g = GRADS[(p.g || 0) % GRADS.length];
+    const n = openTabs(p).length;
+    const dotc = projDot(p), letter = projLetter(p);
+    return `<div class="pg ${p.open !== false && UI.cur.p === p.id ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
         <div class="subs"><div class="subs-in"><div class="tray">${subsOf(p, true, isCur)}</div></div></div></div>`;
-    }).join('');
+  };
+  const projOpen = (p) => `<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
+        <div class="prow"><button class="ph" data-ph="${p.id}"><span class="pav" style="--c1:${GRADS[(p.g || 0) % GRADS.length][0]};--c2:${GRADS[(p.g || 0) % GRADS.length][1]}">${projLetter(p)}${projDot(p) ? `<span class="st" style="background:${projDot(p)}"></span>` : ''}</span><span class="pn">${esc(p.name)}</span><span class="chev">${ic('chevr', 12)}</span></button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
+        <div class="subs"><div class="subs-in"><div class="subs-pad">${subsOf(p, false, isCur)}</div></div></div></div>`;
+  if (col) {
+    // barra recolhida: cada categoria é um ícone (como uma pasta); selecionar abre/fecha a lista de projetos dela logo abaixo
+    const list = CATS.map(([k, label, icon]) => { const ps = byKind(k), open = catOpen(k);
+      return `<div class="mcat ${open ? 'open' : ''}" data-cat="${k}"><button class="ci ksel ${open ? 'sel' : ''}" data-sidecat="${k}" data-tip="${label} (${ps.length})">${ic(icon, 17)}</button>${open ? ps.map(projMini).join('') : ''}</div>`; }).join('');
     side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
       ${newBtns}
       <span class="rsep"></span>
       <div class="sscroll">${list}</div>
       <div class="sfoot"><span class="rsep"></span>${GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('')}</div>`;
   } else {
+    // barra aberta: hierarquia de pastas. Chats e Workflows são as pastas; dentro de cada uma ficam os projetos, e dentro deles as funções
+    const body = CATS.map(([k, label, icon, none]) => { const ps = byKind(k), open = catOpen(k);
+      return `<div class="cat ${open ? 'open' : ''}" data-cat="${k}">
+        <button class="chead" data-sidecat="${k}"><span class="chev">${ic('chevr', 12)}</span>${ic(icon, 16)}<span class="cn">${label}</span><small>${ps.length}</small></button>
+        <div class="subs"><div class="subs-in"><div class="cbody">${ps.length ? ps.map(projOpen).join('') : `<p class="meta sempty">${none}</p>`}</div></div></div></div>`; }).join('');
     side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
       ${newBtns}
-      <div class="sscroll">${ps.length ? '' : `<p class="meta sempty">${kind === 'workflow' ? 'Nenhum workflow ainda.' : 'Nenhum chat ainda.'}</p>`}${ps.map((p) => `<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
-        <div class="prow"><button class="ph" data-ph="${p.id}"><span class="pav" style="--c1:${GRADS[(p.g || 0) % GRADS.length][0]};--c2:${GRADS[(p.g || 0) % GRADS.length][1]}">${projLetter(p)}${projDot(p) ? `<span class="st" style="background:${projDot(p)}"></span>` : ''}</span><span class="pn">${esc(p.name)}</span><span class="chev">${ic('chevr', 12)}</span></button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
-        <div class="subs"><div class="subs-in"><div class="subs-pad">${subsOf(p, false, isCur)}</div></div></div></div>`).join('')}
-      </div>
+      <div class="sscroll">${body}</div>
       <div class="sfoot"><div class="label">Geral</div>
       ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${gIc(i, 17)}</span>${n}</button>`).join('')}</div>`;
   }
@@ -888,7 +901,16 @@ function renderSide() {
   }
 }
 
-// clique num projeto (nome na barra aberta ou avatar na recolhida): outro projeto = vai até ele e abre as subtelas; o projeto atual = mostra/esconde as subtelas (mesmo efeito nas duas barras)
+// barra aberta: clicar no nome do projeto só abre/fecha o dropdown das funções dele, sem sair da tela atual
+function projToggle(id) {
+  const p = proj(id);
+  if (!p) return;
+  p.open = p.open === false; save();
+  const el = document.querySelector(`#side [data-pid="${p.id}"]`);
+  if (el) el.classList.toggle('open', p.open !== false); else renderSide();
+}
+
+// clique num projeto (avatar da barra recolhida; a barra aberta usa projToggle ou avatar na recolhida): outro projeto = vai até ele e abre as subtelas; o projeto atual = mostra/esconde as subtelas (mesmo efeito nas duas barras)
 function projClick(id) {
   const p = proj(id);
   if (!p) return;
@@ -1747,7 +1769,7 @@ async function importSessionsFlow(p, fromImport = false) {
 }
 function addProject({ name, path, imported, noTab, first, workflow }) {
   const p = { id: uuid(), name, path, imported, archived: false, tabs: [], activeTab: null, g: S.projects.length, open: true, ...(workflow ? { kind: 'workflow' } : {}) };
-  S.projects.push(p); S.settings.sideKind = kindOf(p);
+  S.projects.push(p); S.settings.sideKind = kindOf(p); setCatOpen(kindOf(p), true);
   UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.res = null;
   save(); renderAll();
   if (!noTab && !workflow) { if (first && first.kind === 'chat') createTab(p, first.perm, { kind: 'chat' }); else createTab(p, first ? first.perm : 'n'); }
@@ -1948,7 +1970,7 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-bg]'))) { S.settings.bg = el.dataset.bg; save(); applyBg(); if (UI.cur.page === 'Configurações') renderPage(); return; }
   if ((el = q('[data-win]'))) { api.winCtl(el.dataset.win); return; }
   if (q('[data-togside]')) { S.settings.sideCollapsed = !S.settings.sideCollapsed; save(); renderSide(); tween('sideW', sideTarget()); return; }
-  if ((el = q('[data-ph]'))) { projClick(el.dataset.ph); return; }
+  if ((el = q('[data-ph]'))) { projToggle(el.dataset.ph); return; } // barra aberta: um clique só mostra/esconde as funções do projeto (não troca de projeto)
   if ((el = q('[data-pt]'))) { projClick(el.dataset.pt); return; }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
   if ((el = q('[data-step]'))) { // botões − e + do campo numérico
@@ -2004,7 +2026,12 @@ document.addEventListener('click', async (e) => {
   if (q('[data-wfstart]')) { const wp = curProject(); if (wp) { wp.wfStarted = true; save(); renderAll(); } return; }
   if ((el = q('[data-newk]'))) return goNew(el.dataset.newk);
   if (q('[data-import]')) return goNew('chat', 'dir');
-  if ((el = q('[data-sidekind]'))) { S.settings.sideKind = el.dataset.sidekind; save(); renderSide(); return; }
+  if ((el = q('[data-sidecat]'))) {
+    const k = el.dataset.sidecat; setCatOpen(k, !catOpen(k)); save();
+    const box = document.querySelector('#side .cat[data-cat="' + k + '"]');
+    if (box) box.classList.toggle('open', catOpen(k)); else renderSide(); // barra aberta: troca a classe no lugar para a animação rodar; recolhida: redesenha
+    return;
+  }
   if ((el = q('[data-npwhere]'))) { if (UI.np) { UI.np.where = el.dataset.npwhere; renderPage(); if (UI.np.where === 'dir' && !UI.np.dir) npPick(); } return; }
   if (q('[data-nppick]')) return npPick();
   if ((el = q('[data-npp]'))) { if (UI.np) { UI.np.perm = el.dataset.npp; renderPage(); } return; }
@@ -2104,7 +2131,7 @@ const bgMode = () => (['blur', 'acrylic', 'mica'].includes(S.settings.bg) ? 'blu
 /* ---------- geometria do vidro: painéis flutuantes, como no Rocruzta Hub (TASK-121) ----------
    Cabeçalho e rodapé ficam soltos sobre o fundo; a barra lateral e o braço de notificações são painéis de vidro (um recorte só, em #glass);
    o palco (#col) é o painel de conteúdo, com vidro próprio. GAP = vão entre painéis e até a borda; RP = raio dos painéis. */
-const FR = { R: 22, RP: 18, GAP: 10, HEAD: 44, BOT: 38, SIDE_OPEN: 260, SIDE_MINI: 88, ARM_OPEN: 360, ARM_CLOSED: 10 };
+const FR = { R: 22, RP: 18, GAP: 10, HEAD: 44, DOCK: 36, BOT: 56, SIDE_OPEN: 260, SIDE_MINI: 64, ARM_OPEN: 360, ARM_CLOSED: 10 };
 const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base não engrossa
 const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN);
 const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
@@ -2112,11 +2139,11 @@ const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
 // telas que não são terminal nem chat (Plugins, Skills, MCPs, Consumo, Integrações, Configurações, sem projeto): o painel de conteúdo desce até perto da base e sem o rodapé de funções (TASK-042)
 const flatMode = () => ['page', 'empty'].includes(mode());
 const rrect = (x, y, w, h, r) => { r = Math.max(0, Math.min(r, w / 2, h / 2)); return `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`; };
-function framePath(W, H, S_, A) {
+function framePath(W, H, S_, A, bot) {
   const { RP, GAP, HEAD: h } = FR;
-  const side = rrect(GAP, h, S_ - 2 * GAP, H - h - GAP, RP);
+  const side = rrect(GAP, h, S_ - 2 * GAP, H - h - bot, RP);
   const aw = A - 2 * GAP; // painel de notificações: cresce junto com o braço
-  return aw > 2 ? side + rrect(W - A + GAP, h, aw, H - h - GAP, RP) : side;
+  return aw > 2 ? side + rrect(W - A + GAP, h, aw, H - h - bot, RP) : side;
 }
 
 function layout() {
@@ -2125,15 +2152,17 @@ function layout() {
   if (!W || !H) return;
   const flat = flatMode();
   if (flat !== document.body.classList.contains('flatpage')) { document.body.classList.toggle('flatpage', flat); setTimeout(() => { if (typeof fitActive === 'function') fitActive(); }, 0); } // o palco muda de altura: reajusta o terminal
-  const d = framePath(W, H, GEO.sideW, GEO.armW);
+  const bot = flat ? FR.GAP : GEO.bot; // o palco termina acima do rail inferior (terminal, chat, Web); a barra lateral e as notificações descem sempre até o chão
+  const d = framePath(W, H, GEO.sideW, GEO.armW, FR.GAP);
   $('#glass').style.clipPath = `path(evenodd, '${d}')`;
   $('#edgePath').setAttribute('d', d);
   document.documentElement.style.setProperty('--head', `${FR.HEAD}px`);
   Object.assign($('#side').style, { left: `${FR.GAP}px`, width: `${GEO.sideW - 2 * FR.GAP}px` });
   Object.assign($('#arm').style, { right: `${FR.GAP}px`, width: `${Math.max(0, GEO.armW - 2 * FR.GAP)}px` });
   $('#arm').classList.toggle('open', UI.actOpen && GEO.armW > 200);
-  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${flat ? FR.GAP : GEO.bot}px` });
-  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: '0px', height: `${GEO.bot}px` }); // rodapé: faixa solta sob o palco
+  document.documentElement.style.setProperty('--bot', `${FR.GAP}px`);
+  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${bot}px` });
+  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: `${FR.GAP}px`, height: `${FR.DOCK}px` }); // rail: ao lado da barra lateral, sob o palco; mesmo vão (GAP) acima, abaixo e dos lados
 }
 
 let tweening = 0; // durante a animação: sem sombra pesada e sem refazer o tamanho do terminal a cada quadro
