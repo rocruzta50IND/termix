@@ -11,7 +11,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-120 — Publicar a versão 0.3.9 (novo shell, Workflow base e modais novos)
 
 - **Responsável:** DEV1
-- **Status:** EM ANDAMENTO (2026-11-09; pedido explícito do usuário: "pode mandar a release nova")
+- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (Release v0.3.9 publicado em 2026-11-09: https://github.com/rocruzta50IND/termix/releases/tag/v0.3.9; instalador 125.200.762 bytes, sha512 conferido com o `latest.yml`; promoção dev1 → main `0de15bb`; feed público mostra 0.3.9). Pedido explícito do usuário: "pode mandar a release nova".
 - **Entra nesta versão:** TASK-119 (modais novos, barra lateral com + Chat/+ Workflow e seletor, tela de novo projeto ao lado, Workflow base com Começar Brainstorm e dois chats fixos em Dangerously, sem a função ainda).
 - **Passos:** versão 0.3.9; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.9`.
 - **Próximo passo:** o usuário atualiza o app (0.3.8 → 0.3.9) e confere.
