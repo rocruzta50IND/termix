@@ -252,12 +252,12 @@ function footChatCtl(p, m) {
 }
 function renderFoot(st, p, m) {
   const foot = $('#appfoot');
-  const show = !!p && (m === 'term' || m === 'noterm' || m === 'web') && !$('#splash');
+  const show = !!p && (m === 'term' || m === 'noterm' || m === 'web' || m === 'workflow') && !$('#splash');
   foot.classList.toggle('hide', !show);
   foot.classList.toggle('fade', !!st.fade);
   const c = st.clear;
   const wf = show && p.kind === 'workflow'; // Workflow: só a função (ícone) e a Web
-  const html = !show ? '' : wf ? `<button class="${st.mode === 'term' ? 'on' : ''}" data-fm="term">${ficon('workflow')}Workflow</button><button class="${st.mode === 'web' ? 'on' : ''}" data-fm="web">${ficon('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>` : `<button class="${st.mode === 'term' ? 'on' : ''}" data-fm="term">${ficon('term')}Terminais${st.terms ? `<span class="n ${st.attention ? 'att' : ''}">${st.terms}</span>` : ''}</button>`
+  const html = !show ? '' : wf ? `<button class="${st.mode === 'term' || st.mode === 'workflow' ? 'on' : ''}" data-fm="term">${ficon('workflow')}Workflow</button><button class="${st.mode === 'web' ? 'on' : ''}" data-fm="web">${ficon('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>` : `<button class="${st.mode === 'term' ? 'on' : ''}" data-fm="term">${ficon('term')}Terminais${st.terms ? `<span class="n ${st.attention ? 'att' : ''}">${st.terms}</span>` : ''}</button>`
     + `<button class="${st.mode === 'web' ? 'on' : ''}" data-fm="web">${ficon('web')}Web${st.webs ? `<span class="n">${st.webs}</span>` : ''}${st.fresh ? '<i class="nd"></i>' : ''}</button>`
     + (c ? `<i class="sep"></i><button class="clr ${c.pulse ? 'pulse ' : ''}${c.busy ? 'busy' : ''}" data-fm="clear" ${c.off ? 'disabled' : ''}>${ficon('clear')}Clear</button>`
       + `<button class="rst ${c.rst.spin ? 'spin' : ''}" data-fm="restart" ${c.rst.off ? 'disabled' : ''} title="${c.rst.tip}" aria-label="${c.rst.tip}">${ficon('refresh')}Reiniciar</button>` : '')

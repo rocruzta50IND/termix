@@ -775,7 +775,7 @@ function mode() {
   if (!p) return 'empty';
   if (UI.cur.page !== 'Terminais') return 'page';
   if (UI.surface === 'web') return 'web'; // navegador embutido (TASK-022)
-  if (p.kind === 'workflow') { wfEnsure(p); return 'term'; } // Workflow sempre tem os dois chats
+  if (p.kind === 'workflow') { wfEnsure(p); return p.wfStarted ? 'term' : 'workflow'; } // Workflow: tela limpa com "Começar Brainstorm"; depois, os dois chats fixos
   return curTab(p) ? 'term' : 'noterm';
 }
 
@@ -900,19 +900,20 @@ if (typeof ResizeObserver !== 'undefined') window.addEventListener('DOMContentLo
 function renderTabs() {
   if (UI.tabDragging) return; // redesenhar no meio do arraste soltaria a aba do mouse; o soltar refaz
   const p = curProject();
-  if (!p || mode() !== 'term' || p.kind === 'workflow') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
+  if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
+  const wf = p.kind === 'workflow'; // Workflow: as duas guias são fixas (sem fechar, sem nova guia); o split é sempre lado a lado
   const st = stOf(cur), [sc, sl] = STATES[st];
   if (document.hasFocus() && RT[cur.id]) RT[cur.id].unread = null; // a aba à vista, com o app em foco, já foi vista
   $('#sess').style.setProperty('--tc', cur.color);
   $('#sess').classList.toggle('working', st === 'work');
   $('#tabsRow').classList.toggle('working', st === 'work');
-  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="${esc(t.name)} · ${STATES[stOf(t)][1]} — clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
-    + `<button class="plus" data-newtab="${chatNewKey()}" title="${chatCfg().mode === 'chat' ? 'Novo chat (Claude Code)' : 'Novo terminal (Claude Code)'}">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
+  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="${esc(t.name)} · ${STATES[stOf(t)][1]} — clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}${wf ? '' : `<span class="x" data-x="${t.id}">${ic('x', 13)}</span>`}</button>`).join('')
+    + (wf ? '' : `<button class="plus" data-newtab="${chatNewKey()}" title="${chatCfg().mode === 'chat' ? 'Novo chat (Claude Code)' : 'Novo terminal (Claude Code)'}">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>`) + `
     <span class="sp"></span>
     <div class="tctl">
-      ${closed ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
+      ${closed && !wf ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
       <span class="state"><i class="dot ${sc}"></i>${sl}</span>
     </div>`;
   fuseBar($('#tabsRow'));
@@ -1504,10 +1505,16 @@ function noTermHTML(p) {
 }
 
 // Workflow: sempre dois chats fixos, lado a lado, já em Dangerously (a função em si vem depois)
+function wfStartHTML(p) {
+  return `<div class="empty wfstart"><div class="wfmark">${ic('workflow', 34)}</div><h2>Workflow · ${esc(p.name)}</h2>
+    <p>Dois terminais lado a lado, sempre em Dangerously, para trabalhar o projeto em etapas. Comece pelo brainstorm.</p>
+    <div class="row2"><button class="btn pri big" data-wfstart>Começar Brainstorm</button></div></div>`;
+}
 function wfEnsure(p) {
   let made = false;
   for (const n of [1, 2]) {
-    if (p.tabs.some((t) => t.wf === n)) continue;
+    const old = p.tabs.find((t) => t.wf === n);
+    if (old) { if (!old.open || old.archived) { old.open = true; old.archived = false; made = true; } continue; } // os dois são fixos: se um foi fechado, volta
     const t = { id: uuid(), sessionId: uuid(), agent: 'claude', name: `Terminal ${n}`, color: DEFAULT_COLOR, perm: 'd', started: false, open: true, live: false, archived: false, kind: 'chat', wf: n };
     p.tabs.push(t); made = true; launch(p, t, 'new');
   }
@@ -1518,6 +1525,7 @@ function renderPage() {
   let html = '';
   if (m === 'empty') html = emptyHTML();
   else if (m === 'noterm') html = noTermHTML(curProject());
+  else if (m === 'workflow') html = wfStartHTML(curProject());
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML }[UI.cur.page]();
   else if (m === 'page') html = resPageHTML(UI.cur.page);
   $('#page').innerHTML = html;
@@ -1616,7 +1624,7 @@ function renderChrome() { renderSide(); renderTabs(); renderTop(); renderRail();
 function renderAll() {
   const m = mode();
   renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu(); renderRail();
-  $('#tabsRow').classList.toggle('hide', m !== 'term' || (curProject() || {}).kind === 'workflow');
+  $('#tabsRow').classList.toggle('hide', m !== 'term');
   $('#sess').classList.toggle('hide', m !== 'term');
   $('#page').classList.toggle('hide', m === 'term' || m === 'web');
   if (window.webRender) webRender(m);
@@ -1992,6 +2000,7 @@ document.addEventListener('click', async (e) => {
     if (f && k === 'newconv') newConversation(f.p, f.tab);
     return;
   }
+  if (q('[data-wfstart]')) { const wp = curProject(); if (wp) { wp.wfStarted = true; save(); renderAll(); } return; }
   if (q('[data-newproj]')) return newProjectFlow();
   if (q('[data-import]')) return importFlow();
   if (q('[data-projmenu]')) return projectMenuFlow();

@@ -807,3 +807,7 @@ table.t tr.dim td{color:var(--text2)}
 .chatv.wf2 .c-wfh{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);flex:none}
 .c-wfh b{font-size:13px}
 .c-wfh em{display:inline-flex;align-items:center;gap:5px;font-style:normal;font-size:11px;padding:2px 10px;border-radius:99px;background:rgba(240,163,94,.14);color:#f0a35e;border:1px solid rgba(240,163,94,.4)}
+.wfstart{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center}
+.wfmark{width:76px;height:76px;border-radius:22px;display:grid;place-items:center;margin-bottom:8px;color:var(--accent);background:rgba(91,157,255,.12);border:1px solid rgba(91,157,255,.35);box-shadow:0 0 40px rgba(91,157,255,.18)}
+.wfstart p{max-width:460px}
+.btn.big{padding:12px 28px;font-size:15px;min-height:46px}

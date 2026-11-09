@@ -376,7 +376,7 @@ function showChat(tab) {
 // Workflow: os dois chats fixos aparecem lado a lado, cada um com o seu título e a etiqueta Dangerously
 function showWorkflow(p) {
   const ts = p.tabs.filter((t) => t.wf).sort((x, y) => x.wf - y.wf);
-  ts.slice().reverse().forEach((t) => showChat(t)); // o Terminal 1 fica com o foco
+  ts.slice().sort((x) => (x.id === p.activeTab ? 1 : -1)).forEach((t) => showChat(t)); // a guia ativa é a última e fica com o foco
   ts.forEach((t) => {
     const c = chatView(t);
     c.root.classList.add('on');
