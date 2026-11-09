@@ -197,7 +197,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Responsável:** DEV1
 - **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (2026-11-09)
 - **Pedido:** modais mais bonitos; o de criação ganha escolha entre Chat e Workflow (função futura) e a permissão já na criação.
-- **Feito:** modal mais largo (660 px) com três cartões (Chat, Terminal, Workflow "Em breve", desabilitado) e dois cartões de permissão (Chat: Perguntar/Automático; Terminal: Normal/Dangerously). A primeira aba do projeto nasce no modo e na permissão escolhidos (padrão: o modo de Configurações > Chat). Antes a primeira aba era sempre terminal Normal.
+- **Feito:** modal mais largo (660 px) com cartões de modo (Chat; Workflow "Em breve", desabilitado) e cartões visuais de permissão (Perguntar, com escudo; Automático, com raio e destaque laranja). A primeira aba do projeto novo é sempre um Chat com a permissão escolhida (terminal continua pelo "+" da barra). Ajuste pedido pelo usuário: só Chat/Workflow no modo. Também refeito o modal do botão direito no projeto: caminho, etiqueta de origem e ações em linhas com ícone e descrição (Abrir pasta, Renomear, Arquivar; Remover do app e Excluir pasta em vermelho).
 - **Arquivos:** `src/renderer/app.js` (`newProjectFlow`, `addProject`, ícone `workflow`), `src/renderer/styles.css`.
 - **Como validar:** + Novo projeto → escolher Chat/Terminal e a permissão → Criar; a primeira aba segue a escolha. Workflow aparece desabilitado.
 - **Próximo passo:** o usuário aprova; depois, melhorar os outros modais (pedido: "melhorar os modais do app") e implementar o Workflow.

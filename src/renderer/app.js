@@ -31,6 +31,11 @@ const ICONS = {
   terminal: '<path d="M7.5 4.5h10a3.5 3.5 0 0 1 3.5 3.5v8"/><rect x="3" y="8" width="15" height="12" rx="3"/><path d="M7 12.4l2.4 1.9L7 16.2M11.6 16.4h3"/>',
   plug: '<path d="M9 3.5v4M15 3.5v4"/><path d="M6.5 7.5h11v3.2a5.5 5.5 0 0 1-11 0V7.5z"/><path d="M12 16.2v4.3"/>',
   workflow: '<rect x="3" y="4" width="6" height="6" rx="1.6"/><rect x="15" y="14" width="6" height="6" rx="1.6"/><path d="M9 7h3.5a2.5 2.5 0 0 1 2.5 2.5V14"/>',
+  shield: '<path d="M12 3l7 3v5.5c0 4.2-2.9 7.6-7 9.5-4.1-1.9-7-5.3-7-9.5V6l7-3z"/><path d="M9 12l2.2 2.2L15.2 10"/>',
+  bolt: '<path d="M13 3L5.5 13.2H11L10 21l8.5-10.5H13L13 3z"/>',
+  folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7.5z"/>',
+  archive: '<rect x="3.5" y="4.5" width="17" height="4" rx="1.4"/><path d="M5 8.5V18a1.6 1.6 0 0 0 1.6 1.6h10.8A1.6 1.6 0 0 0 19 18V8.5M10 12.5h4"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l.8 11.2a1.6 1.6 0 0 0 1.6 1.5h6.2a1.6 1.6 0 0 0 1.6-1.5L17.5 7M10 11v5M14 11v5"/>',
   sparkles: '<path d="M11 4l1.7 4.6L17.3 10l-4.6 1.4L11 16l-1.7-4.6L4.7 10l4.6-1.4L11 4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"/>',
   network: '<circle cx="6" cy="6.5" r="2.3"/><circle cx="18" cy="6.5" r="2.3"/><circle cx="12" cy="17.5" r="2.3"/><path d="M8.2 7.7l2.7 7.5M15.8 7.7l-2.7 7.5M8.3 6.5h7.4"/>',
   gauge: '<path d="M4.5 17a8 8 0 1 1 15 0"/><path d="M12 15.5l3.6-4.6"/><circle cx="12" cy="15.8" r="1"/>',
@@ -1609,34 +1614,33 @@ function renderAll() {
 // modos de trabalho do projeto novo (o Workflow chega depois: aparece, mas ainda não dá para escolher)
 const NP_MODES = [
   { k: 'chat', icon: 'sparkles', t: 'Chat', d: 'Conversa em bolhas com o Claude Code, sem terminal.' },
-  { k: 'terminal', icon: 'terminal', t: 'Terminal', d: 'O Claude Code de sempre, no terminal.' },
   { k: 'workflow', icon: 'workflow', t: 'Workflow', d: 'Tarefas encadeadas por etapas.', soon: true },
 ];
-const NP_PERMS = {
-  chat: [['n', 'Perguntar', 'Aceita edições de arquivo e pergunta o resto na conversa.'], ['d', 'Automático', 'Executa sem pedir permissão.']],
-  terminal: [['n', 'Normal', 'O Claude Code pergunta antes de agir (padrão).'], ['d', 'Dangerously', 'Ignora as verificações de permissão. Sem isolamento do sistema.']],
-};
+const NP_PERMS = [
+  ['n', 'shield', 'Perguntar', 'Aceita edições de arquivo e pede a sua aprovação para o resto, na conversa.'],
+  ['d', 'bolt', 'Automático', 'Executa tudo sem pedir permissão. Mais rápido, com menos controle.'],
+];
 async function newProjectFlow() {
-  let mode = chatCfg().mode === 'chat' ? 'chat' : 'terminal';
-  let perm = mode === 'chat' ? chatPermFor() : 'n';
+  let mode = 'chat';
+  let perm = chatPermFor();
   const r = await modal({
     title: 'Novo projeto',
     body: `<p>O Termix cria e organiza a pasta do projeto. Informe o nome e como quer trabalhar.</p>
       <div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="name" placeholder="Meu SaaS" maxlength="60"></div>
-      <div class="f"><label>Modo de trabalho</label><div class="npmodes">${NP_MODES.map((m) => `<button type="button" class="npm ${m.k === mode ? 'sel' : ''}" data-npm="${m.k}" ${m.soon ? 'disabled' : ''}>${ic(m.icon, 22)}<b>${m.t}</b><small>${m.d}</small>${m.soon ? '<em>Em breve</em>' : ''}</button>`).join('')}</div></div>
-      <div class="f"><label>Permissão</label><div class="npperm" id="npPerm"></div></div>
+      <div class="f"><label>Modo de trabalho</label><div class="npmodes">${NP_MODES.map((m) => `<button type="button" class="npm ${m.k === mode ? 'sel' : ''}" data-npm="${m.k}" ${m.soon ? 'disabled' : ''}>${ic(m.icon, 26)}<b>${m.t}</b><small>${m.d}</small>${m.soon ? '<em>Em breve</em>' : ''}</button>`).join('')}</div></div>
+      <div class="f"><label>Permissão</label><div class="npmodes">${NP_PERMS.map(([v, i, l, d]) => `<button type="button" class="npm ${v === 'd' ? 'warn' : ''}" data-npp="${v}">${ic(i, 26)}<b>${l}</b><small>${d}</small></button>`).join('')}</div></div>
       <input type="hidden" data-f="mode" value="${mode}"><input type="hidden" data-f="perm" value="${perm}">`,
     buttons: [['Cancelar', null], ['Importar pasta existente…', 'import'], ['Criar projeto', 'ok', 'pri']],
     onOpen: (root) => {
       const paint = () => {
-        root.querySelectorAll('[data-npm]').forEach((b) => b.classList.toggle('sel', b.dataset.npm === mode));
-        root.querySelector('#npPerm').innerHTML = NP_PERMS[mode].map(([v, l, d]) => `<button type="button" class="npp ${v === 'd' ? 'warn' : ''} ${v === perm ? 'sel' : ''}" data-npp="${v}"><b>${l}</b><small>${d}</small></button>`).join('');
+        root.querySelectorAll('[data-npm]').forEach((x) => x.classList.toggle('sel', x.dataset.npm === mode));
+        root.querySelectorAll('[data-npp]').forEach((x) => x.classList.toggle('sel', x.dataset.npp === perm));
         root.querySelector('[data-f=mode]').value = mode; root.querySelector('[data-f=perm]').value = perm;
       };
       root.addEventListener('click', (e) => {
-        const a = e.target.closest('[data-npm]'); const b = e.target.closest('[data-npp]');
-        if (a && !a.disabled) { mode = a.dataset.npm; perm = mode === 'chat' ? chatPermFor() : 'n'; paint(); }
-        if (b) { perm = b.dataset.npp; paint(); }
+        const x = e.target.closest('[data-npm]'); const y = e.target.closest('[data-npp]');
+        if (x && !x.disabled) { mode = x.dataset.npm; paint(); }
+        if (y) { perm = y.dataset.npp; paint(); }
       });
       paint();
     },
@@ -1653,7 +1657,7 @@ async function newProjectFlow() {
     $('#modalRoot').innerHTML = '';
     note = out.ok ? `Projeto limpo: ${out.plugins} plugin${out.plugins === 1 ? '' : 's'} e ${out.mcps} MCP${out.mcps === 1 ? '' : 's'}/conectores desligados aqui.${out.userSkills ? ` ${out.userSkills} skill(s) de usuário continuam valendo (limite do Claude Code).` : ''}` : `Não consegui deixar o projeto limpo: ${out.message}`;
   }
-  addProject({ name, path, imported: false, first: { kind: r.form.mode === 'chat' ? 'chat' : 'claude', perm: r.form.perm === 'd' ? 'd' : 'n' } });
+  addProject({ name, path, imported: false, first: { kind: 'chat', perm: r.form.perm === 'd' ? 'd' : 'n' } });
   if (note) addEvent({ who: name, msg: note });
 }
 async function importFlow() {
@@ -1787,14 +1791,24 @@ function disposeProjectViews(p) {
 
 const PROJ_NAME_MAX = 60; // nome do projeto: limite de tamanho (a pasta criada usa o nome; Windows aceita 255 por nome e 260 no caminho)
 const projNameClip = (s) => String(s || '').trim().slice(0, PROJ_NAME_MAX);
+const PJ_ACTS = [
+  { k: 'open', i: 'folder', t: 'Abrir pasta', d: 'Mostra a pasta no Explorador de Arquivos.' },
+  { k: 'rename', i: 'edit', t: 'Renomear', d: 'Muda só o nome na interface; a pasta fica onde está.' },
+  { k: 'archive', i: 'archive', t: 'Arquivar', d: 'Tira da lista sem apagar nada; dá para restaurar em Configurações.' },
+  { k: 'remove', i: 'x', t: 'Remover do app', d: 'Esquece o projeto aqui; os arquivos da pasta não são apagados.', bad: true },
+  { k: 'delete', i: 'trash', t: 'Excluir pasta…', d: 'Envia a pasta para a Lixeira do Windows, com confirmação.', bad: true },
+];
 async function projectMenuFlow() {
   const p = curProject();
   if (!p) return;
   UI.menu = null; renderMenu();
   const r = await modal({
     title: `<span class="clamp3" title="${esc(p.name)}">${esc(p.name)}</span>`,
-    body: `<p class="meta" style="user-select:text">${esc(p.path)}</p><p>${p.imported ? 'Pasta importada: o app só a registra, sem copiar nem mover.' : 'Pasta criada e organizada pelo app.'}</p>`,
-    buttons: [['Fechar', null], ['Abrir pasta', 'open'], ['Renomear', 'rename'], ['Arquivar', 'archive'], ['Remover do app', 'remove', 'bad']].concat(p.imported ? [] : [['Excluir pasta…', 'delete', 'bad']]),
+    body: `<div class="pjhead"><span class="pjpath" style="user-select:text" title="${esc(p.path)}">${ic('folder', 16)}<span>${esc(p.path)}</span></span><span class="pjtag">${p.imported ? 'Pasta importada' : 'Criada pelo Termix'}</span></div>
+      <p class="meta">${p.imported ? 'O app só registra a pasta, sem copiar nem mover nada.' : 'Pasta criada e organizada pelo app.'}</p>
+      <div class="pjlist">${PJ_ACTS.filter((x) => !(x.k === 'delete' && p.imported)).map((x) => `<button type="button" class="pjrow ${x.bad ? 'bad' : ''}" data-pj="${x.k}">${ic(x.i, 20)}<span><b>${x.t}</b><small>${x.d}</small></span>${ic('chevr', 14)}</button>`).join('')}</div>`,
+    buttons: [['Fechar', null], ...PJ_ACTS.map((x) => [x.t, x.k, 'hide'])],
+    onOpen: (root) => { root.querySelectorAll('[data-pj]').forEach((b) => { b.onclick = () => root.querySelector(`.foot2 [data-mb="${PJ_ACTS.findIndex((x) => x.k === b.dataset.pj) + 1}"]`).click(); }); },
   });
   if (r.value === 'open') api.openFolder(p.path);
   if (r.value === 'rename') {
