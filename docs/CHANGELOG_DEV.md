@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**TASK-118 — Fechamento: versão 0.3.8 validada** (DEV1)
+
+- O usuário validou o Clear no app instalado (0.3.8). TASK-118 movida para Concluídas.
+
 **TASK-117 — Clear instantâneo com resumo nativo** (DEV1)
 
 - O botão Clear deixou de pedir ao Claude para fechar a tarefa e retomar. Um modal só com **Confirmar** limpa na hora e o app entrega ao agente um resumo que ele mesmo monta (`src/handoff.js`: últimos pedidos, fim da última resposta, arquivos alterados, git e tarefa ativa; ~80 ms, ~700 tokens). No terminal o resumo entra pelo hook de início de sessão depois do `/clear`; no chat, por `--append-system-prompt-file`.

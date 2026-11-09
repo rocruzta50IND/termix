@@ -8,17 +8,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
-### TASK-118 — Publicar a versão 0.3.8 (Clear instantâneo com resumo nativo)
-
-- **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (Release v0.3.8 publicado em 2026-11-09: https://github.com/rocruzta50IND/termix/releases/tag/v0.3.8; instalador 125.196.500 bytes, sha512 conferido com o `latest.yml`; promoção dev1 → main `21adec6`; feed público já mostra 0.3.8). Pedido explícito do usuário: "pode subir a release", depois de validar a TASK-117 no uso real. Ficou bloqueada por algumas horas no instalador (ver "Problema"), resolvida com o usuário desligando o Smart App Control.
-- **Prioridade:** Alta — leva o novo botão Clear ao time.
-- **Entra nesta versão:** TASK-117 (Clear com resumo nativo, modelo do resumo editável em Configurações), TASK-116 (DEV2 no fluxo) e as tarefas de documentação do Backlog (111 a 115).
-- **Passos:** versão 0.3.8 (`package.json` e `package-lock.json`); promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.8`.
-- **Problema:** `npm run dist` falha na etapa do NSIS (`computeScriptAndSignUninstaller`) com `spawn UNKNOWN`, e deixou um instalador de 356 KB (só o stub), sem `latest.yml` novo; os parciais foram apagados. É o mesmo erro (`UNKNOWN`) que, na mesma máquina e no mesmo dia, o Windows deu ao tentar rodar o Electron de `node_modules` ("uma política de Controle de Aplicativo bloqueou este arquivo"). A 0.3.7 foi gerada aqui em 2026-11-05, então a política mudou depois. **Causa confirmada** (registro de eventos Code Integrity, ids 3033/3077, às 11:48 e 11:52): o **Smart App Control está LIGADO** (`VerifiedAndReputablePolicyState = 1`; na TASK-081/097 estava em "Avaliação", então passou a bloquear depois dos testes de 05/11) e barra o `node.exe` ao carregar o instalador recém-gerado `dist\Termix-Setup-0.3.8.exe` (não assinado), que o electron-builder executa para montar o desinstalador. O mesmo bloqueio atinge o `electron.exe` de `node_modules`. O `npm run dist` rodado no terminal do usuário (pela sessão) deu o mesmo erro. Não foi feita nenhuma tentativa de contornar a política.
-- **Solução (decisão do usuário, 2026-11-09):** entre as opções (GitHub Actions, outro PC, assinar o código, desligar), o usuário **desligou o Smart App Control** pelo Windows (irreversível sem reinstalar o Windows; confirmado: `VerifiedAndReputablePolicyState = 0`). Com isso `npm run dist` gerou o instalador (125.196.500 bytes, sha512 igual ao do `latest.yml`, pacote com `src/handoff.js`) e o Release saiu com instalador, `.blockmap` e `latest.yml`. **Fica no Backlog para pensar:** assinar o código (resolve também o bloqueio nos PCs do time, TASK-081) e/ou build por GitHub Actions.
-- **Próximo passo:** o usuário atualiza o app (0.3.7 → 0.3.8) e valida o Clear no app instalado (terminal e chat, e a edição do modelo em Configurações).
-
 ### TASK-116 — Adicionar o DEV2 ao fluxo (criar a branch dev2 e registrar devs no fluxo.json)
 
 - **Responsável:** DEV1
@@ -655,6 +644,17 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** confirmar uma vez (com a contagem) em "Fechar outras guias/à direita" e "Restaurar padrões"; toast também para erros que não são de aba (hoje só o selo do sino); alternar "Sim/Não" das Configurações sem refazer a página (perde o foco); roxo remanescente (cursor e seleção do terminal, cor padrão de evento, palavras-chave do chat) contra a regra "sem roxo" do DESIGN; vocabulário único ("aba" × "guia" × "sessão"; traduzir "Rail" e "Dangerously"); "Nenhum(a) skill encontrado(a)"; esconder as colunas Tokens/Custo "indisponível" da página Consumo; `backdrop-filter` do modal sobre terminais.
 
 ## Concluídas
+
+### TASK-118 — Publicar a versão 0.3.8 (Clear instantâneo com resumo nativo)
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (validada pelo usuário no app instalado em 2026-11-09; Release v0.3.8 publicado em 2026-11-09: https://github.com/rocruzta50IND/termix/releases/tag/v0.3.8; instalador 125.196.500 bytes, sha512 conferido com o `latest.yml`; promoção dev1 → main `21adec6`; feed público já mostra 0.3.8). Pedido explícito do usuário: "pode subir a release", depois de validar a TASK-117 no uso real. Ficou bloqueada por algumas horas no instalador (ver "Problema"), resolvida com o usuário desligando o Smart App Control.
+- **Prioridade:** Alta — leva o novo botão Clear ao time.
+- **Entra nesta versão:** TASK-117 (Clear com resumo nativo, modelo do resumo editável em Configurações), TASK-116 (DEV2 no fluxo) e as tarefas de documentação do Backlog (111 a 115).
+- **Passos:** versão 0.3.8 (`package.json` e `package-lock.json`); promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.8`.
+- **Problema:** `npm run dist` falha na etapa do NSIS (`computeScriptAndSignUninstaller`) com `spawn UNKNOWN`, e deixou um instalador de 356 KB (só o stub), sem `latest.yml` novo; os parciais foram apagados. É o mesmo erro (`UNKNOWN`) que, na mesma máquina e no mesmo dia, o Windows deu ao tentar rodar o Electron de `node_modules` ("uma política de Controle de Aplicativo bloqueou este arquivo"). A 0.3.7 foi gerada aqui em 2026-11-05, então a política mudou depois. **Causa confirmada** (registro de eventos Code Integrity, ids 3033/3077, às 11:48 e 11:52): o **Smart App Control está LIGADO** (`VerifiedAndReputablePolicyState = 1`; na TASK-081/097 estava em "Avaliação", então passou a bloquear depois dos testes de 05/11) e barra o `node.exe` ao carregar o instalador recém-gerado `dist\Termix-Setup-0.3.8.exe` (não assinado), que o electron-builder executa para montar o desinstalador. O mesmo bloqueio atinge o `electron.exe` de `node_modules`. O `npm run dist` rodado no terminal do usuário (pela sessão) deu o mesmo erro. Não foi feita nenhuma tentativa de contornar a política.
+- **Solução (decisão do usuário, 2026-11-09):** entre as opções (GitHub Actions, outro PC, assinar o código, desligar), o usuário **desligou o Smart App Control** pelo Windows (irreversível sem reinstalar o Windows; confirmado: `VerifiedAndReputablePolicyState = 0`). Com isso `npm run dist` gerou o instalador (125.196.500 bytes, sha512 igual ao do `latest.yml`, pacote com `src/handoff.js`) e o Release saiu com instalador, `.blockmap` e `latest.yml`. **Fica no Backlog para pensar:** assinar o código (resolve também o bloqueio nos PCs do time, TASK-081) e/ou build por GitHub Actions.
+- **Fechamento:** usuário validou ("tarefa validada pode finalizar"). Sem pendências.
 
 ### TASK-117 — Clear instantâneo com resumo nativo (Confirmar, limpa e volta com o contexto, sem reler o projeto)
 
