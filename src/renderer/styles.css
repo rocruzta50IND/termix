@@ -1205,6 +1205,16 @@ input[type=checkbox]:checked::after{border-color:#0d0d0e}
 .brand .ver[data-patch]:hover{color:var(--text);border-color:var(--border2)}
 .ph .chev{display:grid;place-items:center;width:24px;height:24px;margin-right:-4px;border-radius:var(--r-s);cursor:pointer}
 .ph .chev:hover{background:var(--hover);color:var(--text)}
+/* botão ⋯ afastado da setinha (antes os dois se encostavam) */
+.pm{right:28px;width:24px;height:24px;background:none;border-radius:var(--r-s)}
+.pm:hover{background:none;color:var(--text)}
+.prow:hover .pn{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 58px),transparent calc(100% - 34px));mask-image:linear-gradient(to right,#000 calc(100% - 58px),transparent calc(100% - 34px))}
+.pm,.ph .chev{transition:opacity .15s ease,background .15s ease,transform .22s cubic-bezier(.2,.8,.2,1)}
+/* abrir/fechar as funções do projeto: altura suave + o conteúdo esmaece e desliza, sem "pular" */
+.subs{transition:grid-template-rows .26s cubic-bezier(.4,0,.2,1)}
+.subs-in{opacity:0;transform:translateY(-4px);transition:opacity .16s ease,transform .26s cubic-bezier(.4,0,.2,1)}
+.proj.open>.subs>.subs-in,.pg.open>.subs>.subs-in,.cat.open>.subs>.subs-in{opacity:1;transform:none;transition:opacity .22s ease .06s,transform .26s cubic-bezier(.4,0,.2,1)}
+@media (prefers-reduced-motion:reduce){.subs,.subs-in{transition:none}}
 
 /* abrir/fechar a barra lateral: só a largura anima; o conteúdo aberto mantém a largura e é cortado pela borda (sem esmaecer) */
 .side.anim:not(.mini)>*{min-width:220px;flex-shrink:0}

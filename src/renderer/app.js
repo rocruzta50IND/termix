@@ -2351,10 +2351,9 @@ function toggleSide() {
   sideSwapping = true;
   const side = $('#side'), closing = !S.settings.sideCollapsed;
   side.classList.add('anim');
-  if (!closing) { S.settings.sideCollapsed = false; save(); renderSide(); }
+  S.settings.sideCollapsed = closing; save(); renderSide(); // o recolhido (centralizado) já entra no começo e acompanha a barra encolhendo
   tween('sideW', closing ? FR.SIDE_MINI : FR.SIDE_OPEN, 240);
   setTimeout(() => {
-    if (closing) { S.settings.sideCollapsed = true; save(); renderSide(); }
     side.classList.remove('anim'); side.scrollLeft = 0; sideSwapping = false;
     const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' }); side.scrollLeft = 0; // traz o projeto atual à vista já com a barra no tamanho final
   }, 250);
