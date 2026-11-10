@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Termix — protótipo Conectores (TASK-127)</title>
+<style>
+:root{--text:#ececea;--text2:#a3a3a0;--text3:#7b7b78;--accent:#3b82f6;--ok:#4cc38a;--warn:#e5a63b;--bad:#ec5d5d;
+  --glass:rgba(255,255,255,.05);--glass2:rgba(255,255,255,.085);--border:rgba(255,255,255,.085);--border2:rgba(255,255,255,.16);
+  --sheet:rgba(17,19,24,.62);--r:18px;--r-s:6px;--r-m:8px;--r-l:12px;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--sans:"Inter",-apple-system,"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:#0a0c10;color:var(--text);font:14px/1.45 var(--sans);overflow:hidden}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(760px 600px at -5% -10%,rgba(37,99,235,.34),transparent 70%),radial-gradient(700px 700px at 105% 0,rgba(100,116,139,.26),transparent 70%),radial-gradient(800px 560px at 25% 110%,rgba(14,116,144,.26),transparent 70%)}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+.app{position:fixed;inset:0;display:grid;grid-template-columns:244px 1fr;grid-template-rows:44px 1fr;gap:10px;padding:0 10px 10px}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding-left:10px}
+.top b{font-weight:600}.ver{font:11.5px var(--mono);color:var(--text3);border:1px solid var(--border);border-radius:99px;padding:2px 7px}
+.top .proto{margin-left:auto;font-size:12px;color:var(--warn);border:1px solid rgba(229,166,59,.4);border-radius:99px;padding:3px 10px}
+.panel{background:var(--sheet);border:1px solid var(--border);border-radius:var(--r);box-shadow:inset 0 1px 0 rgba(255,255,255,.09)}
+.side{padding:10px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+.side h6{font-size:11px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--text3);padding:10px 8px 4px}
+.row{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:var(--r-s);color:var(--text2);width:100%;text-align:left;position:relative}
+.row:hover{background:var(--glass)}.row.on{background:var(--glass2);color:var(--text)}
+.row.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:2px;border-radius:2px;background:var(--accent)}
+.av{width:22px;height:22px;border-radius:5px;display:grid;place-items:center;font-size:11px;font-weight:600;background:rgba(59,130,246,.22);color:#9cc4ff}
+.tree{margin-left:19px;border-left:1px solid var(--border);padding-left:6px;display:flex;flex-direction:column;gap:1px}
+.ico{width:17px;height:17px;border:1.6px solid currentColor;border-radius:5px;opacity:.8;flex:none}
+.ico.round{border-radius:50%}
+.stage{overflow:auto;padding:20px 28px 70px;position:relative}
+
+/* cabeçalho da tela: título + Meus/Descobrir + busca + filtro + ordenar + Adicionar */
+.head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.head h2{font-size:20px;font-weight:600}
+.head .sp{flex:1}
+.seg{display:flex;padding:2px;border-radius:var(--r-m);background:var(--glass);border:1px solid var(--border);height:34px}
+.seg button{padding:0 14px;border-radius:var(--r-s);color:var(--text2);font-size:12.5px;white-space:nowrap}
+.seg button.sel{background:var(--glass2);box-shadow:inset 0 0 0 1px var(--border2);color:var(--text)}
+.search{position:relative;display:flex;width:min(300px,100%)}
+.search input{flex:1;height:34px;border-radius:var(--r-l);border:1px solid var(--border2);background:rgba(255,255,255,.04);color:var(--text);padding:0 12px 0 34px;font:inherit;outline:0;min-width:0}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.22)}
+.lens{position:absolute;left:12px;top:10px;width:13px;height:13px;border:1.6px solid var(--text3);border-radius:50%;pointer-events:none}
+.ib{width:34px;height:34px;border-radius:var(--r-m);display:grid;place-items:center;color:var(--text2);border:1px solid transparent;font-size:15px}
+.ib:hover,.ib.on{background:var(--glass2);color:var(--text);border-color:var(--border)}
+.btn{height:34px;padding:0 14px;border-radius:var(--r-m);background:var(--glass2);border:1px solid var(--border2);font-size:13px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.12)}
+.btn.pri{background:#ececea;color:#101114;border-color:transparent;font-weight:500}
+.btn.pri:hover{background:#fff}
+.btn.sm{height:28px;padding:0 11px;font-size:12.5px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.menu{position:absolute;z-index:30;min-width:270px;padding:6px;border-radius:var(--r-l);background:rgba(28,31,38,.98);border:1px solid var(--border2);box-shadow:0 18px 50px rgba(0,0,0,.55);display:none}
+.menu.open{display:block}
+.menu button{display:flex;gap:10px;align-items:center;width:100%;padding:9px 10px;border-radius:var(--r-m);text-align:left;color:var(--text);font-size:13px}
+.menu button:hover{background:var(--glass2)}
+.menu small{display:block;color:var(--text3);font-size:11.5px}
+.menu .mi{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:600;flex:none}
+.menu hr{border:0;border-top:1px solid var(--border);margin:5px 4px}
+.tabsrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.chip{height:28px;padding:0 12px;border-radius:99px;border:1px solid var(--border);color:var(--text2);font-size:12.5px}
+.chip:hover{background:var(--glass)}.chip.sel{background:var(--glass2);border-color:var(--border2);color:var(--text)}
+.chip small{color:var(--text3);margin-left:5px;font-family:var(--mono);font-size:11px}
+.adv{display:none;gap:22px;flex-wrap:wrap;padding:12px 14px;margin:10px 0 4px;border-radius:var(--r-l);background:var(--glass);border:1px solid var(--border)}
+.adv.open{display:flex}
+.adv label{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);display:block;margin-bottom:6px}
+.adv .chips{display:flex;gap:6px;flex-wrap:wrap}
+.gh{display:flex;align-items:center;gap:10px;margin:26px 0 6px;font-size:15px;font-weight:600}
+.gh .n{font-size:11.5px;font-weight:500;color:var(--text2);background:var(--glass2);border-radius:99px;padding:1px 9px}
+.gh a{margin-left:auto;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer}.gh a:hover{color:var(--text)}
+.gsub{font-size:12px;color:var(--text3);margin:-2px 0 4px}
+
+/* linhas da aba Meus (como a lista de Skills do Claude) */
+.rows .it{display:grid;grid-template-columns:40px 1fr auto auto 34px 30px;gap:14px;align-items:center;padding:12px 6px;border-bottom:1px solid var(--border)}
+.rows .it:last-child{border-bottom:0}
+.rows .it.dim{opacity:.6}
+.ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:12px;font-weight:600;border:1px solid var(--border);flex:none;position:relative}
+.t-plugin{background:rgba(59,130,246,.16);color:#9cc4ff}.t-skill{background:rgba(76,195,138,.14);color:#8fe0b9}.t-mcp{background:rgba(229,166,59,.14);color:#f0c677}
+.nm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:600;font-size:14px}
+.sub{font-size:12.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.mid{min-width:0}
+.tag{height:20px;padding:0 8px;border-radius:99px;border:1px solid var(--border2);display:inline-flex;align-items:center;font-size:11px;font-weight:500;color:var(--text2);white-space:nowrap}
+.tag.ok{color:var(--ok);border-color:rgba(76,195,138,.35)}.tag.warn{color:var(--warn);border-color:rgba(229,166,59,.4)}.tag.bad{color:var(--bad);border-color:rgba(236,93,93,.4)}.tag.blue{color:#8fb9ff;border-color:rgba(59,130,246,.45);background:rgba(59,130,246,.1)}
+.meta{font-size:12px;color:var(--text3);text-align:right;white-space:nowrap}
+.sw{width:34px;height:20px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
+.sw.on{background:var(--accent)}.sw.on::after{left:17px}
+.more{color:var(--text3);width:30px;height:28px;border-radius:6px;font-size:16px}.more:hover{background:var(--glass2);color:var(--text)}
+
+/* cartões da aba Descobrir (como "Conectores mais usados") */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
+.cd{padding:14px;border-radius:var(--r-l);background:var(--glass);border:1px solid var(--border);box-shadow:inset 0 1px 0 rgba(255,255,255,.09);display:flex;gap:12px;align-items:flex-start;min-height:104px}
+.cd:hover{background:rgba(255,255,255,.07)}
+.cd .ct{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.cd p{font-size:12.5px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cd .by{font-size:12px;color:var(--text3);display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:auto}
+.vf{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1.4px solid var(--text3);color:var(--text3);font-size:9px;line-height:1;vertical-align:1px}
+.plus{width:32px;height:32px;border-radius:var(--r-m);background:var(--glass2);border:1px solid var(--border);font-size:18px;color:var(--text);flex:none;line-height:1}
+.plus:hover{background:rgba(255,255,255,.14)}
+.plus.done{color:var(--ok);font-size:14px;pointer-events:none}
+.empty{color:var(--text3);padding:34px 0;text-align:center}
+
+/* esqueleto */
+.sk{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.11) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:sh 1.3s linear infinite;border-radius:6px}
+@keyframes sh{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.sk.l{height:10px}.sk.l1{width:34%;height:12px}.sk.l2{width:78%}
+
+/* janelas (pequenas, como "Adicionar conector personalizado"; grande para o "Mostrar tudo") */
+.scrim{position:fixed;inset:0;background:rgba(3,5,9,.55);display:none;align-items:flex-start;justify-content:center;padding-top:70px;z-index:40}
+.scrim.open{display:flex}
+.dlg{width:min(540px,94vw);max-height:calc(100vh - 90px);overflow:auto;padding:22px 24px;background:rgba(20,23,29,.97);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.dlg.big{width:min(980px,94vw);height:min(640px,calc(100vh - 90px));display:flex;flex-direction:column;padding:0}
+.dh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.dh h3{font-size:16.5px;font-weight:600}.dh .x{margin-left:auto;width:30px;height:30px;border-radius:8px;color:var(--text3);font-size:17px}.dh .x:hover{background:var(--glass2);color:var(--text)}
+.dlg p.t{color:var(--text2);font-size:13px;margin-bottom:14px}
+.dlg label{display:block;font-size:12.5px;font-weight:500;margin:12px 0 5px}
+.dlg .inp{width:100%;height:36px;border-radius:var(--r-l);border:1px solid var(--border2);background:rgba(255,255,255,.04);color:var(--text);padding:0 12px;font:13px var(--sans);outline:0}
+.dlg .inp.mono{font-family:var(--mono);font-size:12.5px}
+.dlg .inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.22)}
+.dlg .help{font-size:12px;color:var(--text3);margin-top:5px}
+.warnbox{display:flex;gap:10px;padding:12px 14px;border-radius:var(--r-l);border:1px solid var(--border2);background:rgba(255,255,255,.03);color:var(--text2);font-size:12.5px;margin-top:16px}
+.warnbox i{font-style:normal;font-weight:700;color:var(--text3)}
+.df{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.dbig-h{padding:18px 22px 0}.dbig-b{flex:1;overflow:auto;padding:12px 22px 20px}
+.demo{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:4px;z-index:50;background:rgba(10,12,16,.92);border:1px solid var(--border2);border-radius:99px;padding:4px}
+.demo button{height:28px;padding:0 12px;border-radius:99px;font-size:12px;color:var(--text2)}.demo button:hover{background:var(--glass2);color:var(--text)}
+.toast{position:fixed;right:22px;bottom:60px;z-index:60;background:rgba(28,31,38,.98);border:1px solid var(--border2);border-radius:var(--r-l);padding:10px 14px;font-size:13px;display:none}
+.toast.show{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><b>&gt;_ Termix</b><span class="ver">v0.4.3</span><span class="proto">Protótipo estático · dados fictícios · TASK-127 (v2)</span></div>
+
+  <aside class="panel side">
+    <h6>Chats</h6>
+    <button class="row"><span class="av">L</span>Loja Aurora</button>
+    <button class="row on"><span class="av">T</span>Termix</button>
+    <div class="tree">
+      <button class="row"><span class="ico"></span>Terminais</button>
+      <button class="row on"><span class="ico round"></span>Conectores</button>
+    </div>
+    <button class="row"><span class="av">H</span>Rocruzta Hub</button>
+    <h6>Workflows</h6>
+    <button class="row"><span class="av">A</span>Automidia</button>
+  </aside>
+
+  <main class="panel stage" id="stage">
+    <div class="head">
+      <h2>Conectores</h2>
+      <div class="seg" id="mode"><button data-m="meus" class="sel">Meus</button><button data-m="desc">Descobrir</button></div>
+      <span class="sp"></span>
+      <div class="search"><i class="lens"></i><input id="q" placeholder="Procurar" autocomplete="off"></div>
+      <button class="ib" id="filt" title="Filtros">⛉</button>
+      <button class="ib" id="sort" title="Ordenar">⇅</button>
+      <button class="btn pri" id="add">+ Adicionar ▾</button>
+    </div>
+    <div class="tabsrow" id="types"></div>
+    <div class="adv" id="adv">
+      <div><label>Escopo (neste projeto)</label><div class="chips" data-f="scope"></div></div>
+      <div><label>Estado</label><div class="chips" data-f="st"></div></div>
+      <div><label>Ordenar por</label><div class="chips" data-f="ord"></div></div>
+    </div>
+    <div id="body"></div>
+  </main>
+</div>
+
+<div class="menu" id="addmenu">
+  <button data-a="mcp"><span class="mi t-mcp">M</span><span>Adicionar conector personalizado<small>MCP por URL ou comando</small></span></button>
+  <button data-a="mk"><span class="mi t-plugin">P</span><span>Adicionar marketplace<small>repositório com plugins</small></span></button>
+  <button data-a="plug"><span class="mi t-plugin">P</span><span>Instalar plugin<small>nome@marketplace ou pasta</small></span></button>
+  <hr>
+  <button data-a="skill"><span class="mi t-skill">S</span><span>Adicionar skill<small>de uma pasta, ou criar nova</small></span></button>
+</div>
+<div class="menu" id="sortmenu" style="min-width:190px">
+  <button data-o="nome">Nome (A–Z)</button><button data-o="novo">Mais recentes</button><button data-o="custo">Custo em tokens</button>
+</div>
+
+<div class="scrim" id="scrim"><div class="dlg" id="dlg" role="dialog"></div></div>
+<div class="toast" id="toast"></div>
+<div class="demo"><button id="reload">↻ Ver carregando</button><button id="goDesc">Ir para Descobrir</button></div>
+
+<script>
+const TY = {plugin:['Plugins','P','t-plugin','Plugin'], skill:['Skills','S','t-skill','Skill'], mcp:['MCPs','M','t-mcp','MCP']};
+/* Meus: g = grupo de origem */
+const MEUS = [
+  {g:'a',t:'skill',n:'skill-creator',by:'da Anthropic',d:'Cria novas skills, melhora as existentes e mede o desempenho delas.',sc:'Usuário',on:1,dt:'28 de out.',tk:300},
+  {g:'a',t:'plugin',n:'frontend-design',by:'por Anthropic',d:'Orientação de design visual para interfaces novas e tipografia fora do padrão.',sc:'Usuário',on:1,dt:'27 de out.',tag:'Novidade',tk:1200},
+  {g:'a',t:'skill',n:'deep-research',by:'da Anthropic',d:'Pesquisa um tema em várias fontes e entrega um relatório com citações.',sc:'Usuário',on:1,dt:'14 de set.',tk:400},
+  {g:'a',t:'mcp',n:'claude.ai Notion',by:'por Notion',d:'Conector da conta: busca e atualiza páginas do workspace.',sc:'Conta',on:1,dt:'12 de set.',st:'ok',lb:'Conectado'},
+  {g:'a',t:'mcp',n:'claude.ai Slack',by:'por Slack',d:'Conector da conta: envia mensagens e lê canais.',sc:'Conta',on:1,dt:'12 de set.',st:'warn',lb:'Precisa de login'},
+  {g:'m',t:'plugin',n:'fluxo',by:'por Rocruzta',d:'Fluxo DEV2..DEV5 → DEV1 → MAIN: papéis, tarefas e promoção.',sc:'Usuário',on:1,dt:'27 de out.',tag:'Novidade',tk:2400},
+  {g:'m',t:'plugin',n:'hyperframes',by:'por HeyGen',d:'Vídeos a partir de HTML: cenas, legendas e renderização local.',sc:'Local',on:0,dt:'28 de out.',tk:3100},
+  {g:'m',t:'skill',n:'figma',by:'por HeyGen',d:'Traz o Figma para um vídeo: assets, tokens e componentes.',sc:'Plugin',on:0,dt:'28 de out.',tag:'Hyperframes'},
+  {g:'m',t:'skill',n:'retomar',by:'do projeto',d:'Retoma o trabalho depois de um /clear lendo o contexto do repositório.',sc:'Projeto',on:1,dt:'09 de nov.'},
+  {g:'o',t:'mcp',n:'playwright',by:'seu',d:'npx @playwright/mcp — navegador controlado para testes visuais.',sc:'Usuário',on:1,dt:'02 de nov.',st:'ok',lb:'Conectado'},
+  {g:'o',t:'mcp',n:'banco-local',by:'seu',d:'https://localhost:8931/mcp — falhou ao conectar.',sc:'Local',on:1,dt:'05 de nov.',st:'bad',lb:'Falhou'},
+  {g:'o',t:'skill',n:'encerrar-tarefa',by:'do projeto',d:'Fecha a tarefa: registro, validação, commit e push na dev1.',sc:'Projeto',on:1,dt:'09 de nov.'},
+];
+const GR = {a:['Da Anthropic e parceiros',''],m:['Dos marketplaces que você adicionou','rocruzta-plugins · claude-plugins · heygen'],o:['Seus, neste computador','Criados ou adicionados por você (usuário, projeto e local)']};
+/* Descobrir */
+const DESC = {
+  anth:[ // Anthropic
+    ['plugin','Frontend design','Anthropic','Orientação de design visual para interfaces novas.',1,'Instalar',1],['plugin','Agent SDK dev','Anthropic','Kit de desenvolvimento para o Claude Agent SDK.',0,'',1],
+    ['mcp','Google Drive','Google','Busca, lê e envia arquivos na hora.',1,'Conexão automática',1],['mcp','Gmail','Google','Rascunha respostas, resume conversas e pesquisa a caixa de entrada.',1,'Conexão automática',1],
+    ['mcp','Slack','Slack','Envia mensagens, cria canvas e busca dados do Slack.',1,'Conexão automática',1],['mcp','Notion','Notion','Conecta seu workspace para buscar e atualizar páginas.',1,'Conexão automática',1],
+    ['skill','skill-creator','Anthropic','Cria skills novas e mede o desempenho delas.',1,'',1],['skill','deep-research','Anthropic','Pesquisa em várias fontes com citações.',1,'',1]],
+  part:[
+    ['plugin','42crunch API security','42Crunch','Audita especificações OpenAPI e detecta vulnerabilidades.',0,'',1],['plugin','ActiveCampaign','ActiveCampaign','Automação de marketing, CRM e e-mail.',0,'',1],
+    ['plugin','Adobe for creativity','Adobe','Ferramentas criativas com IA para editar imagens.',0,'',1],['plugin','Aikido','Aikido','Segurança: SAST, segredos e IaC.',0,'',1],
+    ['mcp','Canva','Canva','Busca, cria e exporta designs.',1,'Conexão automática',1],['mcp','Figma','Figma','Gera diagramas e código melhor a partir do contexto do Figma.',0,'Conexão automática',1],
+    ['mcp','Atlassian','Atlassian','Jira, Confluence, Bitbucket e Loom.',0,'Conexão automática',1],['skill','figma','HeyGen','Traz o Figma para vídeos HyperFrames.',0,'',1]],
+  mine:[
+    ['plugin','Hyperframes','HeyGen','Escreva HTML e renderize vídeo.',1,'',0],['plugin','Fluxo','Rocruzta','Fluxo DEV2..DEV5 → DEV1 → MAIN.',1,'',0],
+    ['plugin','Rocruzta DS','Rocruzta','Design System para projetos novos e existentes.',1,'',0],['skill','hyperframes-cli','HeyGen','CLI do HyperFrames por tarefa.',0,'',0]],
+  reg:[
+    ['mcp','Postgres (somente leitura)','Registro MCP','Consultas SQL num banco local.',0,'',0],['mcp','GitHub','Registro MCP','Issues, PRs e código dos seus repositórios.',0,'',0],
+    ['mcp','Sentry','Registro MCP','Erros e alertas dos seus projetos.',0,'',0],['mcp','Fetch','Registro MCP','Baixa páginas e converte em texto.',0,'',0]]
+};
+const SRC = [['anth','Anthropic'],['part','Parceiros'],['mine','Meus marketplaces'],['reg','Registro MCP']];
+const S = {mode:'meus', type:'', q:'', scope:'', st:'', ord:'nome', loading:true, src:'anth', full:false};
+const $ = (s,e=document)=>e.querySelector(s), esc = (s)=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ic = (t,sz)=>`<div class="ic ${TY[t][2]}" title="${TY[t][3]}">${TY[t][1]}</div>`;
+
+function skRows(n){ return `<div class="rows">${Array(n).fill(`<div class="it"><div class="sk" style="width:40px;height:40px;border-radius:10px"></div><div class="mid" style="display:flex;flex-direction:column;gap:7px"><div class="sk l l1"></div><div class="sk l l2"></div></div><div class="sk" style="width:60px;height:18px;border-radius:99px"></div><div class="sk" style="width:60px;height:10px"></div><div class="sk" style="width:34px;height:20px;border-radius:99px"></div><span></span></div>`).join('')}</div>`; }
+function skCards(n){ return `<div class="cards">${Array(n).fill(`<div class="cd"><div class="sk" style="width:40px;height:40px;border-radius:10px"></div><div class="ct" style="gap:8px"><div class="sk l l1"></div><div class="sk l l2"></div><div class="sk l" style="width:50%"></div></div><div class="sk" style="width:32px;height:32px;border-radius:8px"></div></div>`).join('')}</div>`; }
+
+function types(){
+  const base = S.mode==='meus' ? MEUS : [].concat(...Object.values(DESC).map(a=>a.map(x=>({t:x[0]}))));
+  const c = (t)=>base.filter(x=>!t||x.t===t).length;
+  $('#types').innerHTML = [['','Todos']].concat(Object.entries(TY).map(([k,v])=>[k,v[0]])).map(([k,l])=>`<button class="chip ${S.type===k?'sel':''}" data-t="${k}">${l}<small>${S.loading?'·':c(k)}</small></button>`).join('')
+    + (S.mode==='desc'?'<span style="width:14px"></span>'+SRC.map(([k,l])=>`<button class="chip ${S.src===k?'sel':''}" data-src="${k}" style="border-style:dashed">${l}</button>`).join(''):'');
+}
+function filt(){
+  const mk=(f,opts,cur)=>[['','Todos']].concat(opts).map(([v,l])=>`<button class="chip ${cur===v?'sel':''}" data-f="${f}" data-v="${v}">${l}</button>`).join('');
+  $('[data-f=scope]').innerHTML = mk('scope',['Usuário','Projeto','Local','Conta','Plugin'].map(s=>[s,s]),S.scope);
+  $('[data-f=st]').innerHTML = mk('st',[['on','Ligados'],['off','Desligados'],['issue','Com problema']],S.st);
+  $('[data-f=ord]').innerHTML = [['nome','Nome'],['novo','Mais recentes'],['custo','Custo em tokens']].map(([v,l])=>`<button class="chip ${S.ord===v?'sel':''}" data-f="ord" data-v="${v}">${l}</button>`).join('');
+}
+function meus(){
+  const q=S.q.trim().toLowerCase();
+  const ok=x=>(!S.type||x.t===S.type)&&(!S.scope||x.sc===S.scope)&&(!q||(x.n+x.d+x.by).toLowerCase().includes(q))&&(!S.st||(S.st==='on'?x.on:S.st==='off'?!x.on:(x.st==='warn'||x.st==='bad')));
+  const order=(a,b)=>S.ord==='custo'?(b.tk||0)-(a.tk||0):S.ord==='novo'?0:a.n.localeCompare(b.n);
+  let out='', any=false;
+  for(const g of ['a','m','o']){
+    const r=MEUS.filter(x=>x.g===g&&ok(x)).sort(order); if(!r.length) continue; any=true;
+    out+=`<div class="gh">${GR[g][0]}<span class="n">${r.length}</span></div>${GR[g][1]?`<div class="gsub">${GR[g][1]}</div>`:''}<div class="rows">${r.map(x=>`<div class="it${x.on?'':' dim'}">${ic(x.t)}<div class="mid"><div class="nm">${esc(x.n)}${x.tag?`<span class="tag blue">${esc(x.tag)}</span>`:''}${x.st?`<span class="tag ${x.st}">${x.lb}</span>`:''}</div><div class="sub">${esc(x.by)} · ${esc(x.d)}</div></div>
+      <div style="display:flex;gap:6px;align-items:center"><span class="tag">${TY[x.t][3]}</span><span class="tag">${esc(x.sc)}</span></div><div class="meta">${x.tk?`~${(x.tk/1000).toFixed(1).replace('.',',')} mil tok. · `:''}${x.dt}</div><div class="sw ${x.on?'on':''}" title="${x.on?'Desligar aqui':'Ligar aqui'}"></div><button class="more" title="Gerenciar…">⋯</button></div>`).join('')}</div>`;
+  }
+  const tot=MEUS.filter(x=>x.on&&x.tk).reduce((s,x)=>s+x.tk,0);
+  return any?`<div class="gsub" style="margin:12px 0 0">Ligados neste projeto custam ~${(tot/1000).toFixed(1).replace('.',',')} mil tokens por sessão. “Aqui” vale só para este projeto.</div>`+out:'<div class="empty">Nada com esse filtro.</div>';
+}
+function desc(){
+  const q=S.q.trim().toLowerCase();
+  const all=[].concat(...Object.entries(DESC).map(([k,a])=>a.map(x=>({k,x}))));
+  const keep=({x})=>(!S.type||x[0]===S.type)&&(!q||(x[1]+x[3]+x[2]).toLowerCase().includes(q));
+  const card=x=>{const[t,n,by,d,vf,flag,add]=x;return `<div class="cd">${ic(t)}<div class="ct"><div class="nm" style="font-size:14px">${esc(n)}${vf?'<span class="vf" title="Verificado">✓</span>':''}${flag&&flag!=='Instalar'?`<span class="tag">${flag}</span>`:''}</div><p>${esc(d)}</p><div class="by">${add?'<span class="tag ok">✓ Adicionado</span><span>·</span>':''}<span>por ${esc(by)}</span></div></div><button class="plus ${add?'done':''}" title="${add?'Já adicionado':'Adicionar'}">${add?'✓':'+'}</button></div>`;};
+  if(S.full){ // "Mostrar tudo" = só a fonte escolhida, completa
+    const r=all.filter(i=>i.k===S.src).filter(keep); return `<div class="gh">${SRC.find(s=>s[0]===S.src)[1]}<span class="n">${r.length}</span><a data-back>← Voltar</a></div>${r.length?`<div class="cards">${r.map(i=>card(i.x)).join('')}</div>`:'<div class="empty">Nada com esse filtro.</div>'}`;
+  }
+  const pop=all.filter(i=>i.k===S.src).filter(keep), nw=all.filter(i=>i.k!==S.src).filter(keep).slice(0,4);
+  return `<div class="gh">Mais usados — ${SRC.find(s=>s[0]===S.src)[1]}<span class="n">${pop.length}</span><a data-full>Mostrar tudo →</a></div>${pop.length?`<div class="cards">${pop.map(i=>card(i.x)).join('')}</div>`:'<div class="empty">Nada com esse filtro.</div>'}
+    <div class="gh">Em outras fontes<span class="n">${nw.length}</span></div><div class="cards">${nw.map(i=>card(i.x)).join('')}</div>`;
+}
+function body(){ $('#body').innerHTML = S.loading ? (S.mode==='meus'?`<div class="gh"><span class="sk" style="width:200px;height:14px"></span></div>`+skRows(5):`<div class="gh"><span class="sk" style="width:200px;height:14px"></span></div>`+skCards(8)) : (S.mode==='meus'?meus():desc()); }
+function render(){ document.querySelectorAll('#mode button').forEach(b=>b.classList.toggle('sel',b.dataset.m===S.mode)); types(); filt(); body(); $('#filt').classList.toggle('on',$('#adv').classList.contains('open')); }
+function load(){ S.loading=true; render(); setTimeout(()=>{S.loading=false;render();},1700); }
+
+/* janelas */
+const DL = {
+  mcp:()=>`<div class="dh"><h3>Adicionar conector personalizado</h3><button class="x" data-close title="Fechar (Esc)">✕</button></div>
+    <p class="t">Conecte o Claude Code a dados e ferramentas por um servidor MCP.</p>
+    <div class="seg" id="mt" style="width:fit-content"><button class="sel" data-mt="url">URL (web)</button><button data-mt="cmd">Comando (local)</button></div>
+    <label>Nome</label><input class="inp" id="f1" placeholder="Nome"><div class="help">Exibido na lista de conectores.</div>
+    <div id="mtf"><label>URL do servidor MCP</label><input class="inp mono" id="f2" placeholder="https://mcp.exemplo.com/mcp"><div class="help">O endereço HTTPS onde o servidor aceita requisições MCP.</div></div>
+    <label>Onde vale</label><div class="seg" style="width:fit-content"><button class="sel">Só este projeto</button><button>Todos os meus projetos</button></div>
+    <div class="warnbox"><i>ⓘ</i><span>Use apenas conectores de desenvolvedores em quem você confia. A Anthropic não controla as ferramentas que eles disponibilizam.</span></div>
+    <div class="df"><button class="btn" data-close>Cancelar</button><button class="btn pri" disabled id="go">Continuar</button></div>`,
+  mk:()=>`<div class="dh"><h3>Adicionar marketplace</h3><button class="x" data-close>✕</button></div>
+    <div class="warnbox" style="margin-top:0"><i>ⓘ</i><span>Adicione somente marketplaces em que você confia: a Anthropic não controla os plugins deles e os proprietários podem alterá-los depois.</span></div>
+    <label>URL</label><input class="inp mono" id="f1" placeholder="owner/repo   ou   https://github.com/owner/repo.git"><div class="help">Um <code>owner/repo</code> do GitHub ou uma URL de repositório Git.</div>
+    <div class="df"><button class="btn" data-close>Cancelar</button><button class="btn pri" disabled id="go">Sincronizar</button></div>`,
+  plug:()=>`<div class="dh"><h3>Instalar plugin</h3><button class="x" data-close>✕</button></div>
+    <p class="t">Instala pelo Claude Code, igual ao terminal. Também dá para escolher na aba <b>Descobrir</b>.</p>
+    <label>Plugin</label><input class="inp mono" id="f1" placeholder="nome@marketplace   ou   pasta do plugin">
+    <label>Escopo</label><div class="seg" style="width:fit-content"><button class="sel">Só este projeto (local)</button><button>Projeto (no git)</button><button>Usuário</button></div>
+    <div class="df"><button class="btn" data-close>Cancelar</button><button class="btn pri" disabled id="go">Instalar</button></div>`,
+  skill:()=>`<div class="dh"><h3>Adicionar skill</h3><button class="x" data-close>✕</button></div>
+    <div class="seg" style="width:fit-content"><button class="sel">De uma pasta</button><button>Criar nova</button></div>
+    <label>Pasta da skill</label><input class="inp mono" id="f1" placeholder="C:\\caminho\\da\\skill"><div class="help">A pasta precisa ter um SKILL.md.</div>
+    <label>Escopo</label><div class="seg" style="width:fit-content"><button class="sel">Projeto</button><button>Usuário</button></div>
+    <div class="df"><button class="btn" data-close>Cancelar</button><button class="btn pri" disabled id="go">Adicionar</button></div>`
+};
+function open(k){ $('#dlg').className='dlg'; $('#dlg').innerHTML=DL[k](); $('#scrim').classList.add('open'); const f=$('#f1'); if(f){ f.focus(); f.addEventListener('input',()=>{$('#go').disabled=!f.value.trim();}); } }
+function closeM(){ $('#scrim').classList.remove('open'); }
+function toast(t){ const e=$('#toast'); e.textContent=t; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),1800); }
+function place(m,btn){ const r=btn.getBoundingClientRect(); m.style.left=Math.max(10,r.right-m.offsetWidth||r.left)+'px'; m.classList.add('open'); m.style.left=Math.max(10,r.right-m.offsetWidth)+'px'; m.style.top=(r.bottom+6)+'px'; }
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button,.sw,a[data-full],a[data-back]');
+  if(!e.target.closest('.menu')&&!(t&&(t.id==='add'||t.id==='sort'))){ $('#addmenu').classList.remove('open'); $('#sortmenu').classList.remove('open'); }
+  if(!t) return;
+  if(t.dataset.m){ S.mode=t.dataset.m; S.full=false; load(); }
+  else if(t.dataset.t!==undefined&&t.closest('#types')){ S.type=t.dataset.t; render(); }
+  else if(t.dataset.src){ S.src=t.dataset.src; load(); }
+  else if(t.dataset.f){ S[t.dataset.f]=t.dataset.v; render(); }
+  else if(t.id==='filt'){ $('#adv').classList.toggle('open'); render(); }
+  else if(t.id==='add'){ const m=$('#addmenu'); const was=m.classList.contains('open'); $('#sortmenu').classList.remove('open'); was?m.classList.remove('open'):place(m,t); }
+  else if(t.id==='sort'){ const m=$('#sortmenu'); const was=m.classList.contains('open'); $('#addmenu').classList.remove('open'); was?m.classList.remove('open'):place(m,t); }
+  else if(t.dataset.a){ $('#addmenu').classList.remove('open'); open(t.dataset.a); }
+  else if(t.dataset.o){ S.ord=t.dataset.o; $('#sortmenu').classList.remove('open'); render(); }
+  else if(t.hasAttribute('data-close')) closeM();
+  else if(t.dataset.mt){ document.querySelectorAll('#mt button').forEach(b=>b.classList.toggle('sel',b===t)); $('#mtf').innerHTML = t.dataset.mt==='url'?'<label>URL do servidor MCP</label><input class="inp mono" id="f2" placeholder="https://mcp.exemplo.com/mcp"><div class="help">O endereço HTTPS onde o servidor aceita requisições MCP.</div>':'<label>Comando</label><input class="inp mono" id="f2" placeholder="npx -y @pacote/servidor"><div class="help">Roda no seu computador. Só use comandos que você conhece.</div>'; }
+  else if(t.id==='go'){ closeM(); toast('Exemplo: aqui o app rodaria o comando do Claude Code e atualizaria a lista.'); }
+  else if(t.id==='reload') load();
+  else if(t.id==='goDesc'){ S.mode='desc'; S.full=false; load(); }
+  else if(t.hasAttribute('data-full')){ S.full=true; render(); }
+  else if(t.hasAttribute('data-back')){ S.full=false; render(); }
+  else if(t.classList.contains('plus')&&!t.classList.contains('done')){ t.classList.add('done'); t.textContent='✓'; toast('Exemplo: instalando pelo Claude Code…'); }
+  else if(t.classList.contains('sw')){ t.classList.toggle('on'); t.closest('.it').classList.toggle('dim'); }
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeM(); });
+$('#q').addEventListener('input',e=>{ S.q=e.target.value; types(); body(); });
+$('#scrim').addEventListener('mousedown',e=>{ if(e.target.id==='scrim') $('#dlg').animate([{transform:'scale(1)'},{transform:'scale(1.018)'},{transform:'scale(1)'}],{duration:300}); });
+load();
+</script>
+</body>
+</html>
