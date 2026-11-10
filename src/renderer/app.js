@@ -8,7 +8,7 @@ const GLOBALS = [['Consumo', 'gauge'], ['Integrações', 'link'], ['Configuraç�
 // o desenho de cada ícone ocupa uma parte diferente do quadro (a engrenagem é grande, o link é pequeno): o tamanho de cada um é ajustado para os três terem o mesmo peso visual (~13 px de desenho)
 const GLOBAL_ICON = { gauge: 19, link: 21, gear: 16 };
 const gIc = (name, base) => ic(name, Math.round(base * (GLOBAL_ICON[name] || 19) / 19 * 10) / 10);
-const SUBS = [['Terminais', 'sterm'], ['Plugins', 'splug'], ['Skills', 'sparkles'], ['MCPs', 'network']];
+const SUBS = [['Terminais', 'sterm'], ['Conectores', 'splug']];
 
 // engrenagem de 8 dentes, gerada por pontos para não depender de um desenho externo
 function gearPath() {
@@ -61,6 +61,9 @@ const ICONS = {
   arrowl: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
   arrowr: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   download: '<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 19.5h14"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  filter: '<path d="M4 5.5h16l-6 7.2v5.3l-4 2v-7.3z"/>',
+  sort: '<path d="M8 4.5v15M4.5 16l3.5 3.5 3.5-3.5M16 19.5v-15M12.5 8l3.5-3.5L19.5 8"/>',
   save: '<path d="M5 4.5h11l3 3v12H5z"/><path d="M8 4.5v5h7v-5M8 19.5v-6h8v6"/>',
 };
 const ic = (name, size = 18) => `<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -985,24 +988,42 @@ function emptyHTML() {
 }
 const ptitle = (t) => `<div class="ptitle"><span>${UI.cur.p === '_' ? 'Geral' : esc(curProject().name)} ›</span> ${t}</div>`;
 
-/* ---------- plugins, skills e MCPs (TASK-013: ver tudo e controlar) ---------- */
-const RES_PAGES = ['Plugins', 'Skills', 'MCPs'];
-const RES_SCOPES = { Plugins: ['Usuário', 'Projeto', 'Local', 'Sincronizado'], Skills: ['Usuário', 'Projeto', 'Plugin'], MCPs: ['Conta', 'Usuário', 'Projeto', 'Local', 'Plugin'] };
-const RES_STATES = { Plugins: [['on', 'Ligados'], ['off', 'Desligados']], Skills: [], MCPs: [['ok', 'Conectados'], ['issue', 'Com problema'], ['off', 'Desligados']] };
+/* ---------- Conectores: plugins, skills e MCPs numa tela só (TASK-127, sobre a TASK-013: ver tudo e controlar) ---------- */
+const RES_PAGES = ['Conectores'];
 const PL_SCOPE = { user: 'Usuário', project: 'Projeto', local: 'Local', synced: 'Sincronizado' };
 const RESC = {}; // por projeto: plugins e estado dos MCPs lidos pela CLI (aparecem na hora e atualizam por trás) e aviso de reinício
 const safeTarget = (t) => (!t ? '' : /^https?:/i.test(t) ? t.replace(/[?#].*$/, '') : t.split(/\s+/)[0]); // sem argumentos (podem ter chaves)
 const fmtTokPt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.', ',')} mil` : String(n)); // preciso, para somar custos
-const resNoun = (kind, n) => (kind === 'MCPs' ? (n === 1 ? 'MCP' : 'MCPs') : n === 1 ? kind.slice(0, -1).toLowerCase() : kind.toLowerCase());
 const plShort = (id) => String(id || '').split('@')[0];
+const mkOf = (id) => String(id || '').split('@')[1] || '';
+const OFFICIAL_MK = ['claude-plugins-official', 'anthropic-plugin-directory'];
+const CON_TYPE = { plugin: ['Plugin', 'P'], skill: ['Skill', 'S'], mcp: ['MCP', 'M'] };
+const CON_GROUPS = [
+  ['acc', 'Da sua conta claude.ai', 'Conectores ligados na sua conta: aqui você liga, desliga e entra.'],
+  ['anth', 'Da Anthropic', 'Plugins dos marketplaces oficiais e o que vem neles.'],
+  ['mk', 'Dos marketplaces que você adicionou', ''],
+  ['own', 'Seus, neste computador', 'Criados ou adicionados por você (usuário, projeto e local).'],
+];
+const CON_SRC = [['anth', 'Anthropic'], ['dir', 'Diretório'], ['mk', 'Meus marketplaces'], ['reg', 'Registro MCP']];
+const CON_SRC_HINT = {
+  anth: 'Marketplace oficial da Anthropic, dos mais instalados para os menos.',
+  dir: 'Diretório da Anthropic (parceiros e comunidade). Instale só de quem você conhece.',
+  mk: 'Plugins dos marketplaces que você adicionou.',
+  reg: 'Registro público de servidores MCP. Não tem avaliação: instale só de quem você conhece.',
+};
+const CON_PAGE = 24;
+// catálogos do "Descobrir": valem para o app inteiro (não dependem do projeto) e são buscados só quando a aba é aberta
+const DISC = { pl: null, plP: null, plErr: '', reg: { items: [], next: '', loading: false, loaded: false, err: '', tok: 0, q: '' }, t: 0 };
+const fmtInst = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} mi` : n >= 1e3 ? `${Math.round(n / 1e3)} mil` : String(n));
 
-function resEnsure(kind) {
+function resEnsure() {
   const p = curProject();
-  if (!UI.res || UI.res.pid !== p.id) UI.res = { pid: p.id, files: null, filesJson: '', q: '', scope: '', st: '', busy: '', msg: null, byKey: {} };
+  if (!UI.res || UI.res.pid !== p.id) UI.res = { pid: p.id, files: null, filesJson: '', q: '', scope: '', st: '', type: '', ord: 'nome', mode: 'meus', src: 'anth', adv: false, menu: '', show: CON_PAGE, busy: '', msg: null, byKey: {} };
   const r = UI.res;
   if (!r.files && !r.loadingFiles) { r.loadingFiles = true; api.scan(p.path).then((d) => { r.loadingFiles = false; r.files = d; r.filesJson = JSON.stringify(d); repaintRes(); }); }
-  if (kind === 'Plugins') resLoadPlugins(p, false);
-  if (kind === 'MCPs') resLoadMcp(p, false);
+  resLoadPlugins(p, false);
+  resLoadMcp(p, false);
+  if (r.mode === 'desc') discEnsure();
 }
 // leituras pela CLI: devolvem a promessa (a ação espera a lista nova); uma leitura em andamento não é duplicada
 function resLoadPlugins(p, force) {
@@ -1018,89 +1039,159 @@ function resLoadMcp(p, force) {
   return c.mcp && !force ? Promise.resolve() : go();
 }
 
-// itens de cada tela, já no formato comum { key, raw, search, scope, st, html }
-function resItems(kind) {
+// itens da aba "Meus": plugins, skills e MCPs no mesmo formato { key, raw, type, name, by, desc, scope, g (grupo), on, toggle, tok, tag, label, st, issue, search }
+function conItems() {
   const r = UI.res, c = RESC[r.pid] || {};
-  const tag = (txt, k = '') => `<span class="tag ${k}">${esc(txt)}</span>`;
-  const btn = (act, key, label, cls = '') => `<button class="btn sm ${cls}" data-ract="${act}" data-rk="${esc(key)}">${label}</button>`;
-  const files = r.files || { skills: [], mcps: [], disabledMcps: [] };
-  if (kind === 'Plugins') {
-    if (!c.pl) return null;
-    return c.pl.plugins.map((x) => {
-      const key = 'pl:' + x.id;
-      const inv = [x.skills.length && `${x.skills.length} skill${x.skills.length > 1 ? 's' : ''}`, x.agents && `${x.agents} agente${x.agents > 1 ? 's' : ''}`, x.hooks.length && `${x.hooks.length} hook${x.hooks.length > 1 ? 's' : ''}`, x.mcps.length && `${x.mcps.length} MCP${x.mcps.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ') || 'sem componentes';
-      return { key, raw: x, search: `${x.name} ${x.marketplace} ${x.desc} ${x.skills.join(' ')}`, scope: PL_SCOPE[x.scope] || x.scope, st: x.enabled ? 'on' : 'off',
-        html: `<div class="card${x.enabled ? '' : ' dim'}"><h5>${esc(x.name)}</h5><p class="rmeta">${esc(x.marketplace)} · v${esc(String(x.version).slice(0, 12))}</p>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : ''}<p class="rmeta">${esc(inv)}</p>${x.skills.length ? `<p class="rmeta" title="${esc(x.skills.join(', '))}">Skills: ${esc(x.skills.slice(0, 6).join(', '))}${x.skills.length > 6 ? '…' : ''}</p>` : ''}
-          <div class="tags">${tag('Escopo: ' + (PL_SCOPE[x.scope] || x.scope))}${tag(x.enabled ? 'Ligado' : 'Desligado', x.enabled ? 'ok' : 'warn')}${typeof x.alwaysOn === 'number' ? `<span class="tag" title="Custo estimado, em todo início de sessão, enquanto o plugin estiver ligado">~${fmtTokPt(x.alwaysOn)} tokens/sessão</span>` : ''}${x.notes.length ? `<span class="tag warn" title="${esc(x.notes.join(' '))}">Aviso</span>` : ''}</div>
-          <div class="acts">${btn('pl-toggle', key, x.enabled ? 'Desligar aqui' : 'Ligar aqui', x.enabled ? '' : 'pri')}${btn('pl-manage', key, 'Gerenciar…')}</div></div>` };
-    });
+  if (!r.files || !c.pl) return null;
+  const out = [];
+  for (const x of c.pl.plugins) {
+    out.push({ key: 'pl:' + x.id, raw: x, type: 'plugin', name: x.name, by: `${x.marketplace} · v${String(x.version).slice(0, 12)}`, desc: x.desc, scope: PL_SCOPE[x.scope] || x.scope,
+      g: OFFICIAL_MK.includes(x.marketplace) ? 'anth' : 'mk', on: x.enabled, toggle: true, tok: typeof x.alwaysOn === 'number' ? x.alwaysOn : 0, tag: x.notes.length ? 'Aviso' : '', tagK: 'warn', st: x.enabled ? 'on' : 'off', issue: false,
+      search: `${x.name} ${x.marketplace} ${x.desc} ${x.skills.join(' ')}` });
   }
-  if (kind === 'Skills') {
-    return files.skills.map((x) => {
-      const key = `sk:${x.scope}:${x.kind}:${x.name}:${x.origin}`;
-      const nm = x.scope === 'Plugin' ? `${plShort(x.origin)}:${x.name}` : x.name;
-      const own = x.scope === 'Usuário' || x.scope === 'Projeto';
-      return { key, raw: x, search: `${x.name} ${x.desc} ${x.origin}`, scope: x.scope, st: '',
-        html: `<div class="card${x.off ? ' dim' : ''}"><h5>/${esc(nm)}</h5>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : '<p class="rmeta">Sem descrição.</p>'}
-          <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' ? ' · ' + plShort(x.origin) : ''))}${tag(x.kind === 'skill' ? 'Skill' : 'Comando')}${x.off ? tag('Plugin desligado', 'warn') : ''}</div>
-          <div class="acts">${own ? btn('sk-edit', key, 'Editar') + btn('sk-del', key, 'Excluir', 'bad') : '<span class="rmeta">Faz parte do plugin; para desligar, desligue o plugin.</span>'}</div></div>` };
-    });
+  for (const x of r.files.skills) {
+    const own = x.scope === 'Usuário' || x.scope === 'Projeto';
+    const nm = x.scope === 'Plugin' ? `${plShort(x.origin)}:${x.name}` : x.name;
+    out.push({ key: `sk:${x.scope}:${x.kind}:${x.name}:${x.origin}`, raw: x, type: 'skill', name: '/' + nm, by: x.scope === 'Plugin' ? plShort(x.origin) : x.kind === 'skill' ? 'skill' : 'comando', desc: x.desc, scope: x.scope,
+      g: own ? 'own' : OFFICIAL_MK.includes(mkOf(x.origin)) ? 'anth' : 'mk', on: !x.off, toggle: false, tok: 0, tag: x.kind === 'skill' ? '' : 'Comando', tagK: '', st: x.off ? 'off' : 'on', issue: false, search: `${x.name} ${x.desc} ${x.origin}` });
   }
   // MCPs: o estado real (CLI) manda; os arquivos dão o escopo e a origem e dizem o que está desligado neste projeto
   const live = c.mcp && c.mcp.items;
-  const offSet = new Set(files.disabledMcps || []);
-  const findCfg = (n) => files.mcps.find((f) => f.name === n || (f.scope === 'Plugin' && n.endsWith(':' + f.name) && n.includes(plShort(f.origin))));
+  const offSet = new Set(r.files.disabledMcps || []);
+  const findCfg = (n) => r.files.mcps.find((f) => f.name === n || (f.scope === 'Plugin' && n.endsWith(':' + f.name) && n.includes(plShort(f.origin))));
   const rows = [];
   for (const it of live || []) {
     const f = findCfg(it.name);
     const scope = f ? f.scope : /^claude\.ai /.test(it.name) ? 'Conta' : /^plugin:/.test(it.name) ? 'Plugin' : 'Usuário';
     rows.push({ name: it.name, scope, origin: f ? f.origin : '', type: f ? f.type : '', target: it.target, kind: it.kind, label: it.label, detail: it.detail });
   }
-  for (const f of files.mcps) {
+  for (const f of r.files.mcps) {
     if (live && rows.some((x) => findCfg(x.name) === f)) continue;
     rows.push({ name: f.name, scope: f.scope, origin: f.origin, type: f.type, target: f.target, kind: '', label: live ? 'Sem leitura de estado' : 'Verificando…', detail: '' });
   }
-  return rows.map((x) => {
+  for (const x of rows) {
     // os arquivos (lidos a cada poucos segundos) dizem o que está desligado aqui; o "desligado" que vem da CLI pode estar velho
     // logo depois de ligar (a leitura do estado leva alguns segundos) e não vale sozinho, a não ser nos MCPs de plugin
     const off = offSet.has(x.name) || (x.kind === 'off' && x.scope === 'Plugin');
     if (off) { x.kind = 'off'; x.label = 'Desligado neste projeto'; x.detail = ''; }
     else if (x.kind === 'off') { x.kind = ''; x.label = 'Verificando…'; x.detail = ''; }
-    const key = 'mcp:' + x.name;
-    const ctl = x.scope !== 'Plugin';
-    return { key, raw: x, search: `${x.name} ${x.origin} ${x.target}`, scope: x.scope, st: off ? 'off' : x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '',
-      html: `<div class="card${x.kind === 'ok' || !x.kind ? '' : ' dim'}"><h5>${esc(x.name)}</h5>${x.target ? `<p class="rmeta">${esc(safeTarget(x.target))}</p>` : ''}${x.detail ? `<p class="rmeta" title="${esc(x.detail)}">${esc(x.detail.slice(0, 90))}</p>` : ''}
-        <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' && x.origin ? ' · ' + plShort(x.origin) : ''))}${tag(x.label, x.kind === 'off' ? '' : x.kind)}${x.type ? tag(x.type) : ''}</div>
-        <div class="acts">${ctl ? btn('mcp-toggle', key, off ? 'Ligar aqui' : 'Desligar aqui', off ? 'pri' : '') : '<span class="rmeta">Vem do plugin; o plugin controla.</span>'}${btn('mcp-manage', key, 'Gerenciar…')}</div></div>` };
-  });
+    const st = off ? 'off' : x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '';
+    out.push({ key: 'mcp:' + x.name, raw: x, type: 'mcp', name: x.name, by: x.scope === 'Plugin' && x.origin ? plShort(x.origin) : x.type || 'MCP', desc: x.target ? safeTarget(x.target) : (x.detail || '').slice(0, 90), scope: x.scope,
+      g: x.scope === 'Conta' ? 'acc' : x.scope === 'Plugin' ? (OFFICIAL_MK.includes(mkOf(x.origin)) ? 'anth' : 'mk') : 'own', on: !off, toggle: x.scope !== 'Plugin', tok: 0, tag: '', label: x.label, lk: x.kind === 'off' ? '' : x.kind, st, issue: st === 'issue',
+      search: `${x.name} ${x.origin} ${x.target}` });
+  }
+  return out;
 }
 
-function resListHTML(kind) {
-  const r = UI.res, c = RESC[r.pid] || {};
-  if (!r.files && kind !== 'Plugins') return '<div class="empty" style="height:auto">Lendo configurações…</div>';
-  const items = resItems(kind);
-  if (!items) return `<div class="empty" style="height:auto">${c.pl && c.pl.error ? esc(c.pl.error) : 'Lendo plugins pelo Claude Code…'}</div>`;
+const conTag = (t, k = '') => `<span class="tag ${k}">${esc(t)}</span>`;
+function conRow(x) {
+  const act = x.type === 'plugin' ? 'pl-toggle' : 'mcp-toggle';
+  const sw = x.toggle ? `<button class="cn-sw ${x.on ? 'on' : ''}" data-ract="${act}" data-rk="${esc(x.key)}" title="${x.on ? 'Desligar aqui' : 'Ligar aqui'}" aria-label="${x.on ? 'Desligar' : 'Ligar'} ${esc(x.name)} neste projeto" role="switch" aria-checked="${x.on}"></button>` : '<span></span>';
+  return `<div class="cn-it${x.on ? '' : ' dim'}"><div class="cn-ic t-${x.type}" title="${CON_TYPE[x.type][0]}">${CON_TYPE[x.type][1]}</div>
+    <div class="cn-mid"><div class="cn-nm">${esc(x.name)}${x.tag ? conTag(x.tag, x.tagK) : ''}${x.label ? conTag(x.label, x.lk) : ''}</div><div class="cn-sub" title="${esc(x.desc)}">${esc(x.by)} · ${esc(x.desc || 'Sem descrição.')}</div></div>
+    <div class="cn-tags">${conTag(CON_TYPE[x.type][0])}${conTag(x.scope)}</div><div class="cn-meta">${x.tok ? `~${fmtTokPt(x.tok)} tok.` : ''}</div>${sw}
+    <button class="cn-more" data-con="more" data-rk="${esc(x.key)}" title="Gerenciar…" aria-label="Gerenciar ${esc(x.name)}">${ic('dots', 18)}</button></div>`;
+}
+const conSkelRows = (n) => `<div class="cn-rows">${Array(n).fill('<div class="cn-it"><div class="sk" style="width:40px;height:40px;border-radius:10px"></div><div class="cn-mid" style="display:flex;flex-direction:column;gap:7px"><div class="sk cn-l" style="width:34%;height:12px"></div><div class="sk cn-l" style="width:78%"></div></div><div class="sk" style="width:90px;height:18px;border-radius:99px"></div><span></span><div class="sk" style="width:34px;height:20px;border-radius:99px"></div><span></span></div>').join('')}</div>`;
+const conSkelCards = (n) => `<div class="cn-cards">${Array(n).fill('<div class="cn-cd"><div class="sk" style="width:40px;height:40px;border-radius:10px"></div><div class="cn-ct" style="gap:8px"><div class="sk cn-l" style="width:40%;height:12px"></div><div class="sk cn-l" style="width:88%"></div><div class="sk cn-l" style="width:50%"></div></div><div class="sk" style="width:32px;height:32px;border-radius:8px"></div></div>').join('')}</div>`;
+
+function conMeusHTML() {
+  const r = UI.res, items = conItems();
+  if (!items) return conSkelRows(6);
   r.byKey = Object.fromEntries(items.map((x) => [x.key, x.raw]));
   const q = r.q.trim().toLowerCase();
-  const list = items.filter((x) => (!r.scope || x.scope === r.scope) && (!r.st || x.st === r.st) && (!q || x.search.toLowerCase().includes(q)));
-  const one = kind.slice(0, -1).toLowerCase();
-  if (!list.length) return `<div class="empty" style="height:auto">${items.length ? 'Nada com esse filtro.' : `Nenhum(a) ${one} encontrado(a) para este projeto.`}</div>`;
-  return `<div class="cards">${list.map((x) => x.html).join('')}</div>`;
+  const list = items.filter((x) => (!r.type || x.type === r.type) && (!r.scope || x.scope === r.scope) && (!q || x.search.toLowerCase().includes(q))
+    && (!r.st || (r.st === 'on' ? x.on : r.st === 'off' ? !x.on : x.issue)));
+  if (!list.length) return `<div class="cn-empty">${items.length ? 'Nada com esse filtro.' : 'Nenhum conector neste projeto ainda. Use “Descobrir” ou “+ Adicionar”.'}</div>`;
+  const cmp = r.ord === 'custo' ? (a, b) => (b.tok - a.tok) || a.name.localeCompare(b.name) : (a, b) => a.name.localeCompare(b.name);
+  return CON_GROUPS.map(([g, title, sub]) => {
+    const rows = list.filter((x) => x.g === g).sort(cmp);
+    return rows.length ? `<div class="cn-gh">${title}<span class="cn-n">${rows.length}</span></div>${sub ? `<div class="cn-gsub">${sub}</div>` : ''}<div class="cn-rows">${rows.map(conRow).join('')}</div>` : '';
+  }).join('');
 }
-function resMetaText(kind) {
+
+/* ---- Descobrir: catálogo dos marketplaces (plugins) e registro público de MCPs ---- */
+function discLoadPlugins() {
+  if (DISC.pl || DISC.plP) return;
+  const p = curProject();
+  DISC.plP = api.resDo('pluginsAvailable', { projectPath: p.path }).then((d) => { DISC.pl = d.items || []; DISC.plErr = d.error || ''; }).catch(() => { DISC.pl = []; DISC.plErr = 'Não consegui ler os marketplaces.'; }).finally(() => { DISC.plP = null; repaintRes(); });
+}
+function regFetch(more) {
+  const g = DISC.reg, q = UI.res ? UI.res.q.trim() : '';
+  if (!more) { g.items = []; g.next = ''; g.q = q; g.loaded = false; }
+  const tok = ++g.tok;
+  g.loading = true; g.err = ''; repaintRes();
+  api.resDo('mcpRegistry', { q: g.q, cursor: more ? g.next : '' }).then((d) => {
+    if (tok !== g.tok) return;
+    g.loading = false; g.loaded = true;
+    if (!d.ok) { g.err = d.message || 'Não consegui consultar o registro MCP.'; return; }
+    const seen = new Set(g.items.map((i) => i.name));
+    g.items = g.items.concat(d.items.filter((i) => !seen.has(i.name)));
+    g.next = d.next || '';
+  }).catch(() => { if (tok === g.tok) { g.loading = false; g.err = 'Não consegui consultar o registro MCP.'; } }).finally(() => { if (tok === g.tok) repaintRes(); });
+}
+function discEnsure() {
+  const r = UI.res;
+  if (!r || r.mode !== 'desc') return;
+  if (r.src === 'reg') { const g = DISC.reg; if (!g.loading && (g.q !== r.q.trim() || (!g.loaded && !g.err))) regFetch(false); }
+  else discLoadPlugins();
+}
+const regAdded = (it) => {
+  const r = UI.res, c = RESC[r.pid] || {};
+  const k = String(it.name).split('/').pop().toLowerCase();
+  const have = [...((r.files && r.files.mcps) || []).map((m) => m.name), ...((c.mcp && c.mcp.items) || []).map((m) => m.name)].map((n) => String(n).toLowerCase());
+  return have.includes(k);
+};
+function conCard(it) {
+  const t = it.kind;
+  const nm = t === 'plugin' ? it.name : (it.title || it.name.split('/').pop());
+  const by = t === 'plugin' ? it.by : it.name.split('/')[0];
+  const flags = [it.added ? '<span class="tag ok">✓ Adicionado</span>' : '', it.installs ? `<span class="tag">${fmtInst(it.installs)} instalações</span>` : '', t === 'mcp' && it.remote ? '<span class="tag">Web</span>' : t === 'mcp' && it.pkg ? '<span class="tag">Local</span>' : ''].join('');
+  const btn = it.added ? `<button class="cn-plus done" disabled title="Já adicionado" aria-label="Já adicionado">${ic('save', 15)}</button>` : `<button class="cn-plus" data-con="${t === 'plugin' ? 'inst' : 'regadd'}" data-cv="${esc(t === 'plugin' ? it.id : it.name)}" title="Adicionar" aria-label="Adicionar ${esc(nm)}">${ic('plus', 16)}</button>`;
+  return `<div class="cn-cd"><div class="cn-ic t-${t}">${CON_TYPE[t][1]}</div><div class="cn-ct"><div class="cn-nm">${esc(nm)}</div><p>${esc(it.desc || 'Sem descrição.')}</p><div class="cn-by">${flags}<span>por ${esc(by)}</span></div></div>${btn}</div>`;
+}
+function conDescHTML() {
+  const r = UI.res, c = RESC[r.pid] || {}, src = r.src, q = r.q.trim().toLowerCase();
+  const title = (CON_SRC.find((s) => s[0] === src) || [0, ''])[1];
+  let list = [], total = 0, more = '', loading = false, err = '';
+  if (src === 'reg') {
+    const g = DISC.reg;
+    list = g.items.map((i) => ({ ...i, kind: 'mcp', added: regAdded(i) }));
+    total = list.length; loading = g.loading && !list.length; err = g.err;
+    if (g.next && !g.loading) more = '<button class="btn" data-con="showmore">Mostrar mais</button>';
+    else if (g.loading && list.length) more = '<span class="cn-gsub">Carregando…</span>';
+    if (!err && !loading && !list.length && g.loaded) err = 'Nada encontrado no registro.';
+  } else {
+    if (!DISC.pl) loading = true;
+    else {
+      const have = new Set(((c.pl && c.pl.plugins) || []).map((x) => x.id));
+      const official = new Set(DISC.pl.filter((x) => x.marketplace === 'claude-plugins-official').map((x) => x.name));
+      let a = DISC.pl.filter((x) => (src === 'anth' ? x.marketplace === 'claude-plugins-official' : src === 'dir' ? x.marketplace === 'anthropic-plugin-directory' && !official.has(x.name) : !OFFICIAL_MK.includes(x.marketplace)));
+      if (q) { const rank = (x) => (x.name.toLowerCase().startsWith(q) ? 0 : x.name.toLowerCase().includes(q) ? 1 : 2); a = a.filter((x) => `${x.name} ${x.desc}`.toLowerCase().includes(q)).sort((x, y) => rank(x) - rank(y) || y.installs - x.installs); }
+      else a.sort((x, y) => y.installs - x.installs || x.name.localeCompare(y.name));
+      total = a.length;
+      list = a.slice(0, r.show).map((x) => ({ kind: 'plugin', id: x.id, name: x.name, desc: x.desc, by: x.marketplace, installs: x.installs, added: have.has(x.id) }));
+      if (total > r.show) more = '<button class="btn" data-con="showmore">Mostrar mais</button>';
+      err = !total ? (DISC.plErr || (q ? 'Nada com esse filtro.' : src === 'mk' ? 'Você ainda não adicionou nenhum marketplace. Use “+ Adicionar › Adicionar marketplace”.' : 'Nenhum plugin encontrado.')) : '';
+    }
+  }
+  const head = `<div class="cn-gh">${title}${loading ? '' : `<span class="cn-n">${total}${src === 'reg' && DISC.reg.next ? '+' : ''}</span>`}</div><div class="cn-gsub">${CON_SRC_HINT[src]}</div>`;
+  if (loading) return head + conSkelCards(8);
+  if (err && !list.length) return `${head}<div class="cn-empty">${esc(err)}</div>`;
+  return `${head}${err ? `<div class="cn-empty">${esc(err)}</div>` : ''}<div class="cn-cards">${list.map(conCard).join('')}</div>${more ? `<div class="cn-moreb">${more}</div>` : ''}`;
+}
+
+function resListHTML() { return UI.res.mode === 'desc' ? conDescHTML() : conMeusHTML(); }
+function resMetaText() {
   const r = UI.res, c = RESC[r.pid] || {};
   if (r.busy) return r.busy;
-  const items = (r.files || kind === 'Plugins') ? resItems(kind) : null;
-  const n = items ? items.length : 0;
-  const on = kind === 'Plugins' && c.pl ? c.pl.plugins.filter((x) => x.enabled && typeof x.alwaysOn === 'number') : [];
-  const sum = on.length ? ` · ligados custam ~${fmtTokPt(on.reduce((s, x) => s + x.alwaysOn, 0))} tokens por sessão` : '';
-  const since = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 5 ? 'agora' : s < 60 ? `há ${s} s` : `há ${Math.round(s / 60)} min`; };
-  let st = '';
-  if (kind === 'Plugins') st = c.plLoading ? 'atualizando…' : c.plAt ? `lido pelo Claude Code ${since(c.plAt)}` : '';
-  else if (kind === 'MCPs') st = c.mcpLoading ? 'conferindo o estado de cada conector (leva alguns segundos)…' : c.mcpAt ? `estado conferido ${since(c.mcpAt)}` : '';
-  else st = 'lido dos arquivos do Claude Code';
-  const err = (kind === 'MCPs' && c.mcp && c.mcp.error) ? ` · ${c.mcp.error}` : '';
-  return `${items ? `${n} ${resNoun(kind, n)}${kind === 'Plugins' ? sum : ''}${st ? ' · ' : ''}` : ''}${st}${err}`;
+  if (r.mode === 'desc') return '';
+  const items = conItems();
+  if (!items) return '';
+  const tot = c.pl ? c.pl.plugins.filter((x) => x.enabled && typeof x.alwaysOn === 'number').reduce((s, x) => s + x.alwaysOn, 0) : 0;
+  const st = c.mcpLoading ? 'conferindo o estado dos conectores (leva alguns segundos)…' : '';
+  const err = c.mcp && c.mcp.error ? c.mcp.error : '';
+  return [`${items.length} ${items.length === 1 ? 'conector' : 'conectores'}`, tot ? `os plugins ligados custam ~${fmtTokPt(tot)} tokens por sessão` : '', st, err].filter(Boolean).join(' · ');
 }
 const resMsgHTML = () => (UI.res && UI.res.msg ? `<div class="resmsg ${UI.res.msg.ok ? 'ok' : 'bad'}">${esc(UI.res.msg.text)}</div>` : '');
 const resBannerHTML = () => {
@@ -1110,31 +1201,72 @@ const resBannerHTML = () => {
   return c.restart ? `<div class="note restartnote"><span>Mudança aplicada. Os terminais já abertos deste projeto só passam a ver depois de reiniciar.</span><span class="acts" style="margin:0">${t && t.live ? '<button class="btn sm pri" data-ract="restart-tab">Reiniciar a aba ativa</button>' : ''}<button class="btn sm" data-ract="restart-dismiss">Dispensar</button></span></div>` : '';
 };
 function repaintRes() {
-  const kind = UI.cur.page;
-  if (!UI.res || !RES_PAGES.includes(kind) || UI.cur.p !== UI.res.pid || mode() !== 'page') return;
+  if (!UI.res || UI.cur.page !== 'Conectores' || UI.cur.p !== UI.res.pid || mode() !== 'page') return;
   const l = $('#reslist'), m = $('#resmeta'), g = $('#resmsg'), b = $('#resbanner');
-  if (l) l.innerHTML = resListHTML(kind);
-  if (m) m.textContent = resMetaText(kind);
+  if (l) l.innerHTML = resListHTML();
+  if (m) m.textContent = resMetaText();
   if (g) g.innerHTML = resMsgHTML();
   if (b) b.innerHTML = resBannerHTML();
 }
 
-function resPageHTML(kind) {
-  resEnsure(kind);
+function resPageHTML() {
+  resEnsure();
+  const r = UI.res, desc = r.mode === 'desc';
+  const chip = (attr, v, cur, l) => `<button class="cn-chip ${cur === v ? 'sel' : ''}" data-con="${attr}" data-cv="${esc(v)}">${esc(l)}</button>`;
+  const types = [['', 'Todos'], ['plugin', 'Plugins'], ['skill', 'Skills'], ['mcp', 'MCPs']];
+  const row2 = desc ? CON_SRC.map(([k, l]) => chip('src', k, r.src, l)).join('') : types.map(([k, l]) => chip('type', k, r.type, l)).join('');
+  const menu = r.menu === 'add' ? `<div class="cn-menu" style="right:0;top:40px">
+      <button data-con="add-mcp"><span class="cn-mi t-mcp">M</span><span>Adicionar conector personalizado<small>MCP por URL ou por comando</small></span></button>
+      <button data-con="add-mk"><span class="cn-mi t-plugin">P</span><span>Adicionar marketplace<small>repositório do GitHub ou URL Git</small></span></button>
+      <button data-con="add-plugin"><span class="cn-mi t-plugin">P</span><span>Instalar plugin<small>nome@marketplace</small></span></button>
+      <hr><button data-con="add-skill"><span class="cn-mi t-skill">S</span><span>Nova skill ou comando<small>criar e editar aqui</small></span></button></div>`
+    : r.menu === 'sort' ? `<div class="cn-menu" style="right:0;top:40px;min-width:200px">${[['nome', 'Nome (A–Z)'], ['custo', 'Custo em tokens']].map(([v, l]) => `<button data-con="ord" data-cv="${v}"${r.ord === v ? ' class="sel"' : ''}>${l}</button>`).join('')}</div>` : '';
+  const adv = !desc && r.adv ? `<div class="cn-adv"><div><label>Escopo</label><div class="cn-chips">${chip('scope', '', r.scope, 'Todos')}${['Conta', 'Usuário', 'Projeto', 'Local', 'Plugin'].map((s) => chip('scope', s, r.scope, s)).join('')}</div></div>
+      <div><label>Estado</label><div class="cn-chips">${[['', 'Todos'], ['on', 'Ligados'], ['off', 'Desligados'], ['issue', 'Com problema']].map(([v, l]) => chip('st', v, r.st, l)).join('')}</div></div>
+      <div><label>Neste projeto</label><div class="cn-chips"><button class="btn sm" data-ract="pl-all-off">Desligar todos os plugins</button><button class="btn sm" data-ract="pl-all-on">Ligar todos os plugins</button><button class="btn sm" data-ract="mcp-all-off">Desligar todos os MCPs</button><button class="btn sm" data-ract="mcp-all-on">Ligar todos os MCPs</button></div></div></div>` : '';
+  return `<div class="page cn-page">
+    <div class="cn-head">${ptitle('Conectores').replace('class="ptitle"', 'class="ptitle" style="margin:0"')}
+      <div class="seg" role="tablist"><button role="tab" class="${desc ? '' : 'sel'}" data-con="mode" data-cv="meus">Meus</button><button role="tab" class="${desc ? 'sel' : ''}" data-con="mode" data-cv="desc">Descobrir</button></div>
+      <span class="grow"></span>
+      <div class="cn-search">${ic('search', 15)}<input id="resq" class="resq" type="text" placeholder="${desc && r.src === 'reg' ? 'Pesquisar no registro MCP' : 'Procurar'}" value="${esc(r.q)}" autocomplete="off"></div>
+      <button class="cn-ib ${r.adv ? 'on' : ''}" data-con="adv" title="Filtros" aria-label="Filtros" ${desc ? 'hidden' : ''}>${ic('filter', 17)}</button>
+      <span class="cn-rel" ${desc ? 'hidden' : ''}><button class="cn-ib ${r.menu === 'sort' ? 'on' : ''}" data-con="menu" data-cv="sort" title="Ordenar" aria-label="Ordenar">${ic('sort', 17)}</button>${r.menu === 'sort' ? menu : ''}</span>
+      <button class="cn-ib" data-con="refresh" title="Atualizar" aria-label="Atualizar">${ic('refresh', 17)}</button>
+      <span class="cn-rel"><button class="btn pri" data-con="menu" data-cv="add">${ic('plus', 15)} Adicionar ${ic('chevd', 14)}</button>${r.menu === 'add' ? menu : ''}</span></div>
+    <div class="cn-row2">${row2}</div>${adv}
+    <div id="resbanner">${resBannerHTML()}</div><div id="resmsg">${resMsgHTML()}</div>
+    <div class="rmeta" id="resmeta" style="margin:8px 0 0">${esc(resMetaText())}</div>
+    <div id="reslist">${resListHTML()}</div></div>`;
+}
+
+// ações dos controles da tela (abas, filtros, menus, cartões do Descobrir)
+function conAct(a, v, el) {
   const r = UI.res;
-  const seg = (attr, cur, opts) => `<div class="seg sm">${[['', 'Todos']].concat(opts).map(([v, l]) => `<button ${attr}="${esc(v)}" class="${cur === v ? 'sel' : ''}">${esc(l)}</button>`).join('')}</div>`;
-  const A = (act, label, cls = '') => `<button class="btn sm ${cls}" data-ract="${act}">${label}</button>`;
-  const actions = kind === 'Plugins' ? A('pl-install', '+ Instalar plugin…', 'pri') + A('pl-all-off', 'Desligar todos aqui') + A('pl-all-on', 'Ligar todos aqui')
-    : kind === 'MCPs' ? A('mcp-add', '+ Adicionar MCP…', 'pri') + A('mcp-all-off', 'Desligar todos aqui') + A('mcp-all-on', 'Ligar todos aqui')
-      : A('sk-new', '+ Nova skill ou comando…', 'pri');
-  const hint = kind === 'MCPs' ? 'inclusive os conectores da sua conta' : kind === 'Plugins' ? 'com o custo estimado em tokens' : 'de usuário, de projeto e de plugins';
-  return `<div class="page">${ptitle(kind)}<div class="note">Mostra o mesmo que o Claude Code enxerga neste projeto (${hint}). "Aqui" vale só para este projeto. Tudo o que você muda pela tela pode ser mudado também pelo terminal (e vice-versa), e o app acompanha.</div>
-    <div id="resbanner">${resBannerHTML()}</div>
-    <div class="restools"><input id="resq" class="resq" type="text" placeholder="Buscar em ${resNoun(kind, 2)}…" value="${esc(r.q)}">${seg('data-resscope', r.scope, RES_SCOPES[kind].map((s) => [s, s]))}${RES_STATES[kind].length ? seg('data-resst', r.st, RES_STATES[kind]) : ''}</div>
-    <div class="restools">${actions}<button class="btn sm resrefresh" data-resrefresh>Atualizar</button></div>
-    <div id="resmsg">${resMsgHTML()}</div>
-    <div class="rmeta" id="resmeta" style="margin:2px 0 4px">${esc(resMetaText(kind))}</div>
-    <div id="reslist">${resListHTML(kind)}</div></div>`;
+  if (!r) return;
+  const redraw = () => { r.show = CON_PAGE; renderPage(); };
+  if (a === 'mode') { r.mode = v; r.menu = ''; redraw(); discEnsure(); return; }
+  if (a === 'type') { r.type = v; redraw(); return; }
+  if (a === 'src') { r.src = v; redraw(); discEnsure(); return; }
+  if (a === 'scope') { r.scope = v; redraw(); return; }
+  if (a === 'st') { r.st = v; redraw(); return; }
+  if (a === 'ord') { r.ord = v; r.menu = ''; renderPage(); return; }
+  if (a === 'adv') { r.adv = !r.adv; renderPage(); return; }
+  if (a === 'menu') { r.menu = r.menu === v ? '' : v; renderPage(); return; }
+  if (a === 'refresh') {
+    const p = curProject();
+    r.files = null; r.loadingFiles = false; resLoadPlugins(p, true); resLoadMcp(p, true);
+    DISC.pl = null; DISC.reg.loaded = false; DISC.reg.err = '';
+    renderPage(); return;
+  }
+  if (a === 'showmore') { if (r.mode === 'desc' && r.src === 'reg') regFetch(true); else { r.show += CON_PAGE; repaintRes(); } return; }
+  if (a === 'more') return conMore(el.dataset.rk);
+  if (a === 'inst') return plInstallQuick(v);
+  if (a === 'regadd') return regAddFlow(v);
+  r.menu = ''; renderPage();
+  if (a === 'add-mcp') return mcpAddFlow({});
+  if (a === 'add-mk') return marketplaceFlow();
+  if (a === 'add-plugin') return plInstallFlow();
+  if (a === 'add-skill') return skNewFlow();
 }
 
 /* ---- ações ---- */
@@ -1147,12 +1279,10 @@ async function resRun(label, fn, restart) {
   let out;
   try { out = await fn(); } catch (e) { out = { ok: false, message: String((e && e.message) || e) }; }
   // espera as listas novas antes de liberar a tela, para os cartões já mostrarem o estado novo (o estado dos MCPs vem por trás)
-  const onPlugins = UI.cur.page === 'Plugins';
   r.busy = 'Atualizando a lista…'; repaintRes();
-  const [d] = await Promise.all([api.scan(p.path), onPlugins ? resLoadPlugins(p, true) : null]);
+  const [d] = await Promise.all([api.scan(p.path), resLoadPlugins(p, true)]);
   if (UI.res === r) { r.files = d; r.filesJson = JSON.stringify(d); }
   resLoadMcp(p, true);
-  if (!onPlugins) resLoadPlugins(p, true);
   r.busy = ''; r.msg = { ok: !!out.ok, text: out.message || (out.ok ? 'Feito.' : 'Não deu certo.') };
   const c = RESC[p.id] || (RESC[p.id] = {});
   if (out.ok && restart) c.restart = true;
@@ -1240,6 +1370,54 @@ async function plInstallFlow() {
   return resRun(`Instalando ${id}… (pode levar um minuto)`, () => api.resDo('pluginInstall', { id, scope: m.form.scope, projectPath: p.path }), true);
 }
 
+// instalar um plugin escolhido no Descobrir: só pergunta onde vale (o padrão é só neste projeto)
+async function plInstallQuick(id) {
+  const p = curProject();
+  const x = (DISC.pl || []).find((a) => a.id === id);
+  if (!p || !x) return;
+  const m = await modal({ title: `Instalar ${esc(x.name)}`, body: `<p>${esc(x.desc || 'Plugin do Claude Code.')}</p><p class="meta">${esc(x.id)}${x.version ? ' · v' + esc(x.version) : ''}${x.installs ? ' · ' + fmtInst(x.installs) + ' instalações' : ''}</p><p class="meta">Use apenas plugins de quem você confia: a Anthropic não controla os plugins dos marketplaces.</p>
+    <div class="f"><label>Instalar para</label>${selHTML('scope', [['local', 'Só neste projeto, só para mim (local)'], ['user', 'Todos os meus projetos (usuário)'], ['project', 'Este projeto, compartilhado com o time (.claude/settings.json)']], 'local')}</div>`,
+    buttons: [['Cancelar', null], ['Instalar', 'ok', 'pri']] });
+  if (m.value !== 'ok') return;
+  return resRun(`Instalando ${x.name}… (pode levar um minuto)`, () => api.resDo('pluginInstall', { id: x.id, scope: m.form.scope, projectPath: p.path }), true);
+}
+
+// adicionar um servidor do registro MCP: abre o formulário já preenchido (endereço web ou comando npx/uvx)
+function regAddFlow(name) {
+  const it = DISC.reg.items.find((i) => i.name === name);
+  if (!it) return;
+  const base = String(it.title || it.name.split('/').pop()).replace(/[^\w.-]+/g, '-').replace(/^[^A-Za-z0-9]+/, '').slice(0, 40) || 'servidor';
+  if (it.remote) return mcpAddFlow({ name: base, type: it.remote.type, url: it.remote.url });
+  if (it.pkg && it.pkg.type === 'npm') return mcpAddFlow({ name: base, type: 'stdio', command: 'npx', args: '-y\n' + it.pkg.id });
+  if (it.pkg && it.pkg.type === 'pypi') return mcpAddFlow({ name: base, type: 'stdio', command: 'uvx', args: it.pkg.id });
+  UI.res.msg = { ok: false, text: `${it.title || it.name} precisa de instalação manual${it.site ? ': veja ' + it.site : '.'}` }; repaintRes();
+}
+
+async function marketplaceFlow() {
+  const p = curProject();
+  const m = await modal({ title: 'Adicionar marketplace', body: `<p class="meta">Adicione somente marketplaces em que você confia: a Anthropic não controla os plugins deles e os proprietários podem alterá-los depois.</p>
+    <div class="f"><label>URL</label><input class="inp" type="text" data-f="src" placeholder="owner/repo   ou   https://github.com/owner/repo.git" autocomplete="off"></div><p class="meta">Um <b>owner/repo</b> do GitHub ou uma URL https de repositório Git.</p>`,
+    buttons: [['Cancelar', null], ['Sincronizar', 'ok', 'pri']] });
+  if (m.value !== 'ok') return;
+  const src = (m.form.src || '').trim();
+  if (!src) return;
+  const out = await resRun(`Adicionando o marketplace ${src}… (pode levar um minuto)`, () => api.resDo('marketplaceAdd', { source: src, projectPath: p.path }), false);
+  if (out && out.ok) { DISC.pl = null; discEnsure(); }
+}
+
+// menu ⋯ de uma linha da lista
+async function conMore(key) {
+  const r = UI.res, x = r && r.byKey[key];
+  if (!x) return;
+  if (key.startsWith('pl:')) return resAct('pl-manage', key);
+  if (key.startsWith('mcp:')) return resAct('mcp-manage', key);
+  const own = x.scope === 'Usuário' || x.scope === 'Projeto';
+  const m = await modal({ title: `/${esc(x.name)} <small class="meta">${esc(x.scope)} · ${x.kind === 'skill' ? 'skill' : 'comando'}</small>`, body: `<p>${esc(x.desc || 'Sem descrição.')}</p>${own ? '' : '<p class="meta">Faz parte do plugin; para desligar, desligue o plugin.</p>'}`,
+    buttons: [['Fechar', null], ...(own ? [['Excluir…', 'del', 'bad'], ['Editar', 'edit', 'pri']] : [])] });
+  if (m.value === 'edit') return resAct('sk-edit', key);
+  if (m.value === 'del') return resAct('sk-del', key);
+}
+
 async function mcpManageFlow(x) {
   const p = curProject();
   const run = (op, args) => api.resDo(op, { projectPath: p.path, ...args });
@@ -1260,7 +1438,7 @@ async function mcpManageFlow(x) {
 async function mcpAddFlow(prev) {
   const p = curProject();
   const v = { name: '', type: 'http', url: '', command: '', args: '', env: '', headers: '', scope: 'local', ...prev };
-  const m = await modal({ title: 'Adicionar MCP', body: `${v.error ? `<div class="resmsg bad">${esc(v.error)}</div>` : ''}
+  const m = await modal({ title: 'Adicionar conector personalizado', body: `${v.error ? `<div class="resmsg bad">${esc(v.error)}</div>` : ''}<p class="meta">Use apenas conectores de desenvolvedores em quem você confia: a Anthropic não controla as ferramentas que eles disponibilizam.</p>
     <div class="f"><label>Nome</label><input class="inp" type="text" data-f="name" value="${esc(v.name)}" placeholder="ex.: github"></div>
     <div class="f"><label>Tipo</label>${selHTML('type', [['http', 'Servidor na web (HTTP)'], ['sse', 'Servidor na web (SSE)'], ['stdio', 'Programa local (comando)']], v.type)}</div>
     <div data-mcpf="web"><div class="f"><label>Endereço</label><input class="inp" type="text" data-f="url" value="${esc(v.url)}" placeholder="https://servidor.exemplo.com/mcp"></div>
@@ -1524,7 +1702,7 @@ function confHTML() {
     <div class="row"><div class="grow">Restaurar os padrões</div><button class="btn sm" data-ntfreset>Restaurar</button></div></div>
     <h5 style="margin:22px 0 8px">Conectores (plugins, skills e MCPs)</h5>
     <div class="card" style="padding:6px 18px">
-    <div class="row" style="align-items:flex-start"><div class="grow">Projeto novo criado pelo Termix<small><b>Automático:</b> o projeto nasce como o Claude Code monta por padrão, com os seus plugins, MCPs e conectores já valendo (isso pesa nos tokens de cada sessão). <b>Limpo:</b> o projeto nasce sem nenhum plugin, MCP nem conector; você liga só o que quiser nas telas Plugins, MCPs e Skills.</small></div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Projeto novo criado pelo Termix<small><b>Automático:</b> o projeto nasce como o Claude Code monta por padrão, com os seus plugins, MCPs e conectores já valendo (isso pesa nos tokens de cada sessão). <b>Limpo:</b> o projeto nasce sem nenhum plugin, MCP nem conector; você liga só o que quiser na tela Conectores.</small></div>
       <div class="seg"><button class="${connCfg().newProject === 'auto' ? 'sel' : ''}" data-conn="auto">Automático</button><button class="${connCfg().newProject === 'clean' ? 'sel' : ''}" data-conn="clean">Limpo</button></div></div>
     <div class="row"><div class="grow"><small>O "limpo" desliga só dentro do projeto novo (plugins em .claude/settings.local.json e MCPs/conectores na entrada do projeto do Claude Code); os outros projetos e as suas configurações de usuário não mudam. Skills e comandos de <b>usuário</b> (pasta .claude do seu usuário) não têm como ser desligados por projeto. Plugins, MCPs ou conectores instalados depois ficam ligados até você desligar. Projetos importados não são alterados.</small></div></div></div>
     <h5 style="margin:22px 0 8px">Projetos arquivados</h5>
@@ -1587,7 +1765,7 @@ function renderPage() {
   else if (m === 'noterm') html = noTermHTML(curProject());
   else if (m === 'workflow') html = wfStartHTML(curProject());
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML, 'Novo chat': () => newPageHTML('chat'), 'Novo workflow': () => newPageHTML('workflow') }[UI.cur.page]();
-  else if (m === 'page') html = resPageHTML(UI.cur.page);
+  else if (m === 'page') html = resPageHTML();
   $('#page').innerHTML = html;
   $('#page').classList.toggle('wfpage', m === 'workflow'); // tela inicial do Workflow ocupa o palco inteiro, sem moldura
   layout(); // o recorte do vidro depende do tipo de tela
@@ -1967,6 +2145,7 @@ document.addEventListener('click', async (e) => {
   const q = (s) => e.target.closest(s);
   let el;
   closeFloaters(e);
+  if (UI.res && UI.res.menu && UI.cur.page === 'Conectores' && !q('.cn-menu,[data-con="menu"]')) { UI.res.menu = ''; renderPage(); }
   if ((el = q('[data-setcolor]'))) { const [id, c] = el.dataset.setcolor.split('|'); const f = findTab(id); if (f) { f.tab.color = c; save(); } UI.menu = null; renderAll(); return; }
   if ((el = q('[data-rename]'))) { const f = findTab(el.dataset.rename); UI.menu = null; renderMenu(); if (f) renameTab(f.tab); return; }
   if ((el = q('[data-dup]'))) { const f = findTab(el.dataset.dup); UI.menu = null; if (f) createTab(f.p, f.tab.perm, { name: `${f.tab.name} (2)`, color: f.tab.color, after: f.tab.id }); return; }
@@ -2006,19 +2185,11 @@ document.addEventListener('click', async (e) => {
     inp.value = Math.min(+box.dataset.max, Math.max(+box.dataset.min, (parseInt(inp.value, 10) || 0) + (+el.dataset.step)));
     inp.dispatchEvent(new Event('input', { bubbles: true })); return;
   }
+  if ((el = q('[data-con]'))) { conAct(el.dataset.con, el.dataset.cv, el); return; }
   if ((el = q('[data-ract]'))) { resAct(el.dataset.ract, el.dataset.rk); return; }
   if ((el = q('[data-ctab]'))) { UI.cons.tab = el.dataset.ctab; renderPage(); return; }
   if ((el = q('[data-cper]'))) { UI.cons.per = el.dataset.cper; renderPage(); return; }
   if ((el = q('[data-cmore]'))) { UI.cons.more = !UI.cons.more; renderPage(); return; }
-  if ((el = q('[data-resscope]'))) { UI.res.scope = el.dataset.resscope; renderPage(); return; }
-  if ((el = q('[data-resst]'))) { UI.res.st = el.dataset.resst; renderPage(); return; }
-  if ((el = q('[data-resrefresh]'))) {
-    const p = curProject(), kind = UI.cur.page;
-    UI.res.files = null; UI.res.loadingFiles = false;
-    if (kind === 'Plugins') resLoadPlugins(p, true);
-    if (kind === 'MCPs') resLoadMcp(p, true);
-    renderPage(); return;
-  }
   if ((el = q('[data-go]'))) {
     const [p, pg] = el.dataset.go.split('|');
     UI.cur = { p, page: pg }; if (p !== '_') UI.last = p;
@@ -2115,7 +2286,11 @@ document.addEventListener('focusout', (e) => {
 
 document.addEventListener('input', (e) => {
   const id = e.target.id;
-  if (id === 'resq' && UI.res) { UI.res.q = e.target.value; repaintRes(); return; }
+  if (id === 'resq' && UI.res) {
+    UI.res.q = e.target.value; UI.res.show = CON_PAGE;
+    if (UI.res.mode === 'desc' && UI.res.src === 'reg') { clearTimeout(DISC.t); DISC.t = setTimeout(discEnsure, 350); } else repaintRes();
+    return;
+  }
   if (id === 'clrTpl') { S.settings.clear.template = e.target.value === HANDOFF_DEF ? null : e.target.value; save(); return; } // igual ao padrão = continua "padrão do app" (acompanha melhorias futuras)
   if (id === 'clrAlert') {
     const c = S.settings.clear;
@@ -2150,8 +2325,8 @@ setInterval(async () => {
   const json = JSON.stringify(data);
   const changed = UI.res && json !== UI.res.filesJson;
   if (changed) { UI.res.files = data; UI.res.filesJson = json; }
-  if (kind === 'Plugins' && resTick % 3 === 0) resLoadPlugins(p, true);
-  if (kind === 'MCPs' && resTick % 15 === 0) resLoadMcp(p, true);
+  if (resTick % 3 === 0) resLoadPlugins(p, true);
+  if (resTick % 15 === 0) resLoadMcp(p, true);
   if (changed) repaintRes();
 }, 4000);
 

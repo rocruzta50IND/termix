@@ -8,6 +8,13 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-10
 
+**TASK-127 — Conectores: Plugins, Skills e MCPs numa tela só** (DEV1)
+
+- Protótipo estático aprovado pelo usuário (`docs/exemplos/conectores/index.html`, a partir das telas Skills/Conectores/Plugins/Diretório do Claude) e levantamento das fontes reais (CLI `claude plugin list --available --json`, `claude plugin marketplace`, registro público de MCP). Sem avaliação de usuários em nenhuma fonte; só instalações.
+- App: a barra lateral do projeto passa a ter **Terminais** e **Conectores** (saem Plugins, Skills e MCPs). Aba **Meus** (lista agrupada por origem, filtro por tipo/escopo/estado, ordenar, interruptor "aqui", ⋯ Gerenciar) e aba **Descobrir** (Anthropic ~316, Diretório ~3,7 mil, Meus marketplaces e Registro MCP com busca no servidor; 24 por vez + "Mostrar mais"). Menu **+ Adicionar**: conector personalizado (MCP), marketplace, instalar plugin e nova skill. Esqueleto de carregamento nas duas abas.
+- Código: `src/renderer/app.js` (bloco Conectores no lugar das três telas: `conItems`, `conMeusHTML`, `conDescHTML`, `conAct`, fluxos `plInstallQuick`, `regAddFlow`, `marketplaceFlow`, `conMore`), `src/renderer/styles.css` (bloco `cn-*`), `src/resources.js` (`marketplaceAdd`, `mcpRegistry`, `pluginsAvailable` com instalações e versão). `docs/DECISOES.md` e `docs/DESIGN.md` atualizados.
+- Validação: `npm run check` ok; testado por CDP numa instância isolada (esqueleto, Meus com 50 itens em 4 grupos, Descobrir com 316 plugins, Registro MCP com busca "github" e "Mostrar mais" 30 → 60, menu Adicionar, filtros, modais de conector/marketplace/instalar), 0 erros de JavaScript. Não testado: instalar de fato um plugin, adicionar um marketplace e ligar/desligar (só abrem os modais). Aguarda validação do usuário.
+
 **Encerramento — TASK-121, TASK-124 e TASK-125** (DEV1)
 
 - Aprovadas pelo usuário ("finalizado") depois de usar as versões 0.4.0 a 0.4.3: layout novo do Rocruzta Hub, janela de novidades, ícone dos atalhos e da barra de tarefas, reabertura sob demanda. Releases v0.4.0, v0.4.1, v0.4.2 e v0.4.3 publicados. Pendente: medir a abertura com os 30 projetos reais (TASK-125). Backlog: TASK-122 (tema claro), TASK-123 (anexar e falar), TASK-126 (ícone do `Termix.exe`) e, **no escopo MVP**, TASK-127 (Conectores: tela única para Plugins, Skills e MCPs, com busca, modal "Adicionar conector" e carregamento com esqueleto; começa por um index de exemplo).
