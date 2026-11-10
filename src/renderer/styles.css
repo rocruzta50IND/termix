@@ -162,7 +162,7 @@ body.maxed .shadow{filter:none}
 .col{position:absolute;display:flex;flex-direction:column;gap:0;min-height:0;min-width:0;border-radius:14px;overflow:hidden}
 #page:not(.hide){margin:8px}
 /* TASK-042: tela que não é terminal/chat vira parte do app (sem recorte, borda, painel nem margem) */
-body.flatpage #col{border-radius:0}
+body.flatpage #col{border-radius:var(--r)} /* telas planas (Novo chat, Consumo, Conectores, Código...): folha com o mesmo canto arredondado do resto do app */
 body.flatpage #page:not(.hide){margin:0;border:0;border-radius:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;padding-bottom:14px}
 /* rail: cápsula vertical de anéis (contexto, 5 h, 7 d, cache) dentro do terminal, junto à borda direita */
 .rail{position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;width:50px;padding:0;background:none;border:0;box-shadow:none;transition:opacity .2s} /* só os anéis flutuando: sem cápsula */
@@ -1336,7 +1336,6 @@ body.flatpage #page.codepage:not(.hide){overflow:hidden;padding:0}
 .cd .grow{flex:1}
 .cd-row small{flex-shrink:6;min-width:0}
 .cd-sec+.cd-sec{border-top:1px solid var(--border);margin-top:8px;padding-top:6px}
-body.flatpage #col:has(#page.codepage){border-radius:var(--r)}
 body.codedock #page{order:1;min-height:140px}
 body.codedock #tabsRow{order:2;border-top:1px solid var(--border)}
 body.codedock #sess{order:3;flex:0 0 var(--cdh,320px);min-height:120px}

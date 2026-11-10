@@ -3,6 +3,14 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.6.1',
+    date: '10/11/2026',
+    resumo: 'Acabamento: todas as telas agora têm o canto arredondado.',
+    corrigido: [
+      'Novo chat, Novo workflow, Consumo, Integrações, Configurações, Conectores e a tela inicial vazia tinham a borda do palco quadrada. Agora seguem o mesmo canto arredondado do resto do app.',
+    ],
+  },
+  {
     v: '0.6.0',
     date: '10/11/2026',
     resumo: 'Nova tela Código: veja os arquivos do projeto e o que mudou, com os terminais embaixo.',

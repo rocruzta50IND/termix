@@ -139,3 +139,4 @@ O Termix adota **só a identidade visual** do Rocruzta Hub (projeto separado, qu
 - Explorador de 272 px à esquerda; títulos de seção só em texto (sem caixa), com uma linha entre Alterações e Arquivos. Linhas de 28 px, abas de 40 px, caminho do arquivo de 36 px, barra de status de 30 px; textos alinhados na mesma margem.
 - Diff: adicionado em verde, removido em vermelho, trechos (`@@`) em azul; duas colunas de numeração. Cores de arquivo por extensão e letra do estado (M amarelo, U/A verde, D vermelho).
 - Terminais embaixo: divisória arrastável (faixa de 5 px na base do editor e 9 px no topo das abas), com linha azul ao passar o mouse.
+- **Canto das telas planas (0.6.1):** a folha do palco (`#col`) tem `border-radius: var(--r)` em todas as telas planas (Novo chat/workflow, Consumo, Integrações, Configurações, Conectores, Código, tela vazia), não só na Código.
