@@ -34,6 +34,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-131 — Tela Telemetria: o time e as tarefas do projeto vindos do git (pós-MVP)
+
+- **Responsável:** DEV1
+- **Status:** BACKLOG — **pós-MVP**; alinhada com o usuário em 2026-11-10, sem implementação ainda ("não vamos mexer nisso agora").
+- **Ideia:** subaba **Telemetria** em cada projeto (depois de Código), só leitura, mostrando como anda o desenvolvimento dos devs no mesmo projeto. Primeira entrega da TASK-099 (fluxo no app); usa a TASK-103 (métrica) se existir.
+- **Dados (sem login):** git local com `git fetch` (branches de todos os devs, commits à frente/atrás da `main`, último commit e autor); `docs/TASKS.md` e `CHANGELOG_DEV.md` lidos de cada branch; commits `TASK-XXX:` ligados às tarefas. API do GitHub (PRs, Actions, issues) **fora do escopo**: conexões ficam no Rocruzta Hub (ver DECISOES, "Tela Integrações: destino futuro").
+- **Blocos:** Time (um cartão por branch: dev, último commit, à frente/atrás, tarefa em andamento); Tarefas (Em andamento, Aguardando validação, Prontas, Backlog); Linha do tempo (commits por tarefa); Saúde (ex.: "dev1 tem 3 commits fora da main").
+- **Decisões alinhadas:** (1) quem vê o quê segue o papel da máquina (`CLAUDE.local.md`): GERENTE vê tudo, dev vê só o que o fluxo permite; a tela é só para o humano e nunca entra na conversa do Claude (respeita a trava de contexto do DEV1); (2) projeto sem o fluxo mostra só branches e commits; (3) começa por um projeto dentro do Termix, a visão de todos os projetos fica para o Hub; (4) atualiza ao abrir a tela e num botão que roda o `git fetch`, sem consulta contínua; (5) só leitura no primeiro corte (sem criar tarefa nem mover cartão).
+- **Próximo passo (quando entrar):** protótipo estático da tela, como foi feito com Conectores.
+
 ### TASK-109 — Chat: pedidos de permissão em fila (vários cartões iguais) e "Permitir tudo nesta sessão"
 
 - **Responsável:** DEV1
