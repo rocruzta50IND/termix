@@ -3,6 +3,19 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.5.0',
+    date: '10/11/2026',
+    resumo: 'Plugins, Skills e MCPs agora vivem numa tela só: Conectores.',
+    novo: [
+      'Tela Conectores: no lugar de Plugins, Skills e MCPs, cada projeto tem uma só. Em Meus você vê tudo o que vale no projeto, agrupado por origem, com busca, filtros, ordenação e um interruptor para ligar ou desligar só naquele projeto.',
+      'Aba Descobrir: encontre plugins do marketplace oficial e do diretório da Anthropic (os mais instalados primeiro) e servidores MCP do registro público, com busca e “Mostrar mais”. Um clique no “+” instala ou abre o formulário já preenchido.',
+      'Menu “+ Adicionar”: conector personalizado (MCP por endereço ou comando), marketplace de plugins, instalar plugin e criar skill ou comando.',
+    ],
+    melhorado: [
+      'As listas aparecem primeiro como um esqueleto de carregamento e viram o conteúdo quando os dados chegam.',
+    ],
+  },
+  {
     v: '0.4.3',
     date: '10/11/2026',
     resumo: 'Ícone certo na barra de tarefas.',
