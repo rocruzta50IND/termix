@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **Promoção dev1 → main — TASK-120 e TASK-121 (versão 0.4.0)** (DEV1)
 
-- Promovidos `1aa1fe0`..`12add1b` (registro da 0.3.9, identidade visual do Rocruzta Hub, refinamentos do layout novo e versão 0.4.0). Validado pelo usuário com o instalador 0.4.0. `npm run check` ok. Release v0.4.0 a partir da `main`.
+- Promovidos `1aa1fe0`..`12add1b` (registro da 0.3.9, identidade visual do Rocruzta Hub, refinamentos do layout novo e versão 0.4.0). Validado pelo usuário com o instalador 0.4.0. `npm run check` ok. Release v0.4.0 publicado em 2026-11-10 a partir da `main` (`4e2bb5c`): https://github.com/rocruzta50IND/termix/releases/tag/v0.4.0 — instalador 125.015.503 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.4.0.
 
 **TASK-121 — Versão 0.4.0 (instalador gerado)** (DEV1)
 
