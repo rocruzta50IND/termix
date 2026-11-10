@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **Promoção dev1 → main — TASK-129 (versão 0.6.1)** (DEV1)
 
-- Aprovada pelo usuário ("publique a 0.6.1") depois de ver as telas no app em desenvolvimento. Promovidos os commits da `dev1` desde a 0.6.0: canto arredondado em todas as telas planas (TASK-129), versão 0.6.1 com a entrada em `patchnotes.js` e a nota sobre o destino da tela Integrações em `docs/DECISOES.md`. `npm run check` ok. TASK-129 → CONCLUÍDA.
+- Aprovada pelo usuário ("publique a 0.6.1") depois de ver as telas no app em desenvolvimento. Promovidos os commits da `dev1` desde a 0.6.0: canto arredondado em todas as telas planas (TASK-129), versão 0.6.1 com a entrada em `patchnotes.js` e a nota sobre o destino da tela Integrações em `docs/DECISOES.md`. `npm run check` ok. TASK-129 → CONCLUÍDA. Release v0.6.1 publicado em 2026-11-10 a pedido do usuário (`main` `08ecc93`): https://github.com/rocruzta50IND/termix/releases/tag/v0.6.1 — instalador 125.034.037 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.6.1.
 
 **TASK-129 — Canto arredondado em todas as telas planas (versão 0.6.1)** (DEV1)
 
