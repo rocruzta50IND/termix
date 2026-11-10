@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**TASK-125 — Abrir o app rápido com muitos projetos** (DEV1)
+
+- Reabertura sob demanda: ao abrir só o projeto da tela retoma as conversas; os outros retomam quando o usuário os abre (`restoreProject`/`RESTORING` em `app.js`). Antes todas as abas de todos os projetos eram retomadas na entrada (um processo por aba de terminal). Teste por CDP com 10 projetos × 2 terminais: na entrada subiram 2 processos em vez de 20; flags `live` dos não visitados preservados. `npm run check` ok. Aguarda o usuário medir com os 30 projetos reais; versão 0.4.2 quando ele aprovar.
+
 **TASK-124 — Novidades da versão e ícone nos atalhos (versão 0.4.1)** (DEV1)
 
 - Janela "Novidades da versão" (Novo/Melhorado/Corrigido) ao abrir depois de atualizar, com o texto em `patchnotes.js`; clicar na versão do cabeçalho abre de novo. Ícone dos atalhos (menu Iniciar, área de trabalho, barra de tarefas) corrigido ao abrir, sem mexer no `Termix.exe`. Clique no nome do projeto agora abre o projeto; a setinha só abre/fecha as funções. `npm run check` ok; testado por CDP. Barra lateral abre/fecha só com a largura animando (sem esmaecer) e sem ficar deslocada para o lado. Promovida à `main` e publicada como Release v0.4.1 a pedido do usuário em 2026-11-10 (`main` `1103664`): https://github.com/rocruzta50IND/termix/releases/tag/v0.4.1 — instalador 125.018.382 bytes, sha512 conferido; o feed público já mostra 0.4.1.

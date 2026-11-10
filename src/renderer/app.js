@@ -1495,7 +1495,7 @@ function confHTML() {
       <div class="seg"><button class="${bgMode() === 'gradient' ? 'sel' : ''}" data-bg="gradient">Degradê</button><button class="${bgMode() === 'blur' ? 'sel' : ''}" data-bg="blur">Ofuscado</button></div></div>
     <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small id="rootNote">Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip" style="user-select:text;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">…</span><button class="btn" id="rootPick">Alterar</button>${S.settings.projectsRoot ? '<button class="btn" id="rootAuto">Automática</button>' : ''}</div>
     <div class="row"><div class="grow">Ao fechar o app<small>Encerra os processos, com confirmação. As conversas ficam guardadas.</small></div><span class="chip">Pergunta antes de sair</span></div>
-    <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
+    <div class="row"><div class="grow">Ao reabrir<small>Os projetos e as abas voltam todos; as conversas de cada projeto são retomadas quando você abre o projeto (o que está na tela volta na hora)</small></div><span class="chip">Restaura sozinho</span></div></div>
     <h5 style="margin:22px 0 8px">Rail e rodapé</h5>
     <div class="card" style="padding:6px 18px">
     ${[['on', 'Anéis de métricas', 'Os anéis flutuantes junto à borda direita (contexto, limites e cache)'], ['ctx', 'Contexto', 'Quanto da janela de contexto da conversa já foi usado'], ['h5', 'Limite de 5 horas', 'Uso da conta na janela de 5 horas'], ['d7', 'Limite de 7 dias', 'Uso semanal da conta'], ['cache', 'Cache do prompt', 'Tempo até o cache esfriar (só nos terminais)'], ['fade', 'Esmaecer os anéis quando parado', 'Ficam discretos e voltam ao normal ao passar o mouse'], ['reserve', 'Reservar espaço para os anéis', 'O texto para antes dos anéis, sem passar por baixo'], ['meta', 'Modelo, branch e permissões', 'Etiqueta no canto inferior direito'], ['footFade', 'Esmaecer o rodapé quando parado', 'Terminais · Web · Clear · Reiniciar ficam discretos']].map(([k, t, d]) => `<div class="row"><div class="grow">${t}<small>${d}</small></div><div class="seg"><button class="${railCfg()[k] ? 'sel' : ''}" data-railset="${k}|1">Sim</button><button class="${railCfg()[k] ? '' : 'sel'}" data-railset="${k}|0">Não</button></div></div>`).join('')}
@@ -1691,6 +1691,7 @@ function renderAll() {
   if (window.webRender) webRender(m);
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
   if (m === 'term') { const cp = curProject(); if (cp.kind === 'workflow') showWorkflow(cp); else { const t = curTab(cp); if (t.kind === 'chat') showChat(t); else showTab(t); } }
+  const cp0 = curProject(); if (cp0 && BOOTED && !RESTORING.has(cp0.id)) restoreProject(cp0); // abriu um projeto que ainda não foi retomado nesta abertura do app
 }
 
 /* ---------- ações de projeto e abas ---------- */
@@ -2245,6 +2246,7 @@ async function applyBg() {
 }
 
 /* ---------- início ---------- */
+let BOOTED = false;
 (async function init() {
   const saved = await api.loadState();
   const hadState = !!(saved && Array.isArray(saved.projects));
@@ -2276,23 +2278,32 @@ async function applyBg() {
   const t0 = Date.now();
   await Promise.race([restoreOnOpen(), new Promise((ok) => setTimeout(ok, 8000))]); // teto: não trava a entrada se uma aba demorar
   await new Promise((ok) => setTimeout(ok, Math.max(0, 900 - (Date.now() - t0)))); // mínimo, para a animação não piscar
+  BOOTED = true;
   const sp = $('#splash');
   sp.classList.add('out');
   setTimeout(() => sp.remove(), 500);
   setTimeout(() => maybeShowPatchNotes(hadState), 900);
 })();
 
-// ao abrir: reabre sozinho as abas que estavam abertas quando o app foi fechado, uma de cada vez (a ativa do projeto atual primeiro) para não pesar
-async function restoreOnOpen() {
-  const cur = curProject();
-  const rank = ({ p, t }) => (cur && p.id === cur.id ? (t.id === curTab(p)?.id ? 0 : 1) : 2);
-  const pend = S.projects.flatMap((p) => p.tabs.filter((t) => t.live && t.open && !t.archived).map((t) => ({ p, t }))).sort((a, b) => rank(a) - rank(b));
-  for (const { p, t } of pend) {
-    if (RT[t.id] && RT[t.id].alive) continue;
-    try { await launch(p, t, 'resume'); } catch { /* a aba mostra a própria falha */ }
-    await new Promise((ok) => setTimeout(ok, 400));
-  }
+// Reabertura sob demanda (TASK-125): ao abrir o app só o projeto que aparece é retomado; os outros têm as abas na lista (do estado salvo) e só retomam as conversas quando você abre o projeto.
+// Com 30 projetos abertos, retomar tudo na entrada demorava muito (um processo do Claude por aba de terminal). Cada projeto é retomado uma vez por abertura do app; a aba ativa vai primeiro.
+const RESTORING = new Map(); // id do projeto -> promessa (retomada já feita ou em andamento)
+function restoreProject(p) {
+  if (!p) return Promise.resolve();
+  if (RESTORING.has(p.id)) return RESTORING.get(p.id);
+  const act = p.activeTab;
+  const pr = (async () => {
+    const pend = p.tabs.filter((t) => t.live && t.open && !t.archived).sort((x, y) => (x.id === act ? 0 : 1) - (y.id === act ? 0 : 1));
+    for (const t of pend) {
+      if (RT[t.id] && RT[t.id].alive) continue;
+      try { await launch(p, t, 'resume'); } catch { /* a aba mostra a própria falha */ }
+      await new Promise((ok) => setTimeout(ok, 300));
+    }
+  })();
+  RESTORING.set(p.id, pr);
+  return pr;
 }
+async function restoreOnOpen() { await restoreProject(curProject()); }
 
 
 /* arrastar abas: pegue a aba e solte na nova posição; as outras abrem espaço na hora */

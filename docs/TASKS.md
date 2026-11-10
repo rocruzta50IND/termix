@@ -16,6 +16,18 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Passos:** versão 0.3.9; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.9`.
 - **Próximo passo:** o usuário atualiza o app (0.3.8 → 0.3.9) e confere.
 
+### TASK-125 — Abrir o app rápido com muitos projetos (retomada sob demanda)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DO USUÁRIO (2026-11-10; pedido: com 30 projetos abertos, fechar e abrir o Termix demorava muito; ideia do usuário: carregar todos os projetos de uma vez e só retomar a sessão de um projeto quando clicar nele).
+- **Causa:** `restoreOnOpen` retomava, uma a uma (400 ms entre elas), todas as abas de terminal vivas de todos os projetos: um processo `claude --resume` por aba e um xterm por aba, e a entrada esperava até 8 s por isso.
+- **Feito:** `restoreProject(p)` em `app.js`: retoma as abas vivas de **um** projeto (a ativa primeiro), uma vez por abertura do app, guardado em `RESTORING`. Ao abrir o app só o projeto que aparece é retomado (o resto aparece na lista com as abas do estado salvo); ao abrir outro projeto (clique no nome, em uma função, avatar na barra recolhida, aviso de notificação) `renderAll` chama `restoreProject` para ele. A setinha do projeto (só abre/fecha as funções) não retoma nada. O texto de "Ao reabrir" em Configurações foi atualizado.
+- **Não muda:** as abas, o nome e a ordem de todos os projetos voltam como antes; os flags `live` dos projetos ainda não visitados ficam salvos, então na próxima abertura eles continuam sendo retomados sob demanda; abas de chat não sobem processo (já eram baratas).
+- **Efeito visível:** projetos que você ainda não abriu nesta abertura do app mostram as abas como "Encerrada" (cinza) e sem o ponto de estado na barra lateral até você abri-los (aí retomam sozinhos); o contador de sessões ativas e o aviso ao fechar o app só contam o que está rodando.
+- **Como validar:** `npm run check` (passou). Teste por CDP com 10 projetos de 2 terminais vivos cada: na entrada só 2 processos subiram (antes seriam 20), a entrada não esperou os outros; ao clicar no nome do Proj5 subiram os 2 dele (4 no total); a setinha do Proj7 não retomou nem trocou de projeto; os flags `live` dos 10 projetos continuaram salvos. Para o usuário: abrir o instalador com os projetos reais e medir o tempo de abertura (antes × depois).
+- **Pendências:** medir a abertura com os 30 projetos reais; avaliar se vale pré-carregar em segundo plano os projetos mais usados (não feito: o usuário pediu retomar só ao clicar).
+- **Próximo passo:** o usuário testa a abertura; com a aprovação, versão 0.4.2 (e entrada em `patchnotes.js`).
+
 ### TASK-124 — Novidades da versão (patch notes) e ícone novo nos atalhos
 
 - **Responsável:** DEV1

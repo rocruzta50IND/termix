@@ -171,6 +171,10 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Ao abrir depois de uma atualização, o Termix mostra uma janela "Novidades da versão X" com **Novo / Melhorado / Corrigido** (texto escrito à mão em `src/renderer/patchnotes.js`, mais nova primeiro). Quem pulou versões vê as que perdeu; primeira instalação (sem estado salvo) não mostra. A versão vista fica em `settings`/estado (`lastSeenVersion`). Clicar na versão ao lado do nome, no cabeçalho, abre de novo. **A cada versão publicada, acrescentar a entrada em `patchnotes.js`.**
 - O ícone do app nos atalhos (menu Iniciar, área de trabalho, barra de tarefas fixada) é corrigido ao abrir (`repairShortcutIcons` em `main.js`), sem tocar no `Termix.exe` (que é o casco fixo da TASK-081 e carrega o ícone antigo). O ícone do próprio `.exe` (Explorer, Gerenciador de Tarefas) só muda trocando o casco, o que arrisca o Smart App Control: fica como está.
 
+## Reabertura sob demanda (TASK-125)
+- Ao abrir o app, **todos os projetos e abas aparecem na hora** (vêm do estado salvo), mas só o projeto que fica na tela tem as conversas retomadas. As conversas de cada outro projeto são retomadas **quando você abre o projeto** (a aba ativa primeiro). Antes, todas as abas de todos os projetos eram retomadas na entrada, e com 30 projetos isso demorava muito.
+- Abrir o projeto = clicar no nome, em uma função dele, no avatar (barra recolhida) ou num aviso. A setinha do projeto só abre/fecha as funções e **não** retoma.
+
 ## Fluxo de trabalho do projeto
 - Metodologia DEV2 → DEV1 → MAIN (`WORKFLOW.md`). Esta máquina é **DEV1**. A `dev2` não foi criada (trabalho individual).
 - O `/clear` só é dado quando uma tarefa termina e o usuário aprova; o estado vive em `docs/TASKS.md` e `docs/CHANGELOG_DEV.md`. Comandos do projeto: `/retomar` e `/encerrar-tarefa`.
