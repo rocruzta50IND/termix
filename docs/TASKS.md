@@ -37,7 +37,8 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Arquivos tocados:** `src/main.js`, `src/renderer/app.js`, `index.html`, `patchnotes.js` (novo), `styles.css`, `package.json`, `package-lock.json`, `docs/DESIGN.md`, `docs/DECISOES.md`.
 - **Como validar:** `npm run check`; janela de novidades testada por CDP (aparece depois de atualizar, uma vez por versão); clique no nome × setinha testado. O conserto do ícone só roda no app instalado (`app.isPackaged`): conferir depois de instalar a 0.4.1 (pode precisar reabrir o app e, se o Windows guardar o ícone antigo, desafixar e fixar de novo a barra de tarefas).
 - **Correção final:** a barra lateral podia ficar com o conteúdo deslocado para o lado depois de abrir (o `scrollIntoView` rolava o painel na horizontal enquanto o conteúdo aberto era mais largo que a barra); agora o painel zera o deslocamento e o `scrollIntoView` só roda depois da animação.
-- **Próximo passo:** o usuário confere, na 0.4.1 instalada, o ícone da barra de tarefas e a janela de novidades.
+- **Ícone ainda antigo na barra de tarefas (0.4.2 instalada, 2026-11-10):** o conserto dos atalhos rodava **depois** de criar a janela, e o botão da barra de tarefas é criado com o ícone do atalho (cada atualização recria o atalho com o ícone do exe); então a primeira abertura depois de atualizar mostrava o ícone antigo e só a seguinte, o novo. Agora `repairShortcutIcons` roda **antes** de `createWindow` e, se mudou algum atalho, pede `ie4uinit.exe -show` para renovar o cache de ícones do Windows (versão 0.4.3). Conferido na 0.4.2 instalada: os atalhos da área de trabalho e do menu Iniciar já apontavam para o ícone novo.
+- **Próximo passo:** o usuário instala a 0.4.3 e confere o ícone na barra de tarefas logo na primeira abertura.
 
 ### TASK-121 — Identidade visual do Rocruzta Hub no Termix (só aparência)
 

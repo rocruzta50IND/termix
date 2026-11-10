@@ -3,6 +3,14 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.4.3',
+    date: '10/11/2026',
+    resumo: 'Ícone certo na barra de tarefas.',
+    corrigido: [
+      'O ícone antigo do Termix continuava na barra de tarefas logo depois de atualizar. Agora o ícone novo já aparece na primeira abertura.',
+    ],
+  },
+  {
     v: '0.4.2',
     date: '10/11/2026',
     resumo: 'Abertura bem mais rápida com muitos projetos.',
