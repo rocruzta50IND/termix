@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**TASK-124 — Novidades da versão e ícone nos atalhos (0.4.1, não publicada)** (DEV1)
+
+- Janela "Novidades da versão" (Novo/Melhorado/Corrigido) ao abrir depois de atualizar, com o texto em `patchnotes.js`; clicar na versão do cabeçalho abre de novo. Ícone dos atalhos (menu Iniciar, área de trabalho, barra de tarefas) corrigido ao abrir, sem mexer no `Termix.exe`. Clique no nome do projeto agora abre o projeto; a setinha só abre/fecha as funções. `npm run check` ok; testado por CDP. Aguarda gerar e testar o instalador 0.4.1.
+
 **Promoção dev1 → main — TASK-120 e TASK-121 (versão 0.4.0)** (DEV1)
 
 - Promovidos `1aa1fe0`..`12add1b` (registro da 0.3.9, identidade visual do Rocruzta Hub, refinamentos do layout novo e versão 0.4.0). Validado pelo usuário com o instalador 0.4.0. `npm run check` ok. Release v0.4.0 publicado em 2026-11-10 a partir da `main` (`4e2bb5c`): https://github.com/rocruzta50IND/termix/releases/tag/v0.4.0 — instalador 125.015.503 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.4.0.

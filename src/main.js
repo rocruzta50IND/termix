@@ -545,6 +545,29 @@ ipcMain.handle('git:branch', (_e, cwd) => new Promise((resolve) => {
   execFile('git', ['-C', cwd, 'branch', '--show-current'], { timeout: 3000, windowsHide: true }, (err, out) => resolve(err ? '' : String(out).trim()));
 }));
 
+/* Atalhos com o ícone novo. O Termix.exe é um "casco" fixo (TASK-081) e carrega o ícone antigo; o Windows usa o ícone do atalho (menu Iniciar / área de trabalho / barra de tarefas) para o botão do app.
+   Ao abrir, aponta o ícone desses atalhos para assets/icon.ico (o do app instalado), sem mexer no exe e sem trocar o resto do atalho. */
+function repairShortcutIcons() {
+  if (process.platform !== 'win32' || !app.isPackaged) return;
+  try {
+    const icon = path.join(__dirname, '..', 'assets', 'icon.ico');
+    if (!fs.existsSync(icon)) return;
+    const ad = app.getPath('appData');
+    const links = [
+      path.join(app.getPath('desktop'), 'Termix.lnk'),
+      path.join(ad, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Termix.lnk'),
+      path.join(ad, 'Microsoft', 'Internet Explorer', 'Quick Launch', 'User Pinned', 'TaskBar', 'Termix.lnk'),
+    ];
+    for (const lnk of links) {
+      if (!fs.existsSync(lnk)) continue;
+      const cur = shell.readShortcutLink(lnk);
+      if (String(cur.target || '').toLowerCase() !== process.execPath.toLowerCase()) continue; // só atalhos deste Termix
+      if (String(cur.icon || '').toLowerCase() === icon.toLowerCase()) continue;
+      shell.writeShortcutLink(lnk, 'update', { icon, iconIndex: 0 });
+    }
+  } catch { /* o ícone do atalho nunca atrapalha a abertura */ }
+}
+
 /* ---------- ciclo de vida ---------- */
 if (!RUN_MODE) {
   if (app.isPackaged) app.setAppUserModelId('com.termix.app');
@@ -565,7 +588,7 @@ if (!RUN_MODE) {
   if (!app.requestSingleInstanceLock()) app.quit();
   else {
     app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } createWindow(); setTimeout(cleanOldMetrics, 5000); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
+    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } createWindow(); repairShortcutIcons(); setTimeout(cleanOldMetrics, 5000); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
   }
   app.on('quit', () => { if (!wantRelaunch) require('./updater').applyStagedOnQuit(); }); // TASK-069: versão nova já preparada entra no lugar ao fechar
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });

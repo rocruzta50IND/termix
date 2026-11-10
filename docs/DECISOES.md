@@ -162,10 +162,14 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 ## Identidade visual do Rocruzta Hub (TASK-121)
 - O Termix segue a **identidade visual** do Rocruzta Hub (cores, fonte Inter, raios, painéis de vidro flutuantes, abas e rodapé). **Só aparência**: o Hub é outro projeto, com repositório próprio; ele vai abrir e controlar o Termix de fora e **nada do Hub vira função do Termix**. Detalhes e origem da referência em `docs/DESIGN.md`.
 - Tema claro do Hub **fora de escopo** (seria um recurso novo); fica como tarefa futura no Backlog.
-- **Barra lateral em pastas (Chats / Workflows):** a hierarquia é pasta > projeto > função. Substitui o seletor de abas Chats/Workflows. Clicar no nome do projeto **só abre/fecha** as funções dele, sem trocar de tela (antes o primeiro clique trocava de projeto e o segundo fechava).
+- **Barra lateral em pastas (Chats / Workflows):** a hierarquia é pasta > projeto > função. Substitui o seletor de abas Chats/Workflows. Clicar no **nome** do projeto abre o projeto na hora (e mostra as funções dele); a **setinha** ao lado só abre/fecha as funções, sem trocar de tela.
 - **Rail inferior de ponta a ponta:** o dock de funções se estica entre a barra lateral e a borda direita (modos à esquerda, ações no centro, ajustes à direita). Consumo, Integrações e Configurações continuam no fim da barra lateral.
 - **Campo de envio:** anexar arquivo e falar (áudio) aparecem como **"Em breve"** (ainda não existem); enviar é só um ícone neutro. Azul vivo chapado deixa de ser usado em botões de ação; o primário é claro (como o do Hub).
 - **Logo:** só o símbolo no cabeçalho; o ícone do app e da tela de nova conversa é o quadrado azul-marinho com o prompt.
+
+## Novidades da versão (patch notes) e ícone dos atalhos (TASK-124)
+- Ao abrir depois de uma atualização, o Termix mostra uma janela "Novidades da versão X" com **Novo / Melhorado / Corrigido** (texto escrito à mão em `src/renderer/patchnotes.js`, mais nova primeiro). Quem pulou versões vê as que perdeu; primeira instalação (sem estado salvo) não mostra. A versão vista fica em `settings`/estado (`lastSeenVersion`). Clicar na versão ao lado do nome, no cabeçalho, abre de novo. **A cada versão publicada, acrescentar a entrada em `patchnotes.js`.**
+- O ícone do app nos atalhos (menu Iniciar, área de trabalho, barra de tarefas fixada) é corrigido ao abrir (`repairShortcutIcons` em `main.js`), sem tocar no `Termix.exe` (que é o casco fixo da TASK-081 e carrega o ícone antigo). O ícone do próprio `.exe` (Explorer, Gerenciador de Tarefas) só muda trocando o casco, o que arrisca o Smart App Control: fica como está.
 
 ## Fluxo de trabalho do projeto
 - Metodologia DEV2 → DEV1 → MAIN (`WORKFLOW.md`). Esta máquina é **DEV1**. A `dev2` não foi criada (trabalho individual).

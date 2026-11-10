@@ -566,6 +566,32 @@ function modal({ title, body = '', buttons = [['Cancelar', null], ['OK', 'ok', '
   });
 }
 
+/* ---------- novidades da versão (patch notes) ----------
+   Ao abrir depois de uma atualização, mostra o que entrou de novo, o que melhorou e o que foi corrigido (texto em patchnotes.js).
+   Primeira instalação (sem estado salvo) não mostra; quem pulou versões vê todas as que perdeu. Clicar na versão no cabeçalho abre de novo. */
+const verCmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; };
+function patchBody(entries) {
+  const sec = (label, list, cls) => (list && list.length ? '<div class="pn-sec ' + cls + '"><h3>' + label + '</h3><ul>' + list.map((t) => '<li>' + esc(t) + '</li>').join('') + '</ul></div>' : '');
+  return '<div class="pn">' + entries.map((e) => '<section class="pn-ver"><div class="pn-h"><b>Versão ' + esc(e.v) + '</b><span>' + esc(e.date || '') + '</span></div>' + (e.resumo ? '<p>' + esc(e.resumo) + '</p>' : '') + sec('Novo', e.novo, 'n') + sec('Melhorado', e.melhorado, 'm') + sec('Corrigido', e.corrigido, 'c') + '</section>').join('') + '</div>';
+}
+async function showPatchNotes(entries) {
+  if (!entries || !entries.length) return;
+  const title = entries.length === 1 ? 'Novidades da versão ' + esc(entries[0].v) : 'Novidades do Termix';
+  await modal({ title, body: patchBody(entries), buttons: [['Entendi', 'ok', 'pri']] });
+}
+async function maybeShowPatchNotes(hadState) {
+  try {
+    const ver = (await api.appVersion()) || '';
+    if (!ver || typeof PATCH_NOTES === 'undefined') return;
+    const seen = S.lastSeenVersion;
+    if (seen === ver) return;
+    S.lastSeenVersion = ver; save();
+    if (!seen && !hadState) return; // primeira instalação: nada para contar
+    const list = PATCH_NOTES.filter((e) => verCmp(e.v, ver) <= 0 && (seen ? verCmp(e.v, seen) > 0 : e.v === ver)).sort((a, b) => verCmp(b.v, a.v));
+    await showPatchNotes(list);
+  } catch { /* as novidades nunca atrapalham a abertura */ }
+}
+
 /* ---------- atualização do app (TASK-035) ---------- */
 // O app baixa a versão nova em segundo plano. Pronta: aparece este aviso; "Depois" o guarda no botão "Atualizar" do cabeçalho.
 let UPD = { state: 'idle' };
@@ -796,7 +822,7 @@ function renderTop() {
   const maxIcon = UI.maxed
     ? '<rect x="7" y="9" width="10" height="10" rx="1.5"/><path d="M9.5 9V7a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 18.5 7v6A1.5 1.5 0 0 1 17 14.5h-2"/>'
     : '<rect x="5.5" y="5.5" width="13" height="13" rx="1.8"/>';
-  const topHtml = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix<span class="ver" title="Versão instalada do Termix">${APP_VER ? 'v' + esc(APP_VER) : ''}</span></div><span class="sp"></span>
+  const topHtml = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix<span class="ver" data-patch title="Versão instalada do Termix (clique para ver as novidades)">${APP_VER ? 'v' + esc(APP_VER) : ''}</span></div><span class="sp"></span>
     ${railCfg().on ? '' : `<div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>`}
     <span class="sp"></span>
     ${updChipHTML()}
@@ -901,7 +927,7 @@ function renderSide() {
   }
 }
 
-// barra aberta: clicar no nome do projeto só abre/fecha o dropdown das funções dele, sem sair da tela atual
+// barra aberta: clicar na setinha do projeto só abre/fecha o dropdown das funções dele, sem sair da tela atual
 function projToggle(id) {
   const p = proj(id);
   if (!p) return;
@@ -1970,7 +1996,7 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-bg]'))) { S.settings.bg = el.dataset.bg; save(); applyBg(); if (UI.cur.page === 'Configurações') renderPage(); return; }
   if ((el = q('[data-win]'))) { api.winCtl(el.dataset.win); return; }
   if (q('[data-togside]')) { S.settings.sideCollapsed = !S.settings.sideCollapsed; save(); renderSide(); tween('sideW', sideTarget()); return; }
-  if ((el = q('[data-ph]'))) { projToggle(el.dataset.ph); return; } // barra aberta: um clique só mostra/esconde as funções do projeto (não troca de projeto)
+  if ((el = q('[data-ph]'))) { if (e.target.closest('.chev')) projToggle(el.dataset.ph); else projClick(el.dataset.ph); return; } // barra aberta: o nome abre o projeto (e mostra as funções dele); a setinha só abre/fecha as funções, sem trocar de tela
   if ((el = q('[data-pt]'))) { projClick(el.dataset.pt); return; }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
   if ((el = q('[data-step]'))) { // botões − e + do campo numérico
@@ -2026,6 +2052,7 @@ document.addEventListener('click', async (e) => {
   if (q('[data-wfstart]')) { const wp = curProject(); if (wp) { wp.wfStarted = true; save(); renderAll(); } return; }
   if ((el = q('[data-newk]'))) return goNew(el.dataset.newk);
   if (q('[data-import]')) return goNew('chat', 'dir');
+  if (q('[data-patch]')) { const v = APP_VER && typeof PATCH_NOTES !== 'undefined' ? PATCH_NOTES.filter((e) => e.v === APP_VER) : []; showPatchNotes(v.length ? v : (typeof PATCH_NOTES !== 'undefined' ? PATCH_NOTES.slice(0, 1) : [])); return; }
   if ((el = q('[data-sidecat]'))) {
     const k = el.dataset.sidecat; setCatOpen(k, !catOpen(k)); save();
     const box = document.querySelector('#side .cat[data-cat="' + k + '"]');
@@ -2203,6 +2230,7 @@ async function applyBg() {
 /* ---------- início ---------- */
 (async function init() {
   const saved = await api.loadState();
+  const hadState = !!(saved && Array.isArray(saved.projects));
   if (saved && Array.isArray(saved.projects)) S = { ...saved, settings: { termOp: 88, sideCollapsed: false, ...(saved.settings || {}) } };
   S.settings.rail = S.settings.rail && S.settings.rail.v === RAIL_DEF.v ? { ...RAIL_DEF, ...S.settings.rail } : { ...RAIL_DEF };
   { const sc = S.settings.clear || {}; S.settings.clear = { v: CLEAR_DEF.v, alert: typeof sc.alert === 'number' ? sc.alert : CLEAR_DEF.alert, template: typeof sc.template === 'string' ? sc.template : null }; } // descarta os campos do modelo antigo (pedidos de fechar e retomar)
@@ -2234,6 +2262,7 @@ async function applyBg() {
   const sp = $('#splash');
   sp.classList.add('out');
   setTimeout(() => sp.remove(), 500);
+  setTimeout(() => maybeShowPatchNotes(hadState), 900);
 })();
 
 // ao abrir: reabre sozinho as abas que estavam abertas quando o app foi fechado, uma de cada vez (a ativa do projeto atual primeiro) para não pesar

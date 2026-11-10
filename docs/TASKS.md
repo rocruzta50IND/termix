@@ -16,6 +16,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Passos:** versão 0.3.9; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512); `gh release create v0.3.9`.
 - **Próximo passo:** o usuário atualiza o app (0.3.8 → 0.3.9) e confere.
 
+### TASK-124 — Novidades da versão (patch notes) e ícone novo nos atalhos
+
+- **Responsável:** DEV1
+- **Status:** EM ANDAMENTO (2026-11-10; pedido do usuário após instalar a 0.4.0: o ícone na barra de tarefas continuava o antigo, e queria uma janela que mostra o que melhorou/corrigiu ao atualizar; mais: clicar no nome do projeto tem que abrir o projeto).
+- **Feito:** janela "Novidades da versão" (`patchnotes.js`, `maybeShowPatchNotes`, `showPatchNotes`, clique na versão do cabeçalho); `repairShortcutIcons` em `main.js` (aponta o ícone dos atalhos do menu Iniciar, da área de trabalho e da barra de tarefas para `assets/icon.ico`); clique no nome do projeto abre o projeto e a setinha só abre/fecha as funções; versão 0.4.1 em `package.json`/`package-lock.json` (instalador ainda **não** gerado nem publicado).
+- **Causa do ícone antigo:** o `Termix.exe` é o casco fixo da 0.3.0 (TASK-081), com o ícone antigo embutido; o Windows usa o ícone do atalho (o do menu Iniciar tinha `,0` do exe) para o botão na barra de tarefas.
+- **Arquivos tocados:** `src/main.js`, `src/renderer/app.js`, `index.html`, `patchnotes.js` (novo), `styles.css`, `package.json`, `package-lock.json`, `docs/DESIGN.md`, `docs/DECISOES.md`.
+- **Como validar:** `npm run check`; janela de novidades testada por CDP (aparece depois de atualizar, uma vez por versão); clique no nome × setinha testado. O conserto do ícone só roda no app instalado (`app.isPackaged`): conferir depois de instalar a 0.4.1 (pode precisar reabrir o app e, se o Windows guardar o ícone antigo, desafixar e fixar de novo a barra de tarefas).
+- **Próximo passo:** gerar o instalador 0.4.1, o usuário instala e confere o ícone e a janela; depois promover e publicar.
+
 ### TASK-121 — Identidade visual do Rocruzta Hub no Termix (só aparência)
 
 - **Responsável:** DEV1

@@ -1188,3 +1188,20 @@ input[type=checkbox]:checked::after{border-color:#0d0d0e}
 #appfoot .fl{justify-self:start}
 #appfoot .fm{justify-self:center}
 #appfoot .fr{justify-self:end}
+
+/* novidades da versão (modal de patch notes) */
+.pn{display:flex;flex-direction:column;gap:18px;max-height:56vh;overflow:auto;padding:2px 4px 2px 0}
+.pn-ver+.pn-ver{border-top:1px solid var(--border);padding-top:16px}
+.pn-h{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.pn-h b{font-size:15px;font-weight:600;color:var(--text)}
+.pn-h span{font:400 11.5px var(--mono);color:var(--text3)}
+.pn-ver>p{margin:0 0 10px;color:var(--text2);font-size:13px}
+.pn-sec{margin-top:10px}
+.pn-sec h3{margin:0 0 6px;font:500 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.pn-sec.n h3{color:var(--ok)}.pn-sec.m h3{color:var(--accent)}.pn-sec.c h3{color:var(--warn)}
+.pn-sec ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;color:var(--text2);font-size:13px;line-height:1.5}
+.pn-sec li::marker{color:var(--text3)}
+.brand .ver[data-patch]{cursor:pointer}
+.brand .ver[data-patch]:hover{color:var(--text);border-color:var(--border2)}
+.ph .chev{display:grid;place-items:center;width:24px;height:24px;margin-right:-4px;border-radius:var(--r-s);cursor:pointer}
+.ph .chev:hover{background:var(--hover);color:var(--text)}
