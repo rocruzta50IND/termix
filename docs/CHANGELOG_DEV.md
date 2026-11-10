@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **Promoção dev1 → main — TASK-125 (versão 0.4.2)** (DEV1)
 
-- Promovida a TASK-125 (reabertura sob demanda) com a versão 0.4.2 e a entrada em `patchnotes.js`. Instalador gerado em `distTermix-Setup-0.4.2.exe`; **Release no GitHub não publicado** (a pedido do usuário foi só para a `main`).
+- Promovida a TASK-125 (reabertura sob demanda) com a versão 0.4.2 e a entrada em `patchnotes.js`. Instalador gerado em `distTermix-Setup-0.4.2.exe`; Release v0.4.2 publicado em 2026-11-10 a pedido do usuário: https://github.com/rocruzta50IND/termix/releases/tag/v0.4.2 (instalador 125.018.766 bytes, sha512 conferido; feed público mostra 0.4.2).
 
 **TASK-125 — Abrir o app rápido com muitos projetos** (DEV1)
 
