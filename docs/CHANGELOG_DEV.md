@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-10
 
+**Promoção dev1 → main — TASK-102 (versão 0.6.0)** (DEV1)
+
+- A pedido do usuário ("crie a release dessas alterações"), promovidos `7e5501d`..`d0f7a09`: tela Código (primeiro corte, com terminais embaixo) e versão 0.6.0 com a entrada em `patchnotes.js`; TASK-128 no Backlog. `npm run check` ok. A TASK-102 segue em andamento (ajustes e pendências); a promoção levou só o primeiro corte.
+
 **TASK-102 — Tela Código (primeiro corte)** (DEV1)
 
 - Terminais do projeto embaixo da tela (abas e sessão ativa, botão Terminal, divisória arrastável); folha do palco arredondada; versão **0.6.0**. TASK-128 (abas unificadas) registrada no Backlog.
