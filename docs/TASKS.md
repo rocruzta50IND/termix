@@ -28,15 +28,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
-### TASK-129 — Canto arredondado em todas as telas planas (versão 0.6.1)
-
-- **Responsável:** DEV1
-- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (2026-11-10) — pedido do usuário: "para a versão 0.6.1 sair, arrume em todas as telas que tem a borda quadrada". Versão 0.6.1 preparada; **não publicada** (aguarda o usuário).
-- **Feito até agora:** `body.flatpage #col` passou de `border-radius:0` para `var(--r)` em `src/renderer/styles.css` (e saiu a regra `:has(#page.codepage)`, que ficou redundante). Vale para Novo chat, Novo workflow, Consumo, Integrações, Configurações, Conectores, Código e a tela vazia.
-- **Arquivos tocados:** `src/renderer/styles.css`, `src/renderer/patchnotes.js`, `package.json`, `package-lock.json`, `docs/DESIGN.md`.
-- **Como validar:** `npm run check` ok; conferido por CDP em instância isolada (Conectores e Configurações com o canto arredondado). Não conferi as outras telas uma a uma (Novo chat, Consumo, Integrações, tela vazia).
-- **Próximo passo:** o usuário confere as telas; com o aprovado, promover à `main`, gerar o instalador e publicar o Release v0.6.1.
-
 ## Validadas em DEV1
 
 ## Prontas
@@ -413,6 +404,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Objetivo:** confirmar uma vez (com a contagem) em "Fechar outras guias/à direita" e "Restaurar padrões"; toast também para erros que não são de aba (hoje só o selo do sino); alternar "Sim/Não" das Configurações sem refazer a página (perde o foco); roxo remanescente (cursor e seleção do terminal, cor padrão de evento, palavras-chave do chat) contra a regra "sem roxo" do DESIGN; vocabulário único ("aba" × "guia" × "sessão"; traduzir "Rail" e "Dangerously"); "Nenhum(a) skill encontrado(a)"; esconder as colunas Tokens/Custo "indisponível" da página Consumo; `backdrop-filter` do modal sobre terminais.
 
 ## Concluídas
+
+### TASK-129 — Canto arredondado em todas as telas planas (versão 0.6.1)
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (2026-11-10) — aprovada pelo usuário ("publique a 0.6.1"); promovida à `main` e publicada como Release v0.6.1.
+- **Feito até agora:** `body.flatpage #col` passou de `border-radius:0` para `var(--r)` em `src/renderer/styles.css` (e saiu a regra `:has(#page.codepage)`, que ficou redundante). Vale para Novo chat, Novo workflow, Consumo, Integrações, Configurações, Conectores, Código e a tela vazia.
+- **Arquivos tocados:** `src/renderer/styles.css`, `src/renderer/patchnotes.js`, `package.json`, `package-lock.json`, `docs/DESIGN.md`.
+- **Como validar:** `npm run check` ok; conferido por CDP em instância isolada (Conectores e Configurações com o canto arredondado). Não conferi as outras telas uma a uma (Novo chat, Consumo, Integrações, tela vazia).
+- **Próximo passo:** nenhum.
 
 ### TASK-120 — Publicar a versão 0.3.9 (novo shell, Workflow base e modais novos)
 

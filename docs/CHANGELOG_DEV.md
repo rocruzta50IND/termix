@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-10
 
+**Promoção dev1 → main — TASK-129 (versão 0.6.1)** (DEV1)
+
+- Aprovada pelo usuário ("publique a 0.6.1") depois de ver as telas no app em desenvolvimento. Promovidos os commits da `dev1` desde a 0.6.0: canto arredondado em todas as telas planas (TASK-129), versão 0.6.1 com a entrada em `patchnotes.js` e a nota sobre o destino da tela Integrações em `docs/DECISOES.md`. `npm run check` ok. TASK-129 → CONCLUÍDA.
+
 **TASK-129 — Canto arredondado em todas as telas planas (versão 0.6.1)** (DEV1)
 
 - A folha do palco (`#col`) das telas planas tinha o canto reto; agora usa `var(--r)` como o resto do app (Novo chat/workflow, Consumo, Integrações, Configurações, Conectores, Código e tela vazia). Só CSS. Versão 0.6.1 e novidades preparadas; **não publicada**. `npm run check` ok. Aguarda o usuário.
