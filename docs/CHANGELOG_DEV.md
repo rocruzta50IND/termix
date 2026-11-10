@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**Promoção dev1 → main — TASK-120 e TASK-121 (versão 0.4.0)** (DEV1)
+
+- Promovidos `1aa1fe0`..`12add1b` (registro da 0.3.9, identidade visual do Rocruzta Hub, refinamentos do layout novo e versão 0.4.0). Validado pelo usuário com o instalador 0.4.0. `npm run check` ok. Release v0.4.0 a partir da `main`.
+
 **TASK-121 — Versão 0.4.0 (instalador gerado)** (DEV1)
 
 - Versão 0.4.0 (`package.json` e `package-lock.json`) com o layout novo da TASK-121. Instalador gerado em `distTermix-Setup-0.4.0.exe` (`npm run dist`, sem erros). **Não publicado** (sem Release no GitHub, sem promoção à `main`): o usuário instala e testa primeiro.
