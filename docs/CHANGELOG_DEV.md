@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **Encerramento — TASK-121, TASK-124 e TASK-125** (DEV1)
 
-- Aprovadas pelo usuário ("finalizado") depois de usar as versões 0.4.0 a 0.4.3: layout novo do Rocruzta Hub, janela de novidades, ícone dos atalhos e da barra de tarefas, reabertura sob demanda. Releases v0.4.0, v0.4.1, v0.4.2 e v0.4.3 publicados. Pendente: medir a abertura com os 30 projetos reais (TASK-125). Backlog: TASK-122 (tema claro), TASK-123 (anexar e falar), TASK-126 (ícone do `Termix.exe`).
+- Aprovadas pelo usuário ("finalizado") depois de usar as versões 0.4.0 a 0.4.3: layout novo do Rocruzta Hub, janela de novidades, ícone dos atalhos e da barra de tarefas, reabertura sob demanda. Releases v0.4.0, v0.4.1, v0.4.2 e v0.4.3 publicados. Pendente: medir a abertura com os 30 projetos reais (TASK-125). Backlog: TASK-122 (tema claro), TASK-123 (anexar e falar), TASK-126 (ícone do `Termix.exe`) e, **no escopo MVP**, TASK-127 (Conectores: tela única para Plugins, Skills e MCPs, com busca, modal "Adicionar conector" e carregamento com esqueleto; começa por um index de exemplo).
 
 **TASK-124 (continuação) — Ícone da barra de tarefas na primeira abertura (versão 0.4.3)** (DEV1)
 

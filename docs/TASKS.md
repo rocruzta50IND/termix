@@ -352,6 +352,23 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Backlog
 
+### TASK-127 — Conectores: uma tela só para Plugins, Skills e MCPs, com busca e "Adicionar conector"
+
+- **Responsável:** A definir (DEV1)
+- **Status:** BACKLOG — **ESCOPO MVP** (pedido do usuário em 2026-11-10, com capturas da barra lateral e da tela de Plugins).
+- **Prioridade:** Escopo MVP — facilitar a busca de ferramentas (plugins, skills e MCPs) sem mudar o que cada uma faz.
+- **Problema hoje:** cada projeto mostra três subfunções soltas na barra lateral (Plugins, Skills, MCPs). Cada tela tem um aviso azul comprido, duas fileiras de filtros (escopo e estado), busca, quatro botões ("+ Instalar plugin...", "Desligar todos aqui", "Ligar todos aqui", "Atualizar"), a linha de custo em tokens e cartões grandes: informação demais para achar uma ferramenta.
+- **Proposta (do usuário):**
+  1. **Subfunção "Conectores"** no lugar de Plugins/Skills/MCPs na barra lateral do projeto. Abre uma tela única que lista tudo, com **filtro por tipo** (Plugins, Skills, MCPs) e os demais filtros.
+  2. **Menos informação:** tirar o aviso comprido (no máximo uma dica curta) e trocar as fileiras de botões por **um campo de pesquisa com filtro avançado**; cartões mais enxutos.
+  3. **"Adicionar conector"** abre um **modal grande, no topo, com o visual do shell do app**, com três subtelas: **MCP**, **Plugins** e **Skills**. Cada subtela tem a busca nos marketplaces existentes e também o jeito tradicional de adicionar (comando, URL ou pasta).
+  4. **Carregamento com esqueleto (skeleton):** ao entrar em Conectores (e em cada subtela do modal), os itens aparecem primeiro como o layout do cartão em "carregando" (como as páginas do app fazem) e viram o item de verdade quando o dado chega.
+- **Começo da tarefa:** montar um **index de exemplo** (protótipo estático, fora do app, com dados fictícios) da tela Conectores e do modal "Adicionar conector", incluindo o estado de carregamento. O usuário aprova o desenho antes de qualquer mudança no app.
+- **Não muda:** o que instalar, ligar e desligar faz hoje (mesmos comandos do Claude Code, o app acompanha o terminal); só a organização e o visual.
+- **Pontos para decidir no protótipo:** Conectores substitui as três subfunções (assumido) ou convive com elas; como ficam o escopo (usuário/projeto/local) e o custo em tokens no cartão; quais marketplaces entram na busca de cada tipo.
+- **Pontos de código para ler:** `RES_PAGES`, `resLoadPlugins`, `resLoadMcp`, `SUBS` e `subsOf` em `src/renderer/app.js` (barra lateral e telas), o modal de Plugins/Skills/MCPs e os comandos em `src/main.js`.
+- **Próximo passo:** montar o index de exemplo (ex.: `docs/exemplos/conectores/index.html`) e mostrar ao usuário.
+
 ### TASK-126 — Ícone do Termix.exe (casco fixo) ainda é o antigo
 
 - **Responsável:** A definir
