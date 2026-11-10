@@ -1206,6 +1206,5 @@ input[type=checkbox]:checked::after{border-color:#0d0d0e}
 .ph .chev{display:grid;place-items:center;width:24px;height:24px;margin-right:-4px;border-radius:var(--r-s);cursor:pointer}
 .ph .chev:hover{background:var(--hover);color:var(--text)}
 
-/* abrir/fechar a barra lateral: o conteúdo some e volta suave (a largura anima com ela vazia) */
-.side{transition:opacity .11s ease}
-.side.swap{opacity:0;pointer-events:none}
+/* abrir/fechar a barra lateral: só a largura anima; o conteúdo aberto mantém a largura e é cortado pela borda (sem esmaecer) */
+.side.anim:not(.mini)>*{min-width:220px;flex-shrink:0}

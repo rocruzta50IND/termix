@@ -2160,18 +2160,20 @@ const bgMode = () => (['blur', 'acrylic', 'mica'].includes(S.settings.bg) ? 'blu
    o palco (#col) é o painel de conteúdo, com vidro próprio. GAP = vão entre painéis e até a borda; RP = raio dos painéis. */
 const FR = { R: 22, RP: 18, GAP: 10, HEAD: 44, DOCK: 36, BOT: 56, SIDE_OPEN: 260, SIDE_MINI: 64, ARM_OPEN: 360, ARM_CLOSED: 10 };
 const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base não engrossa
-// abrir/fechar a barra lateral sem "tranco": o conteúdo some num instante, a largura anima com a barra vazia e o conteúdo novo (aberto ou recolhido) volta quando ela já está quase no tamanho
+// abrir/fechar a barra lateral só com a largura animando (sem esmaecer): o conteúdo aberto fica com largura fixa e é revelado/escondido pela borda;
+// ao abrir, o conteúdo aberto entra no começo; ao fechar, o recolhido só entra quando a barra termina de encolher
 let sideSwapping = false;
 function toggleSide() {
   if (sideSwapping) return;
   sideSwapping = true;
-  const side = $('#side');
-  side.classList.add('swap');
+  const side = $('#side'), closing = !S.settings.sideCollapsed;
+  side.classList.add('anim');
+  if (!closing) { S.settings.sideCollapsed = false; save(); renderSide(); }
+  tween('sideW', closing ? FR.SIDE_MINI : FR.SIDE_OPEN, 240);
   setTimeout(() => {
-    S.settings.sideCollapsed = !S.settings.sideCollapsed; save(); renderSide();
-    tween('sideW', sideTarget(), 240);
-    setTimeout(() => { side.classList.remove('swap'); sideSwapping = false; }, 190);
-  }, 110);
+    if (closing) { S.settings.sideCollapsed = true; save(); renderSide(); }
+    side.classList.remove('anim'); sideSwapping = false;
+  }, 250);
 }
 const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN);
 const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
