@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**Promoção dev1 → main — TASK-125 (versão 0.4.2)** (DEV1)
+
+- Promovida a TASK-125 (reabertura sob demanda) com a versão 0.4.2 e a entrada em `patchnotes.js`. Instalador gerado em `distTermix-Setup-0.4.2.exe`; **Release no GitHub não publicado** (a pedido do usuário foi só para a `main`).
+
 **TASK-125 — Abrir o app rápido com muitos projetos** (DEV1)
 
 - Reabertura sob demanda: ao abrir só o projeto da tela retoma as conversas; os outros retomam quando o usuário os abre (`restoreProject`/`RESTORING` em `app.js`). Antes todas as abas de todos os projetos eram retomadas na entrada (um processo por aba de terminal). Teste por CDP com 10 projetos × 2 terminais: na entrada subiram 2 processos em vez de 20; flags `live` dos não visitados preservados. `npm run check` ok. Aguarda o usuário medir com os 30 projetos reais; versão 0.4.2 quando ele aprovar.

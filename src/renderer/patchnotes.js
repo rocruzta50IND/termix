@@ -3,6 +3,14 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.4.2',
+    date: '10/11/2026',
+    resumo: 'Abertura bem mais rápida com muitos projetos.',
+    melhorado: [
+      'Ao abrir o Termix, todos os projetos e abas aparecem na hora. As conversas de cada projeto são retomadas quando você abre o projeto, e a do projeto que está na tela volta na hora.',
+    ],
+  },
+  {
     v: '0.4.1',
     date: '10/11/2026',
     resumo: 'Ajustes depois do layout novo: ícone, barra lateral e novidades ao atualizar.',
