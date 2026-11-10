@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
+**TASK-121 — Versão 0.4.0 (instalador gerado)** (DEV1)
+
+- Versão 0.4.0 (`package.json` e `package-lock.json`) com o layout novo da TASK-121. Instalador gerado em `distTermix-Setup-0.4.0.exe` (`npm run dist`, sem erros). **Não publicado** (sem Release no GitHub, sem promoção à `main`): o usuário instala e testa primeiro.
+
 **TASK-121 — Identidade visual do Rocruzta Hub no Termix** (DEV1)
 
 - Só aparência: tokens, fonte Inter (embutida), fundo azul-marinho, painéis de vidro flutuantes (barra lateral e notificações separadas, palco como painel de conteúdo), cabeçalho e rodapé soltos (dock), abas com sublinhado na cor da aba, itens da barra lateral, botões e controles com os raios do Hub, botão primário invertido. Nada do Hub entrou como função. Referência: `rocruzta-hub` commit `3a9638a`. Só tema escuro (claro: TASK-122).
