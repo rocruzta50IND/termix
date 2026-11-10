@@ -8,6 +8,10 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-10
 
+**Promoção dev1 → main — TASK-127 (versão 0.5.0)** (DEV1)
+
+- Aprovada pelo usuário ("perfeito isso mesmo, pode migrar e subir a release") depois de ver a tela no app em desenvolvimento. Promovidos `b9cf6f1`..`2c3dbec` (protótipo aprovado, levantamento das fontes, tela Conectores e versão 0.5.0 com a entrada em `patchnotes.js`). `npm run check` ok. TASK-127 → CONCLUÍDA.
+
 **TASK-127 — Conectores: Plugins, Skills e MCPs numa tela só** (DEV1)
 
 - Protótipo estático aprovado pelo usuário (`docs/exemplos/conectores/index.html`, a partir das telas Skills/Conectores/Plugins/Diretório do Claude) e levantamento das fontes reais (CLI `claude plugin list --available --json`, `claude plugin marketplace`, registro público de MCP). Sem avaliação de usuários em nenhuma fonte; só instalações.
