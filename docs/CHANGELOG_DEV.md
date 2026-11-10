@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **Promoção dev1 → main — TASK-102 (versão 0.6.0)** (DEV1)
 
-- A pedido do usuário ("crie a release dessas alterações"), promovidos `7e5501d`..`d0f7a09`: tela Código (primeiro corte, com terminais embaixo) e versão 0.6.0 com a entrada em `patchnotes.js`; TASK-128 no Backlog. `npm run check` ok. A TASK-102 segue em andamento (ajustes e pendências); a promoção levou só o primeiro corte.
+- A pedido do usuário ("crie a release dessas alterações"), promovidos `7e5501d`..`d0f7a09`: tela Código (primeiro corte, com terminais embaixo) e versão 0.6.0 com a entrada em `patchnotes.js`; TASK-128 no Backlog. `npm run check` ok. A TASK-102 segue em andamento (ajustes e pendências); a promoção levou só o primeiro corte. Release v0.6.0 publicado em 2026-11-10 a pedido do usuário (`main` `145c8a4`): https://github.com/rocruzta50IND/termix/releases/tag/v0.6.0 — instalador 125.033.883 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.6.0.
 
 **TASK-102 — Tela Código (primeiro corte)** (DEV1)
 
