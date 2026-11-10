@@ -8,9 +8,9 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
-**TASK-124 — Novidades da versão e ícone nos atalhos (0.4.1, não publicada)** (DEV1)
+**TASK-124 — Novidades da versão e ícone nos atalhos (versão 0.4.1)** (DEV1)
 
-- Janela "Novidades da versão" (Novo/Melhorado/Corrigido) ao abrir depois de atualizar, com o texto em `patchnotes.js`; clicar na versão do cabeçalho abre de novo. Ícone dos atalhos (menu Iniciar, área de trabalho, barra de tarefas) corrigido ao abrir, sem mexer no `Termix.exe`. Clique no nome do projeto agora abre o projeto; a setinha só abre/fecha as funções. `npm run check` ok; testado por CDP. Aguarda gerar e testar o instalador 0.4.1.
+- Janela "Novidades da versão" (Novo/Melhorado/Corrigido) ao abrir depois de atualizar, com o texto em `patchnotes.js`; clicar na versão do cabeçalho abre de novo. Ícone dos atalhos (menu Iniciar, área de trabalho, barra de tarefas) corrigido ao abrir, sem mexer no `Termix.exe`. Clique no nome do projeto agora abre o projeto; a setinha só abre/fecha as funções. `npm run check` ok; testado por CDP. Barra lateral abre/fecha só com a largura animando (sem esmaecer) e sem ficar deslocada para o lado. Promovida à `main` e publicada como Release v0.4.1 a pedido do usuário.
 
 **Promoção dev1 → main — TASK-120 e TASK-121 (versão 0.4.0)** (DEV1)
 
