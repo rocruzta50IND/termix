@@ -8,6 +8,24 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Em andamento
 
+### TASK-102 — Tela "Código": explorador de arquivos, leitor e mudanças do git (estilo VS Code)
+
+- **Responsável:** A definir (DEV1 + usuário)
+- **Status:** PRIMEIRO CORTE PUBLICADO na versão 0.6.0 (2026-11-10), a pedido do usuário; ajustes e itens das pendências seguem nesta tarefa. Terminais embaixo da tela feitos na mesma versão.
+- **Prioridade:** Média-alta — levantada pelo usuário em 2026-11-04. Parte visível da TASK-099 (o "fluxo app"); usa a métrica da TASK-103.
+- **Ideia central:** tela que mostra a árvore de arquivos do projeto em que o Claude trabalha, com visualização ao lado e sub-abas: **Geral** (todos os arquivos), **Tasks** (arquivos de tarefas, renderizados de forma legível), **Changelog** (histórico do que foi feito, uma entrada por tarefa; responde "o que mudou e quando") e **Decisões** (por que é assim). Filtro para o que importa: o que o Claude está controlando e as decisões do que ele faz e como faz. No app nativo (TASK-099), essas abas seriam geradas dos dados estruturados do fluxo.
+- **Nome:** "Diff" é diferente de navegador de arquivos. Proposta: uma tela só com duas visões, **Arquivos** (árvore, leitor, abas acima, Markdown bonito) e **Mudanças** (diff de verdade: o que o Claude alterou na sessão ou no commit, antes e depois). Considerar nome melhor ("Arquivos" ou "Código").
+- **Métrica de tokens (TASK-103):** em algum canto, o custo para o Claude ler e reler o arquivo aberto, com cache e repetição por sessão.
+- **A favor:** o app já conhece a pasta de cada projeto; o git dá os diffs (`git diff`, `git status`); o Markdown do chat já é renderizado; o app recebe os eventos de edição do Claude Code, então dá para filtrar "arquivos que o Claude tocou nesta sessão".
+- **Riscos:** árvore grande (ler sob demanda; ignorar `node_modules`, `.git`, `dist`); atualização ao vivo com observador de arquivos só com a tela aberta; **somente leitura** no primeiro corte (editar pelo app conflita com o Claude escrevendo).
+- **Perguntas abertas:** (1) juntar arquivos + mudanças na mesma tela e renomear? (2) filtro principal: "arquivos que o Claude tocou na sessão" ou "arquivos do fluxo" (recomendado: os dois, como abas)? (3) somente leitura no primeiro corte (recomendado)? (4) vale só para Projetos ou também para o Workflow (recomendado: os dois, com a aba "Fluxo" mais importante no Workflow)?
+- **Feito até agora (primeiro corte):** subaba **Código** na barra lateral do projeto (abaixo de Conectores). Layout estilo VS Code: explorador à esquerda com a seção **Alterações** (git status com M/A/D/U e +/− por arquivo) e a **árvore de arquivos** (sob demanda; ignora .git, node_modules, dist), abas de arquivos, leitor com números de linha e realce simples, **diff** colorido por trechos (duas colunas de numeração) e barra de status (branch, nº de alterações). Somente leitura. As mudanças se atualizam a cada 4 s com a tela aberta (sem observador de arquivos).
+- **Decisões:** perguntas abertas respondidas na prática: uma tela só (Alterações + Arquivos juntos, como no VS Code); nome "Código"; somente leitura; vale para Projetos (Workflow fica para depois).
+- **Arquivos tocados:** `src/code.js` (novo: árvore, leitura, git status e diff, com trava para não sair da pasta do projeto), `src/main.js`, `src/preload.js`, `src/renderer/code.js` (novo), `src/renderer/app.js` (subaba e roteamento), `src/renderer/index.html`, `src/renderer/styles.css` (bloco `cd-*`), `package.json` (`check`).
+- **Como validar:** `npm run check` ok; testado por CDP em instância isolada (árvore, Alterações com 8 arquivos, diff do app.js, leitor do code.js), sem erros de JavaScript.
+- **Pendências / ideias para ajustar:** Markdown renderizado, busca de arquivo (Ctrl+P), diff lado a lado, filtro "arquivos que o Claude tocou na sessão", atalhos para TASKS/CHANGELOG/DECISOES, seção Fluxo no Workflow, métrica de tokens (TASK-103), histórico de commits.
+- **Próximo passo:** o usuário testa a tela e pede os ajustes; depois, atualizar `docs/DESIGN.md` e `docs/DECISOES.md` com o que ficar.
+
 ## Aguardando validação DEV1
 
 ## Validadas em DEV1
@@ -28,6 +46,15 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Riscos:** "tudo na sessão" vale também para `Bash` destrutivo, escrita fora do projeto e arquivos sensíveis (`.mcp.json`, `.claude/`): é o mesmo risco do Dangerously, só que escolhido na hora; a flag nova é do Claude Code e pode mudar; auto-responder pedidos "iguais" exige comparar a regra inteira (não só o nome da ferramenta) para não liberar um comando diferente; ligar com a TASK-108 (aviso e lembrete) para a faixa de pedidos pendentes aparecer também com a conversa rolada.
 - **Como validar (depois):** pedir 3 buscas em paralelo ao mesmo domínio: um clique em "Permitir sempre" resolve os 3 cartões; "Permitir todos" resolve a fila de comandos diferentes; "Permitir tudo nesta sessão" para de perguntar até o fim da conversa e deixa de valer ao reiniciar a aba; em "Automático" nada muda.
 - **Próximo passo:** implementar a camada 1 (auto-resolver os cartões pendentes com a mesma regra ao dar "Permitir sempre"; faixa "N pedidos: Permitir todos / Negar todos"; cartões respondidos encolhem) e a camada 2 (botão "Permitir tudo nesta sessão" com confirmação, `--allow-dangerously-skip-permissions` na subida das abas em "Perguntar", selo do rodapé "⚠ tudo liberado (sessão)"). Pontos de partida: `src/chat.js` (`start`, `permit`), `src/renderer/chat.js` (`chatDecide`, `chatPaintItem` do tipo `perm`, `chatUi`), `styles.css` (`.c-pm`). Testar por CDP em instância isolada como na TASK-105 (3 `WebFetch` em paralelo). Depois: atualizar `docs/DECISOES.md` (Permissões), README e o texto de Configurações > Chat.
+
+### TASK-128 — Abas unificadas: telas (Código, Conectores) e terminais na mesma barra de abas
+
+- **Responsável:** A definir
+- **Status:** BACKLOG — só avaliação feita com o usuário em 2026-11-10; ainda não começou. Surgiu na TASK-102 (tela Código).
+- **Ideia:** a barra de abas do projeto fica sempre visível e lista, juntos, os terminais e as telas abertas pela barra lateral (Código, Conectores), cada uma com um ícone que mostra o tipo. Abrir Código ou Conectores na barra lateral cria (ou foca) a aba; o X só a tira da barra. Hoje a barra de abas só aparece na tela Terminais.
+- **Recomendações a confirmar com o usuário:** (1) uma aba por tela (singleton) em cada projeto; (2) o item "Terminais" da barra lateral vira atalho para a última aba de terminal usada, mantendo o contador; (3) o painel de terminais embaixo da tela Código mantém uma lista pequena própria, como no VS Code (a barra do topo é de telas e terminais; a de baixo, só dos terminais do projeto); (4) fechar a aba de uma tela guarda o estado dela (arquivos abertos, filtros) para quando reabrir.
+- **Custo estimado:** médio e estrutural: a barra de abas (`#tabsRow`, `renderTabs`) passa a servir também para telas; abas de tela salvas no projeto (ordem e arrastar); ajustes em `mode()`, `dockOn()` e no painel embaixo da tela Código. Não mexe nos terminais em si.
+- **Próximo passo:** o usuário confirma as 4 recomendações; depois desenhar e implementar.
 
 ### TASK-126 — Ícone do Termix.exe (casco fixo) ainda é o antigo
 
@@ -172,19 +199,6 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Escopo de modelos:** por enquanto **só Claude e os modelos que ele fornece** (decisão do usuário em 2026-11-04).
 - **Primeiros passos:** medir um caso real (`/retomar` + uma tarefa típica) comparando a estimativa com o uso devolvido pelo Claude Code; definir o que o app já recebe de uso por mensagem; esboçar onde a métrica aparece em cada tela.
 - **Próximo passo:** quando o usuário priorizar, começar pela medição (a mesma da TASK-099).
-
-### TASK-102 — Tela "Diff / Arquivos": árvore de arquivos, leitor e mudanças do Claude (avaliação e desenho)
-
-- **Responsável:** A definir (DEV1 + usuário)
-- **Status:** BACKLOG — só avaliação e desenho, **sem código** nesta tarefa.
-- **Prioridade:** Média-alta — levantada pelo usuário em 2026-11-04. Parte visível da TASK-099 (o "fluxo app"); usa a métrica da TASK-103.
-- **Ideia central:** tela que mostra a árvore de arquivos do projeto em que o Claude trabalha, com visualização ao lado e sub-abas: **Geral** (todos os arquivos), **Tasks** (arquivos de tarefas, renderizados de forma legível), **Changelog** (histórico do que foi feito, uma entrada por tarefa; responde "o que mudou e quando") e **Decisões** (por que é assim). Filtro para o que importa: o que o Claude está controlando e as decisões do que ele faz e como faz. No app nativo (TASK-099), essas abas seriam geradas dos dados estruturados do fluxo.
-- **Nome:** "Diff" é diferente de navegador de arquivos. Proposta: uma tela só com duas visões, **Arquivos** (árvore, leitor, abas acima, Markdown bonito) e **Mudanças** (diff de verdade: o que o Claude alterou na sessão ou no commit, antes e depois). Considerar nome melhor ("Arquivos" ou "Código").
-- **Métrica de tokens (TASK-103):** em algum canto, o custo para o Claude ler e reler o arquivo aberto, com cache e repetição por sessão.
-- **A favor:** o app já conhece a pasta de cada projeto; o git dá os diffs (`git diff`, `git status`); o Markdown do chat já é renderizado; o app recebe os eventos de edição do Claude Code, então dá para filtrar "arquivos que o Claude tocou nesta sessão".
-- **Riscos:** árvore grande (ler sob demanda; ignorar `node_modules`, `.git`, `dist`); atualização ao vivo com observador de arquivos só com a tela aberta; **somente leitura** no primeiro corte (editar pelo app conflita com o Claude escrevendo).
-- **Perguntas abertas:** (1) juntar arquivos + mudanças na mesma tela e renomear? (2) filtro principal: "arquivos que o Claude tocou na sessão" ou "arquivos do fluxo" (recomendado: os dois, como abas)? (3) somente leitura no primeiro corte (recomendado)? (4) vale só para Projetos ou também para o Workflow (recomendado: os dois, com a aba "Fluxo" mais importante no Workflow)?
-- **Próximo passo:** quando o usuário priorizar, responder as perguntas e desenhar a tela em `docs/DESIGN.md`.
 
 ### TASK-101 — Categoria "Workflow": projeto guiado com dois agentes fixos (ORQ e DEV) (avaliação e desenho)
 

@@ -33,6 +33,10 @@ contextBridge.exposeInMainWorld('termix', {
   onMetrics: (fn) => ipcRenderer.on('metrics:update', (_e, m) => fn(m)),
   allMetrics: () => ipcRenderer.invoke('metrics:all'),
   gitBranch: (cwd) => ipcRenderer.invoke('git:branch', cwd),
+  codeTree: (cwd, rel) => ipcRenderer.invoke('code:tree', { cwd, rel }),
+  codeRead: (cwd, rel) => ipcRenderer.invoke('code:read', { cwd, rel }),
+  codeStatus: (cwd) => ipcRenderer.invoke('code:status', { cwd }),
+  codeDiff: (cwd, rel, untracked) => ipcRenderer.invoke('code:diff', { cwd, rel, untracked }),
 
   chatStart: (o) => ipcRenderer.invoke('chat:start', o),
   chatSend: (tabId, text, images) => ipcRenderer.invoke('chat:send', { tabId, text, images }),

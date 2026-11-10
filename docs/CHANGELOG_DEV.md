@@ -8,6 +8,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-10
 
+**TASK-102 — Tela Código (primeiro corte)** (DEV1)
+
+- Terminais do projeto embaixo da tela (abas e sessão ativa, botão Terminal, divisória arrastável); folha do palco arredondada; versão **0.6.0**. TASK-128 (abas unificadas) registrada no Backlog.
+- Nova subaba **Código** em cada projeto, abaixo de Conectores, no estilo do VS Code: explorador com **Alterações** (git status, +/− por arquivo) e árvore de arquivos, abas, leitor com realce simples e diff colorido. Somente leitura; atualiza as mudanças a cada 4 s com a tela aberta. Código em `src/code.js` e `src/renderer/code.js`. `npm run check` ok; testado por CDP em instância isolada. Aguarda o usuário testar e pedir ajustes.
+
 **Limpeza do TASKS.md** (DEV1)
 
 - A pedido do usuário ("as demais que estão em andamento e aguardando validação também foram finalizadas, acredito eu"), as tarefas das seções *Em andamento*, *Aguardando validação DEV1* e *Validadas em DEV1* foram movidas para *Concluídas* (27 tarefas; o estado que tinham fica registrado em cada uma). Exceção: a **TASK-109** (pedidos de permissão em fila) nunca foi implementada e voltou ao *Backlog*. Tudo o que estava validado já está na `main` desde a 0.5.0. A TASK-116 (DEV2) foi fechada pela palavra do usuário; o DEV1 não consultou a `dev2` (trava de contexto).

@@ -3,6 +3,19 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.6.0',
+    date: '10/11/2026',
+    resumo: 'Nova tela Código: veja os arquivos do projeto e o que mudou, com os terminais embaixo.',
+    novo: [
+      'Tela Código, abaixo de Conectores em cada projeto, no estilo do VS Code: explorador de arquivos, leitor com números de linha e cores, e a lista de Alterações do git (modificado, novo, apagado, com as linhas a mais e a menos).',
+      'Ao clicar numa mudança, o diff abre em uma aba: o que saiu em vermelho e o que entrou em verde, com a numeração antes e depois. As mudanças se atualizam sozinhas enquanto a tela está aberta.',
+      'Os terminais do projeto aparecem embaixo da tela Código, com as abas e a sessão ativa. O botão Terminal, na barra de baixo, mostra ou esconde, e a divisória pode ser arrastada para mudar a altura.',
+    ],
+    melhorado: [
+      'A tela Código é somente leitura: quem escreve nos arquivos continua sendo o Claude.',
+    ],
+  },
+  {
     v: '0.5.0',
     date: '10/11/2026',
     resumo: 'Plugins, Skills e MCPs agora vivem numa tela só: Conectores.',

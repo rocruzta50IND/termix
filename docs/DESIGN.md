@@ -133,3 +133,9 @@ O Termix adota **só a identidade visual** do Rocruzta Hub (projeto separado, qu
 
 ## Dica de notificação ao lado do sino (TASK-092)
 - A dica que aparece à esquerda do sino é uma **pílula de uma linha** (34 px, cantos totalmente arredondados), centrada na altura do sino e **sempre dentro do cabeçalho**: título da aba e tipo na frente, mensagem cortada com reticências (o texto inteiro vai na dica nativa ao passar o mouse). Largura máxima 420 px e nunca passa da área do cabeçalho. Antes tinha 59 px de altura, subia sobre a borda da janela e ficava fora do quadro do app.
+
+## Tela Código (TASK-102)
+- Sem cartão: o conteúdo fica direto sobre o vidro do app, dividido só por linhas finas (`--border`). A folha do palco (`#col`) tem o canto arredondado (`--r`) nesta tela, como o resto do sistema.
+- Explorador de 272 px à esquerda; títulos de seção só em texto (sem caixa), com uma linha entre Alterações e Arquivos. Linhas de 28 px, abas de 40 px, caminho do arquivo de 36 px, barra de status de 30 px; textos alinhados na mesma margem.
+- Diff: adicionado em verde, removido em vermelho, trechos (`@@`) em azul; duas colunas de numeração. Cores de arquivo por extensão e letra do estado (M amarelo, U/A verde, D vermelho).
+- Terminais embaixo: divisória arrastável (faixa de 5 px na base do editor e 9 px no topo das abas), com linha azul ao passar o mouse.

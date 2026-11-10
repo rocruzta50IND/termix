@@ -8,7 +8,7 @@ const GLOBALS = [['Consumo', 'gauge'], ['Integrações', 'link'], ['Configuraç�
 // o desenho de cada ícone ocupa uma parte diferente do quadro (a engrenagem é grande, o link é pequeno): o tamanho de cada um é ajustado para os três terem o mesmo peso visual (~13 px de desenho)
 const GLOBAL_ICON = { gauge: 19, link: 21, gear: 16 };
 const gIc = (name, base) => ic(name, Math.round(base * (GLOBAL_ICON[name] || 19) / 19 * 10) / 10);
-const SUBS = [['Terminais', 'sterm'], ['Conectores', 'splug']];
+const SUBS = [['Terminais', 'sterm'], ['Conectores', 'splug'], ['Código', 'scode']];
 
 // engrenagem de 8 dentes, gerada por pontos para não depender de um desenho externo
 function gearPath() {
@@ -242,7 +242,7 @@ function fitActive() {
 }
 function fitNow() {
   const p = curProject();
-  if (!p || UI.cur.page !== 'Terminais') return;
+  if (!p || (UI.cur.page !== 'Terminais' && !dockOn())) return;
   const tab = curTab(p);
   if (tab && RT[tab.id] && RT[tab.id].opened) { try { RT[tab.id].fit.fit(); } catch { /* ignora */ } }
 }
@@ -394,7 +394,9 @@ api.onMetrics(onMetric);
 setInterval(() => { renderTop(); }, 30000); // atualiza "renova em" e "atualizado há"
 
 // estado da aba pelos hooks do Claude Code (exato). Sem hooks (node ausente ou hooks bloqueados), vale a heurística abaixo.
-const tabVisible = (p, tab) => UI.cur.p === p.id && UI.cur.page === 'Terminais' && curTab(p) && curTab(p).id === tab.id;
+// tela Código com o painel de terminais embaixo (como o VS Code): as abas e a sessão da aba ativa aparecem sob o editor
+const dockOn = () => { const p = curProject(); return !!p && UI.cur.p !== '_' && UI.cur.page === 'Código' && p.kind !== 'workflow' && !!curTab(p) && codeState(p).term !== false; };
+const tabVisible = (p, tab) => UI.cur.p === p.id && (UI.cur.page === 'Terminais' || dockOn()) && curTab(p) && curTab(p).id === tab.id;
 
 // aviso de uma aba: só quando a pessoa não está olhando para ela (aba oculta ou app em segundo plano).
 // Vai para o painel, ganha selo na aba e, com o app sem foco, vira notificação do Windows.
@@ -963,7 +965,7 @@ if (typeof ResizeObserver !== 'undefined') window.addEventListener('DOMContentLo
 function renderTabs() {
   if (UI.tabDragging) return; // redesenhar no meio do arraste soltaria a aba do mouse; o soltar refaz
   const p = curProject();
-  if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
+  if (!p || (mode() !== 'term' && !dockOn())) { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
   const wf = p.kind === 'workflow'; // Workflow: as duas guias são fixas (sem fechar, sem nova guia); o split é sempre lado a lado
@@ -1765,9 +1767,10 @@ function renderPage() {
   else if (m === 'noterm') html = noTermHTML(curProject());
   else if (m === 'workflow') html = wfStartHTML(curProject());
   else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML, 'Novo chat': () => newPageHTML('chat'), 'Novo workflow': () => newPageHTML('workflow') }[UI.cur.page]();
-  else if (m === 'page') html = resPageHTML();
+  else if (m === 'page') html = UI.cur.page === 'Código' ? codeHTML() : resPageHTML();
   $('#page').innerHTML = html;
-  $('#page').classList.toggle('wfpage', m === 'workflow'); // tela inicial do Workflow ocupa o palco inteiro, sem moldura
+  $('#page').classList.toggle('wfpage', m === 'workflow');
+  $('#page').classList.toggle('codepage', m === 'page' && UI.cur.p !== '_' && UI.cur.page === 'Código'); // tela Código ocupa o palco sem margem // tela inicial do Workflow ocupa o palco inteiro, sem moldura
   layout(); // o recorte do vidro depende do tipo de tela
   if (UI.cur.p === '_' && UI.cur.page === 'Configurações') api.appInfo(S.settings.projectsRoot).then((i) => { const c = $('#rootChip'); if (c) { c.textContent = i.root; c.title = i.root; } const n = $('#rootNote'); if (n && i.rootAuto) n.textContent = 'Automática: o disco com mais espaço livre, para não encher o C:. Projetos importados ficam onde já estão.'; });
 }
@@ -1863,12 +1866,14 @@ function renderChrome() { renderSide(); renderTabs(); renderTop(); renderRail();
 function renderAll() {
   const m = mode();
   renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu(); renderRail();
-  $('#tabsRow').classList.toggle('hide', m !== 'term');
-  $('#sess').classList.toggle('hide', m !== 'term');
+  const dk = dockOn();
+  document.body.classList.toggle('codedock', dk);
+  $('#tabsRow').classList.toggle('hide', m !== 'term' && !dk);
+  $('#sess').classList.toggle('hide', m !== 'term' && !dk);
   $('#page').classList.toggle('hide', m === 'term' || m === 'web');
   if (window.webRender) webRender(m);
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
-  if (m === 'term') { const cp = curProject(); if (cp.kind === 'workflow') showWorkflow(cp); else { const t = curTab(cp); if (t.kind === 'chat') showChat(t); else showTab(t); } }
+  if (m === 'term' || dk) { const cp = curProject(); if (cp.kind === 'workflow') showWorkflow(cp); else { const t = curTab(cp); if (t.kind === 'chat') showChat(t); else showTab(t); } }
   const cp0 = curProject(); if (cp0 && BOOTED && !RESTORING.has(cp0.id)) restoreProject(cp0); // abriu um projeto que ainda não foi retomado nesta abertura do app
 }
 
@@ -2185,6 +2190,7 @@ document.addEventListener('click', async (e) => {
     inp.value = Math.min(+box.dataset.max, Math.max(+box.dataset.min, (parseInt(inp.value, 10) || 0) + (+el.dataset.step)));
     inp.dispatchEvent(new Event('input', { bubbles: true })); return;
   }
+  if ((el = q('[data-cd]'))) { codeAct(el.dataset.cd, el.dataset.cv); return; }
   if ((el = q('[data-con]'))) { conAct(el.dataset.con, el.dataset.cv, el); return; }
   if ((el = q('[data-ract]'))) { resAct(el.dataset.ract, el.dataset.rk); return; }
   if ((el = q('[data-ctab]'))) { UI.cons.tab = el.dataset.ctab; renderPage(); return; }
