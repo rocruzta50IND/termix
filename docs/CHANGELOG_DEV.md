@@ -8,9 +8,9 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-09
 
-**TASK-124 (continuação) — Ícone da barra de tarefas na primeira abertura (versão 0.4.3, não publicada)** (DEV1)
+**TASK-124 (continuação) — Ícone da barra de tarefas na primeira abertura (versão 0.4.3)** (DEV1)
 
-- O conserto dos atalhos passou a rodar antes de criar a janela e renova o cache de ícones do Windows; antes o botão da barra de tarefas era criado com o ícone antigo e só a abertura seguinte mostrava o novo. `npm run check` ok; só roda no app instalado. Aguarda o usuário instalar e conferir.
+- O conserto dos atalhos passou a rodar antes de criar a janela e renova o cache de ícones do Windows; antes o botão da barra de tarefas era criado com o ícone antigo e só a abertura seguinte mostrava o novo. `npm run check` ok; só roda no app instalado. Promovida à `main` e publicada como Release v0.4.3 em 2026-11-10 a pedido do usuário: https://github.com/rocruzta50IND/termix/releases/tag/v0.4.3 (instalador 125.018.886 bytes, sha512 conferido).
 
 **Promoção dev1 → main — TASK-125 (versão 0.4.2)** (DEV1)
 
