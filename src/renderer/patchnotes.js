@@ -5,15 +5,18 @@ const PATCH_NOTES = [
   {
     v: '0.4.1',
     date: '10/11/2026',
-    resumo: 'Ajustes depois do layout novo.',
+    resumo: 'Ajustes depois do layout novo: ícone, barra lateral e novidades ao atualizar.',
     novo: [
       'Esta janela: a cada atualização o Termix mostra o que entrou de novo, o que melhorou e o que foi corrigido. Clique na versão, ao lado do nome, para ver de novo.',
     ],
     melhorado: [
       'O ícone novo do Termix também aparece nos atalhos (menu Iniciar e área de trabalho).',
+      'Um clique no nome do projeto abre o projeto na hora; a setinha ao lado só abre e fecha as funções dele.',
+      'Abrir e fechar a barra lateral ficou mais suave: só a largura anima, sem esmaecer.',
     ],
     corrigido: [
       'O ícone antigo continuava na barra de tarefas depois da atualização.',
+      'A barra lateral podia ficar com o conteúdo deslocado para o lado depois de abrir.',
     ],
   },
   {

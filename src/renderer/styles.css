@@ -1208,3 +1208,4 @@ input[type=checkbox]:checked::after{border-color:#0d0d0e}
 
 /* abrir/fechar a barra lateral: só a largura anima; o conteúdo aberto mantém a largura e é cortado pela borda (sem esmaecer) */
 .side.anim:not(.mini)>*{min-width:220px;flex-shrink:0}
+.side{overflow-x:clip}

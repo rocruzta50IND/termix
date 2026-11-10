@@ -920,10 +920,11 @@ function renderSide() {
       <div class="sfoot"><div class="label">Geral</div>
       ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${gIc(i, 17)}</span>${n}</button>`).join('')}</div>`;
   }
-  const sc = side.querySelector('.sscroll'); if (sc) sc.scrollTop = top;
+  const sc = side.querySelector('.sscroll'); if (sc) { sc.scrollTop = top; sc.scrollLeft = 0; }
+  side.scrollLeft = 0; // o painel é só vertical: nunca fica deslocado para o lado (o conteúdo aberto é mais largo que a barra no meio da animação)
   if (UI.sideCur !== UI.cur.p || !same) { // mudou de projeto (ou de modo): traz o projeto atual para a vista
     UI.sideCur = UI.cur.p;
-    const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur) cur.scrollIntoView({ block: 'nearest' });
+    const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur && !side.classList.contains('anim')) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 }
 
@@ -2172,7 +2173,8 @@ function toggleSide() {
   tween('sideW', closing ? FR.SIDE_MINI : FR.SIDE_OPEN, 240);
   setTimeout(() => {
     if (closing) { S.settings.sideCollapsed = true; save(); renderSide(); }
-    side.classList.remove('anim'); sideSwapping = false;
+    side.classList.remove('anim'); side.scrollLeft = 0; sideSwapping = false;
+    const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' }); side.scrollLeft = 0; // traz o projeto atual à vista já com a barra no tamanho final
   }, 250);
 }
 const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN);
