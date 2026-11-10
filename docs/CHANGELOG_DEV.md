@@ -6,7 +6,11 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
-## 2026-11-09
+## 2026-11-10
+
+**Encerramento — TASK-121, TASK-124 e TASK-125** (DEV1)
+
+- Aprovadas pelo usuário ("finalizado") depois de usar as versões 0.4.0 a 0.4.3: layout novo do Rocruzta Hub, janela de novidades, ícone dos atalhos e da barra de tarefas, reabertura sob demanda. Releases v0.4.0, v0.4.1, v0.4.2 e v0.4.3 publicados. Pendente: medir a abertura com os 30 projetos reais (TASK-125). Backlog: TASK-122 (tema claro), TASK-123 (anexar e falar), TASK-126 (ícone do `Termix.exe`).
 
 **TASK-124 (continuação) — Ícone da barra de tarefas na primeira abertura (versão 0.4.3)** (DEV1)
 
@@ -31,6 +35,8 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 **TASK-121 — Versão 0.4.0 (instalador gerado)** (DEV1)
 
 - Versão 0.4.0 (`package.json` e `package-lock.json`) com o layout novo da TASK-121. Instalador gerado em `distTermix-Setup-0.4.0.exe` (`npm run dist`, sem erros). **Não publicado** (sem Release no GitHub, sem promoção à `main`): o usuário instala e testa primeiro.
+
+## 2026-11-09
 
 **TASK-121 — Identidade visual do Rocruzta Hub no Termix** (DEV1)
 
