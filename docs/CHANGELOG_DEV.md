@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-130 — Acabamento da barra lateral** (DEV1)
 
-- ⋯ do projeto só com os pontinhos no hover e afastado da seta; animação de abrir/fechar as funções com fade; recolher a barra lateral agora mostra o modo recolhido desde o início (`toggleSide`). `npm run check` ok. Validada pelo usuário; sem Release.
+- ⋯ do projeto só com os pontinhos no hover e afastado da seta; animação de abrir/fechar as funções com fade; recolher a barra lateral agora mostra o modo recolhido desde o início (`toggleSide`). `npm run check` ok. Validada pelo usuário; versão 0.6.2 preparada para o Release.
 
 **Promoção dev1 → main — TASK-129 (versão 0.6.1)** (DEV1)
 

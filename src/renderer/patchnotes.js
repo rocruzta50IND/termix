@@ -3,6 +3,18 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.6.2',
+    date: '11/11/2026',
+    resumo: 'Acabamento da barra lateral.',
+    melhorado: [
+      'Ao recolher a barra lateral, a versão recolhida já aparece desde o começo e acompanha o encolhimento, em vez de surgir só no fim.',
+      'Abrir e fechar as funções de um projeto ficou mais suave, com o conteúdo esmaecendo e deslizando.',
+    ],
+    corrigido: [
+      'O botão com os três pontinhos do projeto não encosta mais na setinha e agora aparece só como os pontinhos, sem a caixa de destaque.',
+    ],
+  },
+  {
     v: '0.6.1',
     date: '10/11/2026',
     resumo: 'Acabamento: todas as telas agora têm o canto arredondado.',

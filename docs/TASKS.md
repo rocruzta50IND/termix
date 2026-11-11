@@ -418,7 +418,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-130 — Acabamento da barra lateral (⋯ do projeto e animações)
 
 - **Responsável:** DEV1
-- **Status:** CONCLUÍDA (2026-11-10) — validada pelo usuário ("ficou simplesmente incrível"). Não publicada em Release.
+- **Status:** CONCLUÍDA (2026-11-10) — validada pelo usuário ("ficou simplesmente incrível"). Publicada na versão 0.6.2 (2026-11-11), a pedido do usuário.
 - **Feito:** botão ⋯ do projeto sem fundo/contorno no hover, mais perto da seta e sem encostar nela; abrir/fechar as funções do projeto com fade e deslize; ao recolher a barra lateral, o modo recolhido entra no começo e acompanha o encolhimento (antes só aparecia no fim).
 - **Arquivos tocados:** `src/renderer/styles.css`, `src/renderer/app.js` (`toggleSide`).
 - **Como validar:** `npm run check` ok; conferido pelo usuário no app.
