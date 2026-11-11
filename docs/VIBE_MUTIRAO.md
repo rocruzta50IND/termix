@@ -424,6 +424,37 @@ Projeto com o fluxo e papel DEV2..DEV5 (fora do Mutirão): ao terminar as tarefa
 
 **Testar sem tokens:** o teste do módulo com remotos bare locais (`dep16.js`: Sempre com fast-forward e com merge --no-ff, portão falhando, conflito cancelado, receita falhando depois do envio, voltar versão nos casos merge, fast-forward e intervalo com merge, autorização, pausar/retomar, marco, DEV2 recusado, fim do DEV2, F5 do projeto) e o do app com o Claude Code falso (`run16.js a|b`).
 
+## Vibe de tarefa (DEV2-017)
+
+Decisão do Ygor (2026-11-11): o formulário completo de entrega fica só para **projeto do zero**. Num **projeto em andamento**, o usuário descreve a tarefa e o Termix cria o mesmo painel com orquestrador e dev, com todas as funções (política, recuperação, deploy, Parar e Continuar). Código: `src/vibe/tarefa.js` (processo principal) e a tela em `src/renderer/vibe/vibe.js`.
+
+### Escolha inicial
+
+O botão **Vibe Coding** abre primeiro a escolha: **"Projeto novo (entrega completa)"** (o formulário de sempre, com o "Baixar modelo") ou **"Tarefa num projeto em andamento"**. Até escolher, o rodapé só tem "Fechar". Os dois formulários têm o link **"Trocar o tipo"**, que volta à escolha. Com um ciclo em andamento no projeto, a tela abre direto no tipo dele.
+
+### Formulário da tarefa
+
+1. Projeto (obrigatório); 2. **O que fazer** (obrigatório); 3. **Critério de pronto** (obrigatório); 4. **O que não pode** (opcional); 5. **Arquivos ou telas envolvidos** (opcional). O rascunho fica salvo junto do rascunho do projeto. O botão é **"Iniciar tarefa"**. Projeto sem git é recusado (o Vibe de tarefa é para projeto em andamento).
+
+Abaixo do projeto, recolhível, o **resumo do projeto que vai para o orquestrador**, montado pelo Termix **sem IA**: branch atual e a de trabalho dos agentes, papel do fluxo, últimos commits, primeiras linhas úteis do `README` e do `CLAUDE.md` (sem comentários HTML) e a tarefa em andamento do `TASKS` (a seção "## Em andamento" do `docs/TASKS.md` ou `TASKS.md`; sem ela, as linhas com "EM ANDAMENTO" e o título da tarefa acima).
+
+### Entrega sintética e plano
+
+"Iniciar tarefa" grava em `vibe\<id>\` uma entrega `modo: "tarefa"` (como a do Mutirão): `entrega.json` (objetivo = primeira linha do "o que fazer", critério, o que não pode, sem acessos) e `estrutura.md` (a tarefa e o resumo do projeto). Nada é escrito na pasta do projeto. O pedido de planejamento é próprio, curto e em arquivo: é uma tarefa num projeto em andamento; ler o repositório só no necessário, começando pelos arquivos citados e usando grep, sem ler arquivos grandes inteiros, diffs nem o histórico todo; **poucas tarefas** (o normal é 1 a 3, no máximo 5), só o que cumpre o critério de pronto, sem refatorar o que não foi pedido; as mesmas marcas `[DEPLOY]`, `[HUMANO]` e `[SEM COMMIT]`; e só as perguntas indispensáveis (o normal é nenhuma). O trecho da política para o planejador vai igual ao do Vibe.
+
+Daí em diante é **o mesmo ciclo do Vibe**: perguntas, "Plano pronto", "Antes de iniciar" (política), execução com a trava, recuperação, deploy pelo Termix e fim de ciclo de DEV2..DEV5. No fim, o painel e a notificação dizem **"Tarefa concluída"**.
+
+### Histórico e abas reaproveitadas
+
+- `vibe\<id>\tarefas.json`: uma linha por tarefa (n, o que fazer, critério, início, status, fim, branch, feitas com o commit, pendências com o motivo). Status: **andamento**, **concluida** (no fim do ciclo) ou **interrompida** (uma tarefa nova começou antes de a anterior terminar). Até 100 tarefas.
+- **Uma tarefa nova não apaga a anterior:** a entrega anterior vai para `historico\<data>\` e o ciclo (estado, plano, resultados, revisões, pedidos) para `historico\ciclo-<data>\`, como sempre.
+- O painel mostra **"Tarefa atual (n)"** e **"Tarefas anteriores"** (status, feitas, commits e pendências). Concluída a tarefa, o formulário volta em branco como **"Nova tarefa"**.
+- **As abas do orquestrador e do Dev são reaproveitadas:** a tarefa nova usa as mesmas abas do ciclo anterior. O orquestrador recebe Ctrl+U e `/clear` e o `SessionStart` do clear dispara o pedido do plano; o Dev recebe o `/clear` antes de cada tarefa, como sempre. Aba parada (app reaberto) volta com uma conversa nova; sem as abas (fechadas), o Termix cria as duas como antes. O "Projeto novo" continua criando abas novas.
+
+### Canais e testes
+
+Canais `vibe:tarefaResumo`, `vibe:tarefaNova`, `vibe:tarefaFim` e `vibe:tarefaHist`. No modo de teste, `vibeTest.modo('projeto'|'tarefa'|'')` e `vibeTest.tarefa({ oQue, criterio, naoPode, arquivos })`. **Testar sem tokens:** `tar17.js` (módulo: resumo, conferência, entrega sintética, pedido do plano, histórico de 2 tarefas seguidas e a interrompida, trava na aba) e `run17.js` (app com o Claude Code falso: escolha inicial, formulário com o resumo, tarefa 1 até o fim do ciclo do DEV2, tarefa 2 nas mesmas abas com `/clear` e o painel com o histórico).
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.
@@ -439,9 +470,9 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-009** — Pendências do MVP: marcas do plano numa rodada real, aviso de deploy sem marca, alarme falso de main/master, plano final do Mutirão com o projeto inteiro e a publicação, /clear depois de Esc real e `--ours/--theirs` só com merge em andamento. *(feita)*
 - **DEV2-014** — Política de autonomia por projeto: tela "Antes de iniciar", edição no meio do ciclo e "Pausar deploy". *(feita)*
 - **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto. *(feita)*
-- **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert.
-- **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
-- **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento).
+- **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert. *(feita)*
+- **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções. *(feita; ver "Vibe de tarefa")*
+- **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento). *(feita)*
 - **DEV2-019** — Telegram, por último e junto com o Ygor.
 - O Mutirão fica para depois, até o Ygor aprovar o Vibe.
 - Depois — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.
