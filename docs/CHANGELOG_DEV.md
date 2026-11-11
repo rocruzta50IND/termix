@@ -6,6 +6,14 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-11
+
+**TASK-132 — Chat/Workflow viram Projeto/Mutirão na interface (versão 0.6.3)** (DEV1)
+
+- Só textos visíveis da barra lateral e do título da tela de criação (os nomes internos não mudaram); `npm run check` ok. **Publicação:** `dev1` promovida à `main` (ce6bebf, fast-forward); Release **v0.6.3** publicado com exe, blockmap e `latest.yml`; sha512 conferido. Instalador não testado em Windows limpo.
+
+---
+
 ## 2026-11-10
 
 **TASK-130 — Acabamento da barra lateral** (DEV1)
