@@ -6,6 +6,13 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-014 — Política de autonomia por projeto ("Antes de iniciar") e "Pausar deploy"** (DEV2)
+
+- Tela "Antes de iniciar" entre "Plano pronto" e a execução: Supervisionado, Autônomo até a branch (padrão) e Autônomo com deploy (só DEV1 ou o dono), com ajustes de deploy na main (Nunca / Pedir / a partir de um marco / Sempre), receita, portão (sugere o `validacao` do fluxo), teto 5 h / 7 d / US$, modelo por papel e quando chamar o humano.
+- Gravada por projeto (`vibe\<id>\politica.json`, com histórico), relida ao reabrir e editável no meio do ciclo (vale a partir da próxima tarefa). "Pausar deploy" no painel, na hora, sem parar o ciclo. DEV2..DEV5 não veem deploy: o fim é a branch e o handoff.
+- O ciclo lê a política: `[DEPLOY]` com deploy automático vira "deploy pendente (DEV2-016)" e segue; com "Pausar deploy", "retido"; teto atingido pausa e avisa. Modelo por papel na chave `model` do settings da aba do Vibe, sem tocar no núcleo.
+- Testes sem IA: política 55/55 (novo), trava 113/113, Mutirão 31/31, implementação automática 41/41, robustez 23/23, conferências 16/16, Organizador 19/19; CDP 30/30 sem abas de agente. Fila decidida registrada: DEV2-015 a DEV2-019.
+
 **DEV2-013 — Trava do Vibe barra a troca para a branch principal** (DEV2)
 
 - `git checkout`/`git switch` para main/master recusados com o motivo, inclusive com `-b`/`-c`/`--detach`/`--track`, como ponto de partida, pelo remoto (`origin/main`), com `~`/`^`/`@{n}` e pela branch anterior (`-`, `@{-N}`).

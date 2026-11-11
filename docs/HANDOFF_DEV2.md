@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-013 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo e a trava barrando a troca para a branch principal)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-014 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo a trava barrando a troca para a branch principal e a política de autonomia por projeto)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-11
 
 ## Resumo do que mudou
@@ -71,12 +71,19 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - gasto de cerca de 7 pontos da janela de 5 horas (abaixo do teto combinado de 15);
   - nada quebrou no módulo e nenhuma linha mudou.
 - **DEV2-013:** a trava passa a recusar, com o motivo, a troca de branch para a principal (main/master) nas abas do Vibe. Na DEV2-012 um agente conseguiu trocar para a principal; o commit seguinte foi recusado, mas ele ficou nela. Agora a troca é barrada em todas as formas comuns (direta, criando branch nova a partir da principal, destacada, pelo remoto, pela "branch anterior"). Trocar para a branch permitida ou para outras branches, criar branch a partir da permitida e só ler a principal continuam permitidos. As operações de git do próprio Termix (conferir a branch, o Mutirão juntar as entregas, a conferência depois de cada tarefa) não passam pela trava, então o Mutirão segue igual. Sem custo de IA: 34 casos novos no teste da trava, e os testes antigos do módulo continuam passando.
+- **DEV2-014:** política de autonomia por projeto, escolhida antes de iniciar a produção autônoma (decisões do Ygor de 2026-11-11):
+  - uma tela "Antes de iniciar", entre o plano pronto e a execução, com três modelos prontos (Supervisionado, Autônomo até a branch, que é o padrão, e Autônomo com deploy) e ajustes por cima: deploy na principal, os comandos de deploy, o comando de qualidade que precisa passar antes, o teto de uso (janelas de 5 h e de 7 d e, opcional, em dólares), o modelo de IA do orquestrador e do dev e quando chamar o humano;
+  - só o responsável pelo projeto (papel DEV1 com o fluxo; o dono, sem o fluxo) vê e liga o deploy; para os outros papéis a opção não aparece e o fim do ciclo é enviar a própria branch e o resumo da entrega;
+  - a política fica gravada por projeto, é relida ao reabrir o app e pode ser editada no meio do ciclo sem parar nada (vale a partir da próxima tarefa); o botão "Pausar deploy" fica sempre à vista no painel e corta na hora qualquer deploy automático, sem parar o resto;
+  - o ciclo passa a ler a política: com deploy automático, a tarefa de publicação fica marcada como pendente e o ciclo segue (quem fará o deploy é o Termix, em código, na próxima etapa; nada é executado agora); sem ele, pausa como antes; o teto de uso, antes fixo, passa a ser o da política e, ao ser atingido, o ciclo pausa e avisa;
+  - o modelo de IA por papel vai na configuração que o módulo já gera para as abas do Vibe, sem mudar o núcleo;
+  - os agentes recebem só o trecho da política que importa ao planejador; os pedidos continuam curtos e em arquivo.
 
 ## Áreas e arquivos afetados
 
 - Módulo isolado: a pasta do processo principal ganhou o verificador da trava (DEV2-004) e a parte do Mutirão (DEV2-005); a pasta da interface ganhou o ciclo de execução, o painel do Vibe e o painel do Mutirão.
 - Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. Na DEV2-001, a **ponte ganhou uma linha** (o canal do módulo, só para os pedidos "vibe") e a **página principal ganhou duas linhas** (o estilo e o script do módulo). A checagem de sintaxe do projeto passou a incluir os arquivos do módulo. Da DEV2-005 à DEV2-011, nenhuma outra linha do núcleo (na DEV2-011, só a resolução dos conflitos da sincronização, mantendo a versão da dev1 e somando as linhas do módulo).
-- Dados: na pasta de dados do app, por projeto (entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim.
+- Dados: na pasta de dados do app, por projeto (a política de autonomia desde a DEV2-014, entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim.
 - Documentação: desenho do módulo, tarefas e changelog próprios da dev2 e uma linha nas decisões.
 
 ## Impacto e riscos
@@ -88,18 +95,21 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - Testados sem tokens (com um Claude Code falso no teste, DEV2-007): limite de tentativas, tempo limite, parar antes e durante o turno, tarefa sem commit e envio final com o remoto à frente. Com tokens: a resolução de um conflito pelo dev e pela revisão reais. Ainda não testados com tokens: entrega real do Vibe de um sócio e o plano final do Mutirão com os passos de publicação (validado pelo pedido gerado). A marcação de publicação/humano pelo planejador real foi vista na DEV2-009 (Vibe comum). Depois de parar um agente, o indicador da aba fica "trabalhando" até o próximo pedido (só visual).
 - **Mutirão:** o Termix faz commit e envia ao remoto (só a pasta do Mutirão, só na branch do dono ou do sócio, nunca na principal). No teste, um pedido longo digitado na aba recém-aberta chegou cortado; por isso o pedido do Mutirão vai num arquivo e só uma linha é digitada. O Vibe do sócio não rodou até o fim no teste (a entrega foi simulada).
 - **Implementação automática:** o Termix junta branches e envia a branch do dono ao remoto sem perguntar (só ela, nunca a principal; nada é descartado, e uma junção com conflito é cancelada e vira tarefa). Ela só começa com o projeto sem mudanças pendentes. No teste, as entregas dos sócios foram feitas por script, não pelo Vibe deles.
+- **Política (DEV2-014):** o teto de 7 dias passa a pausar (padrão 95 %) e a pausa por teto passa a avisar. O deploy automático ainda não executa nada: só marca a tarefa como pendente.
 - Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
 
 ## Sugestões ao DEV1 (núcleo, não corrigidas pela dev2)
 
 - **Configurações:** "Notificações", "Conectores" e "Projetos arquivados" aparecem dentro do cartão do "Botão Clear", provavelmente por um bloco não fechado na montagem da página de Configurações.
 - **Conversa existente com `CLAUDE_CONFIG_DIR`:** a conferência "esta conversa existe?" olha só a pasta padrão do Claude Code no perfil do usuário. Com a variável `CLAUDE_CONFIG_DIR` apontando para outra pasta, ao reabrir o app a aba tenta abrir uma conversa nova com o mesmo identificador e o Claude Code recusa, aparecendo o aviso "Falha ao iniciar ou retomar a conversa". Sem a variável (uso normal) não acontece.
+- **Checagem de sintaxe:** o arquivo novo da política do módulo não está na lista da checagem do projeto (a lista fica fora do módulo); foi conferido à parte.
 - **Indicador depois do Esc:** interrompida com Esc, a aba fica "trabalhando" por até 20 segundos, porque o Claude Code não avisa o fim do turno nesse caso (só visual).
 
 ## Como validar
 
 - Seguir o guia de validação do MVP (documento novo da DEV2-008), no Termix real rodando da dev2.
 - Rodar a checagem de sintaxe do projeto.
+- DEV2-014, sem custo de IA: o teste da política (o papel define as opções, modelos, deploy, teto, gravação e reabrir, "Pausar deploy", modelo de IA nas abas e pedidos) e, numa instância isolada sem abas de agente, a tela "Antes de iniciar", o painel e o projeto de outro papel sem a opção de deploy.
 - DEV2-009, sem custo de IA: o verificador da trava com os casos de conflito (escolher um lado passa só com junção em andamento, na branch permitida, em arquivo em conflito) e o teste do módulo das conferências do plano e da entrega do Mutirão.
 - Sem gastar tokens: rodar o verificador da trava direto com entradas simuladas (cada regra com um caso permitido e um bloqueado).
 - Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado (pedir a troca para a branch principal também é recusado (DEV2-013)); o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.

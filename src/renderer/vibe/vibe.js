@@ -45,6 +45,7 @@
   async function cyLoad(id) {
     const c = cyOf(id);
     if (!c.loaded) { const r = await call('cicloGet', id); c.est = (r && r.estado) || null; c.loaded = true; }
+    c.pol = await call('politicaGet', id); // DEV2-014: política de autonomia do projeto
     if (c.est) await cyRead(id);
     return c;
   }
@@ -232,14 +233,33 @@
      permitida, main/master intactas); /clear no orquestrador, pedido curto de revisão (revisoes\Tk.json); aprovado = próxima,
      refazer = volta ao Dev (até MAX_REFAZER vezes). Pausas salvas no estado.json: limite de 5 h, tarefa de DEPLOY/HUMANO,
      erro ou agente sem resposta. A trava em código (src/vibe/trava.js) vale em todas as abas do Vibe. */
-  const TETO_5H = 93; // decisão do Ygor: com a janela de 5 h em 93 % ou mais, pausa e retoma sozinha quando ela virar
+  // DEV2-014: o teto (5 h, 7 d e US$) vem da política do projeto (padrão 93 % na janela de 5 h, 95 % na de 7 d); a regra fica
+  // em src/vibe/politica.js (canal politicaTeto). Ao atingir, pausa e avisa; nas janelas, retoma sozinho quando virar.
   const MAX_REFAZER = 2; // refações por tarefa; depois disso, pausa e pede ajuda ao humano
   const T = { semResposta: 20 * 60000, turno: 30 * 60000 }; // sem nenhum sinal por 20 min, ou turno sem terminar em 30 min = pausa (no teste: vibeTest.tempos)
   let LIM_TEST = null; // só no modo de teste: % da janela de 5 h injetado
   const winOk = (l) => !!(l && typeof l.pct === 'number' && (!l.resets || l.resets * 1000 > Date.now()));
   const lim5 = () => { if (LIM_TEST != null) return { pct: LIM_TEST, resets: Date.now() / 1000 + 3600, teste: true }; try { return UI.limits && UI.limits.five; } catch { return null; } };
   const lim7 = () => { try { return UI.limits && UI.limits.week; } catch { return null; } };
-  const limHit = () => { const l = lim5(); return winOk(l) && l.pct >= TETO_5H; };
+  let LIM7_TEST = null, CUSTO_TEST = null; // só no modo de teste: % da janela de 7 d e custo do ciclo (US$) injetados
+  const lim7r = () => (LIM7_TEST != null ? { pct: LIM7_TEST, resets: Date.now() / 1000 + 86400, teste: true } : lim7());
+  // custo equivalente do ciclo (tabela da API, vindo da status line das abas do Vibe): soma o maior valor visto por sessão
+  function custoCiclo(c) {
+    if (CUSTO_TEST != null) return CUSTO_TEST;
+    const e = c && c.est;
+    if (!e) return null;
+    e.custo = e.custo || {};
+    try {
+      for (const tid of [e.orq, e.dev]) {
+        const m = tid && MET[tid], v = m && m.cost && m.cost.total_cost_usd;
+        if (m && m.session_id && typeof v === 'number') e.custo[m.session_id] = Math.max(e.custo[m.session_id] || 0, v);
+      }
+    } catch { /* sem métricas */ }
+    const vs = Object.values(e.custo);
+    return vs.length ? vs.reduce((a, b) => a + b, 0) : null;
+  }
+  const tetoDe = (id) => call('politicaTeto', id, lim5(), lim7r(), custoCiclo(cyOf(id)));
+  const pctTxt = (l) => (winOk(l) ? `${Math.round(l.pct)}%${l.teste ? ' (teste)' : ''}` : 'indisponível');
   const ACT = {}; // último sinal de cada aba (hook)
   // DEV2-007: o pedido em curso (c.pedindo) até o hook de prompt enviado. Parar ou pausar antes disso desfaz a tentativa
   // (não conta) e apaga o texto da caixa (Ctrl+U), para o próximo /clear não sair grudado no pedido antigo.
@@ -348,12 +368,13 @@
     desfazPedido(c);
     c.gen++; cancelWaits(c); c.esperando = null;
     if (extra.interromper) { try { if (isAlive(extra.interromper)) api.write(extra.interromper, '\x1b'); } catch { /* aba já encerrada */ } delete extra.interromper; }
-    c.live = tipo === 'limite'; // limite: enquanto o app estiver aberto, o Termix retoma sozinho quando a janela virar
+    c.live = tipo === 'limite' && !extra.semAuto; // limite das janelas: com o app aberto, o Termix retoma sozinho quando ela virar
+    const x0 = c.est.exec.pausa; // limite: avisa uma vez, não a cada nova conferência
     c.est = { ...c.est, fase: 'pausado', aviso: '' };
     c.est.exec.pausa = { tipo, motivo, desde: nowIso(), ...extra };
     cySave(id);
     const t = c.est.exec.tarefas[c.est.exec.k];
-    if (tipo !== 'limite') notifyHuman(projOf(id), tabOf(c.est.dev) || tabOf(c.est.orq), `${t ? `${t.id}: ` : ''}${motivo}`);
+    if (tipo !== 'limite' || !(x0 && x0.tipo === 'limite')) notifyHuman(projOf(id), tabOf(c.est.dev) || tabOf(c.est.orq), `${t ? `${t.id}: ` : ''}${motivo}`);
   }
   function finish(id) {
     const c = cyOf(id), x = c.est.exec;
@@ -391,6 +412,8 @@
     if (!c.est || c.est.fase !== 'pronto') return false;
     const ts = await call('tarefas', id);
     if (!ts || !ts.length) { c.est.aviso = 'O plano não tem tarefas no formato "## T1 — título". Peça ao orquestrador para regravar o plano nesse formato (Parar e Iniciar de novo).'; cySave(id); return false; }
+    // DEV2-014: sem política gravada (ex.: o Mutirão clica sozinho em Executar), grava a padrão antes de começar
+    if (!c.pol || !c.pol.existe) { await call('politicaSet', id, (c.pol && c.pol.politica) || {}, 'padrão ao executar'); c.pol = (await call('politicaGet', id)) || c.pol; }
     await call('trust', id);
     c.est = { ...c.est, fase: 'execucao', aviso: '', exec: { tarefas: ts, k: 0, etapa: 'dev', tentativas: 0, feitas: [], liberadas: [], iniciado: nowIso() } };
     cySave(id);
@@ -441,10 +464,27 @@
       while (alive()) {
         if (x.k >= x.tarefas.length) return finish(id);
         const t = x.tarefas[x.k];
-        if ((t.deploy || t.humano) && !(x.liberadas || []).includes(t.id) && x.etapa === 'dev' && !x.tentativas) {
-          return pause(id, t.deploy ? 'deploy' : 'humano', t.deploy ? `Tarefa de DEPLOY: "${t.titulo}". O Termix só segue com a sua liberação.` : `A tarefa "${t.titulo}" precisa de você (acesso, dado ou decisão).`, { gate: t.id });
+        // DEV2-014: a política é lida no início de cada tarefa (editar no meio do ciclo vale a partir da próxima)
+        if (x.etapa === 'dev' && !x.tentativas) {
+          const pt = (await call('politicaTarefa', id, t)) || { deploy: t.deploy ? 'pausar' : '', humano: t.humano ? 'humano' : '' };
+          if (!alive()) return;
+          const liberada = (x.liberadas || []).includes(t.id);
+          if (!liberada && (pt.humano || pt.deploy === 'pausar')) {
+            if (t.deploy && pt.deploy === 'pausar') return pause(id, 'deploy', `Tarefa de DEPLOY: "${t.titulo}". O Termix só segue com a sua liberação.`, { gate: t.id });
+            if (pt.humano === 'humano') return pause(id, 'humano', `A tarefa "${t.titulo}" precisa de você (acesso, dado ou decisão).`, { gate: t.id });
+            return pause(id, 'humano', `Política: confirmar com você antes de cada tarefa. Próxima: ${t.id} — "${t.titulo}". Clique em Continuar para liberar.`, { gate: t.id, sempre: true });
+          }
+          // deploy automático: o Termix fará o deploy (DEV2-016); a tarefa fica marcada e o ciclo segue sem pausar à toa
+          if (t.deploy && (pt.deploy === 'pendente' || pt.deploy === 'retido')) {
+            x.feitas.push({ id: t.id, titulo: t.titulo, deploy: pt.deploy, data: nowIso() });
+            Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, extra: 0, refazer: null, enviadoDev: null, enviadoRev: null });
+            cySave(id);
+            continue;
+          }
         }
-        if (limHit()) return pause(id, 'limite', `Janela de 5 h em ${Math.round(lim5().pct)}% (teto ${TETO_5H}%). O Termix retoma sozinho quando ela virar.`);
+        const teto = await tetoDe(id);
+        if (!alive()) return;
+        if (teto) return pause(id, 'limite', teto.motivo, teto.auto ? {} : { semAuto: true });
         if (x.etapa === 'dev') {
           if (!(x.retomar && x.enviadoDev)) {
             let info = await call('gitInfo', id);
@@ -522,7 +562,20 @@
     for (const id of Object.keys(CY)) {
       const c = CY[id], e = c.est, x = e && e.exec;
       if (!x || !c.live) continue;
-      if (e.fase === 'pausado' && x.pausa && x.pausa.tipo === 'limite' && !limHit()) { continueExec(id, true); continue; }
+      if (e.fase === 'pausado' && x.pausa && x.pausa.tipo === 'limite' && !x.pausa.semAuto) {
+        if (!c.conferindoTeto) {
+          c.conferindoTeto = true;
+          tetoDe(id).then((r) => {
+            c.conferindoTeto = false;
+            const pz = c.live && c.est && c.est.fase === 'pausado' && c.est.exec && c.est.exec.pausa;
+            if (!pz || pz.tipo !== 'limite') return;
+            if (!r) { continueExec(id, true); return; }
+            // outro teto ainda segura (ex.: subiu o de 5 h, mas a janela de 7 d está acima): o motivo à vista acompanha
+            if (r.motivo !== pz.motivo) { pz.motivo = r.motivo; if (!r.auto) { pz.semAuto = true; c.live = false; } cySave(id); }
+          });
+        }
+        continue;
+      }
       if (e.fase === 'execucao' && c.esperando) {
         const tid = c.esperando.tab;
         if (!isAlive(tid)) { pause(id, 'erro', 'A aba do agente fechou no meio da tarefa. Clique em Continuar para reabrir e seguir.'); continue; }
@@ -578,7 +631,7 @@
     const e = c.est, x = e.exec;
     if (!x) return '';
     const n = x.tarefas.length, t = x.tarefas[x.k];
-    const pct = (l) => (winOk(l) ? `${Math.round(l.pct)}%${l.teste ? ' (teste)' : ''}` : 'indisponível');
+    const pol = c.pol && c.pol.politica, o = pol ? pol.orcamento : { teto5: 93, teto7: 95, usd: null }, usd = custoCiclo(c);
     let fase;
     if (e.fase === 'concluido') fase = 'Concluído';
     else if (e.fase === 'pausado') fase = PAUSA_TIT[x.pausa && x.pausa.tipo] || 'Pausado';
@@ -591,7 +644,7 @@
       ['Branch', esc(x.branch || '—')],
       ['Último commit', esc(x.ultimoCommit || '—')],
       ['Tentativas', e.fase === 'concluido' || !t ? '—' : `${x.tentativas || 0} de ${maxTent(x)}`],
-      ['Limites', `5 h ${pct(lim5())} · 7 d ${pct(lim7())} <small>(pausa com a janela de 5 h em ${TETO_5H}%)</small>`],
+      ['Limites', `5 h ${pctTxt(lim5())} · 7 d ${pctTxt(lim7r())}${usd != null ? ` · US$ ${usd.toFixed(2)}` : ''} <small>(teto: 5 h ${o.teto5}% · 7 d ${o.teto7}%${o.usd != null ? ` · US$ ${o.usd}` : ''})</small>`],
     ];
     if (x.ultimaRevisao) rows.push(['Última revisão', `${esc(x.ultimaRevisao.id)}: ${esc(x.ultimaRevisao.veredito)}${x.ultimaRevisao.motivo ? ` — ${esc(x.ultimaRevisao.motivo.slice(0, 160))}` : ''}`]);
     const feita = (id) => x.feitas.find((f) => f.id === id);
@@ -599,7 +652,7 @@
       const f = feita(tt.id);
       const cls = f ? 'done' : i === x.k && e.fase !== 'concluido' ? 'cur' : '';
       const tags = `${tt.deploy ? ' <em class="vx-tag">DEPLOY</em>' : ''}${tt.humano ? ' <em class="vx-tag">HUMANO</em>' : ''}${tt.semCommit ? ' <em class="vx-tag">SEM COMMIT</em>' : ''}`;
-      const extra = f ? (f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
+      const extra = f ? (f.deploy === 'pendente' ? ' · deploy pendente (DEV2-016)' : f.deploy === 'retido' ? ' · deploy retido (Pausar deploy)' : f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
       return `<li class="${cls}">${esc(tt.id)} — ${esc(tt.titulo)}${tags}<small>${extra}</small></li>`;
     }).join('');
     return `<div class="vx"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><ol class="vx-list">${list}</ol></div>`;
@@ -649,18 +702,20 @@
     }[e.fase] || '';
     const acts = [];
     if (e.fase === 'abrindo' && e.aviso && c.live) acts.push('<button class="btn sm" data-vc="send">Enviar o pedido agora</button>');
-    if (e.fase === 'pronto') acts.push('<button class="btn sm pri" data-vc="exec">Executar plano</button>');
+    if (e.fase === 'pronto' && !(c.form && c.form.modo === 'iniciar')) acts.push('<button class="btn sm pri" data-vc="antes">Executar plano…</button>'); // DEV2-014: antes, a tela "Antes de iniciar"
     if (e.fase === 'concluido' && e.mutFim && !e.mutFim.ok) acts.push('<button class="btn sm pri" data-vc="mutfim">Enviar a branch de novo</button>');
     if (e.fase === 'concluido' && e.mutirao && !e.mutirao.ok) acts.push('<button class="btn sm pri" data-vc="mutent">Enviar a entrega de novo</button>');
     if (paused || ['parado', 'erro'].includes(e.fase) || (e.fase === 'pausado' && !(x && x.pausa && x.pausa.tipo === 'limite' && c.live))) acts.push(`<button class="btn sm pri" data-vc="resume">${go}</button>`);
-    if (e.fase === 'pausado' && x && x.pausa && x.pausa.gate) acts.push('<button class="btn sm" data-vc="skip">Já fiz, pular</button>');
+    if (e.fase === 'pausado' && x && x.pausa && x.pausa.gate && !x.pausa.sempre) acts.push('<button class="btn sm" data-vc="skip">Já fiz, pular</button>');
     if (ACTIVE.includes(e.fase) || ['erro', 'pronto', 'pausado'].includes(e.fase)) acts.push('<button class="btn sm" data-vc="stop">Parar Vibe Coding</button>');
     const tip = TIPS[base] ? `<p class="vibe-tip">${esc(TIPS[base])}</p>` : '';
+    const polBar = polBarHtml(c, e); // DEV2-014: política em uma linha, "Editar" e "Pausar deploy" sempre à vista
     const plan = c.plano ? `<details class="vc-plan" ${e.fase === 'pronto' ? 'open' : ''}><summary>Ver o plano (plano.md${c.plano.tarefas ? `, ${plural(c.plano.tarefas, 'tarefa', 'tarefas')}` : ''})</summary><div class="vc-md">${mdLite(c.plano.text)}</div></details>` : '';
     return `<div class="vc ${e.fase} ${paused ? 'paused' : ''}">
       <div class="vc-hd"><b>Andamento</b><ol class="vc-steps">${steps}</ol></div>
       <div class="vc-line">${line}</div>
       ${e.aviso ? `<div class="vc-aviso">${esc(e.aviso)}</div>` : ''}
+      ${polBar}
       ${x ? execHtml(c) : ''}
       ${e.fase === 'perguntas' ? questionsHtml(c) : ''}
       ${plan}${tip}
@@ -673,6 +728,133 @@
     const box = V.root.querySelector('#vcPanel');
     if (box) box.innerHTML = cycleHtml(V.id);
     paint();
+  }
+
+  /* ---------- política de autonomia (DEV2-014) ----------
+     Tela "Antes de iniciar" entre "Plano pronto" e "Executar plano": três modelos prontos e ajustes finos por cima. A política
+     fica em vibe\<id>\politica.json (processo principal, src/vibe/politica.js, que é quem decide) e pode ser editada no meio
+     do ciclo, no painel, sem parar nada: vale a partir da próxima tarefa; o teto e "Pausar deploy" valem na hora. O formulário
+     fica em #vpPanel, fora do #vcPanel, para o redesenho periódico do andamento não apagar o que está sendo digitado. */
+  const DEPLOY_TXT = { nunca: 'Nunca', pedir: 'Pedir autorização', marco: 'Automático a partir de um marco', sempre: 'Sempre automático' };
+  const HUM_TXT = { indispensavel: 'Só o indispensável', produto: 'Também em decisões de produto', sempre: 'Sempre (antes de cada tarefa)' };
+  const IA_TXT = { '': 'Padrão do Claude Code', opus: 'Opus', sonnet: 'Sonnet', haiku: 'Haiku' };
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  function polBarHtml(c, e) {
+    const P = c.pol;
+    if (!P || !e || ['abrindo', 'plano', 'perguntas', 'fechando', 'erro'].includes(e.fase)) return '';
+    const pol = P.politica, pode = P.info && P.info.podeDeploy;
+    const pausado = pode && pol.deploy.pausado;
+    const btns = [];
+    if (!(c.form && c.form.modo)) btns.push('<button class="btn sm" data-vc="poledit">Editar política</button>');
+    if (pode) btns.push(pausado ? '<button class="btn sm pri" data-vc="deployresume">Retomar deploy</button>' : '<button class="btn sm vp-stop" data-vc="deploypause" title="Corta na hora qualquer deploy automático; o resto do ciclo continua">Pausar deploy</button>');
+    return `<div class="vp-bar ${pausado ? 'pausado' : ''}"><div><b>Política${P.existe ? '' : ' (padrão)'}:</b> ${esc(P.resumo || '')}${c.polMsg ? `<small>${esc(c.polMsg)}</small>` : ''}</div><div class="vp-btns">${btns.join('')}</div></div>`;
+  }
+  function polFormHtml(id) {
+    const c = CY[id], F = c && c.form;
+    if (!F || !c.pol) return '';
+    const p = F.p, inf = c.pol.info || {}, pode = !!inf.podeDeploy;
+    const rad = (name, field, val, cur, label, sub) => `<label class="vp-opt ${cur === val ? 'sel' : ''}"><input type="radio" name="${name}" data-vpf="${field}" value="${esc(val)}" ${cur === val ? 'checked' : ''}><span><b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span></label>`;
+    const modelos = (c.pol.prontos || []).map((m) => rad('vpModelo', 'modelo', m.id, p.modelo, `${m.titulo}${m.id === 'branch' ? ' (padrão)' : ''}`, m.resumo)).join('');
+    const sel = (field, opts, cur) => `<select class="inp" data-vpf="${field}">${Object.entries(opts).map(([v, l]) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+    const o = p.orcamento;
+    const deploy = pode ? `
+      <div class="vf"><label>Deploy na main</label>${sel('deploy.modo', DEPLOY_TXT, p.deploy.modo)}
+        ${p.deploy.modo === 'marco' ? `<input type="text" class="inp vp-gap" data-vpf="deploy.marco" maxlength="200" placeholder="Marco, em texto livre. Ex.: v1.0 estável" value="${esc(p.deploy.marco)}">
+        <label class="vf-chk"><input type="checkbox" data-vpf="deploy.marcoAtingido" ${p.deploy.marcoAtingido ? 'checked' : ''}> Marco atingido: a partir de agora o deploy é automático</label>` : ''}
+        <small>O deploy é feito pelo Termix, em código, nunca pelo agente (a trava continua barrando a main para a IA). Voltar versão: git revert. A execução do deploy chega na DEV2-016; até lá, o deploy automático fica marcado "pendente" e o ciclo segue.</small></div>
+      <div class="vf"><label>Receita de deploy <em class="opt">os comandos que o Termix vai rodar</em></label>
+        <textarea class="inp ta" rows="3" data-vpf="deploy.receita" maxlength="4000" placeholder="Um comando por linha. Ex.: npm run build">${esc(p.deploy.receita)}</textarea>
+        <small>Só fica gravada: nada é executado agora.</small></div>
+      <div class="vf"><label>Portão de qualidade <em class="opt">precisa passar antes de qualquer deploy</em></label>
+        <input type="text" class="inp" data-vpf="portao" maxlength="500" placeholder="${esc(inf.validacao || 'Ex.: npm test')}" value="${esc(p.portao)}">
+        ${inf.validacao ? `<small>Sugestão do .claude/fluxo.json: <code>${esc(inf.validacao)}</code></small>` : ''}</div>`
+      : `<div class="vibe-note"><b>Fim do ciclo:</b> enviar a sua branch e o handoff. ${esc(inf.motivo || 'O deploy na main é do DEV1.')}</div>`;
+    const tit = F.modo === 'iniciar' ? 'Antes de iniciar a produção autônoma' : 'Editar a política (vale a partir da próxima tarefa)';
+    const go = F.modo === 'iniciar' ? 'Iniciar a produção autônoma' : 'Salvar a política';
+    return `<div class="vp-form" id="vpForm">
+      <div class="vp-hd"><b>${tit}</b>${p.ajustado ? '<em class="vx-tag">AJUSTADO</em>' : ''}</div>
+      <p class="vp-sub">Escolha um modelo pronto e ajuste o que quiser. Fica gravado neste projeto e pode ser editado no meio do ciclo, sem parar nada.</p>
+      <div class="vf"><label>Modelo</label><div class="vp-opts">${modelos}</div></div>
+      ${deploy}
+      <div class="vf"><label>Orçamento <em class="opt">ao atingir o teto, o ciclo pausa e avisa</em></label>
+        <div class="vp-row"><label>Janela de 5 h <input type="number" class="inp" data-vpf="orcamento.teto5" min="1" max="100" value="${o.teto5}"> %</label>
+        <label>Janela de 7 d <input type="number" class="inp" data-vpf="orcamento.teto7" min="1" max="100" value="${o.teto7}"> %</label>
+        <label>US$ <input type="number" class="inp" data-vpf="orcamento.usd" min="0" step="0.5" placeholder="sem teto" value="${o.usd == null ? '' : o.usd}"></label></div>
+        <small>US$ = custo equivalente do ciclo pela tabela da API (status line das abas do Vibe); opcional.</small></div>
+      <div class="vf"><label>Modelo por papel</label>
+        <div class="vp-row"><label>Orquestrador ${sel('modelos.orq', IA_TXT, p.modelos.orq)}</label><label>Dev ${sel('modelos.dev', IA_TXT, p.modelos.dev)}</label></div>
+        <small>Vai no settings da aba do agente (o mesmo da trava) e vale quando a aba abre. No meio do ciclo, vale na próxima vez que a aba for aberta.</small></div>
+      <div class="vf"><label>Quando chamar você</label><div class="vp-opts">${Object.entries(HUM_TXT).map(([v, l]) => rad('vpHum', 'humano', v, p.humano, l)).join('')}</div>
+        <small>[HUMANO] sempre pausa (o indispensável). "Decisões de produto" vale para as perguntas do próximo plano.</small></div>
+      ${F.err ? `<div class="vf-prob">${esc(F.err)}</div>` : ''}
+      <div class="vibe-confirm"><button class="btn sm" data-vp="cancelar">Voltar</button><button class="btn sm pri" data-vp="salvar">${go}</button></div>
+    </div>`;
+  }
+  function polPaint(id) {
+    if (!V || !V.root || !V.root.isConnected || V.id !== id) return;
+    const box = V.root.querySelector('#vpPanel');
+    if (box) box.innerHTML = polFormHtml(id);
+    paintCycle();
+  }
+  // DOM -> rascunho (sem redesenhar: quem digita não perde o foco)
+  function polRead(id) {
+    const c = CY[id], F = c && c.form;
+    if (!F || !V || !V.root) return null;
+    for (const el of V.root.querySelectorAll('#vpPanel [data-vpf]')) {
+      if (el.type === 'radio' && !el.checked) continue;
+      const [a, b] = el.dataset.vpf.split('.');
+      let v = el.type === 'checkbox' ? el.checked : el.value;
+      if (el.type === 'number') v = el.value === '' ? null : Number(el.value);
+      if (b) F.p[a] = { ...(F.p[a] || {}), [b]: v }; else F.p[a] = v;
+    }
+    return F.p;
+  }
+  async function polOpen(id, modo) {
+    const c = cyOf(id);
+    c.pol = (await call('politicaGet', id)) || c.pol;
+    if (!c.pol) return;
+    c.form = { modo, p: clone(c.pol.politica), err: '' };
+    c.polMsg = '';
+    polPaint(id);
+    try { V.root.querySelector('#vpForm').scrollIntoView({ block: 'nearest' }); } catch { /* sem rolagem */ }
+  }
+  async function polChange(id, el) {
+    const c = CY[id];
+    if (!c || !c.form) return;
+    polRead(id);
+    const f = el.dataset.vpf;
+    // modelo pronto: aplica por cima; deploy/humano: recalcula o "ajustado" e mostra o campo do marco
+    if (['modelo', 'deploy.modo', 'humano'].includes(f)) {
+      const r = await call('politicaModelo', id, c.form.p, f === 'modelo' ? el.value : '');
+      if (r && r.politica) c.form.p = r.politica;
+      polPaint(id);
+    }
+  }
+  async function polAct(id, k) {
+    const c = CY[id];
+    if (!c || !c.form) return;
+    if (k === 'cancelar') { c.form = null; polPaint(id); return; }
+    if (k !== 'salvar') return;
+    polRead(id);
+    const modo = c.form.modo;
+    const r = await call('politicaSet', id, c.form.p, modo === 'iniciar' ? 'antes de iniciar' : 'edição no painel');
+    if (!r || !r.ok) { c.form.err = (r && r.problema) || 'Não foi possível gravar a política. Veja o erros.log.'; polPaint(id); return false; }
+    c.pol = (await call('politicaGet', id)) || c.pol;
+    c.form = null;
+    c.polMsg = modo === 'iniciar' ? '' : `Salva às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}: vale a partir da próxima tarefa.`;
+    polPaint(id);
+    if (modo === 'iniciar') return execStart(id);
+    return true;
+  }
+  // "Pausar deploy": grava na hora e não para o resto do ciclo
+  async function polPausarDeploy(id, pausado) {
+    const c = cyOf(id);
+    const r = await call('politicaPausarDeploy', id, pausado);
+    c.pol = (await call('politicaGet', id)) || c.pol;
+    c.polMsg = r && r.ok ? (pausado ? 'Deploy pausado: nenhum deploy automático sai; o resto do ciclo continua.' : 'Deploy retomado: vale a partir da próxima tarefa de deploy.') : 'Não foi possível gravar. Veja o erros.log.';
+    if (c.form && c.form.p) c.form.p.deploy = { ...c.form.p.deploy, pausado: !!pausado };
+    paintCycle();
+    return !!(r && r.ok);
   }
 
   /* ---------- tela de entrega do Vibe Coding (DEV2-002) ---------- */
@@ -727,6 +909,7 @@
       <div class="vf"><label for="vfProj">1. Projeto <em>obrigatório</em></label>
         <select class="inp" id="vfProj">${ps.length ? '' : '<option value="">Nenhum projeto no Termix. Crie um projeto antes.</option>'}${ps.length ? `<option value="" ${V.id ? '' : 'selected'}>Escolha o projeto…</option>` : ''}${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === V.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div id="vcPanel">${V.id ? cycleHtml(V.id) : ''}</div>
+      <div id="vpPanel">${V.id ? polFormHtml(V.id) : ''}</div>
       <details class="vf-det" ${V.id && CY[V.id] && CY[V.id].est ? '' : 'open'}><summary>Entrega do projeto (itens 2 a 7)</summary>
       <div class="vf"><label for="vfObj">2. Objetivo final do projeto <em>obrigatório</em></label>
         <input type="text" class="inp" id="vfObj" maxlength="${LIM_OBJ}" placeholder="Em uma frase: o que o projeto entrega e para quem" value="${esc(f.objetivo)}" ${dis}>
@@ -886,12 +1069,15 @@
         bs[2].onclick = () => start(false); bs[2].dataset.vgo = '';
         // confirmação de substituir (dentro da própria tela; o app só tem um modal por vez)
         root.addEventListener('click', (e) => {
+          const vp = e.target.closest('[data-vp]'); // DEV2-014: tela "Antes de iniciar" / editar a política
+          if (vp && V && V.id) polAct(V.id, vp.dataset.vp, vp);
           if (e.target.closest('[data-vyes]')) start(true);
           else if (e.target.closest('[data-vno]')) { V.msg = null; paint(); }
           const vc = e.target.closest('[data-vc]');
           if (vc && V && V.id) {
             const k = vc.dataset.vc, id = V.id;
             if (k === 'stop') stopCycle(id); else if (k === 'resume') resumeCycle(id); else if (k === 'send') sendPrompt(id, 'plano'); else if (k === 'answers') sendAnswers(id);
+            else if (k === 'antes') polOpen(id, 'iniciar'); else if (k === 'poledit') polOpen(id, 'editar'); else if (k === 'deploypause') polPausarDeploy(id, true); else if (k === 'deployresume') polPausarDeploy(id, false);
             else if (k === 'exec') execStart(id); else if (k === 'skip') skipTask(id); else if (k === 'mutent') mutEntrega(id); else if (k === 'mutfim') mutFim(id);
           }
         });
@@ -903,6 +1089,7 @@
           else if (t.dataset.qop) (c.ans[t.dataset.qop] = c.ans[t.dataset.qop] || {}).op = t.value;
         };
         root.addEventListener('input', ansSet); root.addEventListener('change', ansSet);
+        root.addEventListener('change', (e) => { if (V && V.id && e.target.closest('#vpPanel') && e.target.dataset.vpf) polChange(V.id, e.target); });
         wire(); paint();
       },
     });
@@ -1314,6 +1501,12 @@
       clear: async (k) => { const c = V && CY[V.id], tab = c && c.est && tabOf(c.est[k || 'orq']); return tab ? !!(await clearTab(c, tab, c.gen)) : null; },
       // DEV2-004: execução. limit(93) injeta o % da janela de 5 h (null volta ao real); exec/cont/skip = botões do painel
       limit: (v) => { LIM_TEST = typeof v === 'number' ? v : null; paintCycle(); return LIM_TEST; },
+      // DEV2-014: política. lim7(v)/custo(v) injetam a janela de 7 d e o custo do ciclo; pol.* = os botões da tela e do painel
+      lim7: (v) => { LIM7_TEST = typeof v === 'number' ? v : null; paintCycle(); return LIM7_TEST; },
+      custo: (v) => { CUSTO_TEST = typeof v === 'number' ? v : null; paintCycle(); return CUSTO_TEST; },
+      pol: { get: () => V && call('politicaGet', V.id), abrir: (m) => V && polOpen(V.id, m || 'iniciar'), form: () => { const c = V && CY[V.id]; if (c && c.form) polRead(V.id); return c && c.form ? clone(c.form) : null; },
+        set: (field, val) => { const el = V && V.root.querySelector(`#vpPanel [data-vpf="${field}"]${typeof val === 'string' && /^(modelo|humano)$/.test(field) ? `[value="${val}"]` : ''}`); if (!el) return false; if (el.type === 'radio' || el.type === 'checkbox') el.checked = el.type === 'radio' ? true : !!val; else el.value = val; el.dispatchEvent(new Event('change', { bubbles: true })); return true; },
+        salvar: () => V && polAct(V.id, 'salvar'), voltar: () => V && polAct(V.id, 'cancelar'), pausarDeploy: (on) => V && polPausarDeploy(V.id, on !== false) },
       // DEV2-007: tempos(ms) do tempo limite do turno e do silêncio (sem argumento: volta ao padrão de 30 e 20 min)
       tempos: (o) => { T.turno = (o && o.turno) || 30 * 60000; T.semResposta = (o && o.semResposta) || 20 * 60000; return { ...T }; },
       exec: () => V && execStart(V.id), cont: () => V && resumeCycle(V.id), skip: () => V && skipTask(V.id),

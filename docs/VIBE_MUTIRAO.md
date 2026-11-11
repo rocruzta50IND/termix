@@ -165,7 +165,7 @@ Com o "Plano pronto", o painel mostra **"Executar plano"**. O Termix lê as tare
 
 **Pausas** (salvas no `estado.json`, retomam de onde pararam):
 
-- **Limite:** antes de cada pedido, com a janela de 5 h em **93 %** ou mais (decisão do Ygor). Com o app aberto, o Termix retoma sozinho quando a janela virar (a hora de renovação passou) ou o número cair abaixo do teto. O 7 d aparece na tela, mas não pausa por enquanto. No modo de teste, `vibeTest.limit(93)` injeta o número.
+- **Limite:** antes de cada pedido, com a janela de 5 h em **93 %** ou mais (decisão do Ygor; desde a DEV2-014, o teto de 5 h, o de 7 d e o em US$ vêm da política do projeto, ver "Política de autonomia"). Com o app aberto, o Termix retoma sozinho quando a janela virar (a hora de renovação passou) ou o número cair abaixo do teto. O 7 d aparece na tela, mas não pausa por enquanto. No modo de teste, `vibeTest.limit(93)` injeta o número.
 - **DEPLOY ou HUMANO:** antes da tarefa marcada; notifica. "Continuar" libera o Dev para executá-la; "Já fiz, pular" marca como feita pelo humano.
 - **Erro ou sem resposta:** branch que não pôde ser preparada, aba que não abriu em 60 s, `/clear` não confirmado, revisão não gravada, main/master alterada, aba fechada no meio do turno 20 min sem nenhum sinal do agente (hook ou saída no terminal) ou turno sem terminar em 30 min (DEV2-007: o Termix interrompe o agente); notifica.
 
@@ -284,6 +284,51 @@ Pontos fracos achados nas rodadas das DEV2-004 a 006, corrigidos e testados (a m
 - **/clear depois de Esc num Claude Code real.** Na mesma rodada: "Parar" no meio do turno do planejamento → "Interrupted" na aba → o `/clear` do ciclo (com o Ctrl+U antes) chegou inteiro (SessionStart "clear"; nada de "clear" sem a barra virando pedido). Observação: depois do Esc, o indicador da aba continua "trabalhando" até o próximo turno, porque o Claude Code não dispara o hook Stop numa interrupção.
 - **Modo de teste:** `vibeTest.clear('orq'|'dev')` chama o `/clear` do ciclo numa aba do Vibe (true = o SessionStart "clear" chegou).
 
+## Política de autonomia (DEV2-014)
+
+Decisões do Ygor (2026-11-11): o responsável pelo projeto fica na dev1 e tem autorização total para deploy na main. O deploy será feito **pelo Termix, em código** (DEV2-016), nunca pelo agente: a trava continua barrando a main para a IA. Voltar versão é por `git revert`. São 5 devs na empresa e esta é a ferramenta diária de todos: o usuário escolhe tudo antes de iniciar a produção autônoma, sem ficar engessado.
+
+### Quem pode ligar o deploy
+
+- Projeto com o fluxo Rocruzta (`.claude/fluxo.json`): só o papel **DEV1** do `CLAUDE.local.md`. Para DEV2..DEV5 (ou sem papel) a opção de deploy **não aparece** e o fim do ciclo é **enviar a própria branch e o handoff**.
+- Projeto sem o fluxo: quem abre é o dono e pode ligar.
+- A regra que vale é a do processo principal (`src/vibe/politica.js`): uma política gravada com deploy por quem não pode vira "Nunca".
+
+### Tela "Antes de iniciar"
+
+Fica entre "Plano pronto" e a execução: o botão do painel passa a ser **"Executar plano…"**, que abre a tela; **"Iniciar a produção autônoma"** grava a política e executa. "Voltar" fecha sem executar. Três modelos prontos, com ajustes finos por cima (mudando deploy ou humano, a tela marca **AJUSTADO**):
+
+| Modelo | Deploy na main | Chamar o humano |
+|---|---|---|
+| Supervisionado | Pedir autorização | Também em decisões de produto |
+| **Autônomo até a branch** (padrão) | Nunca | Só o indispensável |
+| Autônomo com deploy (só DEV1 ou o dono) | Sempre automático | Só o indispensável |
+
+Campos:
+
+- **Deploy na main:** Nunca / Pedir autorização / Automático a partir de um marco (texto livre, ex.: "v1.0 estável", com a caixa "Marco atingido"; marco sem texto não é gravado) / Sempre automático.
+- **Receita de deploy:** os comandos que o Termix vai rodar (um por linha). Só é gravada; nada roda nesta tarefa.
+- **Portão de qualidade:** o comando que precisa passar antes de qualquer deploy; sugere o `validacao` do `.claude/fluxo.json` (os itens juntos com `&&`).
+- **Orçamento:** teto em % da janela de 5 h (padrão 93, a decisão anterior, agora configurável) e da de 7 d (padrão 95) e, opcional, em US$ (custo equivalente do ciclo pela tabela da API, somado da status line das abas do Vibe: o maior valor visto por sessão). Ao atingir, o ciclo **pausa e avisa**; nas janelas, retoma sozinho quando ela virar ou quando o teto subir; no US$, só com "Continuar" depois de subir o teto.
+- **Modelo por papel:** orquestrador e dev (Padrão do Claude Code / Opus / Sonnet / Haiku). Sem tocar no núcleo: vai na chave `model` do settings que o módulo já grava para a aba do Vibe (o mesmo da trava; agora um arquivo por papel, `trava\settings-orq.json` e `trava\settings-dev.json`). Vale quando a aba abre; no meio do ciclo, na próxima vez que a aba for aberta (o "F5" da aba é a DEV2-015).
+- **Quando chamar o humano:** só o indispensável / também em decisões de produto / sempre (antes de cada tarefa).
+
+### Gravação e edição no meio do ciclo
+
+`%APPDATA%\Termix\vibe\<id>\politica.json`, por projeto, com o histórico das alterações (data, motivo e campos, até 30). Relida ao reabrir o app. No painel, uma linha "Política: ..." com **"Editar política"** (o mesmo formulário, "Salvar a política", sem parar nada: vale a partir da próxima tarefa, porque o ciclo lê a política no início de cada tarefa; o teto e "Pausar deploy" valem na hora) e, para quem pode fazer deploy, **"Pausar deploy"**, sempre à vista.
+
+### Como o ciclo usa a política (zero token)
+
+- Tarefa `[DEPLOY]` com "Nunca", "Pedir autorização" ou marco ainda não atingido: pausa como antes (Continuar libera, "Já fiz, pular" marca como feita pelo humano).
+- Deploy automático ("Sempre" ou marco atingido): a tarefa é marcada **"deploy pendente (DEV2-016)"**, não vai ao Dev, e o ciclo segue sem pausar à toa.
+- **"Pausar deploy"** ligado: corta na hora qualquer deploy automático; a tarefa `[DEPLOY]` fica **"deploy retido (Pausar deploy)"** e o resto do ciclo continua. "Retomar deploy" vale a partir da próxima tarefa de deploy. Com "Pedir autorização", continua pausando para autorização.
+- `[HUMANO]` pausa sempre (o indispensável, como hoje). "Sempre" pausa antes de cada tarefa ("Continuar" libera; sem "Já fiz, pular").
+- Projeto do Mutirão (o Termix clica sozinho em "Executar plano"): sem política gravada, vale e é gravada a padrão.
+
+### O que os agentes recebem
+
+Os pedidos continuam curtos e em arquivo. Só o planejador recebe um trecho da política, e só o que importa a ele: com "decisões de produto", perguntar também essas decisões e marcar `[HUMANO]`; com deploy automático ou por marco, que o deploy é do Termix; para DEV2..DEV5, não planejar deploy na main. Receita, portão, teto e modelos não vão aos agentes. O pedido do Dev e o da revisão não mudam.
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.
@@ -297,6 +342,13 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-007** — Robustez do ciclo: [SEM COMMIT], limite de tentativas, tempo limite, Parar no meio do turno e push com o remoto à frente. *(feita)*
 - **DEV2-008** — Guia de validação do MVP do Vibe/Mutirão: `docs/VALIDACAO_MVP_VIBE.md`. *(feita)*
 - **DEV2-009** — Pendências do MVP: marcas do plano numa rodada real, aviso de deploy sem marca, alarme falso de main/master, plano final do Mutirão com o projeto inteiro e a publicação, /clear depois de Esc real e `--ours/--theirs` só com merge em andamento. *(feita)*
+- **DEV2-014** — Política de autonomia por projeto: tela "Antes de iniciar", edição no meio do ciclo e "Pausar deploy". *(feita)*
+- **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto.
+- **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert.
+- **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
+- **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento).
+- **DEV2-019** — Telegram, por último e junto com o Ygor.
+- O Mutirão fica para depois, até o Ygor aprovar o Vibe.
 - Depois — Celular (Telegram ou app próprio), sem prioridade. No MVP, o celular usa o Remote Control do Claude Code.
 
 ## Perguntas em aberto

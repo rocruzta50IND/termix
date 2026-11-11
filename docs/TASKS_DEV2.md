@@ -9,6 +9,47 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## Fila decidida (Ygor, 2026-11-11)
+
+- **DEV2-014** — Política de autonomia por projeto (tela "Antes de iniciar") e "Pausar deploy". *(feita, abaixo)*
+- **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto.
+- **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert.
+- **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
+- **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento).
+- **DEV2-019** — Telegram, por último e junto com o Ygor.
+- O Mutirão fica para depois, até o Ygor aprovar o Vibe.
+
+---
+
+## DEV2-014 — Política de autonomia por projeto ("Antes de iniciar") e "Pausar deploy"
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, com as decisões do Ygor de 2026-11-11) tela "Antes de iniciar" entre "Plano pronto" e "Executar plano", com três modelos prontos e ajustes finos (deploy na main, receita, portão, orçamento 5 h/7 d/US$, modelo por papel, quando chamar o humano); política gravada por projeto e editável no meio do ciclo; botão "Pausar deploy"; o ciclo passa a ler a política. Só a política, a gravação e a interface: o deploy em si é a DEV2-016. Sem custo de IA.
+- **Feito:**
+  - `git log dev2..origin/dev1` vazio: nada a sincronizar.
+  - `src/vibe/politica.js` (novo): quem pode ligar o deploy (fluxo: só DEV1; sem fluxo: o dono), os três modelos, a normalização (a regra que vale: sem permissão, deploy = Nunca), a decisão do ciclo para `[DEPLOY]` (pausar / pendente / retido) e `[HUMANO]`, o teto (5 h, 7 d, US$), o trecho curto para o planejador e a gravação em `vibe\<id>\politica.json` com histórico; canais `vibe:politica*`.
+  - `src/vibe/index.js`: liga a política; modelo por papel na chave `model` do settings da aba do Vibe (um arquivo por papel); trecho da política no fim do pedido de planejamento.
+  - `src/renderer/vibe/vibe.js` e `vibe.css`: "Executar plano…" abre a tela "Antes de iniciar" (em `#vpPanel`, fora do painel que se redesenha a cada 30 s); linha da política no painel com "Editar política" e "Pausar deploy"/"Retomar deploy"; o `execLoop` lê a política no início de cada tarefa; o teto fixo de 93 % virou o teto da política (5 h, 7 d e US$), a pausa por teto agora avisa e o motivo à vista acompanha o teto que ainda segura; tarefas marcadas "deploy pendente (DEV2-016)" ou "deploy retido (Pausar deploy)" na lista; `execStart` grava a política padrão se não houver (Mutirão automático); ganchos de teste `vibeTest.pol.*`, `lim7` e `custo`.
+- **Decisões:**
+  - Modelo por papel sem tocar no núcleo: o Claude Code aceita `model` no arquivo de `--settings` que o módulo já grava para as abas do Vibe. Vale ao abrir a aba; trocar no meio do ciclo vale na próxima abertura (o "F5" da aba entra na DEV2-015). Os settings passaram a ser um por papel, para o modelo do orquestrador não vazar para o dev.
+  - Teto de 7 d padrão em 95 % (antes, o 7 d não pausava). Ao atingir qualquer teto, pausa e avisa (antes, a pausa de 5 h não avisava). Nas janelas, retoma sozinho; no US$, só com "Continuar".
+  - "Pausar deploy" com deploy automático: a tarefa `[DEPLOY]` fica "retida" e o ciclo segue (não para o resto). Com "Pedir autorização", continua pausando.
+  - "Sempre chamar": pausa antes de cada tarefa, sem "Já fiz, pular". "Decisões de produto" muda o pedido do próximo plano (a tela fica depois do plano; vale para o ciclo seguinte ou um "Iniciar de novo").
+  - Marco: texto livre + caixa "Marco atingido" marcada pelo humano; antes disso o deploy é tratado como "Pedir autorização". Marco sem texto não é gravado.
+  - DEV2..DEV5: sem campos de deploy, receita e portão; a tela mostra "Fim do ciclo: enviar a sua branch e o handoff" e o painel não tem "Pausar deploy". O envio em si não foi implementado aqui (pendência).
+- **Arquivos tocados:** `src/vibe/politica.js` (novo), `src/vibe/index.js`, `src/renderer/vibe/vibe.js`, `src/renderer/vibe/vibe.css`, `docs/VIBE_MUTIRAO.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`. Núcleo, versão, dist, main e dev1: nada.
+- **Como validar:** `npm run check`; teste da política sem IA (`pol14.js`, scratchpad): papel, modelos, deploy, humano, teto, gravação/reabrir, Pausar deploy, modelo no settings e pedidos; instância isolada com CDP (`run14.js prep|a|b`): `--user-data-dir` temporário, `CLAUDE_CONFIG_DIR` vazio (sem credenciais), nenhuma aba de agente.
+- **Validação feita:** `npm run check` passou. Testes sem custo de IA: **política 55/55 (novo)**; trava 113/113; Mutirão 31/31; implementação automática 41/41; robustez 23/23; conferências 16/16; Organizador 19/19. CDP: **30/30** (fase a 22, fase b 8), sem erros no console e zero abas de agente: "Executar plano…" abre a tela; Supervisionado e Autônomo com deploy preenchem os campos; marco mostra o texto e "Marco atingido"; "Iniciar" com o teto de 5 h atingido (injetado) grava a política, marca a T1 [DEPLOY] "deploy pendente" e pausa antes da T2 com aviso; "Pausar deploy" grava na hora sem parar o ciclo; editar no meio do ciclo grava e mostra "vale a partir da próxima tarefa", com a janela de 7 d segurando a pausa; reaberto, a política foi relida; projeto DEV2 sem opção de deploy nem "Pausar deploy". Capturas em `C:\Users\CRUUUU~1\AppData\Local\Temp\claude\c5001e4e31f92b1a\4d85f899-f9ef-4652-94ff-b0b3eaa95ee0\scratchpad\shots`: `c1-plano-pronto.png`, `c2-antes-de-iniciar.png`, `c3-marco.png`, `c4-execucao-pendente-e-teto.png`, `c5-deploy-pausado.png`, `c6-editar-no-meio.png`, `c7-painel-depois-de-editar.png`, `c8-reaberto.png`, `c9-dev2-sem-deploy.png`.
+- **Pendências:**
+  - DEV2-016: executar o deploy (receita, portão, tag, revert) e o que fazer com as tarefas "pendente" e "retido".
+  - Fim do ciclo de DEV2..DEV5 ("enviar a própria branch e o handoff"): só mostrado e gravado (`fimCiclo`); o envio automático não existe ainda (entra junto da DEV2-016 ou da DEV2-017, a decidir).
+  - Modelo por papel no meio do ciclo: vale na próxima abertura da aba (DEV2-015, "F5").
+  - Sugestão ao DEV1: o `npm run check` não lista `src/vibe/politica.js` (a lista fica no `package.json`, fora do módulo); conferido com `node --check` à parte.
+- **Próximo passo:** Revisão do Ygor.
+
+---
+
 ## DEV2-013 — Trava do Vibe barra a troca para a branch principal
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)

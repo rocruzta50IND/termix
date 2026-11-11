@@ -15,6 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
+const POL_ = require('./politica'); // DEV2-014: regras da política de autonomia (funções puras)
 
 // Seções obrigatórias do .md da estrutura (as mesmas do modelo modelo-entrega.md). O título é conferido sem acento,
 // sem caixa e sem pontuação; cada seção aceita alguns nomes equivalentes.
@@ -194,6 +195,8 @@ function create(deps = {}) {
   }
   const ORG = require('./organizador').create({ app, dialog, getWin, gitRun, TEST, logError }); // DEV2-010: importar projeto com várias pastas
   const MUT = require('./mutirao').create({ dirOf, readJson, writeJson, gitRun, shaOf, headOf, checkStructure, validId, TEST, logError, gravarEntrega });
+  // DEV2-014: política de autonomia por projeto (src/vibe/politica.js), gravada em vibe<id>politica.json
+  const POL = require('./politica').create({ dirOf, readJson, writeJson, validId, pastaDe: (id) => { const e = entregaOf(id); return (e && e.projeto.pasta) || MUT.pastaDe(id) || ''; } });
   // Branch dos agentes deste projeto: a do dono, na implementação automática do Mutirão (DEV2-006); a da parte do Mutirão,
   // se o sócio abriu o Vibe por ela; senão, a regra de branchOf.
   const branchFor = (id, pasta) => {
@@ -271,6 +274,14 @@ function create(deps = {}) {
     if (id) { const f = path.join(dirOf(id), 'abas.json'); const ab = readJson(f) || { abas: [] }; ab.abas = [...(ab.abas || []), tabId].slice(-50); writeJson(f, ab); }
     return id || null;
   }
+  // orquestrador ou dev do Vibe (pelo estado do ciclo ou pelo nome da aba); a aba do Mutirão não tem papel aqui
+  function papelDaAba(id, tabId, args) {
+    const es = readJson(path.join(dirOf(id), 'estado.json')) || {};
+    if (es.orq === tabId) return 'orq';
+    if (es.dev === tabId) return 'dev';
+    const ni = Array.isArray(args) ? args.indexOf('--name') : -1, nm = ni >= 0 ? args[ni + 1] : '';
+    return nm === ORQ_NAME ? 'orq' : nm === DEV_NAME ? 'dev' : '';
+  }
   function spawnSettings({ tabId, cwd, args, settings, runner } = {}) {
     if (!tabId || typeof tabId !== 'string') return null;
     const id = vibeIdOfTab(tabId, cwd, args);
@@ -284,7 +295,10 @@ function create(deps = {}) {
       writeJson(cfgF, { projeto, vibe: dirOf(id), branch: branchFor(id, projeto).nome, protegidas: PROTEGIDAS, gravado: new Date().toISOString() });
       const cmd = `${runner || 'node'} "${TRAVA}" "${cfgF.replace(/\\/g, '/')}"`;
       const out = { ...base, hooks: { ...(base.hooks || {}), PreToolUse: [{ matcher: '*', hooks: [{ type: 'command', command: cmd, timeout: 30 }] }] }, permissions: { deny: DENY } };
-      const sf = path.join(tdir, 'settings.json');
+      // DEV2-014: modelo por papel (política). Vai no "model" do settings desta aba, sem tocar no núcleo; vale ao abrir a aba.
+      const papelAba = papelDaAba(id, tabId, args), pol = papelAba && POL.ler(id);
+      if (pol && pol.modelos[papelAba]) out.model = pol.modelos[papelAba];
+      const sf = path.join(tdir, papelAba ? `settings-${papelAba}.json` : 'settings.json'); // um por papel: o modelo de um não vaza para o outro
       writeJson(sf, out);
       return sf;
     } catch (err) {
@@ -411,7 +425,8 @@ function create(deps = {}) {
         const lim = m.maxTarefas ? ` Limite deste teste: no máximo ${m.maxTarefas} tarefas no total.` : '';
         return pedido(id, 'plano', `Você é o ORQUESTRADOR do Mutirão do Termix (implementação automática) neste projeto. Todas as partes dos sócios foram entregues e o Termix já juntou as entregas na branch "${m.branch}" (a atual), uma por participante. Nesta etapa só PLANEJE: não altere o código do projeto, não faça commit nem merge. Leia ${path.join(d, 'estrutura.md')} (objetivo e critério de pronto do projeto inteiro, publicação/deploy e passos do humano, divisão, partes, entregas, junções e conflitos) e ${path.join(d, 'entrega.json')} e confira a versão atual da branch ${m.branch} (git log --oneline -20, a estrutura de pastas e só os arquivos necessários; sem ler diffs inteiros). Monte as tarefas até o fim do projeto inteiro (o critério de pronto do projeto, não só o das partes).${conflitos} Depois: ligar as partes entre si, cobrir as lacunas contra o critério de pronto do projeto inteiro e uma tarefa de validação final do projeto inteiro, marcada [SEM COMMIT]. Não deixe de fora a publicação/deploy nem o que depende do humano (seção "Publicação, deploy e passos do humano" de estrutura.md e o objetivo): cada passo vira tarefa, marcada [DEPLOY] (publicação, depois da validação final) e/ou [HUMANO] (acesso, dado ou decisão do humano).${lim} ${formato}`);
       }
-      return pedido(id, 'plano', `Você é o ORQUESTRADOR do Vibe Coding do Termix neste projeto. Nesta etapa só PLANEJE: não altere o código do projeto, não instale nada, não faça commit. A entrega do humano está em ${d}: entrega.json (objetivo, critério de pronto, o que não fazer, acessos), estrutura.md e ${e.arquivos && e.arquivos.fluxo || 'o fluxo desenhado'}. Leia só o necessário. ${formato}`);
+      const tp = POL_.trechoAgente(POL.ler(id), 'plano', POL.info(id)); // DEV2-014: só o trecho da política que importa ao planejador
+      return pedido(id, 'plano', `Você é o ORQUESTRADOR do Vibe Coding do Termix neste projeto. Nesta etapa só PLANEJE: não altere o código do projeto, não instale nada, não faça commit. A entrega do humano está em ${d}: entrega.json (objetivo, critério de pronto, o que não fazer, acessos), estrutura.md e ${e.arquivos && e.arquivos.fluxo || 'o fluxo desenhado'}. Leia só o necessário. ${formato}${tp ? ` ${tp}` : ''}`);
     },
     // Lê o que o orquestrador gravou: plano.md (texto e nº de tarefas) e perguntas.json (lista normalizada).
     planoLer(id) {
@@ -563,8 +578,10 @@ function create(deps = {}) {
     on('revisaoLer', api.revisaoLer);
     on('execPrompt', api.execPrompt);
     for (const [k, fn] of Object.entries(MUT.api)) on(k, fn, null); // Mutirão (DEV2-005)
+    for (const [k, fn] of Object.entries(POL.api)) on(k, fn, null); // DEV2-014: política de autonomia (canais vibe:politica*)
     for (const [k, fn] of Object.entries(ORG)) on(k, fn, null); // Organizador (DEV2-010): canais vibe:org*
   }
+  Object.assign(api, POL.api); // DEV2-014: também acessível pelos testes sem ipc
   api.spawnSettings = spawnSettings; // usado pelo main.js (não é canal ipc)
   return api;
 }
