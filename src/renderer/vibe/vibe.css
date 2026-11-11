@@ -8,6 +8,12 @@
 
 /* Tela de entrega do Vibe Coding (DEV2-002): modal largo no padrão das janelas (.dlg), campos .inp do app */
 .dlg:has(.vibe-form){width:min(760px,94vw)}
+/* DEV2-018: só o formulário rola; os botões do rodapé ficam fora do conteúdo (antes, o rodapé fixo do modal cobria o fim
+   da tela "Antes de iniciar" e cortava "Quando chamar você"). Mexe só neste modal, sem tocar no modal() do núcleo. */
+.dlg:has(.vibe-form){display:flex;flex-direction:column;overflow:hidden}
+.dlg:has(.vibe-form)>.dh{flex:none}
+.dlg:has(.vibe-form)>.vibe-form{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;margin:0 -24px;padding:0 24px 8px;scroll-padding:12px}
+.dlg:has(.vibe-form)>.foot2{flex:none;position:static;margin:8px -24px -24px;padding:14px 24px 24px;border-top:1px solid var(--border);background:none}
 .dlg:has(.vibe-form) .foot2 [data-vtpl]{margin-right:auto}
 .dlg:has(.vibe-form) .foot2 .btn:disabled{opacity:.45;cursor:default;filter:none;box-shadow:none}
 .vibe-form>p{margin-bottom:14px}

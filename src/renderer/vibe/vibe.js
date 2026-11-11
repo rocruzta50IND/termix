@@ -652,7 +652,7 @@
       const f = feita(tt.id);
       const cls = f ? 'done' : i === x.k && e.fase !== 'concluido' ? 'cur' : '';
       const tags = `${tt.deploy ? ' <em class="vx-tag">DEPLOY</em>' : ''}${tt.humano ? ' <em class="vx-tag">HUMANO</em>' : ''}${tt.semCommit ? ' <em class="vx-tag">SEM COMMIT</em>' : ''}`;
-      const extra = f ? (f.deploy === 'pendente' ? ' · deploy pendente (DEV2-016)' : f.deploy === 'retido' ? ' · deploy retido (Pausar deploy)' : f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
+      const extra = f ? (f.deploy === 'pendente' ? ' · deploy pendente' : f.deploy === 'retido' ? ' · deploy retido (Pausar deploy)' : f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
       return `<li class="${cls}">${esc(tt.id)} — ${esc(tt.titulo)}${tags}<small>${extra}</small></li>`;
     }).join('');
     return `<div class="vx"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><ol class="vx-list">${list}</ol></div>`;
@@ -761,7 +761,7 @@
       <div class="vf"><label>Deploy na main</label>${sel('deploy.modo', DEPLOY_TXT, p.deploy.modo)}
         ${p.deploy.modo === 'marco' ? `<input type="text" class="inp vp-gap" data-vpf="deploy.marco" maxlength="200" placeholder="Marco, em texto livre. Ex.: v1.0 estável" value="${esc(p.deploy.marco)}">
         <label class="vf-chk"><input type="checkbox" data-vpf="deploy.marcoAtingido" ${p.deploy.marcoAtingido ? 'checked' : ''}> Marco atingido: a partir de agora o deploy é automático</label>` : ''}
-        <small>O deploy é feito pelo Termix, em código, nunca pelo agente (a trava continua barrando a main para a IA). Voltar versão: git revert. A execução do deploy chega na DEV2-016; até lá, o deploy automático fica marcado "pendente" e o ciclo segue.</small></div>
+        <small>O deploy é feito pelo Termix, em código, nunca pelo agente (a trava continua barrando a main para a IA). Voltar versão: git revert. A execução do deploy ainda não está disponível nesta versão; até lá, o deploy automático fica marcado "pendente" e o ciclo segue.</small></div>
       <div class="vf"><label>Receita de deploy <em class="opt">os comandos que o Termix vai rodar</em></label>
         <textarea class="inp ta" rows="3" data-vpf="deploy.receita" maxlength="4000" placeholder="Um comando por linha. Ex.: npm run build">${esc(p.deploy.receita)}</textarea>
         <small>Só fica gravada: nada é executado agora.</small></div>
@@ -816,7 +816,7 @@
     c.form = { modo, p: clone(c.pol.politica), err: '' };
     c.polMsg = '';
     polPaint(id);
-    try { V.root.querySelector('#vpForm').scrollIntoView({ block: 'nearest' }); } catch { /* sem rolagem */ }
+    try { V.root.querySelector('#vpForm').scrollIntoView({ block: 'start' }); } catch { /* sem rolagem */ }
   }
   async function polChange(id, el) {
     const c = CY[id];

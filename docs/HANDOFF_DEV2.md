@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-014 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo a trava barrando a troca para a branch principal e a política de autonomia por projeto)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-014 e DEV2-018 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto e, na DEV2-018, ajustes da política e a proposta do botão "Delegar tarefa")
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-018 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-11
 
 ## Resumo do que mudou
@@ -78,13 +78,19 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - o ciclo passa a ler a política: com deploy automático, a tarefa de publicação fica marcada como pendente e o ciclo segue (quem fará o deploy é o Termix, em código, na próxima etapa; nada é executado agora); sem ele, pausa como antes; o teto de uso, antes fixo, passa a ser o da política e, ao ser atingido, o ciclo pausa e avisa;
   - o modelo de IA por papel vai na configuração que o módulo já gera para as abas do Vibe, sem mudar o núcleo;
   - os agentes recebem só o trecho da política que importa ao planejador; os pedidos continuam curtos e em arquivo.
+- **DEV2-018:** ajustes da política e uma proposta ao DEV1:
+  - a tela "Antes de iniciar" agora rola inteira: os botões do rodapé do modal do Vibe ficam fora do conteúdo e não cobrem mais o fim do formulário ("Quando chamar você"); mudança só no estilo do módulo, sem tocar no modal do núcleo;
+  - a interface deixou de mostrar números internos de tarefa: a tarefa de deploy aparece como "deploy pendente" e o texto do deploy diz que a execução ainda não está disponível nesta versão;
+  - o arquivo da política entrou na checagem de sintaxe do projeto (a sugestão anterior ao DEV1 sobre isso foi resolvida);
+  - decisões do orquestrador sobre a DEV2-014, mantidas como estavam: o teto de 7 dias pausa com padrão de 95 %, a pausa por teto avisa e "Decisões de produto" vale a partir do próximo plano; o envio automático da própria branch e do handoff no fim do ciclo de DEV2..DEV5 entra na DEV2-016;
+  - documento novo de proposta ao DEV1 (só documento, nada implementado): o botão "Delegar tarefa" com perfil e PIN por sócio (veja "Sugestões ao DEV1").
 
 ## Áreas e arquivos afetados
 
 - Módulo isolado: a pasta do processo principal ganhou o verificador da trava (DEV2-004) e a parte do Mutirão (DEV2-005); a pasta da interface ganhou o ciclo de execução, o painel do Vibe e o painel do Mutirão.
 - Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. Na DEV2-001, a **ponte ganhou uma linha** (o canal do módulo, só para os pedidos "vibe") e a **página principal ganhou duas linhas** (o estilo e o script do módulo). A checagem de sintaxe do projeto passou a incluir os arquivos do módulo. Da DEV2-005 à DEV2-011, nenhuma outra linha do núcleo (na DEV2-011, só a resolução dos conflitos da sincronização, mantendo a versão da dev1 e somando as linhas do módulo).
 - Dados: na pasta de dados do app, por projeto (a política de autonomia desde a DEV2-014, entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim.
-- Documentação: desenho do módulo, tarefas e changelog próprios da dev2 e uma linha nas decisões.
+- Documentação: desenho do módulo, tarefas e changelog próprios da dev2, uma linha nas decisões e, na DEV2-018, a proposta do botão "Delegar tarefa" ao DEV1. Na DEV2-018, a lista da checagem de sintaxe do projeto ganhou o arquivo da política do módulo.
 
 ## Impacto e riscos
 
@@ -98,15 +104,16 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - **Política (DEV2-014):** o teto de 7 dias passa a pausar (padrão 95 %) e a pausa por teto passa a avisar. O deploy automático ainda não executa nada: só marca a tarefa como pendente.
 - Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
 
-## Sugestões ao DEV1 (núcleo, não corrigidas pela dev2)
+## Sugestões ao DEV1
 
-- **Configurações:** "Notificações", "Conectores" e "Projetos arquivados" aparecem dentro do cartão do "Botão Clear", provavelmente por um bloco não fechado na montagem da página de Configurações.
-- **Conversa existente com `CLAUDE_CONFIG_DIR`:** a conferência "esta conversa existe?" olha só a pasta padrão do Claude Code no perfil do usuário. Com a variável `CLAUDE_CONFIG_DIR` apontando para outra pasta, ao reabrir o app a aba tenta abrir uma conversa nova com o mesmo identificador e o Claude Code recusa, aparecendo o aviso "Falha ao iniciar ou retomar a conversa". Sem a variável (uso normal) não acontece.
-- **Checagem de sintaxe:** o arquivo novo da política do módulo não está na lista da checagem do projeto (a lista fica fora do módulo); foi conferido à parte.
-- **Indicador depois do Esc:** interrompida com Esc, a aba fica "trabalhando" por até 20 segundos, porque o Claude Code não avisa o fim do turno nesse caso (só visual).
+- **Botão "Delegar tarefa" (proposta, só documento):** ver `docs/PROPOSTA_DELEGAR_TAREFA.md`. Automatiza o que hoje é manual para passar uma tarefa a um segundo dev: criar e registrar a dev2, o orquestrador da dev1 escrever o pedido com o resultado esperado, o pedido chegar pelo git à pessoa nomeada, o aviso de entrega e a análise só pelo handoff, com integração só com a aprovação do DEV1. Inclui perfil por sócio com PIN (a conta GitHub é compartilhada), as opções de onde guardar o PIN, o que pode ser reaproveitado do plugin fluxo e do Mutirão, as fases sugeridas e as perguntas em aberto. A ressalva de segurança está explícita: organiza e evita conflito, mas não é proteção forte.
+- **Conferência de conversa existente ignora `CLAUDE_CONFIG_DIR`:** a conferência "esta conversa existe?" olha só a pasta padrão do Claude Code no perfil do usuário. Com a variável apontando para outra pasta, ao reabrir o app a aba tenta abrir uma conversa nova com o mesmo identificador e aparece "Falha ao iniciar ou retomar a conversa". Sem a variável (uso normal) não acontece.
+- **Aba "trabalhando" depois de um Esc:** interrompida com Esc, a aba fica "trabalhando" por até 20 segundos, porque o Claude Code não avisa o fim do turno nesse caso (só visual).
+- **Configurações aninhadas:** "Notificações", "Conectores" e "Projetos arquivados" aparecem dentro do cartão do "Botão Clear", provavelmente por um bloco não fechado na montagem da página de Configurações.
 
 ## Como validar
 
+- DEV2-018, sem custo de IA: numa instância isolada sem abas de agente, abrir "Executar plano…" e rolar a tela "Antes de iniciar" até o fim (com e sem os campos de deploy, e numa janela baixa): "Quando chamar você" e os botões do formulário ficam inteiros acima do rodapé; nenhum número interno de tarefa aparece no modal. Ler `docs/PROPOSTA_DELEGAR_TAREFA.md`.
 - Seguir o guia de validação do MVP (documento novo da DEV2-008), no Termix real rodando da dev2.
 - Rodar a checagem de sintaxe do projeto.
 - DEV2-014, sem custo de IA: o teste da política (o papel define as opções, modelos, deploy, teto, gravação e reabrir, "Pausar deploy", modelo de IA nas abas e pedidos) e, numa instância isolada sem abas de agente, a tela "Antes de iniciar", o painel e o projeto de outro papel sem a opção de deploy.

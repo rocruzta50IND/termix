@@ -15,9 +15,33 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto.
 - **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert.
 - **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
-- **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento).
+- **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento) e 3 ajustes da DEV2-014. *(feita, abaixo)*
 - **DEV2-019** — Telegram, por último e junto com o Ygor.
 - O Mutirão fica para depois, até o Ygor aprovar o Vibe.
+
+---
+
+## DEV2-018 — Ajustes da DEV2-014 e proposta ao Rodrigo do botão "Delegar tarefa"
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do orquestrador e do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b) Parte A: 3 ajustes da DEV2-014 (`politica.js` no `npm run check`; tirar da interface os IDs internos de tarefa; na tela "Antes de iniciar", os botões do rodapé do modal cobriam o fim do formulário e cortavam "Quando chamar você"). Parte B: documento `docs/PROPOSTA_DELEGAR_TAREFA.md` para o Rodrigo implementar no núcleo (a dev2 não implementa), e a seção "Sugestões ao DEV1" no handoff. Sem custo de IA, sem agentes reais.
+- **Feito:**
+  - `git fetch` + `git log dev2..origin/dev1` vazio: nada a sincronizar.
+  - `package.json`: `node --check src/vibe/politica.js` na linha `check`, junto dos outros arquivos do módulo.
+  - `src/renderer/vibe/vibe.js`: "deploy pendente (DEV2-016)" virou "deploy pendente"; o texto do deploy na tela "Antes de iniciar" diz "A execução do deploy ainda não está disponível nesta versão". Os outros "DEV2-0xx" do módulo são só comentários (conferido por busca e no texto do modal inteiro pelo CDP). Ao abrir, a tela "Antes de iniciar" rola até o topo do formulário (`block: 'start'`).
+  - `src/renderer/vibe/vibe.css`: só no modal do Vibe (`.dlg:has(.vibe-form)`), o diálogo virou coluna: cabeçalho fixo, só o formulário rola e o rodapé (`.foot2`) fica fora do conteúdo (antes era `sticky` por cima do fim, com fundo em degradê). Sem tocar no `modal()` do núcleo nem no `styles.css`.
+  - `docs/PROPOSTA_DELEGAR_TAREFA.md` (novo): problema (os 5 passos manuais), o botão (só o DEV1, um dev auxiliar nomeado, ciclo de vida da dev2, pedido pelo git na dev1, recebimento como Vibe de tarefa, entrega com handoff e aviso, "Analisar entrega" respeitando a trava de contexto), login (perfil e PIN, 4 opções de onde guardar o hash com prós e contras, o mapa de pessoas no `.claude/fluxo.json`, `user.name` por PC, qualquer um pode ser DEV1, ressalva de segurança), reaproveitamento (plugin fluxo, Mutirão, Vibe, sino), 7 fases e 8 perguntas em aberto.
+  - `docs/HANDOFF_DEV2.md`: DEV2-018 no resumo; "Sugestões ao DEV1" reescrita com o ponteiro para a proposta e as 3 sugestões de núcleo (`CLAUDE_CONFIG_DIR`, aba "trabalhando" depois de um Esc, Configurações aninhadas no cartão do "Botão Clear"); a sugestão da checagem de sintaxe saiu (resolvida).
+- **Decisões:**
+  - Decisões do orquestrador sobre as perguntas da DEV2-014, mantidas como já estavam no código: teto de 7 d pausa com padrão de 95 %; a pausa por teto avisa; "Decisões de produto" vale a partir do próximo plano. O envio automático da própria branch e do handoff no fim do ciclo de DEV2..DEV5 entra na DEV2-016.
+  - Rodapé fora do conteúdo só pelo CSS do módulo (escopo `.dlg:has(.vibe-form)`), para não mexer no núcleo; os outros modais do app seguem iguais.
+  - Na proposta, a sugestão para os perfis é um repositório privado só de perfis (opção A), com PIN de 6+ dígitos, hash lento com sal e bloqueio local; a decisão fica com o Rodrigo (pergunta 1).
+- **Arquivos tocados:** `package.json` (só a linha `check`), `src/renderer/vibe/vibe.js`, `src/renderer/vibe/vibe.css`, `docs/PROPOSTA_DELEGAR_TAREFA.md` (novo), `docs/HANDOFF_DEV2.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`. Núcleo (`src/main.js`, `app.js`, preload), versão, dist, main e dev1: nada.
+- **Como validar:** `npm run check` (agora com `politica.js`); testes sem IA do módulo; instância isolada com CDP (`run18.js prep|a`, scratchpad): `--user-data-dir` temporário, `CLAUDE_CONFIG_DIR` vazio (sem credenciais), nenhuma aba de agente.
+- **Validação feita:** `npm run check` passou, com `politica.js`. Testes sem custo de IA: política 55/55; trava 113/113; Mutirão 31/31; implementação automática 41/41; robustez 23/23; conferências 16/16; Organizador 19/19. CDP novo: **12/12**, sem erros no console e zero abas de agente: rodapé `static` e só o formulário rola; ao abrir, o topo da tela "Antes de iniciar" fica visível; rolado até o fim, "Quando chamar você" e "Voltar"/"Iniciar a produção autônoma" ficam inteiros acima do rodapé (1280×900, com os campos de deploy, e 1100×640); texto do deploy sem ID interno; a lista mostra "deploy pendente" sem ID; nenhum "DEV2-" no texto do modal. CDP da DEV2-014 rodado de novo: 30/30 (22 + 8). Capturas em `C:\Users\CRUUUU~1\AppData\Local\Temp\claude\c5001e4e31f92b1a\8f5c2283-a9d4-4cf2-9620-055dd5e7251c\scratchpad\shots18`: `d1-antes-de-iniciar-topo.png`, `d2-antes-de-iniciar-fim.png`, `d3-deploy-fim.png`, `d4-janela-baixa-fim.png`, `d5-painel-deploy-pendente.png`.
+- **Pendências:** nenhuma da DEV2-018. A proposta depende da resposta do Rodrigo (perguntas em aberto). Da DEV2-014 seguem: deploy e envio automático no fim do ciclo de DEV2..DEV5 (DEV2-016); modelo por papel no meio do ciclo (DEV2-015).
+- **Próximo passo:** revisão do orquestrador e do Ygor; depois, a fila (DEV2-015).
 
 ---
 
@@ -45,7 +69,7 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
   - DEV2-016: executar o deploy (receita, portão, tag, revert) e o que fazer com as tarefas "pendente" e "retido".
   - Fim do ciclo de DEV2..DEV5 ("enviar a própria branch e o handoff"): só mostrado e gravado (`fimCiclo`); o envio automático não existe ainda (entra junto da DEV2-016 ou da DEV2-017, a decidir).
   - Modelo por papel no meio do ciclo: vale na próxima abertura da aba (DEV2-015, "F5").
-  - Sugestão ao DEV1: o `npm run check` não lista `src/vibe/politica.js` (a lista fica no `package.json`, fora do módulo); conferido com `node --check` à parte.
+  - Sugestão ao DEV1 sobre o `npm run check` sem `src/vibe/politica.js`: resolvida na DEV2-018 (a pedido do orquestrador).
 - **Próximo passo:** Revisão do Ygor.
 
 ---

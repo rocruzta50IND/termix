@@ -6,6 +6,15 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-018 — Ajustes da DEV2-014 e proposta do botão "Delegar tarefa"** (DEV2)
+
+- `npm run check` passa a incluir `src/vibe/politica.js`.
+- Interface sem IDs internos: "deploy pendente" (sem o número da tarefa) e "A execução do deploy ainda não está disponível nesta versão".
+- Modal do Vibe: só o formulário rola e o rodapé ("Baixar modelo (.md)", "Fechar") fica fora do conteúdo; "Quando chamar você" e os botões da tela "Antes de iniciar" não são mais cortados. Só CSS do módulo.
+- `docs/PROPOSTA_DELEGAR_TAREFA.md` (novo, só documento, para o Rodrigo): botão "Delegar tarefa" para o DEV1, pedido pelo git, Vibe de tarefa, entrega e "Analisar entrega" com a trava de contexto; perfil e PIN por sócio (conta GitHub compartilhada), opções de onde guardar o hash, ressalva de segurança, reaproveitamento, fases e perguntas em aberto. Handoff com "Sugestões ao DEV1".
+- Decisões do orquestrador sobre a DEV2-014 registradas (7 d pausa em 95 %, pausa por teto avisa, "Decisões de produto" no próximo plano; envio automático no fim do ciclo de DEV2..DEV5 na DEV2-016).
+- Testes sem IA: política 55/55, trava 113/113, Mutirão 31/31, implementação automática 41/41, robustez 23/23, conferências 16/16, Organizador 19/19; CDP novo 12/12 e o da DEV2-014 30/30, sem abas de agente.
+
 **DEV2-014 — Política de autonomia por projeto ("Antes de iniciar") e "Pausar deploy"** (DEV2)
 
 - Tela "Antes de iniciar" entre "Plano pronto" e a execução: Supervisionado, Autônomo até a branch (padrão) e Autônomo com deploy (só DEV1 ou o dono), com ajustes de deploy na main (Nunca / Pedir / a partir de um marco / Sempre), receita, portão (sugere o `validacao` do fluxo), teto 5 h / 7 d / US$, modelo por papel e quando chamar o humano.
