@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-011 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas e a sincronização com a dev1 na versão 0.6.1)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-012 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas a sincronização com a dev1 na versão 0.6.1 e a prova do ciclo real no layout novo)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-11
 
 ## Resumo do que mudou
@@ -64,6 +64,12 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - como o diálogo "Novo projeto" deixou de existir, o botão "Importar projeto (várias pastas)" passou para a tela "Novo chat", ao lado de "Criar chat";
   - o painel do Mutirão foi ajustado para encostar no palco arredondado, sem borda dupla;
   - os testes do módulo sem custo de IA passaram.
+- **DEV2-012:** prova técnica do ciclo do Vibe com agentes reais no layout novo, num projeto de brinquedo isolado (fora das pastas do Ygor, com a configuração do Claude Code de teste):
+  - a chave ligada pela interface; o plano veio com três tarefas pequenas e a validação final, sem perguntas e sem publicação;
+  - "Parar" no meio de uma tarefa, fechar e reabrir o app: o painel mostra onde parou e nada recomeça sozinho; "Continuar" leva até "Projeto concluído", com a notificação;
+  - os commits ficaram só na branch de trabalho; a principal, local e no remoto, não mudou; um pedido proposital de commit na principal foi recusado pela trava, com o motivo na aba;
+  - gasto de cerca de 7 pontos da janela de 5 horas (abaixo do teto combinado de 15);
+  - nada quebrou no módulo e nenhuma linha mudou.
 
 ## Áreas e arquivos afetados
 
@@ -83,13 +89,19 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - **Implementação automática:** o Termix junta branches e envia a branch do dono ao remoto sem perguntar (só ela, nunca a principal; nada é descartado, e uma junção com conflito é cancelada e vira tarefa). Ela só começa com o projeto sem mudanças pendentes. No teste, as entregas dos sócios foram feitas por script, não pelo Vibe deles.
 - Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
 
+## Sugestões ao DEV1 (núcleo, não corrigidas pela dev2)
+
+- **Configurações:** "Notificações", "Conectores" e "Projetos arquivados" aparecem dentro do cartão do "Botão Clear", provavelmente por um bloco não fechado na montagem da página de Configurações.
+- **Conversa existente com `CLAUDE_CONFIG_DIR`:** a conferência "esta conversa existe?" olha só a pasta padrão do Claude Code no perfil do usuário. Com a variável `CLAUDE_CONFIG_DIR` apontando para outra pasta, ao reabrir o app a aba tenta abrir uma conversa nova com o mesmo identificador e o Claude Code recusa, aparecendo o aviso "Falha ao iniciar ou retomar a conversa". Sem a variável (uso normal) não acontece.
+- **Indicador depois do Esc:** interrompida com Esc, a aba fica "trabalhando" por até 20 segundos, porque o Claude Code não avisa o fim do turno nesse caso (só visual).
+
 ## Como validar
 
 - Seguir o guia de validação do MVP (documento novo da DEV2-008), no Termix real rodando da dev2.
 - Rodar a checagem de sintaxe do projeto.
 - DEV2-009, sem custo de IA: o verificador da trava com os casos de conflito (escolher um lado passa só com junção em andamento, na branch permitida, em arquivo em conflito) e o teste do módulo das conferências do plano e da entrega do Mutirão.
 - Sem gastar tokens: rodar o verificador da trava direto com entradas simuladas (cada regra com um caso permitido e um bloqueado).
-- Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado; o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.
+- Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado (a troca de branch em si passa; barrá-la também fica para decisão do Ygor); o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.
 - No real: conferir que a marca de pasta confiável apareceu só na entrada do projeto e que existe a cópia de segurança.
 - Mutirão, sem custo de IA: o teste do módulo com um remoto local (dono e dois sócios) cobre papel, conferência (inclusive a recusa de arquivo em comum), publicação, parte do sócio, entrega e contador. Com IA, numa instância isolada: o dono gera a divisão com o orquestrador, publica; cada sócio sincroniza, vê a parte e abre o Vibe preenchido; o contador vai de 0 a N e mostra o botão da implementação automática.
 - Implementação automática, sem custo de IA: o teste do módulo com um remoto local cobre projeto com mudanças pendentes (recusado), junção sem conflito, junção com conflito (cancelada sem perder nada, a outra entra), a entrega montada para o plano, os pedidos em arquivo, a trava (juntar na branch do dono pode, na principal não) e o envio só da branch do dono. Com IA, numa instância isolada: com duas entregas, o botão leva até "Concluído" e a branch do dono chega ao remoto com a principal intacta; com conflito, o plano começa pela tarefa do conflito.

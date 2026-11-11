@@ -9,6 +9,37 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-012 — Ciclo real do Vibe Coding no layout novo (0.6.1)
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, autorizado pelo Ygor) rodar o Vibe Coding de ponta a ponta com agentes reais no layout novo, num projeto de brinquedo, com gasto controlado (teto ~15 % da janela de 5 h); conferir commits só na branch de trabalho, recusa da trava a um commit proposital na principal, "Parar" + reabrir sem recomeçar sozinho, painel e notificações no layout novo; corrigir só no módulo.
+- **Feito:**
+  - `git log dev2..origin/dev1` vazio: nada a sincronizar.
+  - Projeto de brinquedo fora do repositório (scratchpad): "Contador de copos de água", `git init` com a `main` e um remoto bare local. Instância isolada: `--user-data-dir` temporário, `--remote-debugging-port` 9362, `TERMIX_VIBE_TEST=1`, `CLAUDE_CONFIG_DIR` temporário com só as credenciais copiadas (**apagadas no fim**) e `TERMIX_VIBE_CLAUDE_JSON` num `.claude.json` de teste. O `~.claude.json` real não ganhou a pasta do brinquedo.
+  - Chave Experimental ligada pela interface (Configurações): os botões Vibe Coding e Mutirão apareceram no cabeçalho novo.
+  - Entrega preenchida (o critério de pronto pede no máximo 3 tarefas pequenas + validação, sem publicação). Plano real em ~84 s, **sem perguntas**: T1 estrutura e estilo, T2 contagem e salvamento, T3 README, T4 validação final [SEM COMMIT]; nenhuma [DEPLOY]; main intacta.
+  - Execução real: T1 aprovada; "Parar" no meio do turno do Dev na T2 → ciclo "Parado" na T2, nada apagado; app fechado. Reaberto: painel mostra "Parado em Execução", T2 e T1 feita; 20 s depois continuava parado. "Continuar": T2 refeita (tentativa 2, o turno interrompido já tinha sido enviado) e aprovada, T3 aprovada, T4 validada sem commit → **"Projeto concluído"** e notificação "Projeto concluído: 4 tarefas na branch vibe/brinquedo".
+  - Git: 3 commits só na `vibe/brinquedo`; `main` local e do remoto intactas; árvore limpa.
+  - Trava: pedido proposital digitado na aba do Dev ("git checkout main" e "git commit --allow-empty"): o commit foi **recusado** pela trava com o motivo na aba; nenhum commit na main. O checkout para a main passou (a trava foi desenhada para barrar commit/push fora da branch permitida, não a troca de branch).
+  - Gasto: 73 respostas do modelo, ≈ US$ 3,35 na tabela da API (fase com plano + T1: ≈ US$ 1,12); a janela de 5 h foi de 15 % (1ª leitura, depois do plano e da T1) a 20 % no fim (inclui as outras sessões abertas). Estimativa do ciclo: ~7 pontos, abaixo do teto de 15.
+- **Quebrou / achados:**
+  - Módulo: nada quebrou; nenhuma linha mudou.
+  - Núcleo (sugestão ao DEV1, não corrigido): a conferência "a conversa existe?" olha só `~.claudeprojects` e ignora `CLAUDE_CONFIG_DIR`. Com essa variável, ao reabrir o app a aba é relançada como conversa nova com o mesmo ID e o Claude Code recusa ("Session ID … is already in use"), gerando o aviso "Falha ao iniciar ou retomar a conversa". No uso normal (sem a variável) não acontece; no teste o Vibe se recuperou sozinho, relançando as abas.
+  - Núcleo (observação): depois de um Esc, a aba só sai de "trabalhando" após 20 s sem saída (o Esc não dispara o Stop); o ciclo do Vibe não depende disso.
+  - Núcleo (sugestão ao DEV1, já anotada na DEV2-011): em Configurações, "Notificações", "Conectores" e "Projetos arquivados" ficam dentro do cartão do "Botão Clear", provavelmente por um div não fechado no `confHTML` (visível na captura `f1`).
+- **Decisões:** nenhuma correção no módulo; trocar de branch para a main pelo agente continua permitido (o commit/push é que é barrado e o Termix confere o git depois de cada tarefa). Barrar também a troca fica para decisão do Ygor (Backlog abaixo).
+- **Arquivos tocados:** `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`.
+- **Como validar:** `npm run check`; roteiro A de `docs/VALIDACAO_MVP_VIBE.md` num projeto de brinquedo.
+- **Validação feita:** `npm run check` passou. Testes do módulo sem custo de IA: trava 79/79, Mutirão com remoto local 31/31, implementação automática 41/41, robustez 23/23, conferências do plano 16/16, análise do Organizador 19/19. Sem erros no console nas 4 aberturas. Capturas (só o conteúdo do app, CDP) em `C:UsersCRUUUUUUUUUUUUUUUUUZAppDataLocalTempclaudec5001e4e31f92b1a­e810b-48d5-40fd-8cb3-5e5200a8acd0scratchpadshots`: `c3-entrega-preenchida`, `c5-plano-pronto`, `c6-parado-no-meio-da-t2`, `d1-reaberto-parado`, `d2-concluido-painel`, `e1-trava-recusou-na-aba`, `e2-sino-aberto`, `f1-config-experimental` (`c1`, `c2`, `d3` e `d4` ficaram cobertas por modais e foram refeitas em `e1`, `e2` e `f1`).
+- **Pendências:**
+  - Backlog (decisão do Ygor): a trava barrar também `git checkout/switch` para a main nas abas do Vibe.
+  - Núcleo (DEV1): `CLAUDE_CONFIG_DIR` na conferência de conversa existente; cartões aninhados em Configurações.
+  - Mutirão com IA no layout novo: fica para outra tarefa.
+- **Próximo passo:** Validação do Ygor no app real (`docs/VALIDACAO_MVP_VIBE.md`).
+
+---
+
 ## DEV2-011 — Sincronizar a dev2 com a dev1 (0.6.1) e conferir o módulo no layout novo
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)

@@ -6,6 +6,13 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-012 — Ciclo real do Vibe Coding no layout novo (0.6.1)** (DEV2)
+
+- Rodada real num projeto de brinquedo isolado (remoto bare local, config do Claude Code temporária, credenciais apagadas no fim): chave ligada pela interface, plano de 3 tarefas + validação sem perguntas, "Parar" no meio da T2, app fechado e reaberto parado sem recomeçar, "Continuar" até "Projeto concluído" com a notificação.
+- Commits só na `vibe/brinquedo`; main local e do remoto intactas; commit proposital na main recusado pela trava com o motivo na aba.
+- Gasto ≈ US$ 3,35 (tabela da API), ~7 pontos da janela de 5 h. Módulo sem mudanças; testes sem IA todos passando.
+- Sugestões ao DEV1 (núcleo): conferência de conversa existente ignora `CLAUDE_CONFIG_DIR`; cartões aninhados em Configurações.
+
 **DEV2-011 — Sincronizar a dev2 com a dev1 (0.6.1) e conferir o módulo no layout novo** (DEV2)
 
 - Junção de 52 commits da dev1 (merge, commit `86ba8bb`); conflitos em `package.json`, `src/renderer/index.html` e `docs/DECISOES.md`, resolvidos mantendo a dev1 e somando as linhas do módulo.
