@@ -415,6 +415,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Concluídas
 
+### TASK-132 — Renomear Chat/Workflow na interface para Projeto/Mutirão (versão 0.6.3)
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (2026-11-11) — pedido do usuário; publicada na 0.6.3 a pedido dele.
+- **Feito:** textos visíveis da barra lateral (botões "Novo projeto"/"Novo mutirão", pastas "Projetos"/"Mutirão", dica da barra recolhida, mensagens de pasta vazia, título da tela "Novo Projeto/Mutirão"). Os nomes internos (`chat`, `workflow`, páginas "Novo chat"/"Novo workflow") não mudaram. Grafia "Mutirão" assumida (o usuário escreveu "Multirao").
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/patchnotes.js`, `package.json`, `package-lock.json`.
+- **Pendências:** outros textos da interface ainda dizem "chat"/"workflow" (abas, tela Código, DESIGN/DECISOES); não revisados.
+
 ### TASK-130 — Acabamento da barra lateral (⋯ do projeto e animações)
 
 - **Responsável:** DEV1

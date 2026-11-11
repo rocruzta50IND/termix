@@ -887,11 +887,11 @@ function renderSide() {
   const cp = curProject();
   if (cp && UI.kindFor !== cp.id) { UI.kindFor = cp.id; S.settings.sideKind = kindOf(cp); setCatOpen(kindOf(cp), true); } // abriu outro projeto (por aviso, por exemplo): a pasta dele (Chats ou Workflows) abre
   const onNew = UI.cur.p === '_' && /^Novo /.test(UI.cur.page);
-  const CATS = [['chat', 'Chats', 'bubble', 'Nenhum chat ainda.'], ['workflow', 'Workflows', 'wfnodes', 'Nenhum workflow ainda.']];
+  const CATS = [['chat', 'Projetos', 'bubble', 'Nenhum projeto ainda.'], ['workflow', 'Mutirão', 'wfnodes', 'Nenhum mutirão ainda.']];
   const byKind = (k) => all.filter((p) => kindOf(p) === k);
   const newBtns = col
-    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo chat">${ic('newchat', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo workflow">${ic('newwf', 18)}</button></div>`
-    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('newchat', 16)}<span>Novo chat</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('newwf', 16)}<span>Novo workflow</span></button></div>`;
+    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo projeto">${ic('newchat', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo mutirão">${ic('newwf', 18)}</button></div>`
+    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('newchat', 16)}<span>Novo projeto</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('newwf', 16)}<span>Novo mutirão</span></button></div>`;
   const isCur = (p, n) => UI.cur.p === p && UI.cur.page === n;
   const toggle = `<button class="tbtn" data-togside title="${col ? 'Abrir' : 'Fechar'} barra lateral">${ic('panel', 19)}</button>`;
   const projMini = (p) => {
@@ -1897,7 +1897,7 @@ function newPageHTML(kind) {
     ? `<div class="nprow"><div class="pjpath" style="user-select:text" title="${esc(np.dir || '')}">${ic('folder', 16)}<span>${np.dir ? esc(np.dir) : 'Nenhuma pasta escolhida'}</span></div><button type="button" class="btn" data-nppick>Escolher pasta…</button></div><p class="meta">O Termix só registra a pasta, sem copiar nem mover nada.</p>`
     : `<p class="meta">O Termix cria e organiza a pasta dentro de <b>${esc(S.settings.projectsRoot || 'a pasta de projetos')}</b>.</p>`;
   return `<div class="npage"><div class="npinner">
-    <div class="nphead"><span class="wfmark sm">${ic(wf ? 'workflow' : 'sparkles', 26)}</span><div><h2>${wf ? 'Novo Workflow' : 'Novo Chat'}</h2>
+    <div class="nphead"><span class="wfmark sm">${ic(wf ? 'workflow' : 'sparkles', 26)}</span><div><h2>${wf ? 'Novo Mutirão' : 'Novo Projeto'}</h2>
       <p class="meta">${wf ? 'Dois terminais lado a lado, sempre em Dangerously, para trabalhar o projeto em etapas.' : 'Conversa em bolhas com o Claude Code, sem terminal.'}</p></div></div>
     <div class="f"><label>Nome do projeto</label><input class="inp" type="text" id="npName" value="${esc(np.name)}" placeholder="Meu SaaS" maxlength="60"></div>
     <div class="f"><label>Pasta</label><div class="seg"><button type="button" class="${np.where === 'new' ? 'sel' : ''}" data-npwhere="new">Criar pasta nova</button><button type="button" class="${np.where === 'dir' ? 'sel' : ''}" data-npwhere="dir">Usar pasta existente</button></div>${folder}</div>

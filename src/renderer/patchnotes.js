@@ -3,6 +3,14 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.6.3',
+    date: '11/11/2026',
+    resumo: 'Novos nomes na barra lateral.',
+    melhorado: [
+      'Os botões agora se chamam "Novo projeto" e "Novo mutirão", e as pastas da barra lateral, "Projetos" e "Mutirão" (antes: chat e workflow).',
+    ],
+  },
+  {
     v: '0.6.2',
     date: '11/11/2026',
     resumo: 'Acabamento da barra lateral.',
