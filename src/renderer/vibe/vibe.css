@@ -157,4 +157,6 @@
 .mutp .mp-expl p{font-size:13px}
 .mutp .mp-expl b{color:var(--text)}
 .mutp .vibe-tip{margin:4px 0 0}
-@media (max-width:900px){#col.mut-open>.stage{margin-right:0}.mutp{width:100%}}
+/* DEV2-011: no layout novo o #col é a folha arredondada do palco; o painel encosta nela (sem borda nem canto próprios), separado só pela linha fina */
+#col>.mutp.glass{border:0;border-left:1px solid var(--border);border-radius:0 var(--r) var(--r) 0;box-shadow:none}
+@media (max-width:900px){#col.mut-open>.stage{margin-right:0}.mutp{width:100%}#col>.mutp.glass{border-left:0;border-radius:var(--r)}}

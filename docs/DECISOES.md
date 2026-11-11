@@ -228,3 +228,4 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - Chave própria, desligada por padrão. O padrão é **analisar, confirmar num mapa e abrir abas novas** que se localizam por um pedido curto em arquivo; **retomar** a conversa antiga é opção por pasta, desmarcada.
 - A análise só lê; **nada é movido, renomeado ou apagado** nas pastas do usuário. O que o organizador grava fica em `%APPDATA%\Termix\organizador\`.
 - Cada pasta vira um projeto do Termix (a aba não tem pasta própria no núcleo), agrupado pelo módulo. Desenho: `docs/ORGANIZADOR.md`.
+- Desde o layout da TASK-119 (DEV2-011), o botão fica na tela **Novo chat**, ao lado de "Criar chat" (o diálogo Novo projeto deixou de existir); não aparece no Novo workflow.

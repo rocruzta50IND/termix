@@ -6,9 +6,9 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-010 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências e o importar projeto com várias pastas)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
-- **Data:** 2026-11-07
+- **Tarefas:** DEV2-001 a DEV2-011 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas e a sincronização com a dev1 na versão 0.6.1)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Data:** 2026-11-11
 
 ## Resumo do que mudou
 
@@ -59,11 +59,16 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - "Organizar com IA" (opcional) lê um resumo montado pelo Termix e grava a organização na pasta de dados do app; sugestões que mexeriam em arquivos ficam só como proposta;
   - nada é movido, renomeado ou apagado nas pastas do usuário;
   - como o núcleo abre cada aba na pasta do projeto, cada pasta vira um projeto do Termix, agrupado pelo módulo.
+- **DEV2-011:** a dev2 recebeu tudo o que a dev1 tem até a versão 0.6.1 (layout novo, telas Conectores e Código) e o módulo foi conferido nele:
+  - Vibe Coding, Mutirão e as chaves em Configurações funcionam no layout novo;
+  - como o diálogo "Novo projeto" deixou de existir, o botão "Importar projeto (várias pastas)" passou para a tela "Novo chat", ao lado de "Criar chat";
+  - o painel do Mutirão foi ajustado para encostar no palco arredondado, sem borda dupla;
+  - os testes do módulo sem custo de IA passaram.
 
 ## Áreas e arquivos afetados
 
 - Módulo isolado: a pasta do processo principal ganhou o verificador da trava (DEV2-004) e a parte do Mutirão (DEV2-005); a pasta da interface ganhou o ciclo de execução, o painel do Vibe e o painel do Mutirão.
-- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. A checagem de sintaxe do projeto passou a incluir os arquivos novos. Na DEV2-005 a DEV2-010, nenhuma linha do núcleo (na DEV2-005, só a checagem de sintaxe). Interface principal e ponte: nada.
+- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. Na DEV2-001, a **ponte ganhou uma linha** (o canal do módulo, só para os pedidos "vibe") e a **página principal ganhou duas linhas** (o estilo e o script do módulo). A checagem de sintaxe do projeto passou a incluir os arquivos do módulo. Da DEV2-005 à DEV2-011, nenhuma outra linha do núcleo (na DEV2-011, só a resolução dos conflitos da sincronização, mantendo a versão da dev1 e somando as linhas do módulo).
 - Dados: na pasta de dados do app, por projeto (entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim.
 - Documentação: desenho do módulo, tarefas e changelog próprios da dev2 e uma linha nas decisões.
 

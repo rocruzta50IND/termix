@@ -4,6 +4,15 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ---
 
+## 2026-11-11
+
+**DEV2-011 — Sincronizar a dev2 com a dev1 (0.6.1) e conferir o módulo no layout novo** (DEV2)
+
+- Junção de 52 commits da dev1 (merge, commit `86ba8bb`); conflitos em `package.json`, `src/renderer/index.html` e `docs/DECISOES.md`, resolvidos mantendo a dev1 e somando as linhas do módulo.
+- O botão "Importar projeto (várias pastas)…" saiu do diálogo Novo projeto (que deixou de existir) para a tela Novo chat.
+- O painel do Mutirão encosta na folha arredondada do palco, sem borda dupla.
+- Núcleo: nenhuma linha além dos conflitos. Testes sem IA: trava 79/79, Mutirão 31/31, implementação automática 41/41, robustez 23/23, conferências 16/16, Organizador 19/19.
+
 ## 2026-11-07
 
 **DEV2-010 — Importar projeto (várias pastas) com análise e organização automática** (DEV2)

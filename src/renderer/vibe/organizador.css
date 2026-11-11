@@ -26,3 +26,5 @@
 .btn.orgsug{border-color:rgba(251,191,36,.6);color:var(--warn)}
 pre.orgmd{white-space:pre-wrap;font-size:12.5px;line-height:1.5;max-height:60vh;overflow:auto;padding:12px;border-radius:10px;background:rgba(0,0,0,.25);user-select:text}
 @media (max-width:640px){.orggrid{grid-template-columns:1fr}}
+/* DEV2-011: botão ao lado de "Criar chat" na tela Novo chat (layout da TASK-119) */
+.npage .row2.org-row2{display:flex;gap:10px;flex-wrap:wrap}

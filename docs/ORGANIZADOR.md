@@ -23,13 +23,13 @@ O Ygor costuma ter, para o mesmo projeto, uma pasta para o orquestrador e outra 
 |---|---|
 | `src/vibe/organizador.js` | Processo principal: análise, pedidos, dossiê, registro do grupo. Canais `vibe:org*`. |
 | `src/vibe/index.js` | Duas linhas: cria o organizador e registra os canais (no próprio módulo). |
-| `src/renderer/vibe/organizador.js` e `.css` | Interface: botão no diálogo Novo projeto, passo 1 (nome e pastas), mapa, carregar, Organizar com IA, chave em Configurações. Carregados pelo `vibe.js`. |
+| `src/renderer/vibe/organizador.js` e `.css` | Interface: botão na tela Novo chat (antes, no diálogo Novo projeto; mudou na DEV2-011 com o layout da TASK-119), passo 1 (nome e pastas), mapa, carregar, Organizar com IA, chave em Configurações. Carregados pelo `vibe.js`. |
 | Núcleo (`main.js`, `preload.js`, `index.html`, `app.js`) | **Nada.** Fica dentro de `src/vibe` porque é o único ponto que o núcleo já liga (o `require` no `main.js` e a ponte `vibe:*` no `preload.js`). Só o `package.json` ganhou os dois arquivos na checagem de sintaxe. |
 | Dados | `%APPDATA%\Termix\organizador\<grupo>\` (`grupo.json`, `pedidos\*.md`) e `organizador\org-<projeto>\` (`dossie.md`, `pedido-organizar.md`, `organizacao.md`). |
 
 ## Fluxo
 
-1. **Novo projeto > Importar projeto (várias pastas)…** (só com a chave ligada).
+1. **Novo chat > Importar projeto (várias pastas)…** (só com a chave ligada; o botão fica ao lado de "Criar chat" e não aparece no Novo workflow, porque o organizador abre abas de terminal num projeto do tipo chat).
 2. **Passo 1:** nome do projeto e lista de pastas (várias de uma vez no diálogo do Windows, ou uma por vez; "Tirar" remove da lista). O nome é sugerido pela primeira pasta, sem o "-ORQ".
 3. **Análise em código (zero token), por pasta:**
    - git: branch, remoto (sem usuário/token da URL), últimos 5 commits, arquivos não commitados, raiz (duas pastas no mesmo repositório = aviso);

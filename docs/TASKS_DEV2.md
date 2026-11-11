@@ -9,6 +9,32 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-011 — Sincronizar a dev2 com a dev1 (0.6.1) e conferir o módulo no layout novo
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, autorizado pelo Ygor) trazer para a dev2 os 52 commits da dev1 (layout novo TASK-119/121/124/130, telas Conectores e Código, versões até 0.6.1), resolver os conflitos, conferir por CDP o Vibe, o Mutirão e o Importar projeto no layout novo, corrigir só dentro do módulo e rodar os testes do módulo sem custo de IA.
+- **Feito:**
+  - Junção `git merge --no-ff origin/dev1` (commit `86ba8bb`), sem rebase nem reset. Conflitos: `package.json` (linha `check` da dev1 + os 6 arquivos do módulo), `src/renderer/index.html` (scripts da dev1 + `vibe/vibe.js`; o `vibe/vibe.css` entrou sozinho) e `docs/DECISOES.md` (as duas seções: TASK-119 da dev1 e Vibe/Organizador da dev2). `src/main.js` e `src/preload.js` juntaram sozinhos (o gancho `spawnSettings` e o canal `vibe:*` seguem no lugar).
+  - Conferência por CDP (app isolado: `--user-data-dir` temporário, `TERMIX_VIBE_TEST=1`, sem abas de agente, zero token): chaves em Configurações > Experimental, botões Vibe Coding e Mutirão no cabeçalho novo, formulário do Vibe, painel do Mutirão, passo 1 e mapa do Importar projeto.
+  - **Quebrou:** o botão "Importar projeto (várias pastas)…" sumiu, porque o diálogo "Novo projeto" deixou de existir (a TASK-119 o trocou pelas telas "Novo chat" e "Novo workflow"). **Corrigido no módulo:** o botão agora entra na tela **Novo chat**, ao lado de "Criar chat" (não no Novo workflow); a chave em Configurações cita a tela nova.
+  - **Fora do visual novo:** o painel do Mutirão tinha borda e canto próprios dentro da folha arredondada do palco (`#col`), com borda dupla. **Corrigido no `vibe.css`:** o painel encosta na folha, sem borda nem canto próprios, separado só pela linha fina à esquerda.
+  - Funções do núcleo que o módulo usa (`createTab`, `launch`, `addProject`, `modal`, `addEvent`, `renderAll`, `fitActive`) conferidas: assinaturas compatíveis.
+- **Decisões:**
+  - **Núcleo: nenhuma linha além da resolução dos conflitos.**
+  - Botão do Organizador só no Novo chat: o organizador abre abas de terminal em projetos do tipo chat; o workflow tem dois terminais fixos.
+  - O título "Experimental" segue o estilo das seções de topo de Configurações ("Rail e rodapé"). A diferença visual para "Notificações", "Conectores" e "Projetos arquivados" vem do núcleo (essas seções ficam dentro do cartão do "Botão Clear", que parece não fechar); não mexido, fica como pendência para o DEV1.
+- **Arquivos tocados:** `package.json`, `src/renderer/index.html`, `docs/DECISOES.md` (conflitos e uma linha nova na seção do Organizador); `src/renderer/vibe/organizador.js` e `organizador.css` (botão no Novo chat); `src/renderer/vibe/vibe.css` (painel do Mutirão); `docs/ORGANIZADOR.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`.
+- **Como validar:** `git log dev2..origin/dev1` vazio; `npm run check`. No app: Configurações > Experimental > ligar as duas chaves; Vibe Coding e Mutirão no cabeçalho; Novo chat > "Importar projeto (várias pastas)…".
+- **Validação feita:** `git log dev2..origin/dev1` vazio; `npm run check` passou. Testes do módulo sem custo de IA (roteiros da DEV2-004 a DEV2-010, fora do repositório): trava 79/79, Mutirão com remoto local 31/31, implementação automática 41/41, robustez 23/23, conferências do plano e entrega do Mutirão 16/16, análise do Organizador 19/19. Capturas CDP (só o conteúdo do app) em `C:\Users\CRUUUUUUUUUUUUUUUUUZ\AppData\Local\Temp\claude\c5001e4e31f92b1a\df7367a6-bd24-4693-adff-3404d3365a46\scratchpad\v11\shots`: `a1-config.png`, `a2-vibe.png`, `a3-mutirao.png` (antes), `a4-novo-chat.png`, `a5-org-passo1.png`, `a6-org-mapa.png`, `a7-mutirao-ajustado.png`.
+- **Pendências:**
+  - Núcleo (DEV1): em Configurações, "Notificações", "Conectores" e "Projetos arquivados" ficam aninhadas no cartão do "Botão Clear".
+  - Ciclo do Vibe com abas reais no layout novo (o Vibe e o Mutirão criam abas de terminal num projeto do tipo chat): não rodado, para não gastar tokens.
+  - As pendências da DEV2-010 continuam.
+- **Próximo passo:** Revisão do Ygor no app real.
+
+---
+
 ## DEV2-010 — Importar projeto (várias pastas) com análise e organização automática
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)

@@ -230,18 +230,20 @@
   }
 
   /* ---------- ganchos na interface ---------- */
-  // botão no diálogo "Novo projeto", ao lado de "Importar pasta existente…"
-  function mountModal() {
-    const root = document.getElementById('modalRoot');
-    if (!root || !on() || root.querySelector('[data-org-open]')) return;
-    const h = root.querySelector('.dh h2');
-    if (!h || h.textContent.trim() !== 'Novo projeto') return;
-    const foot = root.querySelector('.foot2');
-    if (!foot) return;
+  // botão na tela "Novo chat" (DEV2-011: desde a TASK-119 o diálogo "Novo projeto" virou uma tela ao lado da barra),
+  // ao lado de "Criar chat". Só no Novo chat: o organizador abre abas de terminal num projeto do tipo chat, não um workflow.
+  function mountNovo() {
+    const page = document.getElementById('page');
+    if (!page || !on() || page.querySelector('[data-org-open]')) return;
+    try { if (!UI.cur || UI.cur.page !== 'Novo chat') return; } catch { return; }
+    const row = page.querySelector('.npage .row2');
+    if (!row) return;
     const b = document.createElement('button');
-    b.className = 'btn'; b.dataset.orgOpen = '1'; b.textContent = 'Importar projeto (várias pastas)…';
-    b.onclick = () => { const x = root.querySelector('[data-mclose]'); if (x) x.click(); setTimeout(() => abrir(), 0); };
-    foot.insertBefore(b, foot.children[1] || null);
+    b.type = 'button'; b.className = 'btn big'; b.dataset.orgOpen = '1'; b.textContent = 'Importar projeto (várias pastas)…';
+    b.title = 'Projeto com mais de uma pasta (ex.: a do dev e a do orquestrador)';
+    b.onclick = (e) => { e.stopPropagation(); abrir(); };
+    row.classList.add('org-row2');
+    row.appendChild(b);
   }
   // chave em Configurações > Experimental (própria, desligada por padrão)
   function mountConf() {
@@ -253,7 +255,7 @@
     box.id = 'orgConf';
     const draw = () => {
       const v = on();
-      box.innerHTML = `${page.querySelector('#vibeConf') ? '' : '<h5 style="margin:22px 0 8px">Experimental</h5>'}<div class="card" style="padding:6px 18px;margin-top:10px"><div class="row"><div class="grow">Importar projeto com várias pastas (experimental)<small>Mostra o botão “Importar projeto (várias pastas)…” no diálogo Novo projeto. O Termix analisa as pastas sem custo de IA (git, papel do fluxo, tarefas, handoff e conversas), mostra um mapa para confirmar e abre abas novas que se localizam pelo checkpoint. Retomar conversas antigas é opcional. Nada é movido, renomeado ou apagado.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-org-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-org-set="0">Não</button></div></div></div>`;
+      box.innerHTML = `${page.querySelector('#vibeConf') ? '' : '<h5 style="margin:22px 0 8px">Experimental</h5>'}<div class="card" style="padding:6px 18px;margin-top:10px"><div class="row"><div class="grow">Importar projeto com várias pastas (experimental)<small>Mostra o botão “Importar projeto (várias pastas)…” na tela Novo chat. O Termix analisa as pastas sem custo de IA (git, papel do fluxo, tarefas, handoff e conversas), mostra um mapa para confirmar e abre abas novas que se localizam pelo checkpoint. Retomar conversas antigas é opcional. Nada é movido, renomeado ou apagado.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-org-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-org-set="0">Não</button></div></div></div>`;
     };
     draw();
     box.addEventListener('click', (e) => {
@@ -268,10 +270,9 @@
 
   function boot() {
     try {
-      const m = document.getElementById('modalRoot'), page = document.getElementById('page');
-      if (m) new MutationObserver(mountModal).observe(m, { childList: true });
-      if (page) new MutationObserver(() => setTimeout(mountConf, 0)).observe(page, { childList: true }); // depois da chave do Vibe
-      mountConf();
+      const page = document.getElementById('page');
+      if (page) new MutationObserver(() => setTimeout(() => { mountConf(); mountNovo(); }, 0)).observe(page, { childList: true }); // depois da chave do Vibe
+      mountConf(); mountNovo();
     } catch (e) { console.error('organizador: início', e); }
   }
   // gancho de teste (o caminho das pastas só é aceito pelo processo principal com TERMIX_VIBE_TEST=1)
