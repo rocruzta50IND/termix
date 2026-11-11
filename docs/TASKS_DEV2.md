@@ -12,12 +12,52 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 ## Fila decidida (Ygor, 2026-11-11)
 
 - **DEV2-014** — Política de autonomia por projeto (tela "Antes de iniciar") e "Pausar deploy". *(feita, abaixo)*
-- **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto.
+- **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto. *(feita, abaixo)*
 - **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert.
 - **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
 - **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento) e 3 ajustes da DEV2-014. *(feita, abaixo)*
 - **DEV2-019** — Telegram, por último e junto com o Ygor.
 - O Mutirão fica para depois, até o Ygor aprovar o Vibe.
+- **Backlog (da DEV2-015):** o F5 do projeto guardar o PID do processo que ficou rodando (servidor) e encerrá-lo antes de um F5 novo; adaptar o roteiro de app da DEV2-007 (`run7.js`) às novas regras (recuperação no lugar das pausas por tempo limite e por tentativas da conferência); validar o F5 da aba e a decisão do orquestrador com um Claude Code real.
+
+---
+
+## DEV2-015 — Recuperação de erro com diagnóstico, voltas do orquestrador e "F5" da aba e do projeto
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do orquestrador e do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, decisão do Ygor) erro simples não pode travar o projeto. Erro do Dev, tempo limite e refações esgotadas pela conferência passam a ter diagnóstico em código, até 3 voltas do orquestrador (uma ação de uma lista fechada) e "F5" da aba e do projeto; esgotadas, a tarefa vira pendência e o ciclo segue. Só no módulo; teste só com o agente falso, sem custo de IA.
+- **Feito:**
+  - Sincronização: a dev1 tinha 2 commits (TASK-130, versão 0.6.2); `git merge --no-ff origin/dev1` na dev2 sem conflito, `npm run check` e push.
+  - `src/vibe/recuperacao.js` (novo): diagnóstico `vibe\<id>\diagnosticos\Tk-n.md` (últimas 60 linhas da tela do Dev, `git status --short --branch`, último commit, branch atual e permitida, motivo, o que já foi tentado); pedido curto ao orquestrador em arquivo; leitura e validação da decisão `recuperacao\Tk-n.json` (ações reenviar, clear_dev, f5_aba, f5_projeto, dividir, pular; `bloqueia_proximas`); dividir Tk em Tk.a/Tk.b no `plano.md` (cópia do anterior); F5 do projeto na pasta do projeto, com o comando passado antes pelo `decide` da trava e sem troca de pasta, saída em `recuperacao\f5-projeto.log`.
+  - `src/vibe/index.js`: IDs `T3.a`/`T3.b` aceitos (`tarefasDo`, resultado, revisão, pedidos); tarefa dividida marcada; refação da recuperação com o motivo, a orientação do orquestrador e o aviso de aba reaberta; canais do módulo novo.
+  - `src/vibe/politica.js`: `recuperacao: { f5Projeto, voltas }` (padrão 3, de 0 a 5).
+  - `src/renderer/vibe/vibe.js`: `falha()` no lugar das pausas de erro, tempo limite, silêncio, aba fechada/não aberta, `/clear` não confirmado, branch errada no fim e tentativas esgotadas pela conferência; etapa `recuperar` no `execLoop` (diagnóstico, volta, ação, conferência); `f5Aba()` (fecha e reabre a aba com `--resume`, pelo caminho normal: trava e modelo da política valem; o pedido vai sem `/clear`); orquestrador travado = F5 dele uma vez por tarefa, depois pausa; pendências (sino com o resumo do diagnóstico; pausa só com `bloqueia_proximas`); painel "Recuperando (volta n/3): <ação>", linha "Recuperação" (diagnóstico e o já tentado), etiqueta PENDÊNCIA e "Pendências do ciclo" no fim; campos novos na política; `vibeTest.f5Projeto` e `vibeTest.tela`. `vibe.css`: estilos das pendências.
+  - `package.json`: só a linha `check`, com `src/vibe/recuperacao.js`.
+  - `docs/VIBE_MUTIRAO.md`: seção "Recuperação de erro (DEV2-015)" e notas nas seções de pausas e robustez.
+- **Decisões:**
+  - Entra na recuperação o que antes pausava por falha do Dev; a refação pedida pela **revisão** continua com 2 + Continuar (pausa "precisa de você"). As execuções pedidas pela recuperação ganham uma tentativa própria (`extraRec`) e não gastam as da revisão: não contam em dobro.
+  - A recuperação começa depois das 2 refações automáticas da conferência (como o pedido: "2 refações pausam o ciclo" vira recuperação), não na primeira entrega incompleta.
+  - Cada falha grava um diagnóstico novo; com as voltas esgotadas, o último (Tk-4 com 3 voltas) acompanha a pendência. Com 0 voltas, a falha vira pendência direto.
+  - JSON inválido, ação fora da lista, `f5_projeto` sem comando ou `dividir` sem as duas partes = pausa; "Continuar" pede a decisão de novo, uma vez.
+  - Ação que falha (F5 da aba que não volta, F5 do projeto com erro ou barrado, dividir recusado) conta como volta e gera o diagnóstico seguinte.
+  - Na volta, o commit que o Dev já fez na tarefa continua valendo (a base não é refeita).
+  - F5 do projeto: sem `detached` (no Windows a saída se perdia); processo que ainda roda depois de 15 s é tratado como servidor e fica rodando. Mudar de pasta (`cd`, `pushd`, `Set-Location`) é recusado além do que a trava já barra.
+  - O orquestrador ganha o F5 uma vez **por tarefa**; a decisão "travou" inclui revisão ou decisão não gravada no turno.
+  - O app limpa a tela da aba no `/clear`, então o diagnóstico mostra o que apareceu desde o último pedido (achado no teste).
+- **Arquivos tocados:** `src/vibe/recuperacao.js` (novo), `src/vibe/index.js`, `src/vibe/politica.js`, `src/renderer/vibe/vibe.js`, `src/renderer/vibe/vibe.css`, `package.json` (só `check`), `docs/VIBE_MUTIRAO.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`. Núcleo (`src/main.js`, `app.js`, preload), versão, dist, main e dev1: nada.
+- **Como validar:** `npm run check`; teste do módulo `rec15.js` (scratchpad); teste do app com o Claude Code falso da DEV2-007 `run15.js` (instância isolada: `--user-data-dir` temporário, `CLAUDE_CONFIG_DIR` vazio, `TERMIX_VIBE_TEST=1`, falso no PATH).
+- **Validação feita:**
+  - `npm run check` passou (com `recuperacao.js`).
+  - **Módulo, novo: 36/36** — política (padrão 3, limites 0..5), diagnóstico (60 linhas, git, motivo, tentado), pedido (lista fechada, f5_projeto só com comando), decisão válida/ausente/JSON inválido/ação fora da lista/dividir incompleto/cercas, dividir no plano (cópia, não divide duas vezes, pedido do Dev para T2.a), refação com orientação, F5 do projeto inofensivo (código 0, rodou na pasta do projeto, log), "rodando", erro (código 3) e barrado (reset --hard, push --force, rm -rf, checkout main, gravar fora, `cd ..`, `pushd`), nada apagado.
+  - **App com o agente falso (CDP), novo: 29/29** — tela "Antes de iniciar" com os campos novos; T1 erro do Dev (3 entregas sem commit) → reenviar com a explicação → aprovada; T2 tempo limite (20 s) → f5_aba (processo novo, pedido sem `/clear`) → aprovada; T3 3 voltas (reenviar, clear_dev, f5_projeto com o comando inofensivo) → pendência, sino com o resumo e o ciclo seguiu; T4 dividir → T4.a e T4.b no plano e no ciclo, as duas aprovadas; T5 orquestrador mudo → F5 dele → mudo de novo → pausa → Continuar aprova; T6 JSON inválido → pausa → Continuar → pular com `bloqueia_proximas` → pendência e pausa; T7 → concluído com "Pendências do ciclo (2)"; main intacta; sem erros no console. Na 1ª rodada, 26/29: as 3 falhas eram do roteiro do teste (o cabeçalho do falso some com o `/clear`; a espera pela ação lenta olhava o log do falso, que grava a ação sem a demora); corrigido o roteiro e rodado de novo (29/29). Também corrigidos um ponto duplicado na mensagem da pausa por JSON inválido e, vista na captura, a linha "Diagnóstico:" colada no texto da recuperação (CSS do módulo); rodada final com o código do commit.
+  - **Testes antigos, sem ajuste:** política 55/55, trava 113/113, Mutirão 31/31, implementação automática 41/41, robustez 23/23, conferências 16/16, Organizador 19/19.
+  - Capturas (CDP, só o conteúdo do app) em `C:\Users\CRUUUU~1\AppData\Local\Temp\claude\c5001e4e31f92b1a\6c63123d-7792-4b64-a062-988899fc0696\scratchpad\shots`: `r1-antes-de-iniciar-recuperacao.png`, `r2-painel-recuperando.png`, `r3-pausa-orquestrador-mudo.png`, `r4-pausa-bloqueia-proximas.png`, `r5-concluido-com-pendencias.png`.
+- **Pendências:**
+  - O roteiro de app da DEV2-007 (`run7.js`) espera as pausas antigas por tempo limite e por tentativas da conferência; mudou de propósito (agora é recuperação) e não foi rodado. O `mod7.js` (robustez 23) segue passando.
+  - Validar num Claude Code real: F5 da aba com `--resume` de uma conversa real e a decisão escrita por um orquestrador real (fica para quando a cota permitir).
+  - O F5 do projeto que fica rodando (servidor) não é encerrado pelo Termix; um F5 novo sobe outro processo. Se isso incomodar, guardar o PID e encerrar o anterior (Backlog).
+- **Próximo passo:** revisão do orquestrador e do Ygor; depois, a fila (DEV2-016).
 
 ---
 

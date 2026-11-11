@@ -97,6 +97,15 @@
 .vx-list li.done{color:var(--ok)}
 .vx-list li.cur{color:var(--text);font-weight:600}
 .vx-list li small{color:var(--text3);font-weight:400}
+/* DEV2-015: recuperação de erro (pendências e tarefas divididas) */
+.vx-list li.pend{color:var(--warn)}
+.vx-pend{border-color:rgba(248,113,113,.55);color:#F87171}
+.vx-pends{margin:10px 0 0;padding:8px 10px;border:1px solid rgba(251,191,36,.35);border-radius:10px;font-size:12.5px}
+.vx-pends ul{margin:6px 0 0;padding-left:18px}
+.vx-pends li{margin:3px 0}
+.vx-pends small,.vx-div{display:block;color:var(--text3);font-size:11.5px;overflow-wrap:anywhere}
+.vx-div{margin-top:6px}
+.vx dd small.vx-sub{display:block;margin-top:2px}
 .vx-tag{font-style:normal;font-size:10.5px;padding:0 6px;border-radius:99px;border:1px solid rgba(251,191,36,.5);color:var(--warn);margin-left:4px}
 @media (max-width:520px){.vx dl{grid-template-columns:1fr}}
 

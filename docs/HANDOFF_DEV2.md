@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-014 e DEV2-018 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto e, na DEV2-018, ajustes da política e a proposta do botão "Delegar tarefa")
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-018 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-015 e DEV2-018 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa" e, na DEV2-015, a recuperação de erro do ciclo)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-018 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-11
 
 ## Resumo do que mudou
@@ -84,6 +84,12 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - o arquivo da política entrou na checagem de sintaxe do projeto (a sugestão anterior ao DEV1 sobre isso foi resolvida);
   - decisões do orquestrador sobre a DEV2-014, mantidas como estavam: o teto de 7 dias pausa com padrão de 95 %, a pausa por teto avisa e "Decisões de produto" vale a partir do próximo plano; o envio automático da própria branch e do handoff no fim do ciclo de DEV2..DEV5 entra na DEV2-016;
   - documento novo de proposta ao DEV1 (só documento, nada implementado): o botão "Delegar tarefa" com perfil e PIN por sócio (veja "Sugestões ao DEV1").
+- **DEV2-015:** recuperação de erro do ciclo (decisão do Ygor: erro simples não pode travar o projeto):
+  - quando o Dev erra, estoura o tempo ou fica sem sinal, o Termix grava um diagnóstico (tela da aba, situação do git, motivo e o que já foi tentado) e pede ao orquestrador uma única ação de uma lista fechada: reenviar com explicação, recomeçar com o contexto limpo, reabrir a aba do Dev retomando a conversa, reiniciar o projeto (comando opcional da política), dividir a tarefa em duas ou pular;
+  - até 3 voltas por tarefa (configurável de 0 a 5, contam no orçamento); depois, a tarefa vira pendência, o Termix avisa e o ciclo segue. Só pausa se a próxima tarefa depender dela, se a principal mudar ou se o teto for atingido; uma decisão ilegível também pausa;
+  - se quem travou foi o orquestrador, o Termix reabre a aba dele uma vez e, travando de novo, pausa e avisa;
+  - o comando de reiniciar o projeto roda só na pasta do projeto e passa antes pela trava; o limite de refações pela revisão não mudou;
+  - o painel mostra "Recuperando (volta n/3)" e, no fim, a lista de pendências. Testado só com o agente falso, sem custo de IA.
 
 ## Áreas e arquivos afetados
 
@@ -101,6 +107,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - Testados sem tokens (com um Claude Code falso no teste, DEV2-007): limite de tentativas, tempo limite, parar antes e durante o turno, tarefa sem commit e envio final com o remoto à frente. Com tokens: a resolução de um conflito pelo dev e pela revisão reais. Ainda não testados com tokens: entrega real do Vibe de um sócio e o plano final do Mutirão com os passos de publicação (validado pelo pedido gerado). A marcação de publicação/humano pelo planejador real foi vista na DEV2-009 (Vibe comum). Depois de parar um agente, o indicador da aba fica "trabalhando" até o próximo pedido (só visual).
 - **Mutirão:** o Termix faz commit e envia ao remoto (só a pasta do Mutirão, só na branch do dono ou do sócio, nunca na principal). No teste, um pedido longo digitado na aba recém-aberta chegou cortado; por isso o pedido do Mutirão vai num arquivo e só uma linha é digitada. O Vibe do sócio não rodou até o fim no teste (a entrega foi simulada).
 - **Implementação automática:** o Termix junta branches e envia a branch do dono ao remoto sem perguntar (só ela, nunca a principal; nada é descartado, e uma junção com conflito é cancelada e vira tarefa). Ela só começa com o projeto sem mudanças pendentes. No teste, as entregas dos sócios foram feitas por script, não pelo Vibe deles.
+- **Recuperação (DEV2-015):** o ciclo segue sozinho em vez de pausar nos erros do Dev, então uma tarefa pode terminar como pendência sem o humano ver na hora (o sino avisa e a lista fica no painel). A reabertura da aba e a decisão do orquestrador ainda não foram vistas com um Claude Code real. O comando de reiniciar o projeto que fica rodando não é encerrado pelo Termix.
 - **Política (DEV2-014):** o teto de 7 dias passa a pausar (padrão 95 %) e a pausa por teto passa a avisar. O deploy automático ainda não executa nada: só marca a tarefa como pendente.
 - Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
 

@@ -167,7 +167,7 @@ Com o "Plano pronto", o painel mostra **"Executar plano"**. O Termix lê as tare
 
 - **Limite:** antes de cada pedido, com a janela de 5 h em **93 %** ou mais (decisão do Ygor; desde a DEV2-014, o teto de 5 h, o de 7 d e o em US$ vêm da política do projeto, ver "Política de autonomia"). Com o app aberto, o Termix retoma sozinho quando a janela virar (a hora de renovação passou) ou o número cair abaixo do teto. O 7 d aparece na tela, mas não pausa por enquanto. No modo de teste, `vibeTest.limit(93)` injeta o número.
 - **DEPLOY ou HUMANO:** antes da tarefa marcada; notifica. "Continuar" libera o Dev para executá-la; "Já fiz, pular" marca como feita pelo humano.
-- **Erro ou sem resposta:** branch que não pôde ser preparada, aba que não abriu em 60 s, `/clear` não confirmado, revisão não gravada, main/master alterada, aba fechada no meio do turno 20 min sem nenhum sinal do agente (hook ou saída no terminal) ou turno sem terminar em 30 min (DEV2-007: o Termix interrompe o agente); notifica.
+- **Erro ou sem resposta:** *(desde a DEV2-015, as falhas do Dev e do orquestrador vão primeiro para a recuperação; ver "Recuperação de erro")* branch que não pôde ser preparada, aba que não abriu em 60 s, `/clear` não confirmado, revisão não gravada, main/master alterada, aba fechada no meio do turno 20 min sem nenhum sinal do agente (hook ou saída no terminal) ou turno sem terminar em 30 min (DEV2-007: o Termix interrompe o agente); notifica.
 
 **Painel:** etapas Preparando plano → Perguntas → Plano pronto → Execução (feitas/N) → Concluído; tarefa atual k/n, fase (Dev trabalhando, Revisão, Pausado: motivo), branch, último commit, tentativas, limites 5 h e 7 d e a lista de tarefas (feitas com o commit, etiquetas DEPLOY/HUMANO). "Parar" interrompe (Esc nas duas abas se estiverem trabalhando) sem apagar nada. No fim: "Projeto concluído", resumo e notificação.
 
@@ -271,8 +271,8 @@ No teste da DEV2-005, um pedido longo digitado na aba chegou cortado. Desde a DE
 Pontos fracos achados nas rodadas das DEV2-004 a 006, corrigidos e testados (a maior parte sem tokens, com um Claude Code falso no PATH do teste).
 
 - **Marca `[SEM COMMIT]`.** O pedido de planejamento pede `[SEM COMMIT]` no título da tarefa que só valida ou confere (no Mutirão, a validação final vem marcada). O Dev recebe "commit só se corrigir algo" e precisa gravar no `resultados\Tk.md` uma linha **"Validação: <comandos e resultado>"**. A conferência do Termix aceita a tarefa sem commit novo quando a marca existe e essa linha está lá; sem a linha (e sem commit), vira refação com o motivo. A revisão é avisada de que não há commit. Na tela, a etiqueta SEM COMMIT e "validada, sem commit" na lista.
-- **Limite de tentativas.** 1 execução + 2 refações (pela conferência ou pela revisão). Na 3ª falha o ciclo pausa ("Pausado: precisa de você"), notifica e mostra o motivo (o que faltou ou o motivo da revisão). **"Continuar" dá mais UMA tentativa** (a refação com o mesmo motivo), não uma rodada nova; "Tentativas" mostra k de n.
-- **Tempo limite do turno.** Se o Dev ou o orquestrador não terminar o turno em **30 min** (desde o pedido), ou ficar **20 min sem nenhum sinal** (hook ou saída no terminal), o Termix interrompe o agente (Esc), pausa, notifica e diz quem travou. "Continuar" confere o que ficou pronto (Dev: arquivo e commit; sem isso, refação) ou pede a revisão de novo, uma vez. No modo de teste, `vibeTest.tempos({turno, semResposta})` encurta os tempos.
+- **Limite de tentativas.** *(DEV2-015: esgotadas pela conferência, vão para a recuperação; pela revisão, continua assim.)* 1 execução + 2 refações (pela conferência ou pela revisão). Na 3ª falha o ciclo pausa ("Pausado: precisa de você"), notifica e mostra o motivo (o que faltou ou o motivo da revisão). **"Continuar" dá mais UMA tentativa** (a refação com o mesmo motivo), não uma rodada nova; "Tentativas" mostra k de n.
+- **Tempo limite do turno.** *(DEV2-015: em vez de pausar, o Dev vai para a recuperação e o orquestrador ganha um F5 da aba.)* Se o Dev ou o orquestrador não terminar o turno em **30 min** (desde o pedido), ou ficar **20 min sem nenhum sinal** (hook ou saída no terminal), o Termix interrompe o agente (Esc), pausa, notifica e diz quem travou. "Continuar" confere o que ficou pronto (Dev: arquivo e commit; sem isso, refação) ou pede a revisão de novo, uma vez. No modo de teste, `vibeTest.tempos({turno, semResposta})` encurta os tempos.
 - **Parar no meio do turno.** O Termix guarda se o pedido chegou a ser enviado (hook de prompt enviado). Parado **antes** do envio: a tentativa é desfeita (não conta) e a caixa de texto da aba é limpa (Ctrl+U), para o próximo `/clear` não sair grudado no pedido antigo. Parado **durante** o turno: Esc ao agente; "Continuar" confere e segue pela refação (o que já ficou commitado vale). Revisão parada sem veredito: "Continuar" pede a revisão de novo.
 - **Push final com o remoto à frente** (Mutirão). Antes do push da branch do dono, o Termix faz `git fetch`; se a `origin/<dono>` estiver à frente (outra máquina), faz `git merge --no-ff origin/<dono>` ("Mutirão: integrar origin/<dono> (remoto à frente)"), sem rebase e sem descartar. Sem conflito, envia; a tela diz que integrou. Com conflito: `git merge --abort`, nada é enviado nem descartado, a tela lista os arquivos e explica; depois de resolver, "Enviar a branch de novo". Com mudança sem commit ou fora da branch do dono, recusa e explica.
 
@@ -329,6 +329,50 @@ Campos:
 
 Os pedidos continuam curtos e em arquivo. Só o planejador recebe um trecho da política, e só o que importa a ele: com "decisões de produto", perguntar também essas decisões e marcar `[HUMANO]`; com deploy automático ou por marco, que o deploy é do Termix; para DEV2..DEV5, não planejar deploy na main. Receita, portão, teto e modelos não vão aos agentes. O pedido do Dev e o da revisão não mudam.
 
+## Recuperação de erro (DEV2-015)
+
+Decisão do Ygor (2026-11-11): erro simples não pode travar o projeto. Até a DEV2-014, erro do Dev, tempo limite (30 min por turno, 20 min sem sinal) e as 2 refações pela conferência pausavam o ciclo. Agora o Termix tenta se recuperar sozinho, só no módulo (`src/vibe/recuperacao.js` no processo principal e o ciclo em `src/renderer/vibe/vibe.js`).
+
+### Quando entra
+
+- **Dev:** tentativas esgotadas pela conferência (1 execução + 2 refações sem `Tk.md` ou sem commit), tempo limite do turno, sem nenhum sinal, aba que fechou no meio do turno, aba que não abriu em 60 s, `/clear` não confirmado e o Dev terminando fora da branch permitida.
+- **Orquestrador travado** (mudo, tempo limite, revisão ou decisão não gravada, aba que não abriu): o Termix dá **F5 na aba dele uma vez por tarefa** e pede de novo o que estava pendente. Se travar de novo, pausa e avisa (sino).
+- **Não muda:** a revisão que pede "refazer" continua com 2 refações + "Continuar" (pausa "precisa de você"). As execuções pedidas pela recuperação não gastam essas tentativas (não contam em dobro). Pausas por teto, `[DEPLOY]`/`[HUMANO]`, main/master alterada e erro interno do Termix também continuam como antes.
+
+### Cada volta
+
+1. **Diagnóstico, em código e sem IA:** `vibe\<id>\diagnosticos\Tk-n.md` com as últimas ~60 linhas da tela da aba do Dev (o mesmo texto do "Exportar texto" do app), `git status --short --branch`, o último commit, a branch atual e a permitida, o erro ou motivo e o que já foi tentado (falhas e ações das voltas anteriores). Cada falha grava um diagnóstico novo (n = 1, 2, ...).
+2. **Volta do orquestrador:** `/clear` no orquestrador e o pedido curto em arquivo (`pedidos\pedido-Tk-recuperacao-n.md`): ler o diagnóstico e a seção Tk do plano, não mexer no código, gravar `vibe\<id>\recuperacao\Tk-n.json` com UMA ação da lista fechada, `"motivo"` e `"bloqueia_proximas"`:
+   - `reenviar`: a tarefa volta ao Dev com a explicação extra (`"explicacao"`) e o motivo da falha;
+   - `clear_dev`: `/clear` no Dev e a tarefa recomeça com o pedido normal;
+   - `f5_aba`: o Termix fecha e reabre a aba do Dev retomando a conversa (`--resume`), pelo caminho normal do app, então a **trava** e o **modelo atual da política** valem; o pedido de continuar vai na conversa retomada, **sem `/clear`**;
+   - `f5_projeto`: roda o comando "reiniciar o projeto" da política (só aparece na lista se houver comando) e reenvia a tarefa;
+   - `dividir`: Tk vira **Tk.a** e **Tk.b** no `plano.md` (inseridas depois da seção Tk, com título e critério de pronto; a Tk ganha a linha "Dividida pelo Termix..." e o plano anterior fica em `plano.antes-de-dividir-Tk.md`); o ciclo segue pela Tk.a;
+   - `pular`: a tarefa vira pendência e o ciclo segue.
+3. **O Termix executa em código** e confere o resultado como sempre (`Tk.md` novo, commit novo na branch permitida, main/master intactas, depois a revisão). O commit que o Dev já tiver feito na tarefa continua valendo na volta.
+
+**JSON inválido**, ação fora da lista, `f5_projeto` sem comando na política, `dividir` sem as duas partes ou o arquivo não gravado no turno: pausa com o motivo. "Continuar" pede a decisão de novo (uma vez); se vier inválida de novo, pausa outra vez.
+
+### Até N voltas e pendências
+
+- **Voltas por tarefa:** da política (padrão **3**, de 0 a 5). Esgotadas, a tarefa vira **pendência**: o sino avisa com o resumo do diagnóstico e o ciclo segue para a próxima tarefa, em vez de parar tudo. Com 0 voltas, a falha vira pendência direto (com o diagnóstico).
+- **Pausa total só se:** o orquestrador marcou `"bloqueia_proximas": true` na decisão da tarefa que virou pendência (a próxima depende dela; "Continuar" segue com a próxima depois que o humano resolver); a main/master mudar; ou o teto da política for atingido. **As voltas contam no orçamento:** o teto (5 h, 7 d, US$) é conferido antes de cada volta, e o custo do orquestrador entra no US$ do ciclo.
+- **Painel:** a linha de fase mostra **"Recuperando (volta n/3): <ação>"** ("aguardando a decisão do orquestrador" enquanto ele decide), com o diagnóstico e o que já foi tentado; a lista marca as tarefas com a etiqueta PENDÊNCIA e as divididas; no fim do ciclo, **"Pendências do ciclo"** lista uma por tarefa pulada, com o motivo e o diagnóstico. A notificação do fim conta as pendências.
+
+### F5 do projeto (política)
+
+Na tela "Antes de iniciar" (e no "Editar política"): **"Comando para reiniciar o projeto (F5 do projeto)"**, opcional (ex.: subir de novo o servidor de desenvolvimento), e **"Voltas do orquestrador por tarefa"** (0 a 5). O comando:
+
+- roda **só na pasta do projeto** (`cwd`) e só quando o orquestrador pedir `f5_projeto`;
+- passa antes pelo **verificador da trava** (`decide` de `src/vibe/trava.js`, a mesma regra das abas): `git reset --hard`, push forçado, apagar recursivo, trocar para a main, gravar fora do projeto etc. são recusados com o motivo; trocar de pasta (`cd`, `pushd`, `Set-Location`) também;
+- a saída vai para `vibe\<id>\recuperacao\f5-projeto.log`; terminou com código 0 = ok; ainda rodando depois de 15 s (servidor) = ok e fica rodando; outro código = a ação falhou e conta como volta.
+
+### Arquivos novos em `vibe\<id>\`
+
+`diagnosticos\Tk-n.md` (Termix), `recuperacao\Tk-n.json` (orquestrador), `recuperacao\f5-projeto.log` (Termix), `pedidos\pedido-Tk-recuperacao-n.md` e, ao dividir, `plano.antes-de-dividir-Tk.md`. Nada é apagado.
+
+**Testar sem tokens:** o teste do módulo (`rec15.js`: diagnóstico, pedido, leitura e validação da decisão, dividir, F5 do projeto inofensivo e barrado) e o do app com o Claude Code falso da DEV2-007 (`run15.js`: `"rec:Tk"` no roteiro do falso grava a decisão; `"acao:ms"` dá demora a uma ação). `vibeTest.f5Projeto()` roda o comando da política e `vibeTest.tela('dev')` mostra o texto que vai ao diagnóstico.
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.
@@ -343,7 +387,7 @@ Renumerado pelo Ygor em 2026-11-06.
 - **DEV2-008** — Guia de validação do MVP do Vibe/Mutirão: `docs/VALIDACAO_MVP_VIBE.md`. *(feita)*
 - **DEV2-009** — Pendências do MVP: marcas do plano numa rodada real, aviso de deploy sem marca, alarme falso de main/master, plano final do Mutirão com o projeto inteiro e a publicação, /clear depois de Esc real e `--ours/--theirs` só com merge em andamento. *(feita)*
 - **DEV2-014** — Política de autonomia por projeto: tela "Antes de iniciar", edição no meio do ciclo e "Pausar deploy". *(feita)*
-- **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto.
+- **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto. *(feita)*
 - **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert.
 - **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
 - **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento).

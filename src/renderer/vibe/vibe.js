@@ -313,6 +313,31 @@
     if (d) await sleep(1500); // o Claude Code redesenha a caixa de texto
     return d;
   }
+  // DEV2-015: "F5 da aba": fecha e reabre a aba do agente retomando a mesma conversa (--resume). Abre pelo caminho normal do
+  // app, então a trava e o modelo atual da política (settings da aba do Vibe) valem na reabertura. Aba fechada: recria.
+  async function f5Aba(id, key, g) {
+    const c = cyOf(id), p = projOf(id), tab = tabOf(c.est[key]);
+    if (!p) return false;
+    if (!tab) return !!(await ensureTab(id, key, g));
+    const w = waitHook(c, tab.id, (d) => d.event === 'SessionStart', 60000);
+    try { await stopProc(tab); } catch { /* processo já encerrado */ }
+    if (c.gen !== g) return false;
+    await launch(p, tab, 'resume');
+    const d = await w;
+    if (c.gen !== g || !d) return false;
+    await sleep(1500);
+    return true;
+  }
+  // DEV2-015: últimas linhas da tela de uma aba (para o diagnóstico), como o "Exportar texto" do app
+  function telaDe(tid) {
+    try {
+      const r = RT[tid];
+      if (!r || !r.term) return '';
+      const b = r.term.buffer.active, out = [];
+      for (let i = Math.max(0, b.length - 200); i < b.length; i++) { const l = b.getLine(i); out.push(l ? l.translateToString(true) : ''); }
+      return out.join('\n');
+    } catch { return ''; }
+  }
   // Garante a aba do orquestrador ou do Dev aberta: retoma a aba parada ou recria a aba fechada (sempre Dangerously, com a trava).
   async function ensureTab(id, key, g) {
     const c = cyOf(id), p = projOf(id);
@@ -337,12 +362,13 @@
     }
     const d = await w;
     if (c.gen !== g) return null;
-    if (!d) { pause(id, 'erro', `A aba "${tab.name}" não abriu em 60 s. Confira a aba (o Claude Code pode estar perguntando algo) e clique em Continuar.`); return null; }
+    if (!d) { falha(id, key, `A aba "${tab.name}" não abriu em 60 s.`); return null; } // DEV2-015: recuperação, não pausa
     await sleep(1500);
     return tab;
   }
   // Pede algo a um agente: /clear, pedido curto e espera o fim do turno (hook Stop). false = parou, pausou ou falhou.
-  async function ask(id, g, key, text) {
+  // opts.semClear (DEV2-015): depois do F5 da aba, o pedido vai na conversa retomada, sem /clear.
+  async function ask(id, g, key, text, opts = {}) {
     const c = cyOf(id);
     if (!text) { pause(id, 'erro', 'Não foi possível montar o pedido (a entrega ou o plano não foram encontrados).'); return false; }
     // o pedido não chegou a ser digitado (aba não abriu, /clear não confirmado): não conta como tentativa, e o "Continuar"
@@ -352,7 +378,7 @@
     const tab = await ensureTab(id, key, g);
     if (!tab || c.gen !== g) { naoEnviado(); return false; }
     P.tab = tab.id;
-    if (!(await clearTab(c, tab, g))) { if (c.gen === g) pause(id, 'erro', `O /clear não foi confirmado na aba "${tab.name}". Confira a aba (a caixa de texto deve estar vazia) e clique em Continuar.`); naoEnviado(); return false; }
+    if (!opts.semClear && !(await clearTab(c, tab, g))) { if (c.gen === g) { naoEnviado(); falha(id, key, `O /clear não foi confirmado na aba "${tab.name}".`); return false; } naoEnviado(); return false; }
     if (c.gen !== g) { naoEnviado(); return false; }
     const stop = waitHook(c, tab.id, (d) => d.event === 'Stop');
     c.esperando = { tab: tab.id, desde: Date.now(), key, enviado: false };
@@ -376,13 +402,57 @@
     const t = c.est.exec.tarefas[c.est.exec.k];
     if (tipo !== 'limite' || !(x0 && x0.tipo === 'limite')) notifyHuman(projOf(id), tabOf(c.est.dev) || tabOf(c.est.orq), `${t ? `${t.id}: ` : ''}${motivo}`);
   }
+  /* ---------- recuperação de erro (DEV2-015) ----------
+     Decisão do Ygor: erro simples não trava o projeto. Dev com erro, tempo limite ou sem sinal: o Termix grava um diagnóstico
+     (vibe\<id>\diagnosticos\Tk-n.md), dá /clear no orquestrador e pede UMA ação da lista fechada (recuperacao\Tk-n.json),
+     executa em código e confere como sempre. Até N voltas por tarefa (política, padrão 3); esgotadas, a tarefa vira
+     pendência, o sino avisa e o ciclo segue. Pausa total só com "bloqueia_proximas", main/master alterada ou teto da política.
+     Orquestrador travado: F5 da aba dele uma vez; se travar de novo, pausa e avisa. As voltas não gastam as tentativas
+     da revisão (2 refações + Continuar), que seguem como antes. */
+  const REC_TXT = { reenviar: 'reenviar ao Dev', clear_dev: '/clear no Dev e recomeçar', f5_aba: 'F5 da aba do Dev', f5_projeto: 'F5 do projeto', dividir: 'dividir a tarefa', pular: 'pular (vira pendência)' };
+  const voltasMax = (c) => { const p = c && c.pol && c.pol.politica; return p && p.recuperacao && typeof p.recuperacao.voltas === 'number' ? p.recuperacao.voltas : 3; };
+  const ZERA = { etapa: 'dev', tentativas: 0, extra: 0, extraRec: 0, refazer: null, enviadoDev: null, enviadoRev: null, semCommitOk: false, rec: null, semClear: false, manterBase: false };
+  // Falha no meio da tarefa: Dev = recuperação (sem pausar); orquestrador = F5 da aba dele uma vez, depois pausa.
+  function falha(id, key, motivo, extra = {}) {
+    const c = cyOf(id), x = c.est && c.est.exec;
+    if (!x || c.est.fase !== 'execucao') return;
+    const t = x.tarefas[x.k];
+    if (!t) return;
+    if (key === 'orq') {
+      if (x.orqF5 && x.orqF5.tarefa === t.id && !x.orqF5.pendente) return pause(id, 'erro', `${motivo} O Termix já reabriu a aba do orquestrador (F5) nesta tarefa e ele travou de novo. Veja a aba "${ORQ_NAME}" e clique em Continuar.`, extra);
+      x.orqF5 = { tarefa: t.id, motivo, pendente: true, data: nowIso() };
+    } else {
+      const r0 = x.rec && x.rec.tarefa === t.id ? x.rec : { tarefa: t.id, voltas: 0, tentado: [] };
+      x.rec = { ...r0, fase: 'nova', falha: motivo, decisao: null, enviado: null };
+      x.etapa = 'recuperar';
+    }
+    x.retomar = false;
+    desfazPedido(c);
+    c.gen++; cancelWaits(c); c.esperando = null;
+    if (extra.interromper) { try { if (isAlive(extra.interromper)) api.write(extra.interromper, '\x1b'); } catch { /* aba já encerrada */ } }
+    cySave(id);
+    setTimeout(() => { if (c.est && c.est.fase === 'execucao') execLoop(id); }, 500);
+  }
+  // Voltas esgotadas (ou "pular"): a tarefa vira pendência, o sino avisa e o ciclo segue (ou pausa, se as próximas dependem dela).
+  function pendencia(id, motivo) {
+    const c = cyOf(id), x = c.est.exec, t = x.tarefas[x.k], rec = x.rec || {};
+    const bloq = !!(rec.decisao && rec.decisao.bloqueia);
+    x.pendencias = [...(x.pendencias || []), { id: t.id, titulo: t.titulo, motivo: String(motivo || '').slice(0, 400), voltas: rec.voltas || 0, diag: rec.diag || '', bloqueia: bloq, data: nowIso() }];
+    Object.assign(x, { ...ZERA, k: x.k + 1 });
+    cySave(id);
+    const prox = x.tarefas[x.k];
+    if (bloq) return pause(id, 'humano', `A ${t.id} virou pendência (${motivo}) e o orquestrador indicou que as próximas tarefas dependem dela. Resolva a ${t.id} (diagnóstico em ${rec.diag || 'vibe\\diagnosticos'}) e clique em Continuar para seguir${prox ? ` com a ${prox.id}` : ''}.`);
+    notifyHuman(projOf(id), tabOf(c.est.dev) || tabOf(c.est.orq), `${t.id} virou pendência: ${motivo}${rec.resumo ? ` · Diagnóstico: ${rec.resumo}` : ''}. O ciclo segue${prox ? ` com a ${prox.id}` : ''}.`);
+    return null;
+  }
   function finish(id) {
     const c = cyOf(id), x = c.est.exec;
     c.gen++; c.live = false;
     c.est = { ...c.est, fase: 'concluido', concluido: nowIso(), aviso: '' };
     cySave(id);
     if (c.est.auto && c.est.auto.mutirao) { mutFim(id); return; } // implementação automática do Mutirão (DEV2-006)
-    notifyHuman(projOf(id), tabOf(c.est.orq), `Projeto concluído: ${plural(x.feitas.length, 'tarefa', 'tarefas')} na branch ${x.branch || ''}.`);
+    const np = (x.pendencias || []).length;
+    notifyHuman(projOf(id), tabOf(c.est.orq), `Projeto concluído: ${plural(x.feitas.length, 'tarefa', 'tarefas')} na branch ${x.branch || ''}${np ? `, ${plural(np, 'pendência', 'pendências')} (veja a lista no painel)` : ''}.`);
     mutEntrega(id); // Mutirão (DEV2-005): sendo a parte de um sócio, o Termix grava e envia a entrega
   }
   // Mutirão concluído (DEV2-006): o Termix (código) faz push só da branch do dono e avisa. Promover para a main é do humano.
@@ -410,8 +480,8 @@
   async function execStart(id) {
     const c = cyOf(id);
     if (!c.est || c.est.fase !== 'pronto') return false;
-    const ts = await call('tarefas', id);
-    if (!ts || !ts.length) { c.est.aviso = 'O plano não tem tarefas no formato "## T1 — título". Peça ao orquestrador para regravar o plano nesse formato (Parar e Iniciar de novo).'; cySave(id); return false; }
+    const ts = ((await call('tarefas', id)) || []).filter((t) => !t.dividida); // DEV2-015: tarefa dividida = só as partes
+    if (!ts.length) { c.est.aviso = 'O plano não tem tarefas no formato "## T1 — título". Peça ao orquestrador para regravar o plano nesse formato (Parar e Iniciar de novo).'; cySave(id); return false; }
     // DEV2-014: sem política gravada (ex.: o Mutirão clica sozinho em Executar), grava a padrão antes de começar
     if (!c.pol || !c.pol.existe) { await call('politicaSet', id, (c.pol && c.pol.politica) || {}, 'padrão ao executar'); c.pol = (await call('politicaGet', id)) || c.pol; }
     await call('trust', id);
@@ -440,14 +510,15 @@
     if (!x || !x.pausa || !x.pausa.gate) return;
     const t = x.tarefas[x.k];
     x.feitas.push({ id: t.id, titulo: t.titulo, humano: true });
-    Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, extra: 0, refazer: null, enviadoDev: null, enviadoRev: null, pausa: null, retomar: false });
+    Object.assign(x, { ...ZERA, k: x.k + 1, pausa: null, retomar: false });
     c.est = { ...c.est, fase: 'execucao', aviso: '' };
     cySave(id);
     execLoop(id);
   }
 
   // limite de tentativas: 1 execução + MAX_REFAZER refações; cada "Continuar" depois da pausa dá mais uma (DEV2-007)
-  const maxTent = (x) => MAX_REFAZER + 1 + (x.extra || 0);
+  // DEV2-015: as execuções pedidas pela recuperação (extraRec) não gastam as tentativas da revisão (não contam em dobro)
+  const maxTent = (x) => MAX_REFAZER + 1 + (x.extra || 0) + (x.extraRec || 0);
   const esgotou = (x) => (x.tentativas || 0) >= maxTent(x);
   async function execLoop(id) {
     const c = cyOf(id);
@@ -477,26 +548,42 @@
           // deploy automático: o Termix fará o deploy (DEV2-016); a tarefa fica marcada e o ciclo segue sem pausar à toa
           if (t.deploy && (pt.deploy === 'pendente' || pt.deploy === 'retido')) {
             x.feitas.push({ id: t.id, titulo: t.titulo, deploy: pt.deploy, data: nowIso() });
-            Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, extra: 0, refazer: null, enviadoDev: null, enviadoRev: null });
+            Object.assign(x, { ...ZERA, k: x.k + 1 });
             cySave(id);
             continue;
           }
         }
-        const teto = await tetoDe(id);
+        // DEV2-015: orquestrador travado: o Termix dá F5 na aba dele (uma vez por tarefa) e pede de novo o que estava pendente
+        if (x.orqF5 && x.orqF5.pendente) {
+          x.orqF5.pendente = false; cySave(id);
+          const okF5 = await f5Aba(id, 'orq', g);
+          if (!alive()) return;
+          if (!okF5) return pause(id, 'erro', `${x.orqF5.motivo} O Termix tentou reabrir a aba do orquestrador (F5) e ela não voltou. Veja a aba "${ORQ_NAME}" e clique em Continuar.`);
+          x.orqF5.feito = nowIso();
+          if (x.etapa === 'revisao') x.enviadoRev = null;
+          if (x.etapa === 'recuperar' && x.rec) x.rec.enviado = null;
+          cySave(id);
+          continue;
+        }
+        const teto = await tetoDe(id); // as voltas da recuperação também passam pelo teto (contam no orçamento)
         if (!alive()) return;
         if (teto) return pause(id, 'limite', teto.motivo, teto.auto ? {} : { semAuto: true });
+        if (x.etapa === 'recuperar') { if ((await recuperar(id, g, x, t, alive)) === 'parar') return; continue; }
         if (x.etapa === 'dev') {
           if (!(x.retomar && x.enviadoDev)) {
             let info = await call('gitInfo', id);
             if (!alive()) return;
             if (info && info.branch !== x.branch) { const b2 = await call('branchPrep', id); if (!alive()) return; if (!b2 || !b2.ok) return pause(id, 'erro', (b2 && b2.motivo) || 'A branch permitida não está ativa.'); info = await call('gitInfo', id); }
             if (!info) return pause(id, 'erro', 'Não foi possível ler o git do projeto.');
-            x.base = { sha: info.permitidaSha, heads: info.heads };
+            // DEV2-015: numa volta de recuperação, o commit que o Dev já tiver feito nesta tarefa continua valendo
+            if (!(x.manterBase && x.base)) x.base = { sha: info.permitidaSha, heads: info.heads };
+            x.manterBase = false;
             x.tentativas = (x.tentativas || 0) + 1;
             x.enviadoDev = nowIso(); x.sub = 'dev';
+            const semClear = !!x.semClear; x.semClear = false;
             cySave(id);
             const text = await call('execPrompt', id, x.refazer ? 'refazer' : 'dev', t.id, { ...(x.refazer || {}), semCommit: !!t.semCommit });
-            if (!(await ask(id, g, 'dev', text))) return;
+            if (!(await ask(id, g, 'dev', text, { semClear }))) return;
           }
           const retomada = !!x.retomar;
           x.retomar = false;
@@ -506,7 +593,7 @@
           if (!info) return pause(id, 'erro', 'Não foi possível ler o git do projeto.');
           const mexeu = Object.keys(x.base.heads || {}).filter((b) => (info.heads[b] || null) !== (x.base.heads[b] || null));
           if (mexeu.length) return pause(id, 'erro', `A ${mexeu.join(', ')} mudou durante a ${t.id}. Isso é proibido: confira o projeto antes de continuar.`);
-          if (info.branch !== x.branch) return pause(id, 'erro', `O Dev terminou a ${t.id} na branch "${info.branch || '?'}" em vez de "${x.branch}". Confira e clique em Continuar.`);
+          if (info.branch !== x.branch) return falha(id, 'dev', `O Dev terminou a ${t.id} na branch "${info.branch || '?'}" em vez de "${x.branch}".`);
           const falta = [];
           const fresco = !!(res && res.existe && res.mtime >= Date.parse(x.enviadoDev) - 2000);
           const novo = !!(info.permitidaSha && info.permitidaSha !== x.base.sha);
@@ -516,7 +603,8 @@
           else if (!novo) falta.push(`um commit novo na branch ${x.branch}`);
           if (falta.length) {
             x.refazer = { falta: `faltou ${falta.join(' e ')}` };
-            if (esgotou(x)) { Object.assign(x, { etapa: 'dev', enviadoDev: null }); return pause(id, 'humano', `A ${t.id} não ficou pronta em ${plural(x.tentativas, 'tentativa', 'tentativas')} (${retomada ? 'interrompida e ' : ''}faltou ${falta.join(' e ')}). Veja a aba "${DEV_NAME}", ajude e clique em Continuar (mais uma tentativa).`, { ajuda: true }); }
+            // DEV2-015: esgotadas as tentativas (ou numa execução pedida pela recuperação), vai para a recuperação em vez de pausar
+            if (esgotou(x)) return falha(id, 'dev', `A ${t.id} não ficou pronta em ${plural(x.tentativas, 'tentativa', 'tentativas')} (${retomada ? 'interrompida e ' : ''}faltou ${falta.join(' e ')}).`);
             cySave(id);
             continue;
           }
@@ -537,11 +625,11 @@
           if (!alive()) return;
           // revisão interrompida (Parar ou tempo limite) e sem veredito: pede a revisão de novo, uma vez, de forma limpa
           if (retomadaRev && (!rv || !rv.ok || rv.mtime < Date.parse(x.enviadoRev) - 2000)) { x.enviadoRev = null; cySave(id); continue; }
-          if (!rv || !rv.ok || rv.mtime < Date.parse(x.enviadoRev) - 2000) return pause(id, 'erro', `O orquestrador não gravou revisoes\\${t.id}.json com o veredito. Veja a aba "${ORQ_NAME}" e clique em Continuar.`);
+          if (!rv || !rv.ok || rv.mtime < Date.parse(x.enviadoRev) - 2000) return falha(id, 'orq', `O orquestrador não gravou revisoes\\${t.id}.json com o veredito.`); // DEV2-015: F5 dele uma vez, depois pausa
           x.ultimaRevisao = { id: t.id, veredito: rv.veredito, motivo: rv.motivo.slice(0, 300) };
           if (rv.veredito === 'aprovado') {
             x.feitas.push({ id: t.id, titulo: t.titulo, commit: x.semCommitOk ? '' : x.ultimoCommit, semCommit: !!x.semCommitOk, tentativas: x.tentativas });
-            Object.assign(x, { k: x.k + 1, etapa: 'dev', tentativas: 0, extra: 0, refazer: null, enviadoDev: null, enviadoRev: null, semCommitOk: false });
+            Object.assign(x, { ...ZERA, k: x.k + 1 });
             cySave(id);
             continue;
           }
@@ -554,6 +642,95 @@
       console.error('vibe: execução', e);
       if (c.gen === g) pause(id, 'erro', `Erro no Termix: ${e && e.message ? e.message : e}`);
     }
+  }
+
+  // DEV2-015: uma etapa da recuperação. Fases: 'nova' (diagnóstico e nova volta, ou pendência) -> 'pedido' (orquestrador
+  // grava a decisão) -> 'acao' (o Termix executa) -> 'conferir' (a tarefa volta ao Dev; falhando de novo, nova volta).
+  // Devolve 'parar' quando pausou/parou; senão o execLoop segue.
+  async function recuperar(id, g, x, t, alive) {
+    const c = cyOf(id), rec = x.rec, max = voltasMax(c);
+    const retom = !!x.retomar;
+    x.retomar = false;
+    if (!rec || rec.tarefa !== t.id) { Object.assign(x, { etapa: 'dev', rec: null }); cySave(id); return; }
+    if (rec.fase === 'nova') {
+      const n = (rec.diags || 0) + 1;
+      const tentado = [...(rec.tentado || []), `falha: ${rec.falha}`];
+      const d = await call('recDiag', id, t.id, n, { quem: 'dev', motivo: rec.falha, tela: telaDe(c.est.dev), tentado, max });
+      if (!alive()) return 'parar';
+      Object.assign(rec, { diags: n, tentado, diag: d && d.arquivo ? d.arquivo : '', resumo: d && d.resumo ? d.resumo : rec.falha });
+      if ((rec.voltas || 0) >= max) { pendencia(id, max ? `${plural(max, 'volta', 'voltas')} de recuperação sem sucesso (última falha: ${rec.falha})` : `sem voltas de recuperação na política (${rec.falha})`); return alive() ? undefined : 'parar'; }
+      rec.voltas = (rec.voltas || 0) + 1;
+      Object.assign(rec, { fase: 'pedido', n, enviado: null, decisao: null, inicio: rec.inicio || nowIso() });
+      cySave(id);
+      return;
+    }
+    if (rec.fase === 'pedido') {
+      if (!(retom && rec.enviado)) {
+        rec.enviado = nowIso(); x.sub = 'rec';
+        cySave(id);
+        const text = await call('recPrompt', id, t.id, rec.n, max);
+        if (!(await ask(id, g, 'orq', text))) return 'parar';
+      }
+      const r = await call('recLer', id, t.id, rec.n);
+      if (!alive()) return 'parar';
+      const fresco = r && r.mtime != null && r.mtime >= Date.parse(rec.enviado) - 2000;
+      if (!r || !r.ok || !fresco) {
+        if (retom && !rec.repetido) { rec.repetido = true; rec.enviado = null; cySave(id); return; } // depois do Continuar: pede de novo, uma vez
+        rec.repetido = false;
+        const mot = !r ? 'erro ao ler a decisão' : !fresco && r.ok ? `o orquestrador não gravou recuperacao\\${t.id}-${rec.n}.json neste turno` : r.motivo;
+        pause(id, 'erro', `Recuperação da ${t.id} (volta ${rec.voltas}/${max}): ${String(mot || '').replace(/\.+$/, '')}. Veja a aba "${ORQ_NAME}" e clique em Continuar (o Termix pede a decisão de novo).`);
+        return 'parar';
+      }
+      rec.repetido = false;
+      rec.decisao = { acao: r.acao, explicacao: r.explicacao, motivo: r.motivo, bloqueia: r.bloqueia, dividir: r.dividir || null };
+      rec.tentado = [...(rec.tentado || []), `volta ${rec.voltas}: ${r.acao}${r.motivo ? ` (${r.motivo.slice(0, 160)})` : ''}`];
+      rec.fase = 'acao';
+      cySave(id);
+      return;
+    }
+    if (rec.fase === 'acao') {
+      const dc = rec.decisao || {};
+      const reexec = (o = {}) => { // a tarefa volta ao Dev; a execução pedida pela recuperação não gasta tentativa da revisão
+        Object.assign(x, { etapa: 'dev', enviadoDev: null, enviadoRev: null, extraRec: (x.extraRec || 0) + 1, manterBase: true, ...o });
+        rec.fase = 'conferir';
+        cySave(id);
+      };
+      const falhou = (m) => { rec.tentado = [...(rec.tentado || []), `ação ${dc.acao} falhou: ${m}`]; Object.assign(rec, { fase: 'nova', falha: `a ação ${dc.acao} falhou (${m})` }); cySave(id); };
+      const recTxt = { motivo: rec.falha, explicacao: dc.explicacao };
+      if (dc.acao === 'pular') { pendencia(id, `pulada pelo orquestrador${dc.motivo ? `: ${dc.motivo}` : ''}`); return alive() ? undefined : 'parar'; }
+      if (dc.acao === 'reenviar') return reexec({ refazer: { recuperacao: recTxt } });
+      if (dc.acao === 'clear_dev') return reexec({ refazer: null });
+      if (dc.acao === 'f5_aba') {
+        const okF5 = await f5Aba(id, 'dev', g);
+        if (!alive()) return 'parar';
+        if (!okF5) return falhou('a aba do Dev não voltou em 60 s');
+        return reexec({ refazer: { recuperacao: { ...recTxt, f5: true } }, semClear: true });
+      }
+      if (dc.acao === 'f5_projeto') {
+        rec.f5Projeto = { inicio: nowIso() }; cySave(id);
+        const r = await call('f5Projeto', id);
+        if (!alive()) return 'parar';
+        rec.f5Projeto = r ? { ok: !!r.ok, estado: r.estado || '', motivo: r.motivo || '', log: r.log || '' } : { ok: false, motivo: 'erro ao rodar' };
+        if (!r || !r.ok) return falhou((r && r.motivo) || 'erro ao rodar o comando');
+        return reexec({ refazer: { recuperacao: recTxt } });
+      }
+      if (dc.acao === 'dividir') {
+        const r = await call('planoDividir', id, t.id, dc.dividir);
+        if (!alive()) return 'parar';
+        if (!r || !r.ok) return falhou((r && r.motivo) || 'não foi possível dividir o plano');
+        const ts = ((await call('tarefas', id)) || []).filter((y) => y.id === `${t.id}.a` || y.id === `${t.id}.b`);
+        if (!alive()) return 'parar';
+        if (ts.length !== 2) return falhou('as partes não apareceram no plano');
+        x.tarefas.splice(x.k, 1, ...ts);
+        x.divididas = [...(x.divididas || []), { id: t.id, titulo: t.titulo, partes: ts.map((y) => y.id), data: nowIso() }];
+        Object.assign(x, { ...ZERA });
+        cySave(id);
+        notifyHuman(projOf(id), tabOf(c.est.orq), `${t.id} dividida pelo orquestrador em ${ts.map((y) => y.id).join(' e ')}. O ciclo segue.`);
+        return;
+      }
+      return falhou('ação desconhecida');
+    }
+    Object.assign(x, { etapa: 'dev' }); cySave(id); // 'conferir' sem execução em andamento: volta ao Dev
   }
 
   let tick = 0;
@@ -578,12 +755,14 @@
       }
       if (e.fase === 'execucao' && c.esperando) {
         const tid = c.esperando.tab;
-        if (!isAlive(tid)) { pause(id, 'erro', 'A aba do agente fechou no meio da tarefa. Clique em Continuar para reabrir e seguir.'); continue; }
+        // DEV2-015: aba fechada, tempo limite ou silêncio não pausam mais: Dev vai para a recuperação; orquestrador, F5 dele uma vez
+        const key = c.esperando.key;
+        if (!isAlive(tid)) { falha(id, key, 'A aba do agente fechou no meio da tarefa.'); continue; }
         const last = Math.max(c.esperando.desde, ACT[tid] || 0, (RT[tid] && RT[tid].lastData) || 0);
-        const quem = c.esperando.key === 'orq' ? 'O orquestrador' : 'O Dev';
+        const quem = key === 'orq' ? 'O orquestrador' : 'O Dev';
         const min = (ms) => (ms >= 60000 ? `${Math.round(ms / 60000)} min` : `${Math.round(ms / 1000)} s`);
-        if (Date.now() - c.esperando.desde > T.turno) pause(id, 'erro', `${quem} não terminou o turno em ${min(T.turno)} (tempo limite). O Termix interrompeu o agente; veja a aba e clique em Continuar para conferir e seguir.`, { interromper: tid });
-        else if (Date.now() - last > T.semResposta) pause(id, 'erro', `${quem} está sem responder há ${min(T.semResposta)}. O Termix interrompeu o agente; veja a aba e clique em Continuar.`, { interromper: tid });
+        if (Date.now() - c.esperando.desde > T.turno) falha(id, key, `${quem} não terminou o turno em ${min(T.turno)} (tempo limite); o Termix interrompeu o agente.`, { interromper: tid });
+        else if (Date.now() - last > T.semResposta) falha(id, key, `${quem} ficou sem nenhum sinal por ${min(T.semResposta)}; o Termix interrompeu o agente.`, { interromper: tid });
       }
     }
     try { checkPart(); } catch { /* aviso da parte do Mutirão: o cabeçalho nem sempre é redesenhado ao trocar de projeto */ }
@@ -637,7 +816,7 @@
     else if (e.fase === 'pausado') fase = PAUSA_TIT[x.pausa && x.pausa.tipo] || 'Pausado';
     else if (e.fase === 'parado') fase = 'Parado';
     else if (!c.live) fase = 'Pausado (o Termix foi fechado)';
-    else fase = x.etapa === 'revisao' ? 'Revisão (orquestrador)' : 'Dev trabalhando';
+    else fase = recTxt(c) || (x.etapa === 'revisao' ? 'Revisão (orquestrador)' : 'Dev trabalhando');
     const rows = [
       ['Tarefa', e.fase === 'concluido' ? `${n}/${n}` : t ? `${x.k + 1}/${n} · ${esc(t.id)} — ${esc(t.titulo)}` : `${n}/${n}`],
       ['Fase', esc(fase)],
@@ -646,16 +825,29 @@
       ['Tentativas', e.fase === 'concluido' || !t ? '—' : `${x.tentativas || 0} de ${maxTent(x)}`],
       ['Limites', `5 h ${pctTxt(lim5())} · 7 d ${pctTxt(lim7r())}${usd != null ? ` · US$ ${usd.toFixed(2)}` : ''} <small>(teto: 5 h ${o.teto5}% · 7 d ${o.teto7}%${o.usd != null ? ` · US$ ${o.usd}` : ''})</small>`],
     ];
+    if (x.rec && x.rec.tarefa === (t && t.id) && e.fase !== 'concluido') rows.push(['Recuperação', `${esc(recTxt(c) || '')}${x.rec.diag ? `<small class="vx-sub">Diagnóstico: ${esc(x.rec.diag)}</small>` : ''}${x.rec.tentado && x.rec.tentado.length ? `<small class="vx-sub">Já tentado: ${esc(x.rec.tentado.slice(-4).join(' · ').slice(0, 400))}</small>` : ''}`]);
     if (x.ultimaRevisao) rows.push(['Última revisão', `${esc(x.ultimaRevisao.id)}: ${esc(x.ultimaRevisao.veredito)}${x.ultimaRevisao.motivo ? ` — ${esc(x.ultimaRevisao.motivo.slice(0, 160))}` : ''}`]);
     const feita = (id) => x.feitas.find((f) => f.id === id);
+    const pends = x.pendencias || [];
     const list = x.tarefas.map((tt, i) => {
-      const f = feita(tt.id);
+      const f = feita(tt.id), pd = pends.find((y) => y.id === tt.id);
+      if (pd && !f) return `<li class="pend">${esc(tt.id)} — ${esc(tt.titulo)} <em class="vx-tag vx-pend">PENDÊNCIA</em></li>`;
       const cls = f ? 'done' : i === x.k && e.fase !== 'concluido' ? 'cur' : '';
       const tags = `${tt.deploy ? ' <em class="vx-tag">DEPLOY</em>' : ''}${tt.humano ? ' <em class="vx-tag">HUMANO</em>' : ''}${tt.semCommit ? ' <em class="vx-tag">SEM COMMIT</em>' : ''}`;
       const extra = f ? (f.deploy === 'pendente' ? ' · deploy pendente' : f.deploy === 'retido' ? ' · deploy retido (Pausar deploy)' : f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
       return `<li class="${cls}">${esc(tt.id)} — ${esc(tt.titulo)}${tags}<small>${extra}</small></li>`;
     }).join('');
-    return `<div class="vx"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><ol class="vx-list">${list}</ol></div>`;
+    // DEV2-015: pendências (tarefas puladas ou com as voltas esgotadas), uma por tarefa, com o motivo e o diagnóstico
+    const pendHtml = pends.length ? `<div class="vx-pends"><b>${e.fase === 'concluido' ? 'Pendências do ciclo' : 'Pendências até agora'} (${pends.length})</b><ul>${pends.map((y) => `<li><b>${esc(y.id)} — ${esc(y.titulo)}</b>: ${esc(y.motivo)}${y.bloqueia ? ' <em class="vx-tag">BLOQUEIA AS PRÓXIMAS</em>' : ''}${y.diag ? `<small>Diagnóstico: ${esc(y.diag)}</small>` : ''}</li>`).join('')}</ul></div>` : '';
+    const divHtml = (x.divididas || []).length ? `<small class="vx-div">Divididas na recuperação: ${x.divididas.map((y) => `${esc(y.id)} em ${esc(y.partes.join(' e '))}`).join('; ')}</small>` : '';
+    return `<div class="vx"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><ol class="vx-list">${list}</ol>${divHtml}${pendHtml}</div>`;
+  }
+  // DEV2-015: "Recuperando (volta n/3): <ação>" enquanto a tarefa atual está numa volta de recuperação
+  function recTxt(c) {
+    const x = c && c.est && c.est.exec, r = x && x.rec, t = x && x.tarefas[x.k];
+    if (!r || !t || r.tarefa !== t.id || !r.voltas) return '';
+    const acao = r.fase === 'pedido' ? 'aguardando a decisão do orquestrador' : r.decisao ? REC_TXT[r.decisao.acao] || r.decisao.acao : 'diagnóstico';
+    return `Recuperando (volta ${r.voltas}/${voltasMax(c)}): ${acao}`;
   }
   const mdLite = (t) => String(t).replace(/\r/g, '').split('\n').map((l) => { const m = /^(#{1,4})\s+(.*)$/.exec(l); return m ? `<div class="vh h${m[1].length}">${esc(m[2])}</div>` : `<div>${l.trim() ? esc(l) : '&nbsp;'}</div>`; }).join('');
 
@@ -694,9 +886,9 @@
       perguntas: `O orquestrador tem ${plural(c.perguntas.length, 'pergunta indispensável', 'perguntas indispensáveis')}. Responda para fechar o plano.`,
       fechando: 'O orquestrador está fechando o plano com as suas respostas.',
       pronto: `<b>Plano pronto${e.tarefas ? `, ${plural(e.tarefas, 'tarefa', 'tarefas')}` : ''}.</b> "Executar plano" passa as tarefas ao Dev uma a uma, com revisão do orquestrador. Commits só na branch permitida; a main/master fica intacta.`,
-      execucao: x ? `<b>Executando o plano.</b> ${x.etapa === 'revisao' ? 'O orquestrador está revisando' : 'O Dev está trabalhando'} na ${esc((x.tarefas[x.k] || {}).id || '')}. O Termix avisa se precisar de você.` : '',
+      execucao: x ? (recTxt(c) ? `<b>${esc(recTxt(c))}.</b> A ${esc((x.tarefas[x.k] || {}).id || '')} falhou e o Termix está recuperando sozinho (diagnóstico e decisão do orquestrador). Esgotadas as voltas, ela vira pendência e o ciclo segue.` : `<b>Executando o plano.</b> ${x.etapa === 'revisao' ? 'O orquestrador está revisando' : 'O Dev está trabalhando'} na ${esc((x.tarefas[x.k] || {}).id || '')}. O Termix avisa se precisar de você.`) : '',
       pausado: x && x.pausa ? `<b>${esc(PAUSA_TIT[x.pausa.tipo] || 'Pausado')}.</b> ${esc(x.pausa.motivo || '')}${(x.pausa.tipo === 'limite' && c.live) || /clique em "?Continuar/i.test(x.pausa.motivo || '') ? '' : x.pausa.gate ? ' Clique em "Continuar" para o Dev executar a tarefa, ou em "Já fiz, pular" se você mesmo a fez.' : ' Clique em "Continuar" quando quiser seguir.'}` : '',
-      concluido: (e.auto && e.auto.mutirao && e.mutFim ? (e.mutFim.ok ? `<b>Mutirão concluído na ${esc(e.mutFim.branch || '')}.</b> Push feito pelo Termix (commit ${esc(String(e.mutFim.sha || '').slice(0, 8))}). Promover para a main é com você. ` : `<span class="mp-bad">O push da branch do dono falhou: ${esc(e.mutFim.motivo || '')}</span> `) : '') + (x ? `<b>Projeto concluído.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}. A main/master não foi alterada.` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
+      concluido: (e.auto && e.auto.mutirao && e.mutFim ? (e.mutFim.ok ? `<b>Mutirão concluído na ${esc(e.mutFim.branch || '')}.</b> Push feito pelo Termix (commit ${esc(String(e.mutFim.sha || '').slice(0, 8))}). Promover para a main é com você. ` : `<span class="mp-bad">O push da branch do dono falhou: ${esc(e.mutFim.motivo || '')}</span> `) : '') + (x ? `<b>Projeto concluído.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}${(x.pendencias || []).length ? `, ${plural(x.pendencias.length, 'pendência', 'pendências')} (lista abaixo)` : ''}. A main/master não foi alterada.` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
       parado: `<b>Vibe Coding parado em "${esc(stepName)}".</b> Nada foi apagado e as abas continuam abertas. Clique em "${go}" para seguir.`,
       erro: `<b>O plano não ficou pronto.</b>`,
     }[e.fase] || '';
@@ -756,7 +948,7 @@
     const rad = (name, field, val, cur, label, sub) => `<label class="vp-opt ${cur === val ? 'sel' : ''}"><input type="radio" name="${name}" data-vpf="${field}" value="${esc(val)}" ${cur === val ? 'checked' : ''}><span><b>${esc(label)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span></label>`;
     const modelos = (c.pol.prontos || []).map((m) => rad('vpModelo', 'modelo', m.id, p.modelo, `${m.titulo}${m.id === 'branch' ? ' (padrão)' : ''}`, m.resumo)).join('');
     const sel = (field, opts, cur) => `<select class="inp" data-vpf="${field}">${Object.entries(opts).map(([v, l]) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
-    const o = p.orcamento;
+    const o = p.orcamento, rc = p.recuperacao || { voltas: 3, f5Projeto: '' };
     const deploy = pode ? `
       <div class="vf"><label>Deploy na main</label>${sel('deploy.modo', DEPLOY_TXT, p.deploy.modo)}
         ${p.deploy.modo === 'marco' ? `<input type="text" class="inp vp-gap" data-vpf="deploy.marco" maxlength="200" placeholder="Marco, em texto livre. Ex.: v1.0 estável" value="${esc(p.deploy.marco)}">
@@ -786,6 +978,12 @@
         <small>Vai no settings da aba do agente (o mesmo da trava) e vale quando a aba abre. No meio do ciclo, vale na próxima vez que a aba for aberta.</small></div>
       <div class="vf"><label>Quando chamar você</label><div class="vp-opts">${Object.entries(HUM_TXT).map(([v, l]) => rad('vpHum', 'humano', v, p.humano, l)).join('')}</div>
         <small>[HUMANO] sempre pausa (o indispensável). "Decisões de produto" vale para as perguntas do próximo plano.</small></div>
+      <div class="vf"><label>Recuperação de erro <em class="opt">quando o Dev erra, estoura o tempo ou fica sem sinal</em></label>
+        <div class="vp-row"><label>Voltas do orquestrador por tarefa <input type="number" class="inp" data-vpf="recuperacao.voltas" min="0" max="5" value="${rc.voltas}"></label></div>
+        <small>Em cada volta, o Termix grava um diagnóstico e o orquestrador escolhe uma ação: reenviar ao Dev, /clear no Dev, F5 da aba, F5 do projeto, dividir a tarefa ou pular. Esgotadas as voltas, a tarefa vira pendência, o Termix avisa e o ciclo segue. As voltas contam no orçamento.</small></div>
+      <div class="vf"><label>Comando para reiniciar o projeto (F5 do projeto) <em class="opt">opcional</em></label>
+        <input type="text" class="inp" data-vpf="recuperacao.f5Projeto" maxlength="500" placeholder="Ex.: npm run dev (sobe de novo o servidor de desenvolvimento)" value="${esc(rc.f5Projeto)}">
+        <small>Roda na pasta do projeto, só quando o orquestrador pedir, e passa antes pela trava (comandos proibidos e troca de pasta são recusados).</small></div>
       ${F.err ? `<div class="vf-prob">${esc(F.err)}</div>` : ''}
       <div class="vibe-confirm"><button class="btn sm" data-vp="cancelar">Voltar</button><button class="btn sm pri" data-vp="salvar">${go}</button></div>
     </div>`;
@@ -1510,6 +1708,8 @@
       // DEV2-007: tempos(ms) do tempo limite do turno e do silêncio (sem argumento: volta ao padrão de 30 e 20 min)
       tempos: (o) => { T.turno = (o && o.turno) || 30 * 60000; T.semResposta = (o && o.semResposta) || 20 * 60000; return { ...T }; },
       exec: () => V && execStart(V.id), cont: () => V && resumeCycle(V.id), skip: () => V && skipTask(V.id),
+      // DEV2-015: recuperação. f5Projeto() roda o comando "reiniciar o projeto" da política; tela(k) = o texto do diagnóstico
+      f5Projeto: () => V && call('f5Projeto', V.id), tela: (k) => { const c = V && CY[V.id]; return c && c.est ? telaDe(c.est[k || 'dev']).split('\n').slice(-60).join('\n') : ''; },
       // DEV2-005: Mutirão. mut.* = os botões do painel; mutEntregar grava a entrega simulada do sócio (sem rodar o Vibe)
       mut: { open: (pid) => openMutirao(pid), close: () => closeMutirao(), rows: (r) => { if (!MP) return false; MP.rows = r; mutPaint(); return true; },
         state: () => (MP ? { id: MP.id, est: MP.est, conf: MP.conf, cont: MP.cont, rows: MP.rows, msg: MP.msg && MP.msg.html, gerando: MP.gerando } : null),

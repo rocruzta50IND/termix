@@ -15,6 +15,7 @@ const HUMANO = ['indispensavel', 'produto', 'sempre'];
 const MODELOS_IA = ['', 'opus', 'sonnet', 'haiku']; // '' = o padrão do Claude Code; vai no "model" do settings da aba
 const TETO5_PADRAO = 93; // decisão anterior do Ygor (DEV2-004), agora configurável
 const TETO7_PADRAO = 95;
+const VOLTAS_PADRAO = 3; // DEV2-015: voltas de recuperação do orquestrador por tarefa (0 a 5)
 
 // Modelos prontos: o usuário escolhe um e ajusta por cima.
 const PRONTOS = {
@@ -47,7 +48,7 @@ function papelDe(pasta) {
 }
 
 function padrao(info) {
-  return { versao: 1, modelo: 'branch', ajustado: false, deploy: { modo: 'nunca', marco: '', marcoAtingido: false, receita: '', pausado: false }, portao: (info && info.validacao) || '', orcamento: { teto5: TETO5_PADRAO, teto7: TETO7_PADRAO, usd: null }, modelos: { orq: '', dev: '' }, humano: 'indispensavel' };
+  return { versao: 1, modelo: 'branch', ajustado: false, deploy: { modo: 'nunca', marco: '', marcoAtingido: false, receita: '', pausado: false }, portao: (info && info.validacao) || '', orcamento: { teto5: TETO5_PADRAO, teto7: TETO7_PADRAO, usd: null }, modelos: { orq: '', dev: '' }, humano: 'indispensavel', recuperacao: { f5Projeto: '', voltas: VOLTAS_PADRAO } };
 }
 
 // Aplica um modelo pronto por cima da política atual (só deploy e humano mudam; o resto fica).
@@ -65,6 +66,7 @@ function normalizar(pol, info) {
   const d = p.deploy && typeof p.deploy === 'object' ? p.deploy : {};
   const o = p.orcamento && typeof p.orcamento === 'object' ? p.orcamento : {};
   const mo = p.modelos && typeof p.modelos === 'object' ? p.modelos : {};
+  const rc = p.recuperacao && typeof p.recuperacao === 'object' ? p.recuperacao : {};
   const pode = !!(info && info.podeDeploy);
   const out = {
     versao: 1,
@@ -81,6 +83,9 @@ function normalizar(pol, info) {
     orcamento: { teto5: num(o.teto5, 1, 100, TETO5_PADRAO), teto7: num(o.teto7, 1, 100, TETO7_PADRAO), usd: o.usd === '' || o.usd == null ? null : num(o.usd, 0.01, 100000, null) },
     modelos: { orq: MODELOS_IA.includes(mo.orq) ? mo.orq : '', dev: MODELOS_IA.includes(mo.dev) ? mo.dev : '' },
     humano: HUMANO.includes(p.humano) ? p.humano : base.humano,
+    // DEV2-015: recuperação de erro. f5Projeto = comando opcional para "reiniciar o projeto" (roda na pasta do projeto, depois
+    // de passar pela trava); voltas = quantas voltas do orquestrador por tarefa antes de virar pendência.
+    recuperacao: { f5Projeto: str(rc.f5Projeto, 500).replace(/\n+/g, ' '), voltas: Math.round(num(rc.voltas, 0, 5, VOLTAS_PADRAO)) },
   };
   if (!pode) { // DEV2..DEV5 (ou fluxo sem papel): sem deploy nem modelo "com deploy"
     out.deploy = { ...out.deploy, modo: 'nunca', marcoAtingido: false };
@@ -197,4 +202,4 @@ function create({ dirOf, readJson, writeJson, validId, pastaDe }) {
   return { api, ler, info };
 }
 
-module.exports = { create, papelDe, padrao, normalizar, aplicarModelo, decidirDeploy, decidirHumano, tetoAtingido, trechoAgente, resumo, deployAuto, PRONTOS, TETO5_PADRAO, TETO7_PADRAO };
+module.exports = { create, papelDe, padrao, normalizar, aplicarModelo, decidirDeploy, decidirHumano, tetoAtingido, trechoAgente, resumo, deployAuto, PRONTOS, TETO5_PADRAO, TETO7_PADRAO, VOLTAS_PADRAO };

@@ -6,6 +6,15 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-015 — Recuperação de erro no ciclo do Vibe** (DEV2)
+
+- Erro do Dev, tempo limite, silêncio, aba fechada e tentativas esgotadas pela conferência não pausam mais: o Termix grava um diagnóstico (`vibe\<id>\diagnosticos\Tk-n.md`: tela, git status, último commit, branch, motivo e o já tentado), dá `/clear` no orquestrador e pede UMA ação (reenviar, clear_dev, f5_aba, f5_projeto, dividir, pular) em `recuperacao\Tk-n.json`, e executa em código.
+- Até 3 voltas por tarefa (política, 0 a 5; contam no orçamento). Esgotadas, a tarefa vira pendência, o sino avisa e o ciclo segue. Pausa total só com `bloqueia_proximas`, main/master alterada ou teto. JSON inválido pausa.
+- Orquestrador travado: F5 da aba dele uma vez por tarefa; travou de novo, pausa e avisa. Refação pela revisão (2 + Continuar) sem mudança e sem contar em dobro.
+- F5 da aba: fecha e reabre com `--resume` (trava e modelo atual da política). F5 do projeto: comando opcional da política, na pasta do projeto, conferido pela trava antes de rodar.
+- Painel: "Recuperando (volta n/3): <ação>", PENDÊNCIA na lista e "Pendências do ciclo" no fim. Tarefa dividida vira Tk.a e Tk.b no plano.
+- Testes sem IA: módulo novo 36/36; app com o agente falso 29/29; antigos sem ajuste (política 55, trava 113, Mutirão 31, implementação automática 41, robustez 23, conferências 16, Organizador 19). Antes, sincronizada com a dev1 (0.6.2).
+
 **DEV2-018 — Ajustes da DEV2-014 e proposta do botão "Delegar tarefa"** (DEV2)
 
 - `npm run check` passa a incluir `src/vibe/politica.js`.

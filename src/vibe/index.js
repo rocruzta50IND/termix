@@ -107,6 +107,7 @@ function checkFields(f) {
 const CYCLE_FILES = ['estado.json', 'plano.md', 'perguntas.json', 'respostas.json', 'resultados', 'revisoes', 'pedidos'];
 const ORQ_NAME = 'Vibe · Orquestrador', DEV_NAME = 'Vibe · Dev';
 const PROTEGIDAS = ['main', 'master'];
+const { TK_RX } = require('./recuperacao'); // DEV2-015: T3 e as partes de uma tarefa dividida (T3.a, T3.b)
 
 // git sem shell, na pasta do projeto: { ok, out, err }
 function gitRun(dir, args, timeout = 15000) {
@@ -120,11 +121,11 @@ function tarefasDo(text) {
   const lines = String(text || '').replace(/\r/g, '').split('\n');
   const out = [];
   lines.forEach((l, i) => {
-    const m = /^[ \t]*(?:#{1,4}[ \t]*|\d+[.)][ \t]*|[-*][ \t]+)?(?:\*\*|__)?T(\d+)\b(.*)$/.exec(l);
-    if (!m || out.some((t) => t.n === +m[1])) return;
-    out.push({ n: +m[1], id: `T${m[1]}`, titulo: m[2].replace(/[*_`]+/g, '').replace(/^[\s—–:.)-]+/, '').trim().slice(0, 160), linha: i });
+    const m = /^[ \t]*(?:#{1,4}[ \t]*|\d+[.)][ \t]*|[-*][ \t]+)?(?:\*\*|__)?T(\d+)((?:\.[a-z]){0,3})\b(.*)$/.exec(l);
+    if (!m || out.some((t) => t.id === `T${m[1]}${m[2]}`)) return;
+    out.push({ n: +m[1], suf: m[2], id: `T${m[1]}${m[2]}`, titulo: m[3].replace(/[*_`]+/g, '').replace(/^[\s—–:.)-]+/, '').trim().slice(0, 160), linha: i });
   });
-  out.sort((a, b) => a.n - b.n);
+  out.sort((a, b) => a.n - b.n || (a.suf < b.suf ? -1 : a.suf > b.suf ? 1 : 0)); // DEV2-015: T3, T3.a, T3.b, T4
   const starts = out.map((t) => t.linha).sort((a, b) => a - b);
   for (const t of out) {
     const fim = starts.find((x) => x > t.linha) || lines.length;
@@ -133,7 +134,8 @@ function tarefasDo(text) {
     t.humano = /\[\s*HUMANO\s*\]/i.test(t.titulo) || /^\W*tipo\W*:\W*humano/im.test(corpo);
     t.semCommit = /\[\s*SEM[\s_-]*COMMIT\s*\]/i.test(t.titulo); // DEV2-007: só valida/confere; pode terminar sem commit
     t.titulo = t.titulo.replace(/\[\s*(DEPLOY|HUMANO|SEM[\s_-]*COMMIT)\s*\]\s*/gi, '').trim() || t.id; // a marca vira etiqueta na tela
-    delete t.linha;
+    t.dividida = /^>\s*Dividida pelo Termix em /m.test(corpo); // DEV2-015: o Dev executa as partes, não ela
+    delete t.linha; delete t.suf;
   }
   return out;
 }
@@ -197,6 +199,8 @@ function create(deps = {}) {
   const MUT = require('./mutirao').create({ dirOf, readJson, writeJson, gitRun, shaOf, headOf, checkStructure, validId, TEST, logError, gravarEntrega });
   // DEV2-014: política de autonomia por projeto (src/vibe/politica.js), gravada em vibe<id>politica.json
   const POL = require('./politica').create({ dirOf, readJson, writeJson, validId, pastaDe: (id) => { const e = entregaOf(id); return (e && e.projeto.pasta) || MUT.pastaDe(id) || ''; } });
+  // DEV2-015: recuperação de erro (diagnóstico, decisão do orquestrador por arquivo, F5 do projeto e dividir tarefa)
+  const REC = require('./recuperacao').create({ dirOf, readJson, validId, entregaOf, pastaDe: (id) => MUT.pastaDe(id), gitRun, headOf, branchDe: (id, pasta) => branchFor(id, pasta).nome, pedido: (...a) => pedido(...a), POL, decide: require('./trava').decide, travaCfg: (id, pasta) => ({ projeto: pasta, vibe: dirOf(id), branch: branchFor(id, pasta).nome, protegidas: PROTEGIDAS }), TEST });
   // Branch dos agentes deste projeto: a do dono, na implementação automática do Mutirão (DEV2-006); a da parte do Mutirão,
   // se o sócio abriu o Vibe por ela; senão, a regra de branchOf.
   const branchFor = (id, pasta) => {
@@ -501,12 +505,12 @@ function create(deps = {}) {
       return { branch: headOf(dir), permitida: br, permitidaSha: br ? shaOf(dir, `refs/heads/${br}`) : null, heads, ultimo: last.ok ? last.out.slice(0, 160) : '' };
     },
     resultadoLer(id, tk) {
-      if (!validId(id) || !/^T\d+$/.test(tk)) return null;
+      if (!validId(id) || !TK_RX.test(tk)) return null;
       const f = path.join(dirOf(id), 'resultados', `${tk}.md`);
       try { const st = fs.statSync(f), texto = fs.readFileSync(f, 'utf8').slice(0, 4000); return { existe: true, mtime: st.mtimeMs, texto, validacao: temValidacao(texto) }; } catch { return { existe: false }; }
     },
     revisaoLer(id, tk) {
-      if (!validId(id) || !/^T\d+$/.test(tk)) return null;
+      if (!validId(id) || !TK_RX.test(tk)) return null;
       const f = path.join(dirOf(id), 'revisoes', `${tk}.json`);
       try {
         const st = fs.statSync(f);
@@ -520,7 +524,7 @@ function create(deps = {}) {
     // Pedidos curtos da execução. kind: 'dev' (tarefa nova), 'refazer' (com a revisão ou o que faltou), 'revisao' (orquestrador).
     execPrompt(id, kind, tk, extra) {
       const e = entregaOf(id);
-      if (!e || !/^T\d+$/.test(String(tk))) return null;
+      if (!e || !TK_RX.test(String(tk))) return null;
       const d = dirOf(id), plano = path.join(d, 'plano.md'), res = path.join(d, 'resultados', `${tk}.md`), rev = path.join(d, 'revisoes', `${tk}.json`);
       const br = branchFor(id, e.projeto.pasta).nome;
       const regras = `Commit só na branch "${br}" (já é a atual); não faça push nem troque de branch. O Termix bloqueia commit/push na main/master, comandos que apagam dados e gravar fora do projeto: se algo for bloqueado, leia o motivo e siga pelo caminho permitido.`;
@@ -531,7 +535,9 @@ function create(deps = {}) {
       if (kind === 'dev' && sc) return pedido(id, `${tk}-dev`, `Você é o DEV do Vibe Coding do Termix. Execute só a tarefa ${tk} (marcada [SEM COMMIT]: só valida ou confere): leia a seção ${tk} de ${plano} (e só o que ela exigir) e valide como ela pede. Se achar algo para corrigir, corrija e faça um commit "${tk}: ..."; se nada mudar, não faça commit. ${regras} ${fimSc}`);
       if (kind === 'dev') return pedido(id, `${tk}-dev`, `Você é o DEV do Vibe Coding do Termix. Execute só a tarefa ${tk}: leia a seção ${tk} de ${plano} (e só o que ela exigir). Implemente, valide como a tarefa pede e faça um commit "${tk}: ..." com tudo dela. ${regras} ${fim}`);
       if (kind === 'refazer') {
-        const ajuste = extra && extra.revisao ? `a revisão pediu ajustes: leia ${rev}` : `o Termix não aceitou a entrega: ${String((extra && extra.falta) || 'faltou o resultado ou o commit').slice(0, 400)}`;
+        let ajuste = extra && extra.revisao ? `a revisão pediu ajustes: leia ${rev}` : `o Termix não aceitou a entrega: ${String((extra && extra.falta) || 'faltou o resultado ou o commit').slice(0, 400)}`;
+        // DEV2-015: volta de recuperação — o motivo da falha e a explicação do orquestrador (ou o aviso de que a aba foi reaberta)
+        if (extra && extra.recuperacao) ajuste = `a tentativa anterior falhou (${String(extra.recuperacao.motivo || '').slice(0, 300)}). ${extra.recuperacao.f5 ? 'O Termix reabriu esta aba retomando a conversa: continue de onde parou, sem repetir o que já está commitado. ' : ''}${extra.recuperacao.explicacao ? `Orientação do orquestrador: ${String(extra.recuperacao.explicacao).slice(0, 1500)}` : ''}`.trim();
         if (sc) return pedido(id, `${tk}-refazer`, `Você é o DEV do Vibe Coding do Termix. Refaça a tarefa ${tk} (marcada [SEM COMMIT]) da seção ${tk} de ${plano}: ${ajuste}. Valide de novo; commit "${tk}: ..." só se corrigir algo. ${regras} ${fimSc}`);
         return pedido(id, `${tk}-refazer`, `Você é o DEV do Vibe Coding do Termix. Refaça a tarefa ${tk} da seção ${tk} de ${plano}: ${ajuste}. Corrija e faça um commit novo "${tk}: ...". ${regras} ${fim}`);
       }
@@ -578,10 +584,11 @@ function create(deps = {}) {
     on('revisaoLer', api.revisaoLer);
     on('execPrompt', api.execPrompt);
     for (const [k, fn] of Object.entries(MUT.api)) on(k, fn, null); // Mutirão (DEV2-005)
+    for (const [k, fn] of Object.entries(REC.api)) on(k, fn, null); // DEV2-015: recuperação de erro (recDiag, recPrompt, recLer, planoDividir, f5Projeto)
     for (const [k, fn] of Object.entries(POL.api)) on(k, fn, null); // DEV2-014: política de autonomia (canais vibe:politica*)
     for (const [k, fn] of Object.entries(ORG)) on(k, fn, null); // Organizador (DEV2-010): canais vibe:org*
   }
-  Object.assign(api, POL.api); // DEV2-014: também acessível pelos testes sem ipc
+  Object.assign(api, POL.api, REC.api); // DEV2-014/015: também acessível pelos testes sem ipc
   api.spawnSettings = spawnSettings; // usado pelo main.js (não é canal ipc)
   return api;
 }
