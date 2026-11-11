@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-016 e DEV2-018 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa", na DEV2-015 a recuperação de erro do ciclo e, na DEV2-016, o deploy feito pelo Termix e o fim de ciclo dos devs auxiliares)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-016, DEV2-018 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-016, DEV2-018 e DEV2-021 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa", na DEV2-015 a recuperação de erro do ciclo e, na DEV2-016, o deploy feito pelo Termix e o fim de ciclo dos devs auxiliares)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-016, DEV2-018, DEV2-021 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-11
 
 ## Resumo do que mudou
@@ -98,6 +98,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - "Pausar deploy" retém a tarefa; "Retomar deploy" publica os retidos (com um agente trabalhando, só ao fim da tarefa atual);
   - "Voltar versão": lista de deploys no painel, com confirmação explícita; desfaz por revert na principal e envia sem forçar; depois pergunta se roda a receita de novo;
   - DEV2..DEV5: nunca publicam na principal (recusado no processo principal, não só na tela); no fim do ciclo o orquestrador reescreve o handoff da dev em alto nível e o Termix faz o commit só dele e envia só a branch da dev;
+- **DEV2-021 (EXPERIMENTO):** deploy automático ("Sempre" ou "Marco") passa a exigir o portão de qualidade (a tela não grava sem ele e o Termix recusa o deploy); depois de "Voltar versão", com o fluxo, o Termix junta a principal na dev1 (sem força; conflito é cancelado, nada se perde), e o painel explica que trazer de volta o que foi revertido exige "reverter o revert".
   - ajustes da DEV2-015: o servidor deixado pelo "F5 do projeto" é encerrado (só ele, com os filhos) antes de um F5 novo e no fim do ciclo; durante a recuperação o painel mostra só "Volta n/N" e um link "Abrir diagnóstico".
 
 ## Áreas e arquivos afetados

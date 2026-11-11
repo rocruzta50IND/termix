@@ -546,7 +546,8 @@
     if (c.esperando) { c.depMsg = 'Um agente está trabalhando: espere a tarefa atual terminar (ou pare o ciclo) para voltar versão.'; paintCycle(); return null; }
     c.voltaConf = null; c.depMsg = `Voltando para antes de ${tag}…`; paintCycle();
     const r = (await call('deployVoltar', id, tag)) || { ok: false, motivo: 'erro ao voltar versão' };
-    c.depMsg = r.ok ? `Versão voltada: git revert de ${r.revertidos.join(', ')} enviado para a ${r.principal} (${String(r.sha).slice(0, 8)}), sem força.` : `Voltar versão não foi feito: ${r.motivo}`;
+    const jn = r.ok && r.juncao ? (r.juncao.ok ? ` A ${r.principal} foi juntada na ${r.branch} (merge --no-ff)${r.juncao.enviado ? ' e enviada, sem força' : `; ${r.juncao.motivo}`}.` : ` ${r.juncao.motivo}`) : '';
+    c.depMsg = r.ok ? `Versão voltada: git revert de ${r.revertidos.join(', ')} enviado para a ${r.principal} (${String(r.sha).slice(0, 8)}), sem força.${jn}` : `Voltar versão não foi feito: ${r.motivo}`;
     if (r.ok) c.voltaFeita = { tag };
     await depRefresh(id);
     notifyHuman(projOf(id), tabOf(c.est && c.est.orq), c.depMsg);
@@ -1015,9 +1016,10 @@
     let conf = '';
     if (c.voltaConf) {
       const k = deps.filter((d) => !d.revertido).findIndex((d) => d.tag === c.voltaConf);
-      conf = `<div class="vx-conf"><b>Voltar a main para antes de ${esc(c.voltaConf)}?</b> O Termix faz git revert de ${plural(k + 1, 'deploy', 'deploys')} (do mais novo até este) na main e envia a main, sem força. Nada é apagado; a tag continua no histórico. <span class="vx-dacts"><button class="btn sm pri" data-vc="depvoltaok">Confirmar: voltar versão</button><button class="btn sm" data-vc="depvoltano">Cancelar</button></span></div>`;
+      conf = `<div class="vx-conf"><b>Voltar a main para antes de ${esc(c.voltaConf)}?</b> O Termix faz git revert de ${plural(k + 1, 'deploy', 'deploys')} (do mais novo até este) na main e envia a main, sem força. Nada é apagado; a tag continua no histórico.${c.pol.info.fluxo ? ` Depois, a main é juntada na ${esc(c.pol.info.papel === 'DEV1' ? 'dev1' : 'branch de trabalho')} (merge --no-ff), para ela também ter o revert.` : ''} <span class="vx-dacts"><button class="btn sm pri" data-vc="depvoltaok">Confirmar: voltar versão</button><button class="btn sm" data-vc="depvoltano">Cancelar</button></span></div>`;
     } else if (c.voltaFeita) conf = `<div class="vx-conf">Versão voltada. Rodar a receita de deploy de novo agora, com a main revertida? <span class="vx-dacts"><button class="btn sm pri" data-vc="deprecvolta">Rodar a receita</button><button class="btn sm" data-vc="depvoltafim">Agora não</button></span></div>`;
-    return `<div class="vx-deps"><b>Deploys (versões)</b>${c.depMsg ? `<small class="vx-sub">${esc(c.depMsg)}</small>` : ''}${lis ? `<ul>${lis}</ul>` : ''}${conf}</div>`;
+    const rr = deps.some((d) => d.revertido) ? '<small class="vx-sub">Para trazer de volta o que foi revertido, é preciso "reverter o revert" (git revert do commit de revert); só juntar a branch de novo não traz.</small>' : '';
+    return `<div class="vx-deps"><b>Deploys (versões)</b>${c.depMsg ? `<small class="vx-sub">${esc(c.depMsg)}</small>` : ''}${lis ? `<ul>${lis}</ul>` : ''}${rr}${conf}</div>`;
   }
   // DEV2-015: "Recuperando (volta n/3): <ação>" enquanto a tarefa atual está numa volta de recuperação
   function recTxt(c) {
@@ -1140,7 +1142,8 @@
         <small>Só fica gravada: nada é executado agora.</small></div>
       <div class="vf"><label>Portão de qualidade <em class="opt">precisa passar antes de qualquer deploy</em></label>
         <input type="text" class="inp" data-vpf="portao" maxlength="500" placeholder="${esc(inf.validacao || 'Ex.: npm test')}" value="${esc(p.portao)}">
-        ${inf.validacao ? `<small>Sugestão do .claude/fluxo.json: <code>${esc(inf.validacao)}</code></small>` : ''}</div>`
+        ${inf.validacao ? `<small>Sugestão do .claude/fluxo.json: <code>${esc(inf.validacao)}</code></small>` : ''}
+        ${['sempre', 'marco'].includes(p.deploy.modo) ? `<small class="vp-obg${String(p.portao || '').trim() ? '' : ' bad'}">Obrigatório com o deploy "Sempre" ou "Marco": sem o portão, a política não é gravada.</small>` : ''}</div>`
       : `<div class="vibe-note"><b>Fim do ciclo:</b> enviar a sua branch e o handoff. ${esc(inf.motivo || 'O deploy na main é do DEV1.')}</div>`;
     const tit = F.modo === 'iniciar' ? 'Antes de iniciar a produção autônoma' : 'Editar a política (vale a partir da próxima tarefa)';
     const go = F.modo === 'iniciar' ? 'Iniciar a produção autônoma' : 'Salvar a política';

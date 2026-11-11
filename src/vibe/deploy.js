@@ -82,6 +82,25 @@ function create({ dirOf, readJson, writeJson, validId, pastaDe, gitRun, shaOf, h
     }
     return { ok: true };
   }
+  // DEV2-021: depois de "Voltar versão" com o fluxo, junta a main (com os reverts) na branch de trabalho e envia a branch, sem
+  // força. Conflito: merge --abort e aviso; nada é descartado. Devolve { ok, enviado, motivo }.
+  function juntarNaBranch(pasta, branch, principal, logF) {
+    if (headOf(pasta) !== branch) return { ok: false, motivo: `A ${principal} não foi juntada na ${branch}: o HEAD não voltou para ela.` };
+    const mg = gitRun(pasta, ['merge', '--no-ff', '--no-edit', '-m', `Junta a ${principal} (Voltar versão pelo Termix)`, principal], 60000);
+    fs.appendFileSync(logF, `git merge --no-ff ${principal} (na ${branch}): ${mg.ok ? 'ok' : `${mg.out}
+${mg.err}`}
+`);
+    if (!mg.ok) {
+      const ab = gitRun(pasta, ['merge', '--abort']);
+      fs.appendFileSync(logF, `git merge --abort: ${ab.ok ? 'ok' : ab.err}
+`);
+      return { ok: false, conflito: true, motivo: `Juntar a ${principal} na ${branch} deu conflito e foi cancelado (merge --abort); nada foi descartado. Junte à mão quando puder.` };
+    }
+    const ps = gitRun(pasta, ['push', 'origin', `refs/heads/${branch}:refs/heads/${branch}`], 120000);
+    fs.appendFileSync(logF, `git push origin ${branch}: ${ps.ok ? 'ok' : ps.err}
+`);
+    return { ok: true, enviado: ps.ok, motivo: ps.ok ? '' : `A ${branch} recebeu a ${principal}, mas o envio falhou (${primeira(ps.err)}).` };
+  }
   const voltar = (pasta, branch, logF) => { const r = gitRun(pasta, ['switch', branch]); fs.appendFileSync(logF, `git switch ${branch}: ${r.ok ? 'ok' : r.err}\n`); return r.ok; };
 
   function nomeTag(pasta, branch, principal) {
@@ -115,6 +134,8 @@ function create({ dirOf, readJson, writeJson, validId, pastaDe, gitRun, shaOf, h
       if (ocupado) return { ok: false, etapa: 'ocupado', motivo: 'Já há um deploy ou uma volta de versão em andamento.' };
       const cx = contexto(id);
       if (!cx.ok) return { ok: false, etapa: cx.proibido ? 'proibido' : 'interno', motivo: cx.motivo };
+      // DEV2-021: por segurança, o processo principal também recusa o deploy automático sem portão (política antiga ou editada à mão)
+      if (['sempre', 'marco'].includes(cx.pol && cx.pol.deploy.modo) && !cx.portao) return { ok: false, etapa: 'politica', motivo: 'O deploy automático ("Sempre" ou "Marco") exige o portão de qualidade, e a política está sem ele. Preencha o portão na política (ou escolha "Pedir autorização"). Nada foi publicado.' };
       ocupado = id;
       const { pasta, branch, principal } = cx;
       fs.mkdirSync(dDir(id), { recursive: true });
@@ -294,7 +315,9 @@ ${rv.err}`}
         const data = new Date().toISOString();
         for (const d of j.deploys) if (alvo.some((a) => a.tag === d.tag)) d.revertido = { data, sha, por: tag };
         gravarReg(id, j);
-        return { ok: true, sha, revertidos: alvo.map((d) => d.tag), principal, log: logF };
+        // DEV2-021: com o fluxo, a main revertida volta para a branch de trabalho (dev1) por merge --no-ff, sem força
+        const juncao = cx.info.fluxo ? juntarNaBranch(pasta, branch, principal, logF) : null;
+        return { ok: true, sha, revertidos: alvo.map((d) => d.tag), principal, branch, juncao, log: logF };
       } finally { ocupado = null; }
     },
 

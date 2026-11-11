@@ -385,7 +385,7 @@ Tarefa `[DEPLOY]` com a política permitindo ("Sempre", ou "Automático a partir
 ### Os passos (`deployExec`)
 
 1. **Confere:** HEAD na branch de trabalho (a do papel com o fluxo; `vibe/<pasta>` sem ele), árvore limpa (arquivos versionados; não versionados não contam), remoto `origin` e `git fetch --tags`. Se a main já tem tudo da branch: "nada novo para publicar" (a tarefa fica feita, sem tag).
-2. **Portão de qualidade** (o comando da política) **na branch de trabalho**, pelo verificador da trava. Falhou: nada é publicado e a falha vai para a **recuperação da DEV2-015** (diagnóstico, decisão do orquestrador). O Dev conserta na branch, a revisão aprova e o Termix tenta o deploy de novo; as voltas continuam contando (esgotadas, a tarefa vira pendência). Sem portão na política, segue (fica registrado no log).
+2. **Portão de qualidade** (o comando da política) **na branch de trabalho**, pelo verificador da trava. Falhou: nada é publicado e a falha vai para a **recuperação da DEV2-015** (diagnóstico, decisão do orquestrador). O Dev conserta na branch, a revisão aprova e o Termix tenta o deploy de novo; as voltas continuam contando (esgotadas, a tarefa vira pendência). Sem portão, só "Pedir autorização" publica (fica registrado no log): desde a DEV2-021, com "Sempre" ou "Marco" o portão é **obrigatório** (a tela "Antes de iniciar" e a edição da política avisam e não gravam; o processo principal também recusa o deploy, etapa `politica`, e o ciclo pausa).
 3. **Leva a branch para a main** (a main local é antes alinhada com a do origin, só por fast-forward; divergência = pausa, nunca reset):
    - com o fluxo (DEV1): **fast-forward** da dev1 para a main, como o `/fluxo:promover`; sem fast-forward possível, **merge --no-ff**;
    - sem o fluxo: **merge --no-ff** da `vibe/<pasta>` na main;
@@ -412,7 +412,7 @@ No painel, **"Deploys (versões)"** lista os deploys enviados (tag, data, fast-f
 - os reverts são feitos numa branch temporária `termix-volta-...` a partir da main; só se todos derem certo a main avança (fast-forward) e é **enviada sem força**; conflito = `git revert --abort`, a main não muda (nem a local nem a do origin) e a branch temporária fica com o que foi feito;
 - depois, pergunta se roda a receita de novo ("Rodar a receita" / "Agora não").
 
-Com um agente trabalhando, voltar versão e rodar a receita esperam (o painel avisa). Com o fluxo, depois de voltar versão a dev1 não contém os reverts: o próximo deploy sai por merge --no-ff (o que foi revertido continua revertido); se quiser, traga a main para a dev1.
+Com um agente trabalhando, voltar versão e rodar a receita esperam (o painel avisa). Com o fluxo (DEV2-021), depois de voltar versão o Termix **junta a main na dev1** (`merge --no-ff`, sem força) e envia a dev1, para ela também ter o revert. Conflito: `merge --abort`, aviso no painel e nada descartado (junte à mão). Para trazer de volta o que foi revertido, é preciso **"reverter o revert"** (`git revert` do commit de revert); juntar a branch de novo não traz (o painel diz isso numa frase).
 
 ### Fim do ciclo de DEV2..DEV5
 

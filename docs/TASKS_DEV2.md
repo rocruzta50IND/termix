@@ -16,10 +16,35 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert. *(feita, abaixo)*
 - **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
 - **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento) e 3 ajustes da DEV2-014. *(feita, abaixo)*
+- **DEV2-021** — Dois ajustes do deploy da DEV2-016: portão obrigatório no deploy automático e junção da main na dev1 depois de "Voltar versão". *(feita, abaixo)*
 - **DEV2-019** — Telegram, por último e junto com o Ygor.
 - O Mutirão fica para depois, até o Ygor aprovar o Vibe.
 - **Backlog (da DEV2-015):** validar o F5 da aba e a decisão do orquestrador com um Claude Code real. (O PID do F5 do projeto e o `run7.js` foram feitos na DEV2-016.)
 - **Backlog (da DEV2-016):** validar com um Claude Code real o Dev consertando o portão pedido pela recuperação e o handoff do fim do ciclo escrito pelo orquestrador.
+
+---
+
+## DEV2-021 — Portão obrigatório no deploy automático e junção da main na dev1 depois de "Voltar versão"
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do orquestrador e do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, aprovado pelo Ygor) dois ajustes pequenos do deploy da DEV2-016, sem agentes reais e sem custo de IA. Só em `src/vibe/deploy.js`, `src/vibe/politica.js` e `src/renderer/vibe`.
+- **Feito:**
+  - `git fetch` + `git log dev2..origin/dev1` vazio: nada a sincronizar.
+  - `politica.js`: com o deploy "Sempre" ou "Marco", gravar sem portão é recusado com o motivo (`PORTAO_OBRIGATORIO`, `semPortaoAuto`); "Pedir autorização" continua gravando sem portão.
+  - `deploy.js`: `deployExec` recusa, por segurança, "Sempre"/"Marco" sem portão (etapa `politica`, nada publicado; o ciclo pausa e "Continuar" tenta de novo). `deployVoltar`, com o fluxo, junta a main na branch de trabalho (`juntarNaBranch`: `merge --no-ff`, envio da branch sem força); conflito = `merge --abort` e aviso, nada descartado. O resultado traz `juncao` (null sem o fluxo).
+  - `vibe.js`/`vibe.css`: aviso "Obrigatório com o deploy Sempre ou Marco" sob o portão (vermelho se vazio); mensagem da volta com o resultado da junção; confirmação da volta diz que a main será juntada na dev1; com algum deploy revertido, a lista explica que trazer de volta exige "reverter o revert".
+  - `docs/VIBE_MUTIRAO.md`: seção "Deploy pelo Termix" atualizada (portão obrigatório e junção na dev1).
+- **Decisões:**
+  - A junção envia a dev1 (sem força), para a dev1 do remoto também ter o revert; envio recusado vira aviso, a junção local fica.
+  - Política antiga gravada com "Sempre"/"Marco" e sem portão continua sendo lida (não é apagada); só o deploy é recusado até o portão ser preenchido.
+- **Arquivos tocados:** `src/vibe/deploy.js`, `src/vibe/politica.js`, `src/renderer/vibe/vibe.js`, `src/renderer/vibe/vibe.css`, `docs/VIBE_MUTIRAO.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`. Núcleo, versão, dist, main e dev1: nada.
+- **Como validar:** `npm run check`; `dep16.js` (remotos bare); `run16.js a|b` (CDP, agente falso); `pol14.js`; `trava13.js`.
+- **Validação feita:** `npm run check` passou.
+  - **`dep16.js`: 68/68** (11 casos novos): Sempre sem portão recusado, Marco sem portão recusado, Pedir sem portão aceito e publicando; processo principal recusa Sempre e Marco sem portão (política editada à mão), nada publicado; volta no projeto com o fluxo seguida da junção na dev1 (merge --no-ff, dev1 enviada, mesma árvore da main revertida); junção com conflito cancelada (merge --abort, dev1 intacta, sem MERGE_HEAD); sem o fluxo, sem junção. Duas checagens antigas mudaram de propósito: a dev1 agora recebe a main depois da volta (o hotfix da main aparece nela) e, por isso, o revert de um intervalo seguinte passa pela diferença líquida ("conflita" em vez de "conflito").
+  - **App (CDP):** `run16.js` a 28/28 (caso novo: na tela "Antes de iniciar", Sempre sem portão mostra o aviso e não grava; captura `d21-sem-portao-recusado.png`) e b 9/9.
+  - **Antigos:** política 55/55, trava 113/113.
+- **Pendências:** nenhuma nova.
 
 ---
 

@@ -6,6 +6,12 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-021 — Portão obrigatório no deploy automático e junção na dev1 depois de "Voltar versão"** (DEV2)
+
+- Deploy "Sempre" ou "Marco" exige o portão de qualidade: a tela "Antes de iniciar" (e a edição da política) avisa e não grava; o processo principal também recusa o deploy. "Pedir autorização" segue podendo publicar sem portão.
+- Com o fluxo, depois de "Voltar versão" o Termix junta a main na dev1 (merge --no-ff, sem força) e envia a dev1; conflito = merge --abort e aviso, nada descartado. O painel explica que, para trazer de volta o que foi revertido, é preciso "reverter o revert".
+- Testes sem IA: dep16 68/68 (11 novos), run16 a 28/28 e b 9/9, política 55/55, trava 113/113.
+
 **DEV2-016 — Deploy feito pelo Termix, fim de ciclo de DEV2..DEV5 e ajustes da DEV2-015** (DEV2)
 
 - Tarefa `[DEPLOY]` permitida pela política: o Termix (código, sem IA) confere árvore e branch, roda o portão na branch de trabalho, leva a branch para a main (fluxo DEV1: fast-forward; senão merge --no-ff; conflito = merge --abort), envia a main e a tag anotada (`deploy-AAAAMMDD-HHMM` ou `v<versão>`) sem força, roda a receita com a main em checkout (cada comando pela trava), grava `vibe\<id>\deploys\<tag>.log` e volta para a branch.

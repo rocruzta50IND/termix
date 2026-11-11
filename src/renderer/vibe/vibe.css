@@ -209,3 +209,4 @@
 .vp-row .inp{width:auto;min-width:80px}
 .vp-row input[type=number]{width:104px}
 .vp-gap{margin-top:8px}
+.vibe-form small.vp-obg.bad{color:var(--bad)}

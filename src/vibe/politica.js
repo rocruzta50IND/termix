@@ -99,6 +99,10 @@ function normalizar(pol, info) {
   return out;
 }
 
+// DEV2-021: deploy automático ("Sempre" ou "Marco") exige o portão de qualidade; "Pedir autorização" pode publicar sem ele.
+const PORTAO_OBRIGATORIO = 'Com o deploy "Sempre" ou "Automático a partir de um marco", o portão de qualidade é obrigatório. Preencha o portão (ex.: npm test) ou escolha "Pedir autorização".';
+const semPortaoAuto = (pol) => !!pol && ['sempre', 'marco'].includes(pol.deploy.modo) && !String(pol.portao || '').trim();
+
 // O deploy desta política é automático agora? (sempre, ou a partir do marco já atingido)
 const deployAuto = (pol) => !!pol && (pol.deploy.modo === 'sempre' || (pol.deploy.modo === 'marco' && pol.deploy.marcoAtingido));
 
@@ -170,6 +174,7 @@ function create({ dirOf, readJson, writeJson, validId, pastaDe }) {
     const old = readJson(arq(id));
     const p = normalizar(pol, inf);
     if (p.deploy.modo === 'marco' && !p.deploy.marco) return { ok: false, problema: 'Escreva o marco (ex.: "v1.0 estável") ou escolha outro modo de deploy.' };
+    if (semPortaoAuto(p)) return { ok: false, problema: PORTAO_OBRIGATORIO };
     const mudou = old ? Object.keys(p).filter((k) => JSON.stringify(p[k]) !== JSON.stringify(old[k]) && !['fimCiclo'].includes(k)) : ['nova'];
     const alteracoes = [...((old && Array.isArray(old.alteracoes)) ? old.alteracoes : []), { data: new Date().toISOString(), motivo: str(motivo, 80) || 'edição', campos: mudou }].slice(-30);
     writeJson(arq(id), { ...p, criada: (old && old.criada) || new Date().toISOString(), atualizada: new Date().toISOString(), alteracoes });
@@ -205,4 +210,4 @@ function create({ dirOf, readJson, writeJson, validId, pastaDe }) {
   return { api, ler, info };
 }
 
-module.exports = { create, papelDe, padrao, normalizar, aplicarModelo, decidirDeploy, decidirHumano, tetoAtingido, trechoAgente, resumo, deployAuto, PRONTOS, TETO5_PADRAO, TETO7_PADRAO, VOLTAS_PADRAO };
+module.exports = { create, papelDe, padrao, normalizar, aplicarModelo, decidirDeploy, decidirHumano, tetoAtingido, trechoAgente, resumo, deployAuto, semPortaoAuto, PORTAO_OBRIGATORIO, PRONTOS, TETO5_PADRAO, TETO7_PADRAO, VOLTAS_PADRAO };
