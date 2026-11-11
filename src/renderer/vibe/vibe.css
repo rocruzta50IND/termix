@@ -210,3 +210,23 @@
 .vp-row input[type=number]{width:104px}
 .vp-gap{margin-top:8px}
 .vibe-form small.vp-obg.bad{color:var(--bad)}
+
+/* DEV2-017: Vibe de tarefa — escolha inicial, resumo do projeto e histórico de tarefas */
+.vt-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 8px}
+.vt-opt{all:unset;box-sizing:border-box;cursor:pointer;padding:14px 16px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.12));background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:6px;color:var(--text);transition:border-color .15s,background .15s}
+.vt-opt:hover,.vt-opt:focus-visible{border-color:var(--accent);background:rgba(167,139,250,.08)}
+.vt-opt b{font-size:14px}
+.vt-opt small{font-size:12.5px;color:var(--text3);line-height:1.45}
+.vibe-form .vt-res{margin:0 0 12px}
+.vt-res-box{font-size:12.5px;color:var(--text2);line-height:1.5;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.03)}
+.vt-res-box pre{margin:6px 0 0;white-space:pre-wrap;font-size:11.5px;color:var(--text3);max-height:140px;overflow:auto}
+small.vt-res{display:block;margin:0 0 12px;color:var(--text3)}
+.vt-atual small{display:block;color:var(--text3);margin-top:4px}
+.vt-hist{margin:0 0 14px;padding:8px 12px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;font-size:12.5px}
+.vt-hist ul{margin:6px 0 0;padding-left:18px}
+.vt-hist li{margin:4px 0}
+.vt-hist small{display:block;color:var(--text3);font-size:11.5px;overflow-wrap:anywhere}
+.vt-hist small.vt-pend{color:var(--warn)}
+.vx-tag.vt-concluida{border-color:rgba(74,222,128,.5);color:var(--ok)}
+.vx-tag.vt-andamento{border-color:rgba(91,157,255,.5);color:#5B9DFF}
+@media (max-width:640px){.vt-choice{grid-template-columns:1fr}}

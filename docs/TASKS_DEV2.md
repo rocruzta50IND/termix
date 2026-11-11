@@ -33,13 +33,15 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
   - `git fetch` + `git log dev2..origin/dev1` vazio: nada a sincronizar.
   - A2/A3 (processo principal, commit 6c4d9c4): `src/vibe/tarefa.js` (novo): resumo do projeto sem IA (README e CLAUDE.md, primeiras linhas; papel do fluxo; branch atual e de trabalho; últimos 8 commits; seção "Em andamento" do TASKS, ou grep "EM ANDAMENTO"), entrega sintética `modo: "tarefa"` (estrutura.md = tarefa + resumo), histórico `vibe\<id>\tarefas.json` (canais `tarefaResumo`, `tarefaNova`, `tarefaFim`, `tarefaHist`); `index.js`: pedido de plano próprio (curto, por grep, poucas tarefas, mesmas marcas, só o indispensável); `package.json`: `tarefa.js` no `npm run check`.
   - Teste do módulo `tar17.js`: 33/33.
+  - A1/A2/A4/A5 (interface, `vibe.js`/`vibe.css`): escolha inicial no botão Vibe Coding (sem "Iniciar" nem "Baixar modelo" até escolher; "Trocar o tipo" volta); formulário da tarefa (projeto, 4 campos, resumo lido sem IA recolhível, "Iniciar tarefa"); `startCycle(..., { reusar })` reaproveita as abas do ciclo anterior (orquestrador com Ctrl+U + /clear; aba parada = conversa nova; sem abas, cria); no fim, `tarefaFim` e "Tarefa concluída"; painel com "Tarefa atual (n)" e "Tarefas anteriores" (status, feitas, commits, pendências). Com um ciclo em andamento, a tela abre direto no tipo dele.
+  - CDP `run17.js` (agente falso, fluxo DEV2, remoto bare): 26/26; capturas `d17-escolha`, `d17-form-tarefa`, `d17-painel-historico`.
 - **Decisões:**
   - A tarefa nova fecha a anterior no histórico ("concluida" pelo fim do ciclo; "interrompida" se ainda não tinha terminado); a entrega anterior vai para `historico\<data>\` e o ciclo para `historico\ciclo-<data>\`; nada é apagado.
   - Projeto sem git é recusado no Vibe de tarefa (é para projeto em andamento).
 - **Arquivos tocados:** `src/vibe/tarefa.js` (novo), `src/vibe/index.js`, `package.json` (só o script check), `docs/TASKS_DEV2.md`.
 - **Como validar:** `npm run check`; `tar17.js` (scratchpad).
-- **Pendências:** A1/A2 na interface, A4/A5 (abas reaproveitadas e painel com histórico), CDP com o agente falso, rodada real curta, docs.
-- **Próximo passo:** interface (`src/renderer/vibe/vibe.js`): escolha inicial, formulário da tarefa com o resumo, start reaproveitando as abas com /clear, histórico no painel; depois `run17.js` (CDP, agente falso).
+- **Pendências:** testes antigos, rodada real curta, docs (VIBE_MUTIRAO, CHANGELOG_DEV2, HANDOFF_DEV2).
+- **Próximo passo:** rodar os testes antigos (dep16, run16 a/b, run7, run15, rec15, pol14, trava13, mod5/6/7/9, organizador); depois a rodada real curta e os docs.
 
 ---
 

@@ -47,6 +47,7 @@
     if (!c.loaded) { const r = await call('cicloGet', id); c.est = (r && r.estado) || null; c.loaded = true; }
     c.pol = await call('politicaGet', id); // DEV2-014: política de autonomia do projeto
     c.deps = (await call('deployLista', id)) || []; // DEV2-016: deploys (versões) feitos pelo Termix
+    c.hist = (await call('tarefaHist', id)) || []; // DEV2-017: tarefas do Vibe de tarefa (a mais nova primeiro)
     if (c.est) await cyRead(id);
     return c;
   }
@@ -66,24 +67,40 @@
 
   // Inicia um ciclo novo: arquiva o anterior, cria as duas abas (Dangerously: trabalham sem pedir aprovação) e espera o orquestrador abrir.
   // auto (DEV2-006): ciclo da implementação automática do Mutirão ({ mutirao, executar, conflitos, branch })
-  async function startCycle(id, auto) {
+  // opts.reusar (DEV2-017, Vibe de tarefa): reaproveita as abas do orquestrador e do Dev do ciclo anterior, com /clear (o Dev
+  // recebe o /clear antes de cada tarefa, como sempre); sem elas, cria as duas como antes.
+  async function startCycle(id, auto, opts = {}) {
     const p = projOf(id);
     if (!p) return false;
     const c = cyOf(id);
+    const ant = c.est; // ciclo anterior (as abas dele)
     await call('cicloNovo', id);
     // pasta confiável (decisão do Ygor): o Termix marca antes de abrir as abas, para o Claude Code não parar perguntando
     const tr = await call('trust', id);
     clearTimeout(c.timer);
     Object.assign(c, { plano: null, perguntas: [], ans: {}, err: '', wait: null, loaded: true });
     UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id;
-    createTab(p, 'd', { name: ORQ_NAME, color: '#A78BFA' });
-    const orq = p.activeTab;
-    createTab(p, 'd', { name: DEV_NAME, color: '#34D399' }); // nesta etapa o dev só é criado e fica parado
-    const dev = p.activeTab;
+    const tOrq = opts.reusar && ant && tabOf(ant.orq), tDev = opts.reusar && ant && tabOf(ant.dev);
+    const reuso = !!(tOrq && tDev);
+    let orq, dev;
+    if (reuso) { orq = tOrq.id; dev = tDev.id; }
+    else {
+      createTab(p, 'd', { name: ORQ_NAME, color: '#A78BFA' });
+      orq = p.activeTab;
+      createTab(p, 'd', { name: DEV_NAME, color: '#34D399' }); // nesta etapa o dev só é criado e fica parado
+      dev = p.activeTab;
+    }
     p.activeTab = orq; save(); renderAll();
-    c.est = { versao: 1, fase: 'abrindo', rodada: 0, orq, dev, iniciado: nowIso(), ...(auto ? { auto } : {}), aviso: tr && !tr.ok ? `O Termix não marcou a pasta como confiável (${tr.motivo || 'erro'}). Se o Claude Code perguntar na aba, escolha "Yes, I trust this folder".` : '' };
+    c.est = { versao: 1, fase: 'abrindo', rodada: 0, orq, dev, iniciado: nowIso(), ...(auto ? { auto } : {}), ...(opts.reusar ? { tarefa: true } : {}), aviso: tr && !tr.ok ? `O Termix não marcou a pasta como confiável (${tr.motivo || 'erro'}). Se o Claude Code perguntar na aba, escolha "Yes, I trust this folder".` : '' };
     c.live = true;
-    const w = (c.wait = { tab: orq, ev: 'SessionStart', since: Date.now() - 2000 });
+    if (reuso) c.est.reuso = true;
+    const w = (c.wait = { tab: orq, ev: 'SessionStart', since: Date.now() - (reuso ? 0 : 2000) });
+    if (reuso) { // o SessionStart do /clear (ou da reabertura) dispara o pedido do plano, como na abertura
+      if (isAlive(orq)) {
+        api.write(orq, '\x15'); // Ctrl+U: caixa vazia antes do /clear (DEV2-007)
+        setTimeout(() => { if (c.wait !== w) return; api.write(orq, '/clear'); let n = 0; const enter = () => { if (c.wait !== w || !isAlive(orq)) return; api.write(orq, '\r'); if (++n < 3) setTimeout(enter, 5000); }; setTimeout(enter, 500); }, 200);
+      } else { tOrq.sessionId = crypto.randomUUID(); tOrq.started = false; save(); launch(p, tOrq, 'new'); } // aba parada (app reaberto): conversa nova
+    }
     c.timer = setTimeout(() => {
       if (c.wait !== w || !c.est || c.est.fase !== 'abrindo') return;
       c.est.aviso = `O orquestrador ainda não abriu. Confira a aba "${ORQ_NAME}": numa pasta nova, o Claude Code pergunta se você confia nela (escolha "Yes, I trust this folder"). O Termix envia o pedido sozinho quando ele abrir; se não enviar, clique em "Enviar o pedido agora".`;
@@ -590,9 +607,10 @@
     cySave(id);
     if (c.est.auto && c.est.auto.mutirao) { mutFim(id); return; } // implementação automática do Mutirão (DEV2-006)
     call('f5Encerrar', id); // DEV2-016: o servidor do F5 do projeto sai no fim do ciclo
+    call('tarefaFim', id).then(async (r) => { if (r) { c.hist = (await call('tarefaHist', id)) || []; paintCycle(); } }); // DEV2-017: a tarefa fica "concluida" no histórico
     const np = (x.pendencias || []).length, fh = x.fimHandoff;
     const hand = fh && fh.aplica ? (fh.ok ? ` ${fh.arquivo} no commit e a ${fh.branch} enviada; o DEV1 é avisado pelo fluxo.` : ` O envio da ${fh.branch} com o handoff falhou: ${fh.motivo}`) : '';
-    notifyHuman(projOf(id), tabOf(c.est.orq), `Projeto concluído: ${plural(x.feitas.length, 'tarefa', 'tarefas')} na branch ${x.branch || ''}${np ? `, ${plural(np, 'pendência', 'pendências')} (veja a lista no painel)` : ''}.${hand}`);
+    notifyHuman(projOf(id), tabOf(c.est.orq), `${c.est.tarefa ? 'Tarefa concluída' : 'Projeto concluído'}: ${plural(x.feitas.length, 'tarefa', 'tarefas')} na branch ${x.branch || ''}${np ? `, ${plural(np, 'pendência', 'pendências')} (veja a lista no painel)` : ''}.${hand}`);
     mutEntrega(id); // Mutirão (DEV2-005): sendo a parte de um sócio, o Termix grava e envia a entrega
   }
   // Mutirão concluído (DEV2-006): o Termix (código) faz push só da branch do dono e avisa. Promover para a main é do humano.
@@ -1067,7 +1085,7 @@
       pronto: `<b>Plano pronto${e.tarefas ? `, ${plural(e.tarefas, 'tarefa', 'tarefas')}` : ''}.</b> "Executar plano" passa as tarefas ao Dev uma a uma, com revisão do orquestrador. Commits só na branch permitida; a main/master fica intacta.`,
       execucao: x ? (recTxt(c) ? `<b>${esc(recTxt(c))}.</b> A ${esc((x.tarefas[x.k] || {}).id || '')} falhou e o Termix está recuperando sozinho (diagnóstico e decisão do orquestrador). Esgotadas as voltas, ela vira pendência e o ciclo segue.` : `<b>Executando o plano.</b> ${x.k >= x.tarefas.length ? 'O orquestrador está escrevendo o handoff do fim do ciclo' : x.etapa === 'deploy' ? 'O Termix está fazendo o deploy (portão, main, tag e receita)' : x.etapa === 'revisao' ? 'O orquestrador está revisando' : 'O Dev está trabalhando'}${x.k < x.tarefas.length ? ` na ${esc((x.tarefas[x.k] || {}).id || '')}` : ''}. O Termix avisa se precisar de você.`) : '',
       pausado: x && x.pausa ? `<b>${esc(x.pausa.autorizacao ? 'Aguardando autorização de deploy' : x.pausa.receita ? 'Deploy: a main foi enviada, a publicação falhou' : PAUSA_TIT[x.pausa.tipo] || 'Pausado')}.</b> ${esc(x.pausa.motivo || '')}${x.pausa.autorizacao || x.pausa.receita || (x.pausa.tipo === 'limite' && c.live) || /clique em "?Continuar/i.test(x.pausa.motivo || '') ? '' : x.pausa.gate ? ' Clique em "Continuar" para o Dev executar a tarefa, ou em "Já fiz, pular" se você mesmo a fez.' : ' Clique em "Continuar" quando quiser seguir.'}` : '',
-      concluido: (e.auto && e.auto.mutirao && e.mutFim ? (e.mutFim.ok ? `<b>Mutirão concluído na ${esc(e.mutFim.branch || '')}.</b> Push feito pelo Termix (commit ${esc(String(e.mutFim.sha || '').slice(0, 8))}). Promover para a main é com você. ` : `<span class="mp-bad">O push da branch do dono falhou: ${esc(e.mutFim.motivo || '')}</span> `) : '') + (x ? `<b>Projeto concluído.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}${(x.pendencias || []).length ? `, ${plural(x.pendencias.length, 'pendência', 'pendências')} (lista abaixo)` : ''}.${x.feitas.some((f) => f.deploy === 'feito') ? ' A main recebeu o deploy pelo Termix (lista de deploys abaixo).' : ' A main/master não foi alterada.'}${x.fimHandoff && x.fimHandoff.aplica ? (x.fimHandoff.ok ? ` ${esc(x.fimHandoff.arquivo)} no commit e a ${esc(x.fimHandoff.branch)} enviada; o DEV1 é avisado pelo fluxo.` : ` <span class="mp-bad">O envio da ${esc(x.fimHandoff.branch || '')} com o handoff falhou: ${esc(x.fimHandoff.motivo || '')}</span>`) : ''}` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
+      concluido: (e.auto && e.auto.mutirao && e.mutFim ? (e.mutFim.ok ? `<b>Mutirão concluído na ${esc(e.mutFim.branch || '')}.</b> Push feito pelo Termix (commit ${esc(String(e.mutFim.sha || '').slice(0, 8))}). Promover para a main é com você. ` : `<span class="mp-bad">O push da branch do dono falhou: ${esc(e.mutFim.motivo || '')}</span> `) : '') + (x ? `<b>${e.tarefa ? 'Tarefa concluída' : 'Projeto concluído'}.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}${(x.pendencias || []).length ? `, ${plural(x.pendencias.length, 'pendência', 'pendências')} (lista abaixo)` : ''}.${x.feitas.some((f) => f.deploy === 'feito') ? ' A main recebeu o deploy pelo Termix (lista de deploys abaixo).' : ' A main/master não foi alterada.'}${x.fimHandoff && x.fimHandoff.aplica ? (x.fimHandoff.ok ? ` ${esc(x.fimHandoff.arquivo)} no commit e a ${esc(x.fimHandoff.branch)} enviada; o DEV1 é avisado pelo fluxo.` : ` <span class="mp-bad">O envio da ${esc(x.fimHandoff.branch || '')} com o handoff falhou: ${esc(x.fimHandoff.motivo || '')}</span>`) : ''}` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
       parado: `<b>Vibe Coding parado em "${esc(stepName)}".</b> Nada foi apagado e as abas continuam abertas. Clique em "${go}" para seguir.`,
       erro: `<b>O plano não ficou pronto.</b>`,
     }[e.fase] || '';
@@ -1102,6 +1120,8 @@
     if (!V || !V.root || !V.root.isConnected) return;
     const box = V.root.querySelector('#vcPanel');
     if (box) box.innerHTML = cycleHtml(V.id);
+    const hb = V.root.querySelector('#vtHist'); // DEV2-017: tarefa atual e anteriores
+    if (hb) hb.innerHTML = tarHistHtml(V.id);
     paint();
   }
 
@@ -1253,9 +1273,121 @@
   const projOf = (id) => projects().find((p) => p.id === id);
   const fmtDate = (iso) => { try { return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); } catch { return iso || ''; } };
 
+  /* ---------- Vibe de tarefa (DEV2-017) ----------
+     Escolha inicial: "Projeto novo (entrega completa)" ou "Tarefa num projeto em andamento". A tarefa tem 4 campos; o Termix
+     monta a entrega sintética com um resumo do projeto lido sem IA (src/vibe/tarefa.js) e o ciclo é o mesmo do Vibe.
+     Tarefas seguidas no mesmo projeto reaproveitam as abas do orquestrador e do Dev (com /clear) e ficam no histórico. */
+  const EMPTY_T = () => ({ oQue: '', criterio: '', naoPode: '', arquivos: '' });
+  const LIM_T = { oQue: 4000, criterio: 2000, naoPode: 2000, arquivos: 2000 };
+  function missingT() {
+    const t = V.t, out = [];
+    if (!V.id) out.push('Escolha o projeto (item 1).');
+    if (!t.oQue.trim()) out.push('Descreva o que fazer (item 2).');
+    if (!t.criterio.trim()) out.push('Escreva o critério de pronto da tarefa (item 3).');
+    for (const [k, n] of Object.entries(LIM_T)) if (t[k].length > n) out.push(`Encurte o campo para até ${n} caracteres.`);
+    if (V.id && V.res === false) out.push('A pasta do projeto não foi encontrada.');
+    else if (V.id && V.res && !V.res.git) out.push('O projeto não tem git: o Vibe de tarefa é para projeto em andamento. Rode "git init" e faça um primeiro commit, ou use "Projeto novo".');
+    return out;
+  }
+  function choiceHtml() {
+    return `<div class="vibe-form">
+      <p>Como você quer usar o Vibe Coding?</p>
+      <div class="vt-choice">
+        <button class="vt-opt" data-vmodo="projeto"><b>Projeto novo (entrega completa)</b><small>Para começar um projeto do zero: objetivo, fluxo desenhado, estrutura (.md), critério de pronto e acessos. O orquestrador planeja o projeto inteiro.</small></button>
+        <button class="vt-opt" data-vmodo="tarefa"><b>Tarefa num projeto em andamento</b><small>Descreva só a tarefa. O Termix lê um resumo do projeto (sem IA) e o orquestrador planeja poucas tarefas a partir do repositório. Mesmo painel: política, recuperação, deploy, Parar e Continuar.</small></button>
+      </div>
+    </div>`;
+  }
+  const ST_T = { andamento: 'EM ANDAMENTO', concluida: 'CONCLUÍDA', interrompida: 'INTERROMPIDA' };
+  function tarHistHtml(id) {
+    const hs = (CY[id] && CY[id].hist) || [];
+    if (!hs.length) return '';
+    const atual = hs[0].status === 'andamento' ? hs[0] : null, ants = atual ? hs.slice(1) : hs;
+    const li = (h) => `<li class="${h.status}"><b>Tarefa ${h.n}</b> — ${esc(String(h.oQue || '').split('\n')[0].slice(0, 140))} <em class="vx-tag vt-${h.status}">${ST_T[h.status] || esc(h.status)}</em><small>${esc(fmtDate(h.iniciada))}${h.status !== 'andamento' ? ` · ${plural((h.feitas || []).length, 'feita', 'feitas')}${h.branch ? ` na ${esc(h.branch)}` : ''}${(h.feitas || []).length ? `: ${esc(h.feitas.map((x) => x.commit ? x.commit.split(' ')[0] : x.id).join(', ').slice(0, 200))}` : ''}` : ''}</small>${(h.pendencias || []).length ? `<small class="vt-pend">Pendências: ${esc(h.pendencias.map((p) => `${p.id} — ${p.motivo}`).join('; ').slice(0, 400))}</small>` : ''}</li>`;
+    return `${atual ? `<div class="vibe-note vt-atual"><b>Tarefa atual (${atual.n}):</b> ${esc(String(atual.oQue).slice(0, 300))}<small>Critério de pronto: ${esc(String(atual.criterio || '').slice(0, 200))}</small></div>` : ''}${ants.length ? `<div class="vt-hist"><b>Tarefas anteriores (${ants.length})</b><ul>${ants.map(li).join('')}</ul></div>` : ''}`;
+  }
+  function resumoHtml() {
+    const r = V.res;
+    if (!V.id) return '';
+    if (r == null) return '<small class="vt-res">Lendo o projeto…</small>';
+    if (r === false) return '<small class="vt-res">A pasta do projeto não foi encontrada.</small>';
+    const linhas = [`Branch atual: <b>${esc(r.branch || '(sem git)')}</b> · os agentes trabalham na <b>${esc(r.branchTrabalho || 'branch do papel')}</b>${r.fluxo ? ` · fluxo Rocruzta, papel <b>${esc(r.papel || 'não definido')}</b>` : ''}`,
+      r.commits.length ? `Últimos commits: ${esc(r.commits.slice(0, 3).join(' · '))}` : '',
+      `Lidos: ${[r.readme && r.readme.arquivo, r.claude && r.claude.arquivo, r.andamento && `${r.andamento.arquivo} (em andamento)`].filter(Boolean).map(esc).join(', ') || 'nenhum README, CLAUDE.md ou TASKS'}`].filter(Boolean);
+    return `<details class="vf-det vt-res"><summary>Resumo do projeto que vai para o orquestrador (lido pelo Termix, sem IA)</summary><div class="vt-res-box">${linhas.map((l) => `<div>${l}</div>`).join('')}${r.andamento ? `<pre>${esc(r.andamento.texto.slice(0, 800))}</pre>` : ''}</div></details>`;
+  }
+  function tarefaBody() {
+    const ps = projects(), t = V.t, dis = V.id ? '' : 'disabled';
+    const c = V.id && CY[V.id], ativo = cycleActive(V.id);
+    return `<div class="vibe-form">
+      <p>Descreva a tarefa. O Termix monta a entrega com um resumo do projeto e cria (ou reaproveita) o orquestrador e o dev, que trabalham sozinhos até o fim da tarefa. <a href="#" class="vx-link" data-vmodo="">Trocar o tipo</a></p>
+      <p class="vibe-tip">Cite os arquivos ou telas: o orquestrador lê só o necessário e gasta menos tokens.</p>
+      <div class="vf"><label for="vfProj">1. Projeto <em>obrigatório</em></label>
+        <select class="inp" id="vfProj">${ps.length ? '' : '<option value="">Nenhum projeto no Termix. Crie um projeto antes.</option>'}${ps.length ? `<option value="" ${V.id ? '' : 'selected'}>Escolha o projeto…</option>` : ''}${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === V.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div id="vtHist">${V.id ? tarHistHtml(V.id) : ''}</div>
+      <div id="vcPanel">${V.id ? cycleHtml(V.id) : ''}</div>
+      <div id="vpPanel">${V.id ? polFormHtml(V.id) : ''}</div>
+      <details class="vf-det" ${ativo || (c && c.est && c.est.fase !== 'concluido') ? '' : 'open'}><summary>${c && c.hist && c.hist.length ? 'Nova tarefa' : 'Tarefa'} (itens 2 a 5)</summary>
+      ${resumoHtml()}
+      <div class="vf"><label for="vtOq">2. O que fazer <em>obrigatório</em></label>
+        <textarea class="inp ta" id="vtOq" rows="3" maxlength="${LIM_T.oQue}" placeholder="Ex.: na tela do carrinho, um botão para remover um item." ${dis}>${esc(t.oQue)}</textarea></div>
+      <div class="vf"><label for="vtCrit">3. Critério de pronto <em>obrigatório</em></label>
+        <textarea class="inp ta" id="vtCrit" rows="2" maxlength="${LIM_T.criterio}" placeholder="Como saber que acabou? Ex.: clicar em remover tira o item e o total é atualizado." ${dis}>${esc(t.criterio)}</textarea></div>
+      <div class="vf"><label for="vtNao">4. O que não pode <em class="opt">opcional</em></label>
+        <textarea class="inp ta" id="vtNao" rows="2" maxlength="${LIM_T.naoPode}" placeholder="Ex.: não mexer no catálogo; não trocar bibliotecas." ${dis}>${esc(t.naoPode)}</textarea></div>
+      <div class="vf"><label for="vtArq">5. Arquivos ou telas envolvidos <em class="opt">opcional</em></label>
+        <textarea class="inp ta" id="vtArq" rows="2" maxlength="${LIM_T.arquivos}" placeholder="Ex.: src/carrinho.js; tela Carrinho." ${dis}>${esc(t.arquivos)}</textarea></div>
+      </details>
+      <div class="vibe-miss" id="vfMiss"></div>
+      <div class="vibe-msg" id="vfMsg"></div>
+    </div>`;
+  }
+  async function loadResumo() {
+    const id = V && V.id, p = id && projOf(id);
+    if (!p) return;
+    V.res = null;
+    const r = await call('tarefaResumo', p.path);
+    if (!V || V.id !== id) return;
+    V.res = r || false;
+    const d = V.root && V.root.querySelector('.vt-res');
+    if (d && V.modo === 'tarefa') { const open = d.open; d.outerHTML = resumoHtml(); const n = V.root.querySelector('.vt-res'); if (n && open) n.open = true; }
+    paint();
+  }
+  function setModo(m) {
+    if (!V) return null;
+    V.modo = m || ''; V.msg = null; V.saved = false;
+    redraw();
+    if (V.modo === 'tarefa') loadResumo();
+    return V.modo;
+  }
+  async function startTarefa() {
+    if (!V || missingT().length || V.busy || cycleActive(V.id)) return null;
+    const p = projOf(V.id) || {};
+    V.busy = true; V.msg = { kind: '', html: 'Gravando a tarefa…' }; paint();
+    persist();
+    const r = await call('tarefaNova', { projectId: V.id, projectName: p.name || '', projectPath: p.path || '', ...V.t });
+    if (!V) return r;
+    V.busy = false;
+    if (r && r.ok) {
+      V.entrega = r.entrega; V.saved = true; V.msg = null;
+      const ok = await startCycle(V.id, null, { reusar: true });
+      if (!V) return r;
+      cyOf(V.id).hist = (await call('tarefaHist', V.id)) || [];
+      V.t = EMPTY_T(); persist(); // a próxima tarefa começa em branco; esta fica no histórico
+      if (!ok) V.msg = { kind: 'bad', html: 'A tarefa foi gravada, mas o projeto não foi encontrado para criar os agentes.' };
+      redraw();
+      return r;
+    }
+    V.msg = { kind: 'bad', html: `Não foi possível gravar a tarefa.${r && r.problems ? `<ul>${r.problems.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}` };
+    paint();
+    return r;
+  }
+
   // O que falta para iniciar, em linguagem clara (a regra que vale é a do processo principal; aqui é só para mostrar)
   function missing() {
     if (!V) return [];
+    if (!V.modo) return ['Escolha o tipo: projeto novo ou tarefa num projeto em andamento.']; // DEV2-017
+    if (V.modo === 'tarefa') return missingT();
     const f = V.f, out = [];
     if (!V.id) out.push('Escolha o projeto (item 1). Os outros campos abrem depois dele.');
     if (!f.objetivo.trim()) out.push('Escreva o objetivo final do projeto (item 2).');
@@ -1284,13 +1416,15 @@
   }
 
   function body() {
+    if (!V.modo) return choiceHtml(); // DEV2-017
+    if (V.modo === 'tarefa') return tarefaBody();
     const ps = projects();
     const dis = V.id ? '' : 'disabled';
     const f = V.f;
     const mutNote = V.mut ? `<div class="vibe-note">Entrega pré-preenchida pela sua <b>parte do Mutirão</b> (branch ${esc(V.mut)}): a estrutura é a parte gravada pelo dono. Complete o que faltar (ex.: o fluxo desenhado) e inicie. Os agentes trabalham só na branch ${esc(V.mut)}.</div>` : '';
     const ent = V.entrega && V.entrega.mutirao ? `<div class="vibe-note">Entrega gerada pelo Termix na <b>implementação automática do Mutirão</b> (branch ${esc(V.entrega.mutirao.branch || '')}, ${esc(fmtDate(V.entrega.data))}): divisão, partes, entregas e conflitos da junção. O andamento está no painel acima.</div>` : V.entrega ? `<div class="vibe-note">Este projeto já tem uma entrega pronta, de ${esc(fmtDate(V.entrega.data))}. Ela continua guardada. Ao clicar em "Iniciar Vibe Coding", o Termix pede confirmação antes de gravar a versão nova.</div>` : '';
     return `<div class="vibe-form">
-      <p>Entregue o projeto completo de uma vez. Com tudo preenchido, o Termix cria um orquestrador e um dev que trabalham sozinhos até o fim. Quanto mais claro, menos retrabalho. O que você preencher fica salvo como rascunho.</p>
+      <p>Entregue o projeto completo de uma vez. Com tudo preenchido, o Termix cria um orquestrador e um dev que trabalham sozinhos até o fim. Quanto mais claro, menos retrabalho. O que você preencher fica salvo como rascunho. <a href="#" class="vx-link" data-vmodo="">Trocar o tipo</a></p>
       <p class="vibe-tip">Entregas completas evitam perguntas e gastam menos tokens.</p>
       ${mutNote}${ent}
       <div class="vf"><label for="vfProj">1. Projeto <em>obrigatório</em></label>
@@ -1323,11 +1457,31 @@
   function paint() {
     if (!V || !V.root.isConnected) return;
     const m = missing();
+    const act = cycleActive(V.id);
+    // DEV2-017: na escolha inicial não há "Iniciar" nem modelo; na tarefa, sem o modelo e com "Iniciar tarefa"
+    const tpl = V.root.querySelector('[data-vtpl]');
+    if (tpl) tpl.style.display = V.modo === 'projeto' ? '' : 'none';
+    const go0 = V.root.querySelector('[data-vgo]');
+    if (!V.modo) { if (go0) go0.style.display = 'none'; return; }
+    if (V.modo === 'tarefa') {
+      const box = V.root.querySelector('#vfMiss');
+      box.className = `vibe-miss ${m.length ? '' : 'done'}`;
+      box.innerHTML = m.length ? `<b>Falta para iniciar:</b><ul>${m.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : act ? '<b>Uma tarefa está em andamento neste projeto.</b> Para começar outra, espere ela terminar ou pare a atual.' : '<b>Tudo pronto.</b> Pode iniciar a tarefa.';
+      if (go0) {
+        go0.disabled = !!m.length || V.busy || V.saved || act;
+        go0.style.display = act ? 'none' : '';
+        go0.classList.add('pri');
+        go0.textContent = 'Iniciar tarefa';
+      }
+      const msg = V.root.querySelector('#vfMsg');
+      msg.className = `vibe-msg ${V.msg ? V.msg.kind : ''}`;
+      msg.innerHTML = V.msg ? V.msg.html : '';
+      return;
+    }
     const box = V.root.querySelector('#vfMiss');
     box.className = `vibe-miss ${m.length ? '' : 'done'}`;
-    const act = cycleActive(V.id);
     box.innerHTML = m.length ? `<b>Falta para iniciar:</b><ul>${m.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : act ? '<b>Vibe Coding em andamento neste projeto.</b> Para iniciar de novo, pare o atual.' : '<b>Tudo pronto.</b> Pode iniciar o Vibe Coding.';
-    const go = V.root.querySelector('[data-vgo]');
+    const go = go0;
     if (go) {
       go.disabled = !!m.length || V.busy || V.saved || act; // gravada: só reabilita depois de mudar algo; com ciclo em andamento, só depois de parar
       // com um ciclo, a ação principal fica no painel (Executar plano / Continuar): "Iniciar" some enquanto o ciclo está
@@ -1350,7 +1504,7 @@
     wire(); paint();
   }
 
-  const persist = () => { if (V && V.id) call('draftSet', V.id, V.f); };
+  const persist = () => { if (V && V.id) call('draftSet', V.id, { ...V.f, tarefa: V.t }); }; // DEV2-017: o rascunho da tarefa junto
   const persistSoon = () => { clearTimeout(V.timer); V.timer = setTimeout(persist, 300); };
 
   async function checkFiles() {
@@ -1363,11 +1517,15 @@
   }
 
   async function loadProject(id) {
-    V.id = id || ''; V.mut = ''; V.saved = false; V.f = EMPTY(); V.fx = { fluxo: null, estrutura: null }; V.entrega = null; V.msg = null;
+    V.id = id || ''; V.mut = ''; V.saved = false; V.f = EMPTY(); V.t = EMPTY_T(); V.res = null; V.fx = { fluxo: null, estrutura: null }; V.entrega = null; V.msg = null;
     if (V.id) {
       const [d, e] = await Promise.all([call('draftGet', V.id), call('entregaGet', V.id), cyLoad(V.id)]);
       if (!V || V.id !== id) return;
       V.entrega = e && e.status === 'pronta' ? e : null;
+      // DEV2-017: rascunho da tarefa; com um ciclo em andamento, a tela abre direto no tipo dele (tarefa ou projeto)
+      if (d && d.tarefa && typeof d.tarefa === 'object') for (const k of Object.keys(V.t)) if (d.tarefa[k] != null) V.t[k] = String(d.tarefa[k]);
+      if (!V.modo && cycleActive(V.id)) V.modo = e && e.modo === 'tarefa' ? 'tarefa' : 'projeto';
+      if (e && e.modo === 'tarefa') V.entrega = null; // a entrega sintética da tarefa não pré-preenche o formulário do projeto novo
       V.mut = d && d.mutirao ? String(d.mutirao) : '';
       const src = d || (V.entrega ? { objetivo: e.objetivo, criterio: e.criterioDePronto, proibido: e.naoPodem, acessos: (e.acessos || []).join('\n'), nadaFornecer: e.nadaAFornecer, fluxo: e.origem && e.origem.fluxo, estrutura: e.origem && e.origem.estrutura } : {});
       const base = EMPTY();
@@ -1376,6 +1534,7 @@
       try { S.settings.vibe = { ...(S.settings.vibe || {}), last: V.id }; save(); } catch { /* sem preferência gravada */ }
     }
     redraw();
+    if (V.modo === 'tarefa') loadResumo();
     checkFiles();
   }
 
@@ -1404,6 +1563,7 @@
   }
 
   async function start(replace) {
+    if (V && V.modo === 'tarefa') return startTarefa(); // DEV2-017
     if (!V || missing().length || V.busy || cycleActive(V.id)) return null;
     V.busy = true; V.msg = { kind: '', html: 'Gravando a entrega…' }; paint();
     persist();
@@ -1429,7 +1589,16 @@
 
   function wire() {
     const R = V.root;
+    if (!V.modo) return; // DEV2-017: escolha inicial (os botões são tratados no clique do modal)
     R.querySelector('#vfProj').onchange = (e) => { clearTimeout(V.timer); persist(); loadProject(e.target.value); };
+    R.querySelector('.vibe-form').addEventListener('keydown', (e) => { if (e.key === 'Enter') e.stopPropagation(); });
+    if (V.modo === 'tarefa') { // DEV2-017: os 4 campos da tarefa
+      for (const [sel, k] of [['#vtOq', 'oQue'], ['#vtCrit', 'criterio'], ['#vtNao', 'naoPode'], ['#vtArq', 'arquivos']]) {
+        const el = R.querySelector(sel);
+        el.oninput = () => { V.t[k] = el.value; V.msg = null; V.saved = false; persistSoon(); paint(); };
+      }
+      return;
+    }
     const txt = (sel, k) => { const el = R.querySelector(sel); el.oninput = () => { V.f[k] = el.value; V.msg = null; V.saved = false; if (k === 'objetivo') R.querySelector('.vf-cnt').textContent = `${el.value.length}/${LIM_OBJ}`; persistSoon(); paint(); }; };
     txt('#vfObj', 'objetivo'); txt('#vfCrit', 'criterio'); txt('#vfProib', 'proibido'); txt('#vfAcc', 'acessos');
     // Enter nos campos não fecha o modal (o modal do app trata Enter num <input> como o último botão)
@@ -1444,9 +1613,9 @@
     let last = '';
     try { last = (S.settings.vibe && S.settings.vibe.last) || ''; } catch { /* sem preferência */ }
     const id = projOf(last) ? last : ps.length === 1 ? ps[0].id : '';
-    V = { root: null, id, f: EMPTY(), fx: { fluxo: null, estrutura: null }, entrega: null, msg: null, busy: false, timer: null };
+    V = { root: null, id, modo: '', f: EMPTY(), t: EMPTY_T(), res: null, fx: { fluxo: null, estrutura: null }, entrega: null, msg: null, busy: false, timer: null }; // modo (DEV2-017): '' = escolha inicial
     const p = modal({
-      title: 'Vibe Coding — entrega do projeto',
+      title: 'Vibe Coding',
       body: body(),
       buttons: [['Baixar modelo (.md)', 'tpl'], ['Fechar', null], ['Iniciar Vibe Coding', 'go', 'pri']],
       onOpen: (root) => {
@@ -1456,6 +1625,8 @@
         bs[2].onclick = () => start(false); bs[2].dataset.vgo = '';
         // confirmação de substituir (dentro da própria tela; o app só tem um modal por vez)
         root.addEventListener('click', (e) => {
+          const vm = e.target.closest('[data-vmodo]'); // DEV2-017: escolha inicial (projeto novo ou tarefa) e "Trocar o tipo"
+          if (vm && V) { e.preventDefault(); setModo(vm.dataset.vmodo); return; }
           const vp = e.target.closest('[data-vp]'); // DEV2-014: tela "Antes de iniciar" / editar a política
           if (vp && V && V.id) polAct(V.id, vp.dataset.vp, vp);
           if (e.target.closest('[data-vyes]')) start(true);
@@ -1884,7 +2055,9 @@
   /* gancho de teste: só existe com o app aberto em modo de teste (TERMIX_VIBE_TEST=1), porque o diálogo nativo de arquivo
      não é automatizável por CDP. Sem esse modo, nada é exposto e a interface não tem atalho escondido. */
   call('status').then((s) => {
-    if (s && s.test) window.vibeTest = { open: () => openVibe(), pick: (k, p) => pick(k, p), template: (p) => template(p), start: (r) => start(r), state: () => (V ? { id: V.id, f: { ...V.f }, missing: missing(), entrega: V.entrega } : null),
+    if (s && s.test) window.vibeTest = { open: () => openVibe(), pick: (k, p) => pick(k, p), template: (p) => template(p), start: (r) => start(r), state: () => (V ? { id: V.id, modo: V.modo, f: { ...V.f }, t: { ...V.t }, res: V.res, missing: missing(), entrega: V.entrega, hist: (CY[V.id] && CY[V.id].hist) || [] } : null),
+      // DEV2-017: Vibe de tarefa. modo('projeto'|'tarefa'|'') = escolha inicial; tarefa({oQue, criterio, naoPode, arquivos}) preenche os campos
+      modo: (m) => setModo(m), tarefa: (o) => { if (!V || V.modo !== 'tarefa') return false; for (const [k, sel] of [['oQue', '#vtOq'], ['criterio', '#vtCrit'], ['naoPode', '#vtNao'], ['arquivos', '#vtArq']]) if (o && o[k] != null) { const el = V.root.querySelector(sel); if (el) { el.value = o[k]; el.dispatchEvent(new Event('input', { bubbles: true })); } } return { ...V.t }; },
       cycle: (id) => { const c = CY[id || (V && V.id)]; return c ? { est: c.est, live: c.live, wait: c.wait, perguntas: c.perguntas, tarefas: c.plano && c.plano.tarefas } : null; },
       inject: async (lista) => { const id = V && V.id, c = id && CY[id]; if (!c || !c.est) return false; if (!(await call('testPerguntas', id, lista))) return false; c.est.fase = 'plano'; await afterTurn(id); return c.est.fase; },
       answer: (map) => { const c = V && CY[V.id]; if (!c) return false; c.ans = map; return sendAnswers(V.id); },
