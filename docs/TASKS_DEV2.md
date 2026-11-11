@@ -9,6 +9,27 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-013 — Trava do Vibe barra a troca para a branch principal
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, autorizado pelo Ygor) na DEV2-012, "git checkout main" passou na aba do Dev; o commit seguinte foi recusado, mas o agente ficou na main. Dentro da regra que já existe (main/master protegidas), a trava passa a recusar `git checkout/switch` para elas, sem regra nova e sem custo de IA.
+- **Feito:**
+  - `git log dev2..origin/dev1` vazio: nada a sincronizar.
+  - `src/vibe/trava.js`: função `vaiParaProt`, chamada nos ramos `checkout` (depois das regras de arquivos e de forçar) e `switch` (depois da regra de forçar). Olha cada nome não-opção do comando (alvo, branch nova, ponto de partida) e `--create=/--orphan=<nome>`; normaliza `refs/heads/`, `refs/remotes/`, `remotes/`, `<remoto>/` (remotos lidos do git, sempre com `origin`), sufixos `~`/`^`/`@{n}` e resolve `-`/`@{-N}` pela branch anterior; compara sem diferenciar maiúsculas com `protegidas`. Motivo: "git checkout|switch para "<prot>" é bloqueado pelo Termix: não saia da branch permitida para a main/master. A branch permitida é ...".
+  - Detalhe: o separador de comandos da trava corta `{}` (separa comandos), então `@{-1}` chega como `@` e `main@{1}` como `main@`; os dois são tratados (`@` sozinho = branch anterior; `@` final é tirado).
+  - Conferido: as trocas do próprio Termix (`index.js` ao conferir/criar a branch permitida, `mutirao.js` ao juntar entregas e ao publicar) usam `execFileSync` no processo principal, fora do hook. O pedido do conflito do Mutirão manda `git merge --no-ff origin/<branch>` e `checkout --ours/--theirs -- <arquivo>`, que seguem permitidos.
+- **Decisões:** bloquear também `checkout -b nova main` / `switch -c nova origin/main` (branch nova a partir da principal), pela leitura conservadora de "inclusive com -c/-b"; `git show main:arq`, `git log origin/main` e `merge` na permitida não são troca de branch e seguem livres; `git checkout @` sozinho é tratado como a branch anterior (inofensivo: `@` é o HEAD atual).
+- **Arquivos tocados:** `src/vibe/trava.js`, `docs/VIBE_MUTIRAO.md` (linha da trava e contagem do teste), `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`.
+- **Como validar:** `npm run check`; `node src/vibe/trava.js <trava.json>` com a entrada do hook pelo stdin (código 2 = bloqueado): `git switch master` bloqueia, `git switch <permitida>` passa.
+- **Validação feita:** `npm run check` passou. Testes sem custo de IA (fora do repositório, scratchpad): trava **113/113** (79 antigos + 34 novos); Mutirão 31/31; implementação automática 41/41; robustez 23/23; conferências 16/16; Organizador 19/19.
+  - Novos bloqueados (24): checkout main/master, switch master/main, switch --detach main, checkout --detach master, checkout origin/main, switch --detach origin/master, checkout refs/remotes/origin/main, checkout upstream/master (outro remoto), checkout master~1, checkout master@{1}, switch -c main, switch --create=main, checkout -b main, checkout -b nova master, switch -c nova origin/main, switch --track origin/main, switch Master, dentro de `bash -c`, `git -C <projeto> checkout master`, checkout - e switch @{-1} com a anterior = master.
+  - Novos permitidos (10): switch e checkout da permitida, checkout -b nova a partir da permitida, switch -c nova2, switch outra, checkout --detach (HEAD atual), switch -c feature/main, checkout - com a anterior = outra, git show main:a.txt, git log origin/main, merge --no-ff origin/socio na permitida.
+- **Pendências:** nenhuma da tarefa. Seguem as da DEV2-012 (núcleo: `CLAUDE_CONFIG_DIR`, cartões aninhados; Mutirão com IA no layout novo).
+- **Próximo passo:** Revisão do Ygor.
+
+---
+
 ## DEV2-012 — Ciclo real do Vibe Coding no layout novo (0.6.1)
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do Ygor)
@@ -33,7 +54,7 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - **Como validar:** `npm run check`; roteiro A de `docs/VALIDACAO_MVP_VIBE.md` num projeto de brinquedo.
 - **Validação feita:** `npm run check` passou. Testes do módulo sem custo de IA: trava 79/79, Mutirão com remoto local 31/31, implementação automática 41/41, robustez 23/23, conferências do plano 16/16, análise do Organizador 19/19. Sem erros no console nas 4 aberturas. Capturas (só o conteúdo do app, CDP) em `C:UsersCRUUUUUUUUUUUUUUUUUZAppDataLocalTempclaudec5001e4e31f92b1a­e810b-48d5-40fd-8cb3-5e5200a8acd0scratchpadshots`: `c3-entrega-preenchida`, `c5-plano-pronto`, `c6-parado-no-meio-da-t2`, `d1-reaberto-parado`, `d2-concluido-painel`, `e1-trava-recusou-na-aba`, `e2-sino-aberto`, `f1-config-experimental` (`c1`, `c2`, `d3` e `d4` ficaram cobertas por modais e foram refeitas em `e1`, `e2` e `f1`).
 - **Pendências:**
-  - Backlog (decisão do Ygor): a trava barrar também `git checkout/switch` para a main nas abas do Vibe.
+  - Backlog (decisão do Ygor): a trava barrar também `git checkout/switch` para a main nas abas do Vibe. **Feito na DEV2-013.**
   - Núcleo (DEV1): `CLAUDE_CONFIG_DIR` na conferência de conversa existente; cartões aninhados em Configurações.
   - Mutirão com IA no layout novo: fica para outra tarefa.
 - **Próximo passo:** Validação do Ygor no app real (`docs/VALIDACAO_MVP_VIBE.md`).

@@ -6,6 +6,12 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-013 — Trava do Vibe barra a troca para a branch principal** (DEV2)
+
+- `git checkout`/`git switch` para main/master recusados com o motivo, inclusive com `-b`/`-c`/`--detach`/`--track`, como ponto de partida, pelo remoto (`origin/main`), com `~`/`^`/`@{n}` e pela branch anterior (`-`, `@{-N}`).
+- Troca para a permitida e outras branches, branch nova a partir da permitida e leitura da principal seguem como antes; as operações de git do próprio Termix ficam fora do hook (Mutirão sem mudança).
+- Testes sem IA: trava 113/113 (34 novos), Mutirão 31/31, implementação automática 41/41, robustez 23/23, conferências 16/16, Organizador 19/19. Só `src/vibe/trava.js` e docs da dev2.
+
 **DEV2-012 — Ciclo real do Vibe Coding no layout novo (0.6.1)** (DEV2)
 
 - Rodada real num projeto de brinquedo isolado (remoto bare local, config do Claude Code temporária, credenciais apagadas no fim): chave ligada pela interface, plano de 3 tarefas + validação sem perguntas, "Parar" no meio da T2, app fechado e reaberto parado sem recomeçar, "Continuar" até "Projeto concluído" com a notificação.

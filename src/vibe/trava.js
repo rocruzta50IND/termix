@@ -118,6 +118,35 @@ function lado(sub, rest, dir, allowed, prot) {
   return null;
 }
 
+// DEV2-013: trocar para a main/master (git checkout/switch <prot>, com -b/-c/--detach ou pelo remoto origin/<prot>) é bloqueado.
+// Considera cada nome não-opção do comando (branch nova, ponto de partida, alvo); "-" e @{-N} viram a branch anterior.
+function vaiParaProt(rest, dir, prot) {
+  const remotos = ((isRepo(dir) && git(dir, ['remote'])) || '').split('\n').map((s) => s.trim()).filter(Boolean);
+  if (!remotos.includes('origin')) remotos.push('origin');
+  const nome = (a) => {
+    let r = a === '@' ? '-' : a; // o separador de comandos corta as chaves: @{-1} chega como '@' (e main@{1} como 'main@')
+    if (r === '-' || /^@\{-\d+\}$/.test(r)) r = (isRepo(dir) && git(dir, ['rev-parse', '--symbolic-full-name', r === '-' ? '@{-1}' : r])) || r;
+    r = r.replace(/^refs\/heads\//, '').replace(/^refs\/remotes\//, '').replace(/^remotes\//, '');
+    r = r.split(/[~^]|@\{/)[0].replace(/@$/, '');
+    const barra = r.indexOf('/');
+    if (barra > 0 && remotos.includes(r.slice(0, barra))) r = r.slice(barra + 1);
+    return r;
+  };
+  const eProt = (n) => prot.some((b) => lc(b) === lc(n)); // refs no Windows não diferenciam maiúsculas
+  let dd = false;
+  for (const a of rest) {
+    if (a === '--') { dd = true; continue; }
+    if (dd) continue;
+    if (a !== '-' && a.startsWith('-')) {
+      const v = a.match(/^--(?:orphan|create|force-create)=(.+)$/); // --create=<nome>
+      if (v && eProt(nome(v[1]))) return nome(v[1]);
+      continue;
+    }
+    if (eProt(nome(a))) return nome(a);
+  }
+  return null;
+}
+
 function checkGit(args, dir, cfg) {
   // opções globais do git antes do subcomando
   let i = 0;
@@ -185,6 +214,8 @@ function checkGit(args, dir, cfg) {
     if (has('--', '-f', '--force', '.', '-p', '--patch') || rest.some((a) => /^-[a-zA-Z]*f[a-zA-Z]*$/.test(a) && a !== '-b')) return why('git checkout em arquivos (ou forçado) é bloqueado pelo Termix (descarta mudanças). Para trocar de branch use git switch <branch>.');
     if (has('-B') && rest.some((a) => prot.includes(a))) return why('git checkout -B na main/master é bloqueado pelo Termix.');
     if (!has('-b', '-B', '--orphan') && rest.some((a) => !a.startsWith('-') && fs.existsSync(resolveP(a, dir)))) return why('git checkout em arquivos é bloqueado pelo Termix (descarta mudanças). Para trocar de branch use git switch <branch>.');
+    const p = vaiParaProt(rest, dir, prot);
+    if (p) return why(`git checkout para "${p}" é bloqueado pelo Termix: não saia da branch permitida para a main/master. ${BR[0].toUpperCase()}${BR.slice(1)}.`);
     return null;
   }
   if (sub === 'restore') {
@@ -193,6 +224,11 @@ function checkGit(args, dir, cfg) {
     return null;
   }
   if (sub === 'switch' && (has('--discard-changes', '-f', '--force', '-C') || has('--force-create'))) return why('git switch forçado é bloqueado pelo Termix (descarta mudanças ou recria a branch).');
+  if (sub === 'switch') {
+    const p = vaiParaProt(rest, dir, prot);
+    if (p) return why(`git switch para "${p}" é bloqueado pelo Termix: não saia da branch permitida para a main/master. ${BR[0].toUpperCase()}${BR.slice(1)}.`);
+    return null;
+  }
   if (sub === 'branch') {
     const del = has('-D') || (has('-d', '--delete') && has('-f', '--force'));
     if (del) return why('git branch -D é bloqueado pelo Termix (apaga uma branch sem conferir). Peça ao humano.');

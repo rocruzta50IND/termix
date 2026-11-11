@@ -6,8 +6,8 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-012 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas a sincronização com a dev1 na versão 0.6.1 e a prova do ciclo real no layout novo)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-013 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo e a trava barrando a troca para a branch principal)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-11
 
 ## Resumo do que mudou
@@ -70,6 +70,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - os commits ficaram só na branch de trabalho; a principal, local e no remoto, não mudou; um pedido proposital de commit na principal foi recusado pela trava, com o motivo na aba;
   - gasto de cerca de 7 pontos da janela de 5 horas (abaixo do teto combinado de 15);
   - nada quebrou no módulo e nenhuma linha mudou.
+- **DEV2-013:** a trava passa a recusar, com o motivo, a troca de branch para a principal (main/master) nas abas do Vibe. Na DEV2-012 um agente conseguiu trocar para a principal; o commit seguinte foi recusado, mas ele ficou nela. Agora a troca é barrada em todas as formas comuns (direta, criando branch nova a partir da principal, destacada, pelo remoto, pela "branch anterior"). Trocar para a branch permitida ou para outras branches, criar branch a partir da permitida e só ler a principal continuam permitidos. As operações de git do próprio Termix (conferir a branch, o Mutirão juntar as entregas, a conferência depois de cada tarefa) não passam pela trava, então o Mutirão segue igual. Sem custo de IA: 34 casos novos no teste da trava, e os testes antigos do módulo continuam passando.
 
 ## Áreas e arquivos afetados
 
@@ -101,7 +102,7 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - Rodar a checagem de sintaxe do projeto.
 - DEV2-009, sem custo de IA: o verificador da trava com os casos de conflito (escolher um lado passa só com junção em andamento, na branch permitida, em arquivo em conflito) e o teste do módulo das conferências do plano e da entrega do Mutirão.
 - Sem gastar tokens: rodar o verificador da trava direto com entradas simuladas (cada regra com um caso permitido e um bloqueado).
-- Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado (a troca de branch em si passa; barrá-la também fica para decisão do Ygor); o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.
+- Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado (pedir a troca para a branch principal também é recusado (DEV2-013)); o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.
 - No real: conferir que a marca de pasta confiável apareceu só na entrada do projeto e que existe a cópia de segurança.
 - Mutirão, sem custo de IA: o teste do módulo com um remoto local (dono e dois sócios) cobre papel, conferência (inclusive a recusa de arquivo em comum), publicação, parte do sócio, entrega e contador. Com IA, numa instância isolada: o dono gera a divisão com o orquestrador, publica; cada sócio sincroniza, vê a parte e abre o Vibe preenchido; o contador vai de 0 a N e mostra o botão da implementação automática.
 - Implementação automática, sem custo de IA: o teste do módulo com um remoto local cobre projeto com mudanças pendentes (recusado), junção sem conflito, junção com conflito (cancelada sem perder nada, a outra entra), a entrega montada para o plano, os pedidos em arquivo, a trava (juntar na branch do dono pode, na principal não) e o envio só da branch do dono. Com IA, numa instância isolada: com duas entregas, o botão leva até "Concluído" e a branch do dono chega ao remoto com a principal intacta; com conflito, o plano começa pela tarefa do conflito.
