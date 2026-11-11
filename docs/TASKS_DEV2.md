@@ -40,8 +40,10 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
   - Projeto sem git é recusado no Vibe de tarefa (é para projeto em andamento).
 - **Arquivos tocados:** `src/vibe/tarefa.js` (novo), `src/vibe/index.js`, `package.json` (só o script check), `docs/TASKS_DEV2.md`.
 - **Como validar:** `npm run check`; `tar17.js` (scratchpad).
-- **Pendências:** testes antigos, rodada real curta, docs (VIBE_MUTIRAO, CHANGELOG_DEV2, HANDOFF_DEV2).
-- **Próximo passo:** rodar os testes antigos (dep16, run16 a/b, run7, run15, rec15, pol14, trava13, mod5/6/7/9, organizador); depois a rodada real curta e os docs.
+  - Testes antigos: dep16 68/68, run16 a 28/28 e b 9/9, run7 23/23, run15 29/29, pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16; rec15 35/36 (a checagem "pedido curto" passa de 200 caracteres por causa do caminho longo do scratchpad; já falhava igual na sessão da DEV2-016, sem relação com esta tarefa). Organizador (`run10.js`) não rodado: usa credencial real e o código dele não mudou.
+  - `docs/VIBE_MUTIRAO.md`: seção "Vibe de tarefa" e a tabela de arquitetura.
+- **Pendências:** rodada real curta; CHANGELOG_DEV2 e HANDOFF_DEV2.
+- **Próximo passo:** rodada real curta (`run17r.js prep|run|limpar`, projeto de brinquedo "copos" com git, Sonnet nas duas abas, teto 12 pontos da janela de 5 h); depois CHANGELOG_DEV2, HANDOFF_DEV2, commit final e relatório ao termix-orq-0b.
 
 ---
 
