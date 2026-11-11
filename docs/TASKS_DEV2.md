@@ -24,6 +24,25 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-017 — Vibe de tarefa (modo rápido para projeto em andamento)
+
+- **Status:** EM ANDAMENTO
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, decisão do Ygor) o formulário completo de entrega fica só para projeto do zero. Num projeto em andamento, o usuário descreve a tarefa e o Termix cria o mesmo painel com orquestrador e dev, com todas as funções (política, recuperação, deploy, Parar e Continuar). Só no módulo. A1 escolha inicial; A2 formulário da tarefa e entrega sintética com resumo do projeto sem IA; A3 pedido de plano curto; A4 resto igual ao Vibe; A5 histórico de tarefas com as abas reaproveitadas por /clear.
+- **Feito até agora:**
+  - `git fetch` + `git log dev2..origin/dev1` vazio: nada a sincronizar.
+  - A2/A3 (processo principal, commit 6c4d9c4): `src/vibe/tarefa.js` (novo): resumo do projeto sem IA (README e CLAUDE.md, primeiras linhas; papel do fluxo; branch atual e de trabalho; últimos 8 commits; seção "Em andamento" do TASKS, ou grep "EM ANDAMENTO"), entrega sintética `modo: "tarefa"` (estrutura.md = tarefa + resumo), histórico `vibe\<id>\tarefas.json` (canais `tarefaResumo`, `tarefaNova`, `tarefaFim`, `tarefaHist`); `index.js`: pedido de plano próprio (curto, por grep, poucas tarefas, mesmas marcas, só o indispensável); `package.json`: `tarefa.js` no `npm run check`.
+  - Teste do módulo `tar17.js`: 33/33.
+- **Decisões:**
+  - A tarefa nova fecha a anterior no histórico ("concluida" pelo fim do ciclo; "interrompida" se ainda não tinha terminado); a entrega anterior vai para `historico\<data>\` e o ciclo para `historico\ciclo-<data>\`; nada é apagado.
+  - Projeto sem git é recusado no Vibe de tarefa (é para projeto em andamento).
+- **Arquivos tocados:** `src/vibe/tarefa.js` (novo), `src/vibe/index.js`, `package.json` (só o script check), `docs/TASKS_DEV2.md`.
+- **Como validar:** `npm run check`; `tar17.js` (scratchpad).
+- **Pendências:** A1/A2 na interface, A4/A5 (abas reaproveitadas e painel com histórico), CDP com o agente falso, rodada real curta, docs.
+- **Próximo passo:** interface (`src/renderer/vibe/vibe.js`): escolha inicial, formulário da tarefa com o resumo, start reaproveitando as abas com /clear, histórico no painel; depois `run17.js` (CDP, agente falso).
+
+---
+
 ## DEV2-021 — Portão obrigatório no deploy automático e junção da main na dev1 depois de "Voltar versão"
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do orquestrador e do Ygor)
