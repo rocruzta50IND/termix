@@ -297,8 +297,37 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, pty,
     try {
       const j = JSON.parse(r.out);
       const list = Array.isArray(j) ? j : (j.available || []);
-      return { items: list.map((x) => ({ id: x.id || x.pluginId || '', name: x.name || String(x.id || '').split('@')[0], desc: String(x.description || x.desc || '').slice(0, 200), marketplace: x.marketplaceName || x.marketplace || String(x.id || '').split('@')[1] || '' })).filter((x) => x.id) };
+      return { items: list.map((x) => ({ id: x.id || x.pluginId || '', name: x.name || String(x.id || '').split('@')[0], desc: String(x.description || x.desc || '').slice(0, 200), marketplace: x.marketplaceName || x.marketplace || String(x.id || '').split('@')[1] || '', version: x.version ? String(x.version).slice(0, 20) : '', installs: typeof x.installCount === 'number' ? x.installCount : 0 })).filter((x) => x.id) };
     } catch { return { items: [], error: 'Não consegui ler a lista de plugins disponíveis.' }; }
+  }
+
+  // adiciona um marketplace (owner/repo do GitHub ou URL https de um repositório Git) pelo próprio Claude Code
+  async function marketplaceAdd({ source, projectPath }) {
+    const s = String(source || '').trim();
+    if (!/^[A-Za-z0-9][\w.-]*\/[A-Za-z0-9][\w.-]*$/.test(s) && !/^https:\/\/[^\s"'<>]+$/.test(s)) return { ok: false, message: 'Use owner/repo do GitHub ou uma URL https de repositório Git.' };
+    const r = await runClaude(['plugin', 'marketplace', 'add', s], projectPath, 180000);
+    return result(r, `Marketplace ${s} adicionado.`);
+  }
+
+  // busca no registro público de servidores MCP (https://registry.modelcontextprotocol.io); sem login, paginado por cursor
+  async function mcpRegistry({ q, cursor }) {
+    const u = new URL('https://registry.modelcontextprotocol.io/v0/servers');
+    u.searchParams.set('limit', '30'); u.searchParams.set('version', 'latest');
+    if (q) u.searchParams.set('search', String(q).slice(0, 80));
+    if (cursor) u.searchParams.set('cursor', String(cursor).slice(0, 300));
+    let j;
+    try {
+      const res = await fetch(u, { signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json' } });
+      if (!res.ok) return { ok: false, items: [], message: `O registro MCP respondeu ${res.status}.` };
+      j = await res.json();
+    } catch (e) { return { ok: false, items: [], message: 'Não consegui falar com o registro MCP.' }; }
+    const items = (j.servers || []).map((x) => x.server || x).filter((s) => s && s.name).map((s) => {
+      const remote = (s.remotes || []).find((r) => /^https:\/\//.test(r.url || '')) || null;
+      const pkg = (s.packages || [])[0] || null;
+      return { name: s.name, title: s.title || '', desc: String(s.description || '').slice(0, 220), version: s.version || '', site: s.websiteUrl || (s.repository && s.repository.url) || '',
+        remote: remote ? { type: remote.type === 'sse' ? 'sse' : 'http', url: remote.url } : null, pkg: pkg ? { type: pkg.registryType || '', id: pkg.identifier || '' } : null };
+    });
+    return { ok: true, items, next: (j.metadata && j.metadata.nextCursor) || '' };
   }
 
   // liga ou desliga todos os plugins neste projeto (escopo local: só vale aqui, não vai para o git)
@@ -462,7 +491,7 @@ module.exports = function createResources({ findClaude, readJson, cleanEnv, pty,
     return { ok: false, message: 'Pedido inválido.' };
   }
 
-  const OPS = { pluginAction, pluginInstall, pluginsAvailable, pluginsBulk, mcpAdd, mcpRemove, mcpAuth, mcpDisabled: async (a) => setMcpDisabled(a), mcpBulk, cleanProject, skillOp };
+  const OPS = { pluginAction, pluginInstall, pluginsAvailable, pluginsBulk, marketplaceAdd, mcpRegistry, mcpAdd, mcpRemove, mcpAuth, mcpDisabled: async (a) => setMcpDisabled(a), mcpBulk, cleanProject, skillOp };
   async function run(op, args) {
     if (!Object.prototype.hasOwnProperty.call(OPS, op)) return { ok: false, message: 'Operação desconhecida.' };
     try { return await OPS[op](args || {}); } catch (e) { return { ok: false, message: String(e.message || e) }; }

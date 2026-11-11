@@ -1,14 +1,14 @@
 'use strict';
 const api = window.termix;
 
-const DEFAULT_COLOR = '#5B9DFF'; // cor principal do sistema (azul): toda aba nova começa com ela
-const COLORS = ['#5B9DFF', '#7C8CFF', '#34D399', '#F472B6', '#FBBF24', '#22D3EE', '#FB923C', '#A78BFA', '#F87171', '#84CC16', '#38BDF8'];
+const DEFAULT_COLOR = '#3B82F6'; // cor principal do sistema (azul): toda aba nova começa com ela
+const COLORS = ['#3B82F6', '#7C8CFF', '#34D399', '#F472B6', '#FBBF24', '#22D3EE', '#FB923C', '#A78BFA', '#F87171', '#84CC16', '#38BDF8'];
 const GRADS = [['#60a5fa', '#22d3ee'], ['#94a3b8', '#64748b'], ['#38bdf8', '#6366f1'], ['#a5b4fc', '#60a5fa'], ['#67e8f9', '#34d399']];
 const GLOBALS = [['Consumo', 'gauge'], ['Integrações', 'link'], ['Configurações', 'gear']];
 // o desenho de cada ícone ocupa uma parte diferente do quadro (a engrenagem é grande, o link é pequeno): o tamanho de cada um é ajustado para os três terem o mesmo peso visual (~13 px de desenho)
 const GLOBAL_ICON = { gauge: 19, link: 21, gear: 16 };
 const gIc = (name, base) => ic(name, Math.round(base * (GLOBAL_ICON[name] || 19) / 19 * 10) / 10);
-const SUBS = [['Terminais', 'terminal'], ['Plugins', 'plug'], ['Skills', 'sparkles'], ['MCPs', 'network']];
+const SUBS = [['Terminais', 'sterm'], ['Conectores', 'splug'], ['Código', 'scode']];
 
 // engrenagem de 8 dentes, gerada por pontos para não depender de um desenho externo
 function gearPath() {
@@ -24,12 +24,24 @@ function gearPath() {
 
 // ícones de traço, todos no mesmo estilo
 const ICONS = {
-  panel: '<rect x="3" y="4.5" width="18" height="15" rx="3.5"/><path d="M9.5 4.5v15"/>',
+  panel: '<rect x="3" y="3.5" width="18" height="17" rx="3"/><path d="M9 3.5v17"/>',
+  newchat: '<path d="M12 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-6"/><path d="M18.4 2.6a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/>',
+  newwf: '<rect x="3" y="3" width="8" height="8" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h2"/><path d="M17 13v8M13 17h8"/>',
+  bubble: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  wfnodes: '<rect x="3" y="3" width="8" height="8" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect x="13" y="13" width="8" height="8" rx="2"/>',
+  sterm: '<rect x="3" y="3" width="18" height="18" rx="3"/><path d="m7.5 10 2.5 2-2.5 2M12.5 15h4"/>',
+  splug: '<path d="M12 21v-4.5M9 7.5V3M15 7.5V3"/><path d="M18 7.5v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4v-5z"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
   bell: '<path d="M6 10a6 6 0 0 1 12 0c0 4.6 1.8 6 1.8 6H4.2S6 14.6 6 10z"/><path d="M10 19.2a2.2 2.2 0 0 0 4 0"/>',
   chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
   terminal: '<path d="M7.5 4.5h10a3.5 3.5 0 0 1 3.5 3.5v8"/><rect x="3" y="8" width="15" height="12" rx="3"/><path d="M7 12.4l2.4 1.9L7 16.2M11.6 16.4h3"/>',
   plug: '<path d="M9 3.5v4M15 3.5v4"/><path d="M6.5 7.5h11v3.2a5.5 5.5 0 0 1-11 0V7.5z"/><path d="M12 16.2v4.3"/>',
+  workflow: '<rect x="3" y="4" width="6" height="6" rx="1.6"/><rect x="15" y="14" width="6" height="6" rx="1.6"/><path d="M9 7h3.5a2.5 2.5 0 0 1 2.5 2.5V14"/>',
+  shield: '<path d="M12 3l7 3v5.5c0 4.2-2.9 7.6-7 9.5-4.1-1.9-7-5.3-7-9.5V6l7-3z"/><path d="M9 12l2.2 2.2L15.2 10"/>',
+  bolt: '<path d="M13 3L5.5 13.2H11L10 21l8.5-10.5H13L13 3z"/>',
+  folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7.5z"/>',
+  archive: '<rect x="3.5" y="4.5" width="17" height="4" rx="1.4"/><path d="M5 8.5V18a1.6 1.6 0 0 0 1.6 1.6h10.8A1.6 1.6 0 0 0 19 18V8.5M10 12.5h4"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l.8 11.2a1.6 1.6 0 0 0 1.6 1.5h6.2a1.6 1.6 0 0 0 1.6-1.5L17.5 7M10 11v5M14 11v5"/>',
   sparkles: '<path d="M11 4l1.7 4.6L17.3 10l-4.6 1.4L11 16l-1.7-4.6L4.7 10l4.6-1.4L11 4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z"/>',
   network: '<circle cx="6" cy="6.5" r="2.3"/><circle cx="18" cy="6.5" r="2.3"/><circle cx="12" cy="17.5" r="2.3"/><path d="M8.2 7.7l2.7 7.5M15.8 7.7l-2.7 7.5M8.3 6.5h7.4"/>',
   gauge: '<path d="M4.5 17a8 8 0 1 1 15 0"/><path d="M12 15.5l3.6-4.6"/><circle cx="12" cy="15.8" r="1"/>',
@@ -49,6 +61,9 @@ const ICONS = {
   arrowl: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
   arrowr: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   download: '<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 19.5h14"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  filter: '<path d="M4 5.5h16l-6 7.2v5.3l-4 2v-7.3z"/>',
+  sort: '<path d="M8 4.5v15M4.5 16l3.5 3.5 3.5-3.5M16 19.5v-15M12.5 8l3.5-3.5L19.5 8"/>',
   save: '<path d="M5 4.5h11l3 3v12H5z"/><path d="M8 4.5v5h7v-5M8 19.5v-6h8v6"/>',
 };
 const ic = (name, size = 18) => `<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -63,6 +78,7 @@ const STATES = {
 
 let S = { projects: [], settings: { termOp: 88, sideCollapsed: false } };
 const UI = { cur: { p: null, page: 'Terminais' }, last: null, actOpen: false, pop: false, menu: null, events: [], res: null, env: null, limits: null };
+document.addEventListener('input', (e) => { if (e.target.id === 'npName' && UI.np) UI.np.name = e.target.value; }); // o nome digitado na tela de novo projeto sobrevive a redesenhos
 const RT = {};  // runtime por aba: terminal, estado, processo
 const MET = {}; // métricas por aba vindas da status line
 
@@ -159,7 +175,7 @@ const pending = () => UI.events.filter((e) => !e.seen && !e.done).length;
 
 /* ---------- terminais ---------- */
 function termTheme() {
-  return { background: 'rgba(0,0,0,0)', foreground: '#dcd9ee', cursor: '#8B7BFF', selectionBackground: 'rgba(139,123,255,.35)', scrollbarSliderBackground: 'rgba(255,255,255,.14)', scrollbarSliderHoverBackground: 'rgba(255,255,255,.28)', scrollbarSliderActiveBackground: 'rgba(255,255,255,.38)' };
+  return { background: 'rgba(0,0,0,0)', foreground: '#ececea', cursor: '#60befa', selectionBackground: 'rgba(59,130,246,.38)', scrollbarSliderBackground: 'rgba(255,255,255,.14)', scrollbarSliderHoverBackground: 'rgba(255,255,255,.28)', scrollbarSliderActiveBackground: 'rgba(255,255,255,.38)' };
 }
 
 function ensureRT(tab) {
@@ -226,7 +242,7 @@ function fitActive() {
 }
 function fitNow() {
   const p = curProject();
-  if (!p || UI.cur.page !== 'Terminais') return;
+  if (!p || (UI.cur.page !== 'Terminais' && !dockOn())) return;
   const tab = curTab(p);
   if (tab && RT[tab.id] && RT[tab.id].opened) { try { RT[tab.id].fit.fit(); } catch { /* ignora */ } }
 }
@@ -365,8 +381,6 @@ api.onExit(({ tabId, code }) => {
 // métricas da status line: limites da conta (5h e 7d) e contexto por sessão
 function onMetric({ tabId, data }) {
   MET[tabId] = data;
-  const c = RT[tabId] && RT[tabId].cost; // base da conversa nova: leitura mais recente antes do pedido de retomada
-  if (c && c.phase === 'cleared' && data.updated >= c.clearedAt && ctxTok(data) !== null) c.base = ctxTok(data);
   const rl = data.rate_limits;
   if (rl && (!UI.limits || data.updated >= UI.limits.updated)) {
     const w = (x) => (x && typeof x.used_percentage === 'number' ? { pct: x.used_percentage, resets: x.resets_at } : null);
@@ -380,7 +394,9 @@ api.onMetrics(onMetric);
 setInterval(() => { renderTop(); }, 30000); // atualiza "renova em" e "atualizado há"
 
 // estado da aba pelos hooks do Claude Code (exato). Sem hooks (node ausente ou hooks bloqueados), vale a heurística abaixo.
-const tabVisible = (p, tab) => UI.cur.p === p.id && UI.cur.page === 'Terminais' && curTab(p) && curTab(p).id === tab.id;
+// tela Código com o painel de terminais embaixo (como o VS Code): as abas e a sessão da aba ativa aparecem sob o editor
+const dockOn = () => { const p = curProject(); return !!p && UI.cur.p !== '_' && UI.cur.page === 'Código' && p.kind !== 'workflow' && !!curTab(p) && codeState(p).term !== false; };
+const tabVisible = (p, tab) => UI.cur.p === p.id && (UI.cur.page === 'Terminais' || dockOn()) && curTab(p) && curTab(p).id === tab.id;
 
 // aviso de uma aba: só quando a pessoa não está olhando para ela (aba oculta ou app em segundo plano).
 // Vai para o painel, ganha selo na aba e, com o app sem foco, vira notificação do Windows.
@@ -436,22 +452,19 @@ api.onHook(({ tabId, data }) => {
     case 'UserPromptSubmit': case 'PostToolUse':
       setSt(tab, 'work');
       if (data.event === 'UserPromptSubmit' && UI.events.some((e) => e.kind === 'cache' && e.tabId === tab.id)) { UI.events = UI.events.filter((e) => !(e.kind === 'cache' && e.tabId === tab.id)); renderAct(); renderTop(); } // mandou mensagem: o cache foi renovado, o aviso perdeu o sentido
-      if (data.event === 'UserPromptSubmit' && r.cost && r.cost.phase === 'cleared') r.cost.phase = 'resumed'; // o pedido de retomada entrou: a base fica congelada
       break;
     case 'SessionStart':
       setSt(tab, 'wait');
       if (data.source === 'clear') { r.term.write('\x1b[2J\x1b[3J\x1b[H'); api.write(tab.id, '\x0c'); } // apaga a tela e o histórico visível e pede o redesenho (Ctrl+L)
-      if (data.source === 'clear' && r.cost && r.cost.phase === 'clearing') { r.cost.phase = 'cleared'; r.cost.clearedAt = Date.now(); }
       if (r.flow && r.flow.step === 'clearing' && data.source === 'clear') {
-        const resume = r.flow.resume;
+        const fl = r.flow;
         r.flow = null;
-        if (resume) setTimeout(() => typeTo(tab, resume), 900);
+        addEvent({ c: tab.color, who: tab.name, msg: fl.chars ? `Contexto limpo · resumo de ${fl.chars} caracteres (~${fmtTok(Math.round(fl.chars / 3.4))} tokens) entregue ao agente` : 'Contexto limpo' });
         renderRail();
       }
       break;
     case 'Stop':
       setSt(tab, 'wait');
-      if (r.cost && r.cost.phase === 'resumed') { r.cost.phase = 'ending'; setTimeout(() => finishCost(tab), 2500); } // dá tempo da status line gravar o fim da resposta
       notifyTab(p, tab, 'done', lastLine(data.last) || 'Terminou · aguarda você');
       break;
     case 'Notification':
@@ -461,69 +474,16 @@ api.onHook(({ tabId, data }) => {
   }
 });
 
-/* ---------- botão Clear (alternador): fechar a tarefa, /clear e retomar ---------- */
-const CLEAR_MARK = 'TERMIX-CLEAR-OK';
-const GENERIC_CLOSE = 'Vou fechar esta tarefa. Faça nesta ordem: 1) confirme que o trabalho está aprovado por mim; se não estiver, resuma o que foi feito e pare, sem escrever o aviso final. 2) Rode a validação do projeto e corrija se falhar. 3) Registre a tarefa no arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir): o que foi feito, arquivos alterados, padrão seguido, decisões e pendências, em até 6 linhas. 4) Não faça commit nem push. 5) Só se tudo isso foi concluído, termine escrevendo exatamente ' + CLEAR_MARK + '.';
-const GENERIC_RESUME = 'Estou retomando o trabalho depois de um /clear. Leia o CLAUDE.md, o arquivo de tarefas do projeto (docs/TASKS.md ou docs/HISTORICO-TAREFAS.md, o que existir) e os últimos commits. Resuma em poucas linhas onde paramos e o que está pendente. Antes de mexer em algo de uma tarefa já encerrada, leia a entrada dela e siga o mesmo padrão. Se faltar informação, pergunte em vez de supor. Não leia arquivos além do necessário.';
+/* ---------- botão Clear (alternador): limpa o contexto e entrega ao agente o resumo da conversa (TASK-117) ---------- */
 const CLEAR_DEF = {
-  v: 2, alert: 15, // alert: % de contexto a partir do qual o botão pulsa (0 = nunca)
-  flow: true, commit: true, // flow: usar os pedidos do fluxo Rocruzta nos projetos que o têm; commit: fechar com commit e push na branch do papel
-  closePrompt: '', resumePrompt: '', // vazio = automático (fluxo ou genérico, conforme o projeto)
+  v: 3, alert: 15, // alert: % de contexto a partir do qual o botão pulsa (0 = nunca)
+  template: null, // modelo do resumo entregue ao agente depois do Clear: null = o padrão do app; '' = só limpar, sem resumo
 };
-// pedidos para projetos no fluxo Rocruzta: só o que o fluxo exige, lendo o mínimo (nada de abrir o TASKS.md inteiro)
-const AUX_ROLES = ['DEV2', 'DEV3', 'DEV4', 'DEV5'];
-const flowResume = (i) => 'Estou retomando o trabalho depois de um /clear; a conversa anterior foi apagada, não dependa dela. '
-  + `Papel desta máquina: ${i.role || 'veja o CLAUDE.local.md'}${i.branch ? `, branch ${i.branch}` : ''}. `
-  + 'Leia o CLAUDE.md e o CLAUDE.local.md (o WORKFLOW.md só se precisar do passo a passo). '
-  + 'Do docs/TASKS.md NÃO abra o arquivo inteiro: ache os títulos com Grep -n "^## " e leia só as seções "Em andamento" e "Aguardando validação DEV1" (Read com offset e limit); das demais tarefas veja só os títulos (Grep -n "^### TASK"). '
-  + 'Do docs/CHANGELOG_DEV.md leia só a entrada mais recente (as primeiras ~40 linhas). '
-  + 'Leia docs/DECISOES.md ou docs/DESIGN.md só se a tarefa em andamento mexer no comportamento do produto ou na aparência, e apenas a seção relevante. '
-  + 'Confira git status -sb e git log --oneline -5. '
-  + (AUX_ROLES.includes(i.role) ? 'Confira se a dev1 tem commits que a sua branch ainda não tem (git log ..origin/dev1 --oneline) e avise antes de seguir. ' : i.role === 'DEV1' ? 'Não consulte as branches dev2 a dev5 (trava de contexto do fluxo). ' : '')
-  + 'Responda em poucas linhas: onde paramos, o que depende de mim e o próximo passo. Não comece a desenvolver até eu confirmar.';
-const flowClose = (i, commit) => {
-  const aux = AUX_ROLES.includes(i.role);
-  const val = i.validacao && i.validacao.length ? i.validacao.join(' e ') : 'a validação do projeto (.claude/fluxo.json)';
-  return 'Vou fechar a tarefa em andamento. Faça nesta ordem, lendo só o necessário: '
-    + '1) confirme que o resultado foi aprovado por mim nesta conversa; se não foi, resuma o que foi feito e como testar e pare, sem escrever o aviso final. '
-    + `2) rode ${val}; se falhar, corrija. `
-    + `3) em docs/TASKS.md edite só a entrada da tarefa ativa (ache-a com Grep -n e leia só esse trecho; não abra o arquivo inteiro): preencha Feito até agora, Decisões, Arquivos tocados, Como validar, Pendências e Próximo passo, mude o status para ${aux ? 'AGUARDANDO VALIDAÇÃO DEV1' : 'VALIDADA EM DEV1'} e mova a entrada para a seção correspondente. `
-    + '4) acrescente a entrada de hoje no topo de docs/CHANGELOG_DEV.md. '
-    + '5) o que surgiu fora do escopo vira tarefa no Backlog. '
-    + (aux ? `6) reescreva docs/HANDOFF_${i.role}.md (resumo em alto nível, sem colar código). ` : '')
-    + (commit ? `${aux ? '7' : '6'}) faça o commit "TASK-XXX: descrição curta no imperativo" e o push somente para origin/${i.branch || 'a branch do seu papel'}; nunca promova para a main. ` : `${aux ? '7' : '6'}) não faça commit nem push. `)
-    + `${aux ? '8' : '7'}) só se tudo isso foi concluído, termine escrevendo exatamente ${CLEAR_MARK}.`;
-};
-// textos efetivos para um projeto: o que a pessoa escreveu nas configurações vale sempre; vazio = automático
-async function clearPrompts(p) {
-  const c = clearCfg();
-  const info = c.flow ? await api.flowInfo(p.path) : { on: false };
-  const fl = !!info.on;
-  return { fl, info, canClose: !(fl && info.role === 'GERENTE'),
-    close: c.closePrompt || (fl ? flowClose(info, c.commit) : GENERIC_CLOSE),
-    resume: c.resumePrompt || (fl ? flowResume(info) : GENERIC_RESUME) };
-}
+let HANDOFF_DEF = ''; // modelo padrão do resumo (vem do processo principal, que o usa para montar o resumo)
 const clearCfg = () => S.settings.clear || CLEAR_DEF;
+const clearTemplate = () => (typeof clearCfg().template === 'string' ? clearCfg().template : null);
 const connCfg = () => S.settings.connectors || { v: 1, newProject: 'auto' };
 const typeTo = (tab, text) => { api.write(tab.id, text); setTimeout(() => api.write(tab.id, '\r'), 150); };
-// tokens no contexto agora (soma do uso atual; o used_percentage vem em inteiro e a 1M de janela cada 1 % são 10 mil tokens)
-const ctxTok = (m) => { const u = m && m.context_window && m.context_window.current_usage; return u ? (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0) : null; };
-// custo da retomada: antes do /clear → base da conversa nova (antes do pedido de retomada) → fim da primeira resposta
-function finishCost(tab) {
-  const r = RT[tab.id], c = r && r.cost;
-  if (!c || c.phase !== 'ending') return;
-  c.after = ctxTok(MET[tab.id]); c.phase = 'done';
-  if (c.after === null) return;
-  const parts = [c.base !== null ? `base ${fmtTok(c.base)} → ${fmtTok(c.after)}` : `contexto depois da retomada ${fmtTok(c.after)}`];
-  if (c.before !== null) parts.push(`antes do /clear ${fmtTok(c.before)}`);
-  addEvent({ c: tab.color, who: tab.name, msg: `${c.base !== null ? `A retomada custou ~${fmtTok(Math.max(0, c.after - c.base))} tokens` : 'Retomada concluída'} · ${parts.join(' · ')}` });
-  renderRail();
-}
-function markCount(term) { // quantas vezes o aviso final aparece no texto do terminal (linhas quebradas são unidas)
-  const b = term.buffer.active; let t = '';
-  for (let i = 0; i < b.length; i++) { const l = b.getLine(i); if (l) t += (l.isWrapped ? '' : '\n') + l.translateToString(true); }
-  return (t.match(new RegExp(CLEAR_MARK, 'g')) || []).length;
-}
 // estado do botão no alternador: off = desabilitado, pulse = contexto passou do limite configurado
 function clearDockState(p) {
   const tab = p && curTab(p), r = tab && RT[tab.id];
@@ -543,54 +503,34 @@ function clearDockState(p) {
     rst: { spin: st === 'restart', off: st === 'restart' || !!(r && r.flow), tip: st === 'end' ? 'Retomar a conversa' : st === 'fail' ? 'Tentar de novo' : 'Reiniciar com a conversa atual' } };
 }
 function dockRestart() { const p = curProject(), tab = p && curTab(p); if (tab) restartTab(p, tab); }
+const clearModal = () => ({
+  title: 'Limpar o contexto?',
+  body: clearTemplate() === '' ? '<p>O Termix limpa a conversa e começa uma <b>conversa nova, sem resumo</b> (o modelo do resumo está vazio em Configurações). A conversa atual continua guardada pelo Claude Code.</p>'
+    : '<p>O Termix limpa a conversa e já entrega ao agente um <b>resumo do ponto em que vocês estavam</b> (último pedido, arquivos alterados, git e tarefa ativa), para ele continuar sem reler o projeto. A conversa atual continua guardada pelo Claude Code. O modelo do resumo pode ser editado em Configurações.</p>',
+  buttons: [['Cancelar', null], ['Confirmar', 'ok', 'pri']],
+});
 async function clearFlow() {
   const p = curProject(), tab = p && curTab(p), r = tab && RT[tab.id];
   if (tab && tab.kind === 'chat') return chatClearFlow(p, tab);
   if (!r || !r.alive || r.st !== 'wait' || r.flow) return;
-  const pr = await clearPrompts(p);
-  if (!r.alive || r.st !== 'wait' || r.flow) return;
-  const nota = pr.fl ? `<p class="meta">Projeto no fluxo Rocruzta${pr.info.role ? ` · papel ${esc(pr.info.role)}` : ''}: o fechamento e a retomada seguem o fluxo e leem só o necessário.</p>` : '';
-  const c = await modal({
-    title: 'Limpar o contexto?',
-    body: '<p>O <code>/clear</code> apaga o contexto e começa uma conversa nova. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, limpa e manda ele retomar pelos arquivos do projeto.</p>' + nota,
-    buttons: pr.canClose ? [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']] : [['Cancelar', null], ['Só limpar', 'only', 'pri']],
-  });
-  if (!c.value || !r.alive || r.st !== 'wait' || r.flow) return;
-  if (c.value === 'only') { doClear(tab, ''); return; }
-  r.flow = { step: 'closing', t0: Date.now(), saw: false, base: null, resumeText: pr.resume };
-  typeTo(tab, pr.close);
-  setTimeout(() => { if (r.flow && r.flow.base === null) r.flow.base = markCount(r.term); }, 1500);
-  addEvent({ c: tab.color, who: tab.name, msg: 'Fechando a tarefa antes do /clear…' });
-  renderRail();
+  const c = await modal(clearModal());
+  if (c.value !== 'ok' || !r.alive || r.st !== 'wait' || r.flow) return;
+  doClearNative(p, tab);
 }
-function doClear(tab, resumeText) { // resumeText vazio = só limpar, sem pedir a retomada
-  const r = RT[tab.id];
-  r.flow = { step: 'clearing', t0: Date.now(), resume: resumeText };
-  r.cost = resumeText ? { phase: 'clearing', before: ctxTok(MET[tab.id]), base: null, after: null } : null; // só mede quando há retomada
+// o app monta o resumo, deixa gravado e dá o /clear; o hook de início de sessão (hook-wrapper) o entrega ao agente. Nenhuma volta do Claude.
+async function doClearNative(p, tab) {
+  const r = RT[tab.id], tpl = clearTemplate();
+  r.flow = { step: 'preparing', t0: Date.now() }; renderRail();
+  let h = null;
+  if (tpl === '') api.handoffDrop(tab.id); else h = await api.handoffPrepare({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, template: tpl });
+  if (!r.alive || r.st !== 'wait' || !r.flow || r.flow.step !== 'preparing') { api.handoffDrop(tab.id); if (r.flow && r.flow.step === 'preparing') { r.flow = null; renderRail(); } return; }
+  r.flow = { step: 'clearing', t0: Date.now(), chars: h && h.ok ? h.chars : 0 };
   typeTo(tab, '/clear');
   renderRail();
 }
-async function clearClosed(tab) { // o agente terminou de fechar a tarefa: limpa se o aviso final apareceu; senão pergunta
-  const r = RT[tab.id];
-  const text = r.flow.resumeText;
-  if (markCount(r.term) > r.flow.base) { doClear(tab, text); return; }
-  r.flow = { step: 'asking', t0: Date.now() };
-  renderRail();
-  const c = await modal({
-    title: 'A tarefa foi registrada?',
-    body: '<p>Não encontrei o aviso de que o fechamento terminou (o agente pode ter pedido sua aprovação ou deixado algo pendente). Olhe o terminal antes de decidir.</p>',
-    buttons: [['Não limpar', null], ['Limpar e retomar mesmo assim', 'ok', 'pri']],
-  });
-  if (c.value === 'ok' && r.alive) doClear(tab, text); else { r.flow = null; renderRail(); }
-}
-function clearTick(tab) { // chamado a cada 700 ms para cada aba viva
+function clearTick(tab) { // chamado a cada 700 ms para cada aba viva: desiste se o /clear não chegou ao agente
   const r = RT[tab.id], f = r.flow;
-  if (!f) return;
-  if (f.step === 'closing') {
-    if (r.st === 'work') f.saw = true;
-    if (!f.saw && Date.now() - f.t0 > 10000) { r.flow = null; renderRail(); } // o agente não recebeu o pedido
-    else if (f.saw && r.st === 'wait' && f.base !== null) clearClosed(tab);
-  } else if (f.step === 'clearing' && Date.now() - f.t0 > 12000) { r.flow = null; renderRail(); }
+  if (f && f.step === 'clearing' && Date.now() - f.t0 > 12000) { api.handoffDrop(tab.id); r.flow = null; renderRail(); }
 }
 
 // heurística de reserva: sem saída por 2,5 s = aguardando você. Com hooks, só cobre o caso de interrupção
@@ -629,6 +569,32 @@ function modal({ title, body = '', buttons = [['Cancelar', null], ['OK', 'ok', '
     if (first) { first.focus(); first.select(); }
     else { const pb = root.querySelector('.foot2 .btn.pri') || root.querySelector('.foot2 .btn:last-child'); if (pb) pb.focus(); } // sem campo de texto: foco no botão principal (Escape/Enter não vazam para o terminal)
   });
+}
+
+/* ---------- novidades da versão (patch notes) ----------
+   Ao abrir depois de uma atualização, mostra o que entrou de novo, o que melhorou e o que foi corrigido (texto em patchnotes.js).
+   Primeira instalação (sem estado salvo) não mostra; quem pulou versões vê todas as que perdeu. Clicar na versão no cabeçalho abre de novo. */
+const verCmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; };
+function patchBody(entries) {
+  const sec = (label, list, cls) => (list && list.length ? '<div class="pn-sec ' + cls + '"><h3>' + label + '</h3><ul>' + list.map((t) => '<li>' + esc(t) + '</li>').join('') + '</ul></div>' : '');
+  return '<div class="pn">' + entries.map((e) => '<section class="pn-ver"><div class="pn-h"><b>Versão ' + esc(e.v) + '</b><span>' + esc(e.date || '') + '</span></div>' + (e.resumo ? '<p>' + esc(e.resumo) + '</p>' : '') + sec('Novo', e.novo, 'n') + sec('Melhorado', e.melhorado, 'm') + sec('Corrigido', e.corrigido, 'c') + '</section>').join('') + '</div>';
+}
+async function showPatchNotes(entries) {
+  if (!entries || !entries.length) return;
+  const title = entries.length === 1 ? 'Novidades da versão ' + esc(entries[0].v) : 'Novidades do Termix';
+  await modal({ title, body: patchBody(entries), buttons: [['Entendi', 'ok', 'pri']] });
+}
+async function maybeShowPatchNotes(hadState) {
+  try {
+    const ver = (await api.appVersion()) || '';
+    if (!ver || typeof PATCH_NOTES === 'undefined') return;
+    const seen = S.lastSeenVersion;
+    if (seen === ver) return;
+    S.lastSeenVersion = ver; save();
+    if (!seen && !hadState) return; // primeira instalação: nada para contar
+    const list = PATCH_NOTES.filter((e) => verCmp(e.v, ver) <= 0 && (seen ? verCmp(e.v, seen) > 0 : e.v === ver)).sort((a, b) => verCmp(b.v, a.v));
+    await showPatchNotes(list);
+  } catch { /* as novidades nunca atrapalham a abertura */ }
 }
 
 /* ---------- atualização do app (TASK-035) ---------- */
@@ -770,10 +736,8 @@ function railHTML(p, tab) {
   // contexto
   const cw = m.context_window || {};
   const cp = typeof cw.used_percentage === 'number' ? cw.used_percentage : null;
-  const rc = (RT[tab.id] || {}).cost; // última retomada medida: base (CLAUDE.md, plugins, skills) e custo
-  const cost = rc && rc.phase === 'done' && rc.after !== null ? ` · ${rc.base !== null ? `base ${fmtTok(rc.base)}, retomada custou ~${fmtTok(Math.max(0, rc.after - rc.base))}` : `após a retomada ${fmtTok(rc.after)}`}` : '';
   const ctx = cp !== null
-    ? ring('CTX', cp, Math.round(cp), `Contexto · ${Math.round(cp)}%`, (cw.total_input_tokens ? `${fmtTok(cw.total_input_tokens)}${cw.context_window_size ? ` de ${fmtTok(cw.context_window_size)}` : ''} tokens` : 'desta conversa') + cost)
+    ? ring('CTX', cp, Math.round(cp), `Contexto · ${Math.round(cp)}%`, (cw.total_input_tokens ? `${fmtTok(cw.total_input_tokens)}${cw.context_window_size ? ` de ${fmtTok(cw.context_window_size)}` : ''} tokens` : 'desta conversa'))
     : ring('CTX', null, '—', 'Contexto', noData);
 
   // cache de prompt: tempo até esfriar (o TTL vem do Claude Code: 1 h na assinatura, 5 min com créditos extras ou chave de API).
@@ -849,6 +813,7 @@ function mode() {
   if (!p) return 'empty';
   if (UI.cur.page !== 'Terminais') return 'page';
   if (UI.surface === 'web') return 'web'; // navegador embutido (TASK-022)
+  if (p.kind === 'workflow') { wfEnsure(p); return p.wfStarted ? 'term' : 'workflow'; } // Workflow: tela limpa com "Começar Brainstorm"; depois, os dois chats fixos
   return curTab(p) ? 'term' : 'noterm';
 }
 
@@ -862,7 +827,7 @@ function renderTop() {
   const maxIcon = UI.maxed
     ? '<rect x="7" y="9" width="10" height="10" rx="1.5"/><path d="M9.5 9V7a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 18.5 7v6A1.5 1.5 0 0 1 17 14.5h-2"/>'
     : '<rect x="5.5" y="5.5" width="13" height="13" rx="1.8"/>';
-  const topHtml = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix<span class="ver" title="Versão instalada do Termix">${APP_VER ? 'v' + esc(APP_VER) : ''}</span></div><span class="sp"></span>
+  const topHtml = `<div class="brand"><img class="logo" src="../../assets/logo-mark.svg" alt="">Termix<span class="ver" data-patch title="Versão instalada do Termix (clique para ver as novidades)">${APP_VER ? 'v' + esc(APP_VER) : ''}</span></div><span class="sp"></span>
     ${railCfg().on ? '' : `<div class="lims" data-lim title="${upd}">${lim('5h', L && L.five)}<span class="lsep"></span>${lim('7d', L && L.week)}<span class="lsep"></span><i class="fresh ${fresh}"></i></div>`}
     <span class="sp"></span>
     ${updChipHTML()}
@@ -907,6 +872,9 @@ function projDot(p) {
 }
 const projLetter = (p) => esc(p.name.trim()[0] ? p.name.trim()[0].toUpperCase() : '?');
 
+// pastas da barra lateral (Chats e Workflows): abertas por padrão; a escolha fica salva
+const catOpen = (k) => !(S.settings.sideCats && S.settings.sideCats[k] === false);
+const setCatOpen = (k, v) => { S.settings.sideCats = { ...(S.settings.sideCats || {}), [k]: v }; };
 function renderSide() {
   hideSideTip(); // a barra é redesenhada: o ícone sobre o qual estava o mouse pode ter saído
   const col = S.settings.sideCollapsed;
@@ -915,39 +883,66 @@ function renderSide() {
   const top = keep && same ? keep.scrollTop : 0; // a rolagem da lista não volta ao topo a cada redesenho (só ao trocar de modo)
   side.dataset.mode = col ? 'mini' : 'open';
   side.classList.toggle('mini', col);
-  const ps = visibleProjects();
+  const all = visibleProjects();
+  const cp = curProject();
+  if (cp && UI.kindFor !== cp.id) { UI.kindFor = cp.id; S.settings.sideKind = kindOf(cp); setCatOpen(kindOf(cp), true); } // abriu outro projeto (por aviso, por exemplo): a pasta dele (Chats ou Workflows) abre
+  const onNew = UI.cur.p === '_' && /^Novo /.test(UI.cur.page);
+  const CATS = [['chat', 'Chats', 'bubble', 'Nenhum chat ainda.'], ['workflow', 'Workflows', 'wfnodes', 'Nenhum workflow ainda.']];
+  const byKind = (k) => all.filter((p) => kindOf(p) === k);
+  const newBtns = col
+    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo chat">${ic('newchat', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo workflow">${ic('newwf', 18)}</button></div>`
+    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('newchat', 16)}<span>Novo chat</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('newwf', 16)}<span>Novo workflow</span></button></div>`;
   const isCur = (p, n) => UI.cur.p === p && UI.cur.page === n;
   const toggle = `<button class="tbtn" data-togside title="${col ? 'Abrir' : 'Fechar'} barra lateral">${ic('panel', 19)}</button>`;
-  if (col) {
-    const list = ps.map((p) => {
-      const g = GRADS[(p.g || 0) % GRADS.length];
-      const n = openTabs(p).length;
-      const dotc = projDot(p), letter = projLetter(p);
-      return `<div class="pg ${p.open !== false && UI.cur.p === p.id ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
+  const projMini = (p) => {
+    const g = GRADS[(p.g || 0) % GRADS.length];
+    const n = openTabs(p).length;
+    const dotc = projDot(p), letter = projLetter(p);
+    return `<div class="pg ${p.open !== false && UI.cur.p === p.id ? 'open' : ''}" data-pid="${p.id}"><button class="av ${UI.cur.p === p.id ? 'active' : ''}" style="--c1:${g[0]};--c2:${g[1]}" data-pt="${p.id}" data-go="${p.id}|${UI.cur.p === p.id ? UI.cur.page : 'Terminais'}" data-tip="${esc(p.name)}">${letter}${n ? `<span class="b">${n}</span>` : ''}${dotc ? `<span class="st" style="background:${dotc}"></span>` : ''}</button>
         <div class="subs"><div class="subs-in"><div class="tray">${subsOf(p, true, isCur)}</div></div></div></div>`;
-    }).join('');
+  };
+  const projOpen = (p) => `<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
+        <div class="prow"><button class="ph" data-ph="${p.id}"><span class="pav" style="--c1:${GRADS[(p.g || 0) % GRADS.length][0]};--c2:${GRADS[(p.g || 0) % GRADS.length][1]}">${projLetter(p)}${projDot(p) ? `<span class="st" style="background:${projDot(p)}"></span>` : ''}</span><span class="pn">${esc(p.name)}</span><span class="chev">${ic('chevr', 12)}</span></button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
+        <div class="subs"><div class="subs-in"><div class="subs-pad">${subsOf(p, false, isCur)}</div></div></div></div>`;
+  if (col) {
+    // barra recolhida: cada categoria é um ícone (como uma pasta); selecionar abre/fecha a lista de projetos dela logo abaixo
+    const list = CATS.map(([k, label, icon]) => { const ps = byKind(k), open = catOpen(k);
+      return `<div class="mcat ${open ? 'open' : ''}" data-cat="${k}"><button class="ci ksel ${open ? 'sel' : ''}" data-sidecat="${k}" data-tip="${label} (${ps.length})">${ic(icon, 17)}</button>${open ? ps.map(projMini).join('') : ''}</div>`; }).join('');
     side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
+      ${newBtns}
+      <span class="rsep"></span>
       <div class="sscroll">${list}</div>
-      <div class="sadd"><button class="ci add" data-newproj data-tip="Novo projeto">${ic('plus', 17)}</button></div>
       <div class="sfoot"><span class="rsep"></span>${GLOBALS.map(([n, i]) => `<button class="ci ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}" data-tip="${n}">${gIc(i, 19)}</button>`).join('')}</div>`;
   } else {
+    // barra aberta: hierarquia de pastas. Chats e Workflows são as pastas; dentro de cada uma ficam os projetos, e dentro deles as funções
+    const body = CATS.map(([k, label, icon, none]) => { const ps = byKind(k), open = catOpen(k);
+      return `<div class="cat ${open ? 'open' : ''}" data-cat="${k}">
+        <button class="chead" data-sidecat="${k}"><span class="chev">${ic('chevr', 12)}</span>${ic(icon, 16)}<span class="cn">${label}</span><small>${ps.length}</small></button>
+        <div class="subs"><div class="subs-in"><div class="cbody">${ps.length ? ps.map(projOpen).join('') : `<p class="meta sempty">${none}</p>`}</div></div></div></div>`; }).join('');
     side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
-      <div class="sscroll">${ps.map((p) => `<div class="proj ${p.open !== false ? 'open' : ''}" data-pid="${p.id}">
-        <div class="prow"><button class="ph" data-ph="${p.id}"><span class="pav" style="--c1:${GRADS[(p.g || 0) % GRADS.length][0]};--c2:${GRADS[(p.g || 0) % GRADS.length][1]}">${projLetter(p)}${projDot(p) ? `<span class="st" style="background:${projDot(p)}"></span>` : ''}</span><span class="pn">${esc(p.name)}</span><span class="chev">${ic('chevr', 12)}</span></button><button class="pm" data-pmenu="${p.id}" title="Gerenciar projeto">${ic('dots', 16)}</button></div>
-        <div class="subs"><div class="subs-in"><div class="subs-pad">${subsOf(p, false, isCur)}</div></div></div></div>`).join('')}
-      </div>
-      <div class="sadd"><button class="newproj" data-newproj>${ic('plus', 14)}<span>Novo projeto</span></button></div>
+      ${newBtns}
+      <div class="sscroll">${body}</div>
       <div class="sfoot"><div class="label">Geral</div>
       ${GLOBALS.map(([n, i]) => `<button class="item ${isCur('_', n) ? 'active' : ''}" data-go="_|${n}"><span class="ico">${gIc(i, 17)}</span>${n}</button>`).join('')}</div>`;
   }
-  const sc = side.querySelector('.sscroll'); if (sc) sc.scrollTop = top;
+  const sc = side.querySelector('.sscroll'); if (sc) { sc.scrollTop = top; sc.scrollLeft = 0; }
+  side.scrollLeft = 0; // o painel é só vertical: nunca fica deslocado para o lado (o conteúdo aberto é mais largo que a barra no meio da animação)
   if (UI.sideCur !== UI.cur.p || !same) { // mudou de projeto (ou de modo): traz o projeto atual para a vista
     UI.sideCur = UI.cur.p;
-    const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur) cur.scrollIntoView({ block: 'nearest' });
+    const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur && !side.classList.contains('anim')) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 }
 
-// clique num projeto (nome na barra aberta ou avatar na recolhida): outro projeto = vai até ele e abre as subtelas; o projeto atual = mostra/esconde as subtelas (mesmo efeito nas duas barras)
+// barra aberta: clicar na setinha do projeto só abre/fecha o dropdown das funções dele, sem sair da tela atual
+function projToggle(id) {
+  const p = proj(id);
+  if (!p) return;
+  p.open = p.open === false; save();
+  const el = document.querySelector(`#side [data-pid="${p.id}"]`);
+  if (el) el.classList.toggle('open', p.open !== false); else renderSide();
+}
+
+// clique num projeto (avatar da barra recolhida; a barra aberta usa projToggle ou avatar na recolhida): outro projeto = vai até ele e abre as subtelas; o projeto atual = mostra/esconde as subtelas (mesmo efeito nas duas barras)
 function projClick(id) {
   const p = proj(id);
   if (!p) return;
@@ -970,19 +965,20 @@ if (typeof ResizeObserver !== 'undefined') window.addEventListener('DOMContentLo
 function renderTabs() {
   if (UI.tabDragging) return; // redesenhar no meio do arraste soltaria a aba do mouse; o soltar refaz
   const p = curProject();
-  if (!p || mode() !== 'term') { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
+  if (!p || (mode() !== 'term' && !dockOn())) { $('#tabsRow').innerHTML = ''; $('#sess').classList.remove('working'); $('#tabsRow').classList.remove('working'); return; }
   const cur = curTab(p);
   const closed = p.tabs.filter((t) => !t.open && !t.archived).length;
+  const wf = p.kind === 'workflow'; // Workflow: as duas guias são fixas (sem fechar, sem nova guia); o split é sempre lado a lado
   const st = stOf(cur), [sc, sl] = STATES[st];
   if (document.hasFocus() && RT[cur.id]) RT[cur.id].unread = null; // a aba à vista, com o app em foco, já foi vista
   $('#sess').style.setProperty('--tc', cur.color);
   $('#sess').classList.toggle('working', st === 'work');
   $('#tabsRow').classList.toggle('working', st === 'work');
-  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="${esc(t.name)} · ${STATES[stOf(t)][1]} — clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}<span class="x" data-x="${t.id}">${ic('x', 13)}</span></button>`).join('')
-    + `<button class="plus" data-newtab="${chatNewKey()}" title="${chatCfg().mode === 'chat' ? 'Novo chat (Claude Code)' : 'Novo terminal (Claude Code)'}">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>
+  $('#tabsRow').innerHTML = openTabs(p).map((t) => `<button class="tab ${t.id === cur.id ? 'active' : ''}" style="--c:${t.color}" data-tab="${t.id}" title="${esc(t.name)} · ${STATES[stOf(t)][1]} — clique duplo para renomear ou mudar a cor"><i class="dot ${STATES[stOf(t)][0]}"></i><span class="nm">${esc(t.name)}</span>${RT[t.id] && RT[t.id].unread ? `<span class="bd bd-${RT[t.id].unread}" title="${KIND_TITLE[RT[t.id].unread]}"></span>` : ''}${wf ? '' : `<span class="x" data-x="${t.id}">${ic('x', 13)}</span>`}</button>`).join('')
+    + (wf ? '' : `<button class="plus" data-newtab="${chatNewKey()}" title="${chatCfg().mode === 'chat' ? 'Novo chat (Claude Code)' : 'Novo terminal (Claude Code)'}">${ic('plus', 17)}</button><button class="plus chev2" data-menu="new" title="Escolher a ferramenta">${ic('chevd', 14)}</button>`) + `
     <span class="sp"></span>
     <div class="tctl">
-      ${closed ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
+      ${closed && !wf ? `<button class="linkbtn" data-closedlist>Fechadas (${closed})</button>` : ''}
       <span class="state"><i class="dot ${sc}"></i>${sl}</span>
     </div>`;
   fuseBar($('#tabsRow'));
@@ -990,28 +986,46 @@ function renderTabs() {
 
 function emptyHTML() {
   return `<div class="empty"><h2>Comece criando um projeto</h2><p>O Termix cria a pasta do projeto para você, ou registra uma pasta que você já tem — sem copiar nem mover nada.</p>
-    <div class="row2"><button class="btn pri" data-newproj>Novo projeto</button><button class="btn" data-import>Importar pasta existente</button></div></div>`;
+    <div class="row2"><button class="btn pri" data-newk="chat">+ Chat</button><button class="btn pri" data-newk="workflow">+ Workflow</button><button class="btn" data-import>Importar pasta existente</button></div></div>`;
 }
 const ptitle = (t) => `<div class="ptitle"><span>${UI.cur.p === '_' ? 'Geral' : esc(curProject().name)} ›</span> ${t}</div>`;
 
-/* ---------- plugins, skills e MCPs (TASK-013: ver tudo e controlar) ---------- */
-const RES_PAGES = ['Plugins', 'Skills', 'MCPs'];
-const RES_SCOPES = { Plugins: ['Usuário', 'Projeto', 'Local', 'Sincronizado'], Skills: ['Usuário', 'Projeto', 'Plugin'], MCPs: ['Conta', 'Usuário', 'Projeto', 'Local', 'Plugin'] };
-const RES_STATES = { Plugins: [['on', 'Ligados'], ['off', 'Desligados']], Skills: [], MCPs: [['ok', 'Conectados'], ['issue', 'Com problema'], ['off', 'Desligados']] };
+/* ---------- Conectores: plugins, skills e MCPs numa tela só (TASK-127, sobre a TASK-013: ver tudo e controlar) ---------- */
+const RES_PAGES = ['Conectores'];
 const PL_SCOPE = { user: 'Usuário', project: 'Projeto', local: 'Local', synced: 'Sincronizado' };
 const RESC = {}; // por projeto: plugins e estado dos MCPs lidos pela CLI (aparecem na hora e atualizam por trás) e aviso de reinício
 const safeTarget = (t) => (!t ? '' : /^https?:/i.test(t) ? t.replace(/[?#].*$/, '') : t.split(/\s+/)[0]); // sem argumentos (podem ter chaves)
 const fmtTokPt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace('.', ',')} mil` : String(n)); // preciso, para somar custos
-const resNoun = (kind, n) => (kind === 'MCPs' ? (n === 1 ? 'MCP' : 'MCPs') : n === 1 ? kind.slice(0, -1).toLowerCase() : kind.toLowerCase());
 const plShort = (id) => String(id || '').split('@')[0];
+const mkOf = (id) => String(id || '').split('@')[1] || '';
+const OFFICIAL_MK = ['claude-plugins-official', 'anthropic-plugin-directory'];
+const CON_TYPE = { plugin: ['Plugin', 'P'], skill: ['Skill', 'S'], mcp: ['MCP', 'M'] };
+const CON_GROUPS = [
+  ['acc', 'Da sua conta claude.ai', 'Conectores ligados na sua conta: aqui você liga, desliga e entra.'],
+  ['anth', 'Da Anthropic', 'Plugins dos marketplaces oficiais e o que vem neles.'],
+  ['mk', 'Dos marketplaces que você adicionou', ''],
+  ['own', 'Seus, neste computador', 'Criados ou adicionados por você (usuário, projeto e local).'],
+];
+const CON_SRC = [['anth', 'Anthropic'], ['dir', 'Diretório'], ['mk', 'Meus marketplaces'], ['reg', 'Registro MCP']];
+const CON_SRC_HINT = {
+  anth: 'Marketplace oficial da Anthropic, dos mais instalados para os menos.',
+  dir: 'Diretório da Anthropic (parceiros e comunidade). Instale só de quem você conhece.',
+  mk: 'Plugins dos marketplaces que você adicionou.',
+  reg: 'Registro público de servidores MCP. Não tem avaliação: instale só de quem você conhece.',
+};
+const CON_PAGE = 24;
+// catálogos do "Descobrir": valem para o app inteiro (não dependem do projeto) e são buscados só quando a aba é aberta
+const DISC = { pl: null, plP: null, plErr: '', reg: { items: [], next: '', loading: false, loaded: false, err: '', tok: 0, q: '' }, t: 0 };
+const fmtInst = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} mi` : n >= 1e3 ? `${Math.round(n / 1e3)} mil` : String(n));
 
-function resEnsure(kind) {
+function resEnsure() {
   const p = curProject();
-  if (!UI.res || UI.res.pid !== p.id) UI.res = { pid: p.id, files: null, filesJson: '', q: '', scope: '', st: '', busy: '', msg: null, byKey: {} };
+  if (!UI.res || UI.res.pid !== p.id) UI.res = { pid: p.id, files: null, filesJson: '', q: '', scope: '', st: '', type: '', ord: 'nome', mode: 'meus', src: 'anth', adv: false, menu: '', show: CON_PAGE, busy: '', msg: null, byKey: {} };
   const r = UI.res;
   if (!r.files && !r.loadingFiles) { r.loadingFiles = true; api.scan(p.path).then((d) => { r.loadingFiles = false; r.files = d; r.filesJson = JSON.stringify(d); repaintRes(); }); }
-  if (kind === 'Plugins') resLoadPlugins(p, false);
-  if (kind === 'MCPs') resLoadMcp(p, false);
+  resLoadPlugins(p, false);
+  resLoadMcp(p, false);
+  if (r.mode === 'desc') discEnsure();
 }
 // leituras pela CLI: devolvem a promessa (a ação espera a lista nova); uma leitura em andamento não é duplicada
 function resLoadPlugins(p, force) {
@@ -1027,89 +1041,159 @@ function resLoadMcp(p, force) {
   return c.mcp && !force ? Promise.resolve() : go();
 }
 
-// itens de cada tela, já no formato comum { key, raw, search, scope, st, html }
-function resItems(kind) {
+// itens da aba "Meus": plugins, skills e MCPs no mesmo formato { key, raw, type, name, by, desc, scope, g (grupo), on, toggle, tok, tag, label, st, issue, search }
+function conItems() {
   const r = UI.res, c = RESC[r.pid] || {};
-  const tag = (txt, k = '') => `<span class="tag ${k}">${esc(txt)}</span>`;
-  const btn = (act, key, label, cls = '') => `<button class="btn sm ${cls}" data-ract="${act}" data-rk="${esc(key)}">${label}</button>`;
-  const files = r.files || { skills: [], mcps: [], disabledMcps: [] };
-  if (kind === 'Plugins') {
-    if (!c.pl) return null;
-    return c.pl.plugins.map((x) => {
-      const key = 'pl:' + x.id;
-      const inv = [x.skills.length && `${x.skills.length} skill${x.skills.length > 1 ? 's' : ''}`, x.agents && `${x.agents} agente${x.agents > 1 ? 's' : ''}`, x.hooks.length && `${x.hooks.length} hook${x.hooks.length > 1 ? 's' : ''}`, x.mcps.length && `${x.mcps.length} MCP${x.mcps.length > 1 ? 's' : ''}`].filter(Boolean).join(' · ') || 'sem componentes';
-      return { key, raw: x, search: `${x.name} ${x.marketplace} ${x.desc} ${x.skills.join(' ')}`, scope: PL_SCOPE[x.scope] || x.scope, st: x.enabled ? 'on' : 'off',
-        html: `<div class="card${x.enabled ? '' : ' dim'}"><h5>${esc(x.name)}</h5><p class="rmeta">${esc(x.marketplace)} · v${esc(String(x.version).slice(0, 12))}</p>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : ''}<p class="rmeta">${esc(inv)}</p>${x.skills.length ? `<p class="rmeta" title="${esc(x.skills.join(', '))}">Skills: ${esc(x.skills.slice(0, 6).join(', '))}${x.skills.length > 6 ? '…' : ''}</p>` : ''}
-          <div class="tags">${tag('Escopo: ' + (PL_SCOPE[x.scope] || x.scope))}${tag(x.enabled ? 'Ligado' : 'Desligado', x.enabled ? 'ok' : 'warn')}${typeof x.alwaysOn === 'number' ? `<span class="tag" title="Custo estimado, em todo início de sessão, enquanto o plugin estiver ligado">~${fmtTokPt(x.alwaysOn)} tokens/sessão</span>` : ''}${x.notes.length ? `<span class="tag warn" title="${esc(x.notes.join(' '))}">Aviso</span>` : ''}</div>
-          <div class="acts">${btn('pl-toggle', key, x.enabled ? 'Desligar aqui' : 'Ligar aqui', x.enabled ? '' : 'pri')}${btn('pl-manage', key, 'Gerenciar…')}</div></div>` };
-    });
+  if (!r.files || !c.pl) return null;
+  const out = [];
+  for (const x of c.pl.plugins) {
+    out.push({ key: 'pl:' + x.id, raw: x, type: 'plugin', name: x.name, by: `${x.marketplace} · v${String(x.version).slice(0, 12)}`, desc: x.desc, scope: PL_SCOPE[x.scope] || x.scope,
+      g: OFFICIAL_MK.includes(x.marketplace) ? 'anth' : 'mk', on: x.enabled, toggle: true, tok: typeof x.alwaysOn === 'number' ? x.alwaysOn : 0, tag: x.notes.length ? 'Aviso' : '', tagK: 'warn', st: x.enabled ? 'on' : 'off', issue: false,
+      search: `${x.name} ${x.marketplace} ${x.desc} ${x.skills.join(' ')}` });
   }
-  if (kind === 'Skills') {
-    return files.skills.map((x) => {
-      const key = `sk:${x.scope}:${x.kind}:${x.name}:${x.origin}`;
-      const nm = x.scope === 'Plugin' ? `${plShort(x.origin)}:${x.name}` : x.name;
-      const own = x.scope === 'Usuário' || x.scope === 'Projeto';
-      return { key, raw: x, search: `${x.name} ${x.desc} ${x.origin}`, scope: x.scope, st: '',
-        html: `<div class="card${x.off ? ' dim' : ''}"><h5>/${esc(nm)}</h5>${x.desc ? `<p class="rdesc">${esc(x.desc)}</p>` : '<p class="rmeta">Sem descrição.</p>'}
-          <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' ? ' · ' + plShort(x.origin) : ''))}${tag(x.kind === 'skill' ? 'Skill' : 'Comando')}${x.off ? tag('Plugin desligado', 'warn') : ''}</div>
-          <div class="acts">${own ? btn('sk-edit', key, 'Editar') + btn('sk-del', key, 'Excluir', 'bad') : '<span class="rmeta">Faz parte do plugin; para desligar, desligue o plugin.</span>'}</div></div>` };
-    });
+  for (const x of r.files.skills) {
+    const own = x.scope === 'Usuário' || x.scope === 'Projeto';
+    const nm = x.scope === 'Plugin' ? `${plShort(x.origin)}:${x.name}` : x.name;
+    out.push({ key: `sk:${x.scope}:${x.kind}:${x.name}:${x.origin}`, raw: x, type: 'skill', name: '/' + nm, by: x.scope === 'Plugin' ? plShort(x.origin) : x.kind === 'skill' ? 'skill' : 'comando', desc: x.desc, scope: x.scope,
+      g: own ? 'own' : OFFICIAL_MK.includes(mkOf(x.origin)) ? 'anth' : 'mk', on: !x.off, toggle: false, tok: 0, tag: x.kind === 'skill' ? '' : 'Comando', tagK: '', st: x.off ? 'off' : 'on', issue: false, search: `${x.name} ${x.desc} ${x.origin}` });
   }
   // MCPs: o estado real (CLI) manda; os arquivos dão o escopo e a origem e dizem o que está desligado neste projeto
   const live = c.mcp && c.mcp.items;
-  const offSet = new Set(files.disabledMcps || []);
-  const findCfg = (n) => files.mcps.find((f) => f.name === n || (f.scope === 'Plugin' && n.endsWith(':' + f.name) && n.includes(plShort(f.origin))));
+  const offSet = new Set(r.files.disabledMcps || []);
+  const findCfg = (n) => r.files.mcps.find((f) => f.name === n || (f.scope === 'Plugin' && n.endsWith(':' + f.name) && n.includes(plShort(f.origin))));
   const rows = [];
   for (const it of live || []) {
     const f = findCfg(it.name);
     const scope = f ? f.scope : /^claude\.ai /.test(it.name) ? 'Conta' : /^plugin:/.test(it.name) ? 'Plugin' : 'Usuário';
     rows.push({ name: it.name, scope, origin: f ? f.origin : '', type: f ? f.type : '', target: it.target, kind: it.kind, label: it.label, detail: it.detail });
   }
-  for (const f of files.mcps) {
+  for (const f of r.files.mcps) {
     if (live && rows.some((x) => findCfg(x.name) === f)) continue;
     rows.push({ name: f.name, scope: f.scope, origin: f.origin, type: f.type, target: f.target, kind: '', label: live ? 'Sem leitura de estado' : 'Verificando…', detail: '' });
   }
-  return rows.map((x) => {
+  for (const x of rows) {
     // os arquivos (lidos a cada poucos segundos) dizem o que está desligado aqui; o "desligado" que vem da CLI pode estar velho
     // logo depois de ligar (a leitura do estado leva alguns segundos) e não vale sozinho, a não ser nos MCPs de plugin
     const off = offSet.has(x.name) || (x.kind === 'off' && x.scope === 'Plugin');
     if (off) { x.kind = 'off'; x.label = 'Desligado neste projeto'; x.detail = ''; }
     else if (x.kind === 'off') { x.kind = ''; x.label = 'Verificando…'; x.detail = ''; }
-    const key = 'mcp:' + x.name;
-    const ctl = x.scope !== 'Plugin';
-    return { key, raw: x, search: `${x.name} ${x.origin} ${x.target}`, scope: x.scope, st: off ? 'off' : x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '',
-      html: `<div class="card${x.kind === 'ok' || !x.kind ? '' : ' dim'}"><h5>${esc(x.name)}</h5>${x.target ? `<p class="rmeta">${esc(safeTarget(x.target))}</p>` : ''}${x.detail ? `<p class="rmeta" title="${esc(x.detail)}">${esc(x.detail.slice(0, 90))}</p>` : ''}
-        <div class="tags">${tag('Escopo: ' + x.scope + (x.scope === 'Plugin' && x.origin ? ' · ' + plShort(x.origin) : ''))}${tag(x.label, x.kind === 'off' ? '' : x.kind)}${x.type ? tag(x.type) : ''}</div>
-        <div class="acts">${ctl ? btn('mcp-toggle', key, off ? 'Ligar aqui' : 'Desligar aqui', off ? 'pri' : '') : '<span class="rmeta">Vem do plugin; o plugin controla.</span>'}${btn('mcp-manage', key, 'Gerenciar…')}</div></div>` };
-  });
+    const st = off ? 'off' : x.kind === 'ok' ? 'ok' : x.kind ? 'issue' : '';
+    out.push({ key: 'mcp:' + x.name, raw: x, type: 'mcp', name: x.name, by: x.scope === 'Plugin' && x.origin ? plShort(x.origin) : x.type || 'MCP', desc: x.target ? safeTarget(x.target) : (x.detail || '').slice(0, 90), scope: x.scope,
+      g: x.scope === 'Conta' ? 'acc' : x.scope === 'Plugin' ? (OFFICIAL_MK.includes(mkOf(x.origin)) ? 'anth' : 'mk') : 'own', on: !off, toggle: x.scope !== 'Plugin', tok: 0, tag: '', label: x.label, lk: x.kind === 'off' ? '' : x.kind, st, issue: st === 'issue',
+      search: `${x.name} ${x.origin} ${x.target}` });
+  }
+  return out;
 }
 
-function resListHTML(kind) {
-  const r = UI.res, c = RESC[r.pid] || {};
-  if (!r.files && kind !== 'Plugins') return '<div class="empty" style="height:auto">Lendo configurações…</div>';
-  const items = resItems(kind);
-  if (!items) return `<div class="empty" style="height:auto">${c.pl && c.pl.error ? esc(c.pl.error) : 'Lendo plugins pelo Claude Code…'}</div>`;
+const conTag = (t, k = '') => `<span class="tag ${k}">${esc(t)}</span>`;
+function conRow(x) {
+  const act = x.type === 'plugin' ? 'pl-toggle' : 'mcp-toggle';
+  const sw = x.toggle ? `<button class="cn-sw ${x.on ? 'on' : ''}" data-ract="${act}" data-rk="${esc(x.key)}" title="${x.on ? 'Desligar aqui' : 'Ligar aqui'}" aria-label="${x.on ? 'Desligar' : 'Ligar'} ${esc(x.name)} neste projeto" role="switch" aria-checked="${x.on}"></button>` : '<span></span>';
+  return `<div class="cn-it${x.on ? '' : ' dim'}"><div class="cn-ic t-${x.type}" title="${CON_TYPE[x.type][0]}">${CON_TYPE[x.type][1]}</div>
+    <div class="cn-mid"><div class="cn-nm">${esc(x.name)}${x.tag ? conTag(x.tag, x.tagK) : ''}${x.label ? conTag(x.label, x.lk) : ''}</div><div class="cn-sub" title="${esc(x.desc)}">${esc(x.by)} · ${esc(x.desc || 'Sem descrição.')}</div></div>
+    <div class="cn-tags">${conTag(CON_TYPE[x.type][0])}${conTag(x.scope)}</div><div class="cn-meta">${x.tok ? `~${fmtTokPt(x.tok)} tok.` : ''}</div>${sw}
+    <button class="cn-more" data-con="more" data-rk="${esc(x.key)}" title="Gerenciar…" aria-label="Gerenciar ${esc(x.name)}">${ic('dots', 18)}</button></div>`;
+}
+const conSkelRows = (n) => `<div class="cn-rows">${Array(n).fill('<div class="cn-it"><div class="sk" style="width:40px;height:40px;border-radius:10px"></div><div class="cn-mid" style="display:flex;flex-direction:column;gap:7px"><div class="sk cn-l" style="width:34%;height:12px"></div><div class="sk cn-l" style="width:78%"></div></div><div class="sk" style="width:90px;height:18px;border-radius:99px"></div><span></span><div class="sk" style="width:34px;height:20px;border-radius:99px"></div><span></span></div>').join('')}</div>`;
+const conSkelCards = (n) => `<div class="cn-cards">${Array(n).fill('<div class="cn-cd"><div class="sk" style="width:40px;height:40px;border-radius:10px"></div><div class="cn-ct" style="gap:8px"><div class="sk cn-l" style="width:40%;height:12px"></div><div class="sk cn-l" style="width:88%"></div><div class="sk cn-l" style="width:50%"></div></div><div class="sk" style="width:32px;height:32px;border-radius:8px"></div></div>').join('')}</div>`;
+
+function conMeusHTML() {
+  const r = UI.res, items = conItems();
+  if (!items) return conSkelRows(6);
   r.byKey = Object.fromEntries(items.map((x) => [x.key, x.raw]));
   const q = r.q.trim().toLowerCase();
-  const list = items.filter((x) => (!r.scope || x.scope === r.scope) && (!r.st || x.st === r.st) && (!q || x.search.toLowerCase().includes(q)));
-  const one = kind.slice(0, -1).toLowerCase();
-  if (!list.length) return `<div class="empty" style="height:auto">${items.length ? 'Nada com esse filtro.' : `Nenhum(a) ${one} encontrado(a) para este projeto.`}</div>`;
-  return `<div class="cards">${list.map((x) => x.html).join('')}</div>`;
+  const list = items.filter((x) => (!r.type || x.type === r.type) && (!r.scope || x.scope === r.scope) && (!q || x.search.toLowerCase().includes(q))
+    && (!r.st || (r.st === 'on' ? x.on : r.st === 'off' ? !x.on : x.issue)));
+  if (!list.length) return `<div class="cn-empty">${items.length ? 'Nada com esse filtro.' : 'Nenhum conector neste projeto ainda. Use “Descobrir” ou “+ Adicionar”.'}</div>`;
+  const cmp = r.ord === 'custo' ? (a, b) => (b.tok - a.tok) || a.name.localeCompare(b.name) : (a, b) => a.name.localeCompare(b.name);
+  return CON_GROUPS.map(([g, title, sub]) => {
+    const rows = list.filter((x) => x.g === g).sort(cmp);
+    return rows.length ? `<div class="cn-gh">${title}<span class="cn-n">${rows.length}</span></div>${sub ? `<div class="cn-gsub">${sub}</div>` : ''}<div class="cn-rows">${rows.map(conRow).join('')}</div>` : '';
+  }).join('');
 }
-function resMetaText(kind) {
+
+/* ---- Descobrir: catálogo dos marketplaces (plugins) e registro público de MCPs ---- */
+function discLoadPlugins() {
+  if (DISC.pl || DISC.plP) return;
+  const p = curProject();
+  DISC.plP = api.resDo('pluginsAvailable', { projectPath: p.path }).then((d) => { DISC.pl = d.items || []; DISC.plErr = d.error || ''; }).catch(() => { DISC.pl = []; DISC.plErr = 'Não consegui ler os marketplaces.'; }).finally(() => { DISC.plP = null; repaintRes(); });
+}
+function regFetch(more) {
+  const g = DISC.reg, q = UI.res ? UI.res.q.trim() : '';
+  if (!more) { g.items = []; g.next = ''; g.q = q; g.loaded = false; }
+  const tok = ++g.tok;
+  g.loading = true; g.err = ''; repaintRes();
+  api.resDo('mcpRegistry', { q: g.q, cursor: more ? g.next : '' }).then((d) => {
+    if (tok !== g.tok) return;
+    g.loading = false; g.loaded = true;
+    if (!d.ok) { g.err = d.message || 'Não consegui consultar o registro MCP.'; return; }
+    const seen = new Set(g.items.map((i) => i.name));
+    g.items = g.items.concat(d.items.filter((i) => !seen.has(i.name)));
+    g.next = d.next || '';
+  }).catch(() => { if (tok === g.tok) { g.loading = false; g.err = 'Não consegui consultar o registro MCP.'; } }).finally(() => { if (tok === g.tok) repaintRes(); });
+}
+function discEnsure() {
+  const r = UI.res;
+  if (!r || r.mode !== 'desc') return;
+  if (r.src === 'reg') { const g = DISC.reg; if (!g.loading && (g.q !== r.q.trim() || (!g.loaded && !g.err))) regFetch(false); }
+  else discLoadPlugins();
+}
+const regAdded = (it) => {
+  const r = UI.res, c = RESC[r.pid] || {};
+  const k = String(it.name).split('/').pop().toLowerCase();
+  const have = [...((r.files && r.files.mcps) || []).map((m) => m.name), ...((c.mcp && c.mcp.items) || []).map((m) => m.name)].map((n) => String(n).toLowerCase());
+  return have.includes(k);
+};
+function conCard(it) {
+  const t = it.kind;
+  const nm = t === 'plugin' ? it.name : (it.title || it.name.split('/').pop());
+  const by = t === 'plugin' ? it.by : it.name.split('/')[0];
+  const flags = [it.added ? '<span class="tag ok">✓ Adicionado</span>' : '', it.installs ? `<span class="tag">${fmtInst(it.installs)} instalações</span>` : '', t === 'mcp' && it.remote ? '<span class="tag">Web</span>' : t === 'mcp' && it.pkg ? '<span class="tag">Local</span>' : ''].join('');
+  const btn = it.added ? `<button class="cn-plus done" disabled title="Já adicionado" aria-label="Já adicionado">${ic('save', 15)}</button>` : `<button class="cn-plus" data-con="${t === 'plugin' ? 'inst' : 'regadd'}" data-cv="${esc(t === 'plugin' ? it.id : it.name)}" title="Adicionar" aria-label="Adicionar ${esc(nm)}">${ic('plus', 16)}</button>`;
+  return `<div class="cn-cd"><div class="cn-ic t-${t}">${CON_TYPE[t][1]}</div><div class="cn-ct"><div class="cn-nm">${esc(nm)}</div><p>${esc(it.desc || 'Sem descrição.')}</p><div class="cn-by">${flags}<span>por ${esc(by)}</span></div></div>${btn}</div>`;
+}
+function conDescHTML() {
+  const r = UI.res, c = RESC[r.pid] || {}, src = r.src, q = r.q.trim().toLowerCase();
+  const title = (CON_SRC.find((s) => s[0] === src) || [0, ''])[1];
+  let list = [], total = 0, more = '', loading = false, err = '';
+  if (src === 'reg') {
+    const g = DISC.reg;
+    list = g.items.map((i) => ({ ...i, kind: 'mcp', added: regAdded(i) }));
+    total = list.length; loading = g.loading && !list.length; err = g.err;
+    if (g.next && !g.loading) more = '<button class="btn" data-con="showmore">Mostrar mais</button>';
+    else if (g.loading && list.length) more = '<span class="cn-gsub">Carregando…</span>';
+    if (!err && !loading && !list.length && g.loaded) err = 'Nada encontrado no registro.';
+  } else {
+    if (!DISC.pl) loading = true;
+    else {
+      const have = new Set(((c.pl && c.pl.plugins) || []).map((x) => x.id));
+      const official = new Set(DISC.pl.filter((x) => x.marketplace === 'claude-plugins-official').map((x) => x.name));
+      let a = DISC.pl.filter((x) => (src === 'anth' ? x.marketplace === 'claude-plugins-official' : src === 'dir' ? x.marketplace === 'anthropic-plugin-directory' && !official.has(x.name) : !OFFICIAL_MK.includes(x.marketplace)));
+      if (q) { const rank = (x) => (x.name.toLowerCase().startsWith(q) ? 0 : x.name.toLowerCase().includes(q) ? 1 : 2); a = a.filter((x) => `${x.name} ${x.desc}`.toLowerCase().includes(q)).sort((x, y) => rank(x) - rank(y) || y.installs - x.installs); }
+      else a.sort((x, y) => y.installs - x.installs || x.name.localeCompare(y.name));
+      total = a.length;
+      list = a.slice(0, r.show).map((x) => ({ kind: 'plugin', id: x.id, name: x.name, desc: x.desc, by: x.marketplace, installs: x.installs, added: have.has(x.id) }));
+      if (total > r.show) more = '<button class="btn" data-con="showmore">Mostrar mais</button>';
+      err = !total ? (DISC.plErr || (q ? 'Nada com esse filtro.' : src === 'mk' ? 'Você ainda não adicionou nenhum marketplace. Use “+ Adicionar › Adicionar marketplace”.' : 'Nenhum plugin encontrado.')) : '';
+    }
+  }
+  const head = `<div class="cn-gh">${title}${loading ? '' : `<span class="cn-n">${total}${src === 'reg' && DISC.reg.next ? '+' : ''}</span>`}</div><div class="cn-gsub">${CON_SRC_HINT[src]}</div>`;
+  if (loading) return head + conSkelCards(8);
+  if (err && !list.length) return `${head}<div class="cn-empty">${esc(err)}</div>`;
+  return `${head}${err ? `<div class="cn-empty">${esc(err)}</div>` : ''}<div class="cn-cards">${list.map(conCard).join('')}</div>${more ? `<div class="cn-moreb">${more}</div>` : ''}`;
+}
+
+function resListHTML() { return UI.res.mode === 'desc' ? conDescHTML() : conMeusHTML(); }
+function resMetaText() {
   const r = UI.res, c = RESC[r.pid] || {};
   if (r.busy) return r.busy;
-  const items = (r.files || kind === 'Plugins') ? resItems(kind) : null;
-  const n = items ? items.length : 0;
-  const on = kind === 'Plugins' && c.pl ? c.pl.plugins.filter((x) => x.enabled && typeof x.alwaysOn === 'number') : [];
-  const sum = on.length ? ` · ligados custam ~${fmtTokPt(on.reduce((s, x) => s + x.alwaysOn, 0))} tokens por sessão` : '';
-  const since = (t) => { const s = Math.round((Date.now() - t) / 1000); return s < 5 ? 'agora' : s < 60 ? `há ${s} s` : `há ${Math.round(s / 60)} min`; };
-  let st = '';
-  if (kind === 'Plugins') st = c.plLoading ? 'atualizando…' : c.plAt ? `lido pelo Claude Code ${since(c.plAt)}` : '';
-  else if (kind === 'MCPs') st = c.mcpLoading ? 'conferindo o estado de cada conector (leva alguns segundos)…' : c.mcpAt ? `estado conferido ${since(c.mcpAt)}` : '';
-  else st = 'lido dos arquivos do Claude Code';
-  const err = (kind === 'MCPs' && c.mcp && c.mcp.error) ? ` · ${c.mcp.error}` : '';
-  return `${items ? `${n} ${resNoun(kind, n)}${kind === 'Plugins' ? sum : ''}${st ? ' · ' : ''}` : ''}${st}${err}`;
+  if (r.mode === 'desc') return '';
+  const items = conItems();
+  if (!items) return '';
+  const tot = c.pl ? c.pl.plugins.filter((x) => x.enabled && typeof x.alwaysOn === 'number').reduce((s, x) => s + x.alwaysOn, 0) : 0;
+  const st = c.mcpLoading ? 'conferindo o estado dos conectores (leva alguns segundos)…' : '';
+  const err = c.mcp && c.mcp.error ? c.mcp.error : '';
+  return [`${items.length} ${items.length === 1 ? 'conector' : 'conectores'}`, tot ? `os plugins ligados custam ~${fmtTokPt(tot)} tokens por sessão` : '', st, err].filter(Boolean).join(' · ');
 }
 const resMsgHTML = () => (UI.res && UI.res.msg ? `<div class="resmsg ${UI.res.msg.ok ? 'ok' : 'bad'}">${esc(UI.res.msg.text)}</div>` : '');
 const resBannerHTML = () => {
@@ -1119,31 +1203,72 @@ const resBannerHTML = () => {
   return c.restart ? `<div class="note restartnote"><span>Mudança aplicada. Os terminais já abertos deste projeto só passam a ver depois de reiniciar.</span><span class="acts" style="margin:0">${t && t.live ? '<button class="btn sm pri" data-ract="restart-tab">Reiniciar a aba ativa</button>' : ''}<button class="btn sm" data-ract="restart-dismiss">Dispensar</button></span></div>` : '';
 };
 function repaintRes() {
-  const kind = UI.cur.page;
-  if (!UI.res || !RES_PAGES.includes(kind) || UI.cur.p !== UI.res.pid || mode() !== 'page') return;
+  if (!UI.res || UI.cur.page !== 'Conectores' || UI.cur.p !== UI.res.pid || mode() !== 'page') return;
   const l = $('#reslist'), m = $('#resmeta'), g = $('#resmsg'), b = $('#resbanner');
-  if (l) l.innerHTML = resListHTML(kind);
-  if (m) m.textContent = resMetaText(kind);
+  if (l) l.innerHTML = resListHTML();
+  if (m) m.textContent = resMetaText();
   if (g) g.innerHTML = resMsgHTML();
   if (b) b.innerHTML = resBannerHTML();
 }
 
-function resPageHTML(kind) {
-  resEnsure(kind);
+function resPageHTML() {
+  resEnsure();
+  const r = UI.res, desc = r.mode === 'desc';
+  const chip = (attr, v, cur, l) => `<button class="cn-chip ${cur === v ? 'sel' : ''}" data-con="${attr}" data-cv="${esc(v)}">${esc(l)}</button>`;
+  const types = [['', 'Todos'], ['plugin', 'Plugins'], ['skill', 'Skills'], ['mcp', 'MCPs']];
+  const row2 = desc ? CON_SRC.map(([k, l]) => chip('src', k, r.src, l)).join('') : types.map(([k, l]) => chip('type', k, r.type, l)).join('');
+  const menu = r.menu === 'add' ? `<div class="cn-menu" style="right:0;top:40px">
+      <button data-con="add-mcp"><span class="cn-mi t-mcp">M</span><span>Adicionar conector personalizado<small>MCP por URL ou por comando</small></span></button>
+      <button data-con="add-mk"><span class="cn-mi t-plugin">P</span><span>Adicionar marketplace<small>repositório do GitHub ou URL Git</small></span></button>
+      <button data-con="add-plugin"><span class="cn-mi t-plugin">P</span><span>Instalar plugin<small>nome@marketplace</small></span></button>
+      <hr><button data-con="add-skill"><span class="cn-mi t-skill">S</span><span>Nova skill ou comando<small>criar e editar aqui</small></span></button></div>`
+    : r.menu === 'sort' ? `<div class="cn-menu" style="right:0;top:40px;min-width:200px">${[['nome', 'Nome (A–Z)'], ['custo', 'Custo em tokens']].map(([v, l]) => `<button data-con="ord" data-cv="${v}"${r.ord === v ? ' class="sel"' : ''}>${l}</button>`).join('')}</div>` : '';
+  const adv = !desc && r.adv ? `<div class="cn-adv"><div><label>Escopo</label><div class="cn-chips">${chip('scope', '', r.scope, 'Todos')}${['Conta', 'Usuário', 'Projeto', 'Local', 'Plugin'].map((s) => chip('scope', s, r.scope, s)).join('')}</div></div>
+      <div><label>Estado</label><div class="cn-chips">${[['', 'Todos'], ['on', 'Ligados'], ['off', 'Desligados'], ['issue', 'Com problema']].map(([v, l]) => chip('st', v, r.st, l)).join('')}</div></div>
+      <div><label>Neste projeto</label><div class="cn-chips"><button class="btn sm" data-ract="pl-all-off">Desligar todos os plugins</button><button class="btn sm" data-ract="pl-all-on">Ligar todos os plugins</button><button class="btn sm" data-ract="mcp-all-off">Desligar todos os MCPs</button><button class="btn sm" data-ract="mcp-all-on">Ligar todos os MCPs</button></div></div></div>` : '';
+  return `<div class="page cn-page">
+    <div class="cn-head">${ptitle('Conectores').replace('class="ptitle"', 'class="ptitle" style="margin:0"')}
+      <div class="seg" role="tablist"><button role="tab" class="${desc ? '' : 'sel'}" data-con="mode" data-cv="meus">Meus</button><button role="tab" class="${desc ? 'sel' : ''}" data-con="mode" data-cv="desc">Descobrir</button></div>
+      <span class="grow"></span>
+      <div class="cn-search">${ic('search', 15)}<input id="resq" class="resq" type="text" placeholder="${desc && r.src === 'reg' ? 'Pesquisar no registro MCP' : 'Procurar'}" value="${esc(r.q)}" autocomplete="off"></div>
+      <button class="cn-ib ${r.adv ? 'on' : ''}" data-con="adv" title="Filtros" aria-label="Filtros" ${desc ? 'hidden' : ''}>${ic('filter', 17)}</button>
+      <span class="cn-rel" ${desc ? 'hidden' : ''}><button class="cn-ib ${r.menu === 'sort' ? 'on' : ''}" data-con="menu" data-cv="sort" title="Ordenar" aria-label="Ordenar">${ic('sort', 17)}</button>${r.menu === 'sort' ? menu : ''}</span>
+      <button class="cn-ib" data-con="refresh" title="Atualizar" aria-label="Atualizar">${ic('refresh', 17)}</button>
+      <span class="cn-rel"><button class="btn pri" data-con="menu" data-cv="add">${ic('plus', 15)} Adicionar ${ic('chevd', 14)}</button>${r.menu === 'add' ? menu : ''}</span></div>
+    <div class="cn-row2">${row2}</div>${adv}
+    <div id="resbanner">${resBannerHTML()}</div><div id="resmsg">${resMsgHTML()}</div>
+    <div class="rmeta" id="resmeta" style="margin:8px 0 0">${esc(resMetaText())}</div>
+    <div id="reslist">${resListHTML()}</div></div>`;
+}
+
+// ações dos controles da tela (abas, filtros, menus, cartões do Descobrir)
+function conAct(a, v, el) {
   const r = UI.res;
-  const seg = (attr, cur, opts) => `<div class="seg sm">${[['', 'Todos']].concat(opts).map(([v, l]) => `<button ${attr}="${esc(v)}" class="${cur === v ? 'sel' : ''}">${esc(l)}</button>`).join('')}</div>`;
-  const A = (act, label, cls = '') => `<button class="btn sm ${cls}" data-ract="${act}">${label}</button>`;
-  const actions = kind === 'Plugins' ? A('pl-install', '+ Instalar plugin…', 'pri') + A('pl-all-off', 'Desligar todos aqui') + A('pl-all-on', 'Ligar todos aqui')
-    : kind === 'MCPs' ? A('mcp-add', '+ Adicionar MCP…', 'pri') + A('mcp-all-off', 'Desligar todos aqui') + A('mcp-all-on', 'Ligar todos aqui')
-      : A('sk-new', '+ Nova skill ou comando…', 'pri');
-  const hint = kind === 'MCPs' ? 'inclusive os conectores da sua conta' : kind === 'Plugins' ? 'com o custo estimado em tokens' : 'de usuário, de projeto e de plugins';
-  return `<div class="page">${ptitle(kind)}<div class="note">Mostra o mesmo que o Claude Code enxerga neste projeto (${hint}). "Aqui" vale só para este projeto. Tudo o que você muda pela tela pode ser mudado também pelo terminal (e vice-versa), e o app acompanha.</div>
-    <div id="resbanner">${resBannerHTML()}</div>
-    <div class="restools"><input id="resq" class="resq" type="text" placeholder="Buscar em ${resNoun(kind, 2)}…" value="${esc(r.q)}">${seg('data-resscope', r.scope, RES_SCOPES[kind].map((s) => [s, s]))}${RES_STATES[kind].length ? seg('data-resst', r.st, RES_STATES[kind]) : ''}</div>
-    <div class="restools">${actions}<button class="btn sm resrefresh" data-resrefresh>Atualizar</button></div>
-    <div id="resmsg">${resMsgHTML()}</div>
-    <div class="rmeta" id="resmeta" style="margin:2px 0 4px">${esc(resMetaText(kind))}</div>
-    <div id="reslist">${resListHTML(kind)}</div></div>`;
+  if (!r) return;
+  const redraw = () => { r.show = CON_PAGE; renderPage(); };
+  if (a === 'mode') { r.mode = v; r.menu = ''; redraw(); discEnsure(); return; }
+  if (a === 'type') { r.type = v; redraw(); return; }
+  if (a === 'src') { r.src = v; redraw(); discEnsure(); return; }
+  if (a === 'scope') { r.scope = v; redraw(); return; }
+  if (a === 'st') { r.st = v; redraw(); return; }
+  if (a === 'ord') { r.ord = v; r.menu = ''; renderPage(); return; }
+  if (a === 'adv') { r.adv = !r.adv; renderPage(); return; }
+  if (a === 'menu') { r.menu = r.menu === v ? '' : v; renderPage(); return; }
+  if (a === 'refresh') {
+    const p = curProject();
+    r.files = null; r.loadingFiles = false; resLoadPlugins(p, true); resLoadMcp(p, true);
+    DISC.pl = null; DISC.reg.loaded = false; DISC.reg.err = '';
+    renderPage(); return;
+  }
+  if (a === 'showmore') { if (r.mode === 'desc' && r.src === 'reg') regFetch(true); else { r.show += CON_PAGE; repaintRes(); } return; }
+  if (a === 'more') return conMore(el.dataset.rk);
+  if (a === 'inst') return plInstallQuick(v);
+  if (a === 'regadd') return regAddFlow(v);
+  r.menu = ''; renderPage();
+  if (a === 'add-mcp') return mcpAddFlow({});
+  if (a === 'add-mk') return marketplaceFlow();
+  if (a === 'add-plugin') return plInstallFlow();
+  if (a === 'add-skill') return skNewFlow();
 }
 
 /* ---- ações ---- */
@@ -1156,12 +1281,10 @@ async function resRun(label, fn, restart) {
   let out;
   try { out = await fn(); } catch (e) { out = { ok: false, message: String((e && e.message) || e) }; }
   // espera as listas novas antes de liberar a tela, para os cartões já mostrarem o estado novo (o estado dos MCPs vem por trás)
-  const onPlugins = UI.cur.page === 'Plugins';
   r.busy = 'Atualizando a lista…'; repaintRes();
-  const [d] = await Promise.all([api.scan(p.path), onPlugins ? resLoadPlugins(p, true) : null]);
+  const [d] = await Promise.all([api.scan(p.path), resLoadPlugins(p, true)]);
   if (UI.res === r) { r.files = d; r.filesJson = JSON.stringify(d); }
   resLoadMcp(p, true);
-  if (!onPlugins) resLoadPlugins(p, true);
   r.busy = ''; r.msg = { ok: !!out.ok, text: out.message || (out.ok ? 'Feito.' : 'Não deu certo.') };
   const c = RESC[p.id] || (RESC[p.id] = {});
   if (out.ok && restart) c.restart = true;
@@ -1249,6 +1372,54 @@ async function plInstallFlow() {
   return resRun(`Instalando ${id}… (pode levar um minuto)`, () => api.resDo('pluginInstall', { id, scope: m.form.scope, projectPath: p.path }), true);
 }
 
+// instalar um plugin escolhido no Descobrir: só pergunta onde vale (o padrão é só neste projeto)
+async function plInstallQuick(id) {
+  const p = curProject();
+  const x = (DISC.pl || []).find((a) => a.id === id);
+  if (!p || !x) return;
+  const m = await modal({ title: `Instalar ${esc(x.name)}`, body: `<p>${esc(x.desc || 'Plugin do Claude Code.')}</p><p class="meta">${esc(x.id)}${x.version ? ' · v' + esc(x.version) : ''}${x.installs ? ' · ' + fmtInst(x.installs) + ' instalações' : ''}</p><p class="meta">Use apenas plugins de quem você confia: a Anthropic não controla os plugins dos marketplaces.</p>
+    <div class="f"><label>Instalar para</label>${selHTML('scope', [['local', 'Só neste projeto, só para mim (local)'], ['user', 'Todos os meus projetos (usuário)'], ['project', 'Este projeto, compartilhado com o time (.claude/settings.json)']], 'local')}</div>`,
+    buttons: [['Cancelar', null], ['Instalar', 'ok', 'pri']] });
+  if (m.value !== 'ok') return;
+  return resRun(`Instalando ${x.name}… (pode levar um minuto)`, () => api.resDo('pluginInstall', { id: x.id, scope: m.form.scope, projectPath: p.path }), true);
+}
+
+// adicionar um servidor do registro MCP: abre o formulário já preenchido (endereço web ou comando npx/uvx)
+function regAddFlow(name) {
+  const it = DISC.reg.items.find((i) => i.name === name);
+  if (!it) return;
+  const base = String(it.title || it.name.split('/').pop()).replace(/[^\w.-]+/g, '-').replace(/^[^A-Za-z0-9]+/, '').slice(0, 40) || 'servidor';
+  if (it.remote) return mcpAddFlow({ name: base, type: it.remote.type, url: it.remote.url });
+  if (it.pkg && it.pkg.type === 'npm') return mcpAddFlow({ name: base, type: 'stdio', command: 'npx', args: '-y\n' + it.pkg.id });
+  if (it.pkg && it.pkg.type === 'pypi') return mcpAddFlow({ name: base, type: 'stdio', command: 'uvx', args: it.pkg.id });
+  UI.res.msg = { ok: false, text: `${it.title || it.name} precisa de instalação manual${it.site ? ': veja ' + it.site : '.'}` }; repaintRes();
+}
+
+async function marketplaceFlow() {
+  const p = curProject();
+  const m = await modal({ title: 'Adicionar marketplace', body: `<p class="meta">Adicione somente marketplaces em que você confia: a Anthropic não controla os plugins deles e os proprietários podem alterá-los depois.</p>
+    <div class="f"><label>URL</label><input class="inp" type="text" data-f="src" placeholder="owner/repo   ou   https://github.com/owner/repo.git" autocomplete="off"></div><p class="meta">Um <b>owner/repo</b> do GitHub ou uma URL https de repositório Git.</p>`,
+    buttons: [['Cancelar', null], ['Sincronizar', 'ok', 'pri']] });
+  if (m.value !== 'ok') return;
+  const src = (m.form.src || '').trim();
+  if (!src) return;
+  const out = await resRun(`Adicionando o marketplace ${src}… (pode levar um minuto)`, () => api.resDo('marketplaceAdd', { source: src, projectPath: p.path }), false);
+  if (out && out.ok) { DISC.pl = null; discEnsure(); }
+}
+
+// menu ⋯ de uma linha da lista
+async function conMore(key) {
+  const r = UI.res, x = r && r.byKey[key];
+  if (!x) return;
+  if (key.startsWith('pl:')) return resAct('pl-manage', key);
+  if (key.startsWith('mcp:')) return resAct('mcp-manage', key);
+  const own = x.scope === 'Usuário' || x.scope === 'Projeto';
+  const m = await modal({ title: `/${esc(x.name)} <small class="meta">${esc(x.scope)} · ${x.kind === 'skill' ? 'skill' : 'comando'}</small>`, body: `<p>${esc(x.desc || 'Sem descrição.')}</p>${own ? '' : '<p class="meta">Faz parte do plugin; para desligar, desligue o plugin.</p>'}`,
+    buttons: [['Fechar', null], ...(own ? [['Excluir…', 'del', 'bad'], ['Editar', 'edit', 'pri']] : [])] });
+  if (m.value === 'edit') return resAct('sk-edit', key);
+  if (m.value === 'del') return resAct('sk-del', key);
+}
+
 async function mcpManageFlow(x) {
   const p = curProject();
   const run = (op, args) => api.resDo(op, { projectPath: p.path, ...args });
@@ -1269,7 +1440,7 @@ async function mcpManageFlow(x) {
 async function mcpAddFlow(prev) {
   const p = curProject();
   const v = { name: '', type: 'http', url: '', command: '', args: '', env: '', headers: '', scope: 'local', ...prev };
-  const m = await modal({ title: 'Adicionar MCP', body: `${v.error ? `<div class="resmsg bad">${esc(v.error)}</div>` : ''}
+  const m = await modal({ title: 'Adicionar conector personalizado', body: `${v.error ? `<div class="resmsg bad">${esc(v.error)}</div>` : ''}<p class="meta">Use apenas conectores de desenvolvedores em quem você confia: a Anthropic não controla as ferramentas que eles disponibilizam.</p>
     <div class="f"><label>Nome</label><input class="inp" type="text" data-f="name" value="${esc(v.name)}" placeholder="ex.: github"></div>
     <div class="f"><label>Tipo</label>${selHTML('type', [['http', 'Servidor na web (HTTP)'], ['sse', 'Servidor na web (SSE)'], ['stdio', 'Programa local (comando)']], v.type)}</div>
     <div data-mcpf="web"><div class="f"><label>Endereço</label><input class="inp" type="text" data-f="url" value="${esc(v.url)}" placeholder="https://servidor.exemplo.com/mcp"></div>
@@ -1495,7 +1666,6 @@ function integHTML() {
     <div class="card"><h5>Codex</h5><p>Planejado para uma próxima fase.</p><div class="tags"><span class="tag">Em breve</span></div></div></div></div>`;
 }
 
-const yn = (k) => `<div class="seg"><button class="${clearCfg()[k] ? 'sel' : ''}" data-clrflag="${k}|1">Sim</button><button class="${clearCfg()[k] ? '' : 'sel'}" data-clrflag="${k}|0">Não</button></div>`;
 const ynN = (k) => `<div class="seg"><button class="${notifCfg()[k] ? 'sel' : ''}" data-ntf="${k}|1">Sim</button><button class="${notifCfg()[k] ? '' : 'sel'}" data-ntf="${k}|0">Não</button></div>`;
 function confHTML() {
   const arch = S.projects.filter((p) => p.archived);
@@ -1505,7 +1675,7 @@ function confHTML() {
       <div class="seg"><button class="${bgMode() === 'gradient' ? 'sel' : ''}" data-bg="gradient">Degradê</button><button class="${bgMode() === 'blur' ? 'sel' : ''}" data-bg="blur">Ofuscado</button></div></div>
     <div class="row"><div class="grow">Pasta raiz dos projetos criados pelo app<small id="rootNote">Projetos importados ficam onde já estão</small></div><span class="chip" id="rootChip" style="user-select:text;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">…</span><button class="btn" id="rootPick">Alterar</button>${S.settings.projectsRoot ? '<button class="btn" id="rootAuto">Automática</button>' : ''}</div>
     <div class="row"><div class="grow">Ao fechar o app<small>Encerra os processos, com confirmação. As conversas ficam guardadas.</small></div><span class="chip">Pergunta antes de sair</span></div>
-    <div class="row"><div class="grow">Ao reabrir<small>Reabre sozinho os terminais que estavam abertos, retomando as conversas</small></div><span class="chip">Restaura sozinho</span></div></div>
+    <div class="row"><div class="grow">Ao reabrir<small>Os projetos e as abas voltam todos; as conversas de cada projeto são retomadas quando você abre o projeto (o que está na tela volta na hora)</small></div><span class="chip">Restaura sozinho</span></div></div>
     <h5 style="margin:22px 0 8px">Rail e rodapé</h5>
     <div class="card" style="padding:6px 18px">
     ${[['on', 'Anéis de métricas', 'Os anéis flutuantes junto à borda direita (contexto, limites e cache)'], ['ctx', 'Contexto', 'Quanto da janela de contexto da conversa já foi usado'], ['h5', 'Limite de 5 horas', 'Uso da conta na janela de 5 horas'], ['d7', 'Limite de 7 dias', 'Uso semanal da conta'], ['cache', 'Cache do prompt', 'Tempo até o cache esfriar (só nos terminais)'], ['fade', 'Esmaecer os anéis quando parado', 'Ficam discretos e voltam ao normal ao passar o mouse'], ['reserve', 'Reservar espaço para os anéis', 'O texto para antes dos anéis, sem passar por baixo'], ['meta', 'Modelo, branch e permissões', 'Etiqueta no canto inferior direito'], ['footFade', 'Esmaecer o rodapé quando parado', 'Terminais · Web · Clear · Reiniciar ficam discretos']].map(([k, t, d]) => `<div class="row"><div class="grow">${t}<small>${d}</small></div><div class="seg"><button class="${railCfg()[k] ? 'sel' : ''}" data-railset="${k}|1">Sim</button><button class="${railCfg()[k] ? '' : 'sel'}" data-railset="${k}|0">Não</button></div></div>`).join('')}
@@ -1519,11 +1689,7 @@ function confHTML() {
     <h5 style="margin:22px 0 8px">Botão Clear (base da janela)</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row"><div class="grow">Pulsar quando o contexto chegar a<small>% do anel CTX a partir da qual o botão Clear pisca. 0 desliga o aviso. Sugestão: 15 para tarefas pequenas, 35 para tarefas longas.</small></div><div class="numf" data-min="0" data-max="100"><button type="button" data-step="-1" aria-label="Diminuir">−</button><input id="clrAlert" type="text" inputmode="numeric" maxlength="3" value="${clearCfg().alert}"><button type="button" data-step="1" aria-label="Aumentar">+</button></div><span class="unit">%</span></div>
-    <div class="row"><div class="grow">Usar o fluxo Rocruzta nos projetos que o têm<small>Detecta .claude/fluxo.json e usa pedidos enxutos que seguem o fluxo (papel, validação, TASKS e CHANGELOG, sem abrir os arquivos inteiros)</small></div>${yn('flow')}</div>
-    <div class="row"><div class="grow">Commit e push ao fechar a tarefa (projetos do fluxo)<small>Commit "TASK-XXX: ..." e push só na branch do seu papel; nunca promove para a main</small></div>${yn('commit')}</div>
-    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de fechamento<small>Enviado ao agente em "Fechar a tarefa e limpar". Vazio = automático (fluxo ou genérico, conforme o projeto). Para o app limpar sozinho, o texto deve terminar pedindo que o agente escreva ${CLEAR_MARK}; sem isso o app pergunta antes de limpar.</small></div><textarea class="inp ta" id="clrClose" rows="5" placeholder="Automático">${esc(clearCfg().closePrompt)}</textarea></div>
-    <div class="row" style="align-items:flex-start"><div class="grow">Pedido de retomada<small>Enviado depois do /clear, na conversa nova. Vazio = automático. Pode ser um comando seu, como /retomar.</small></div><textarea class="inp ta" id="clrResume" rows="5" placeholder="Automático">${esc(clearCfg().resumePrompt)}</textarea></div>
-    <div class="row"><div class="grow">Restaurar os textos padrão</div><button class="btn sm" data-clrreset>Restaurar</button></div></div>
+    <div class="row" style="align-items:flex-start;flex-wrap:wrap"><div class="grow">Resumo entregue ao agente depois do Clear<small>É o texto que o agente recebe na conversa nova, para continuar sem reler o projeto. Pode editar à vontade; os marcadores entre chaves são trocados pelo app na hora do Clear e somem quando não há o que mostrar: <code>{{PROJETO}}</code> projeto, papel e branch · <code>{{PEDIDOS}}</code> últimos pedidos do usuário · <code>{{RESPOSTA}}</code> fim da última resposta do Claude · <code>{{ARQUIVOS}}</code> arquivos alterados · <code>{{GIT}}</code> git status e últimos commits · <code>{{TAREFA}}</code> tarefa ativa do docs/TASKS.md. Apagar tudo = só limpar, sem resumo.</small></div><textarea class="inp ta" id="clrTpl" rows="14" spellcheck="false" style="width:100%;flex-basis:100%;margin-top:8px;font-family:Consolas,monospace;font-size:12px;line-height:1.45">${esc(clearTemplate() ?? HANDOFF_DEF)}</textarea><div class="tags" style="margin-top:8px;flex-basis:100%"><button class="btn sm" data-clrreset>Restaurar o padrão do Termix</button></div></div>
     <h5 style="margin:22px 0 8px">Notificações</h5>
     <div class="card" style="padding:6px 18px">
     <div class="row"><div class="grow">Terminou<small>Aviso quando um terminal termina a resposta e aguarda você (só se você não estiver olhando para ele)</small></div>${ynN('done')}</div>
@@ -1538,7 +1704,7 @@ function confHTML() {
     <div class="row"><div class="grow">Restaurar os padrões</div><button class="btn sm" data-ntfreset>Restaurar</button></div></div>
     <h5 style="margin:22px 0 8px">Conectores (plugins, skills e MCPs)</h5>
     <div class="card" style="padding:6px 18px">
-    <div class="row" style="align-items:flex-start"><div class="grow">Projeto novo criado pelo Termix<small><b>Automático:</b> o projeto nasce como o Claude Code monta por padrão, com os seus plugins, MCPs e conectores já valendo (isso pesa nos tokens de cada sessão). <b>Limpo:</b> o projeto nasce sem nenhum plugin, MCP nem conector; você liga só o que quiser nas telas Plugins, MCPs e Skills.</small></div>
+    <div class="row" style="align-items:flex-start"><div class="grow">Projeto novo criado pelo Termix<small><b>Automático:</b> o projeto nasce como o Claude Code monta por padrão, com os seus plugins, MCPs e conectores já valendo (isso pesa nos tokens de cada sessão). <b>Limpo:</b> o projeto nasce sem nenhum plugin, MCP nem conector; você liga só o que quiser na tela Conectores.</small></div>
       <div class="seg"><button class="${connCfg().newProject === 'auto' ? 'sel' : ''}" data-conn="auto">Automático</button><button class="${connCfg().newProject === 'clean' ? 'sel' : ''}" data-conn="clean">Limpo</button></div></div>
     <div class="row"><div class="grow"><small>O "limpo" desliga só dentro do projeto novo (plugins em .claude/settings.local.json e MCPs/conectores na entrada do projeto do Claude Code); os outros projetos e as suas configurações de usuário não mudam. Skills e comandos de <b>usuário</b> (pasta .claude do seu usuário) não têm como ser desligados por projeto. Plugins, MCPs ou conectores instalados depois ficam ligados até você desligar. Projetos importados não são alterados.</small></div></div></div>
     <h5 style="margin:22px 0 8px">Projetos arquivados</h5>
@@ -1578,14 +1744,33 @@ function noTermHTML(p) {
   return `<div class="empty"><h2>Nenhum terminal aberto</h2>${list}<div class="row2"><button class="btn pri" data-newtab="${chatNewKey()}">${chatCfg().mode === 'chat' ? '+ Chat' : '+ Terminal'}</button></div></div>`;
 }
 
+// Workflow: sempre dois chats fixos, lado a lado, já em Dangerously (a função em si vem depois)
+function wfStartHTML(p) {
+  return `<div class="empty wfstart"><div class="wfmark">${ic('workflow', 34)}</div><h2>Workflow · ${esc(p.name)}</h2>
+    <p>Dois terminais lado a lado, sempre em Dangerously, para trabalhar o projeto em etapas. Comece pelo brainstorm.</p>
+    <div class="row2"><button class="btn pri big" data-wfstart>Começar Brainstorm</button></div></div>`;
+}
+function wfEnsure(p) {
+  let made = false;
+  for (const n of [1, 2]) {
+    const old = p.tabs.find((t) => t.wf === n);
+    if (old) { if (!old.open || old.archived) { old.open = true; old.archived = false; made = true; } continue; } // os dois são fixos: se um foi fechado, volta
+    const t = { id: uuid(), sessionId: uuid(), agent: 'claude', name: `Terminal ${n}`, color: DEFAULT_COLOR, perm: 'd', started: false, open: true, live: false, archived: false, kind: 'chat', wf: n };
+    p.tabs.push(t); made = true; launch(p, t, 'new');
+  }
+  if (made) { if (!p.tabs.some((t) => t.id === p.activeTab)) p.activeTab = (p.tabs.find((t) => t.wf === 1) || p.tabs[0]).id; save(); }
+}
 function renderPage() {
   const m = mode();
   let html = '';
   if (m === 'empty') html = emptyHTML();
   else if (m === 'noterm') html = noTermHTML(curProject());
-  else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML }[UI.cur.page]();
-  else if (m === 'page') html = resPageHTML(UI.cur.page);
+  else if (m === 'workflow') html = wfStartHTML(curProject());
+  else if (UI.cur.p === '_') html = { Consumo: consumoHTML, 'Integrações': integHTML, 'Configurações': confHTML, 'Novo chat': () => newPageHTML('chat'), 'Novo workflow': () => newPageHTML('workflow') }[UI.cur.page]();
+  else if (m === 'page') html = UI.cur.page === 'Código' ? codeHTML() : resPageHTML();
   $('#page').innerHTML = html;
+  $('#page').classList.toggle('wfpage', m === 'workflow');
+  $('#page').classList.toggle('codepage', m === 'page' && UI.cur.p !== '_' && UI.cur.page === 'Código'); // tela Código ocupa o palco sem margem // tela inicial do Workflow ocupa o palco inteiro, sem moldura
   layout(); // o recorte do vidro depende do tipo de tela
   if (UI.cur.p === '_' && UI.cur.page === 'Configurações') api.appInfo(S.settings.projectsRoot).then((i) => { const c = $('#rootChip'); if (c) { c.textContent = i.root; c.title = i.root; } const n = $('#rootNote'); if (n && i.rootAuto) n.textContent = 'Automática: o disco com mais espaço livre, para não encher o C:. Projetos importados ficam onde já estão.'; });
 }
@@ -1681,43 +1866,75 @@ function renderChrome() { renderSide(); renderTabs(); renderTop(); renderRail();
 function renderAll() {
   const m = mode();
   renderTop(); renderSide(); renderTabs(); renderPage(); renderPop(); renderAct(); renderMenu(); renderRail();
-  $('#tabsRow').classList.toggle('hide', m !== 'term');
-  $('#sess').classList.toggle('hide', m !== 'term');
+  const dk = dockOn();
+  document.body.classList.toggle('codedock', dk);
+  $('#tabsRow').classList.toggle('hide', m !== 'term' && !dk);
+  $('#sess').classList.toggle('hide', m !== 'term' && !dk);
   $('#page').classList.toggle('hide', m === 'term' || m === 'web');
   if (window.webRender) webRender(m);
   document.documentElement.style.setProperty('--term-op', S.settings.termOp / 100);
-  if (m === 'term') { const t = curTab(curProject()); if (t.kind === 'chat') showChat(t); else showTab(t); }
+  if (m === 'term' || dk) { const cp = curProject(); if (cp.kind === 'workflow') showWorkflow(cp); else { const t = curTab(cp); if (t.kind === 'chat') showChat(t); else showTab(t); } }
+  const cp0 = curProject(); if (cp0 && BOOTED && !RESTORING.has(cp0.id)) restoreProject(cp0); // abriu um projeto que ainda não foi retomado nesta abertura do app
 }
 
 /* ---------- ações de projeto e abas ---------- */
-async function newProjectFlow() {
-  const r = await modal({
-    title: 'Novo projeto',
-    body: '<p>O Termix cria e organiza a pasta do projeto. Você só informa o nome.</p><div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="name" placeholder="Meu SaaS" maxlength="60"></div>',
-    buttons: [['Cancelar', null], ['Importar pasta existente…', 'import'], ['Criar projeto', 'ok', 'pri']],
-  });
-  if (r.value === 'import') return importFlow();
-  if (r.value !== 'ok') return;
-  const name = projNameClip(r.form.name);
-  if (!name) return;
-  const { path } = await api.createProject(name, S.settings.projectsRoot);
-  let note = '';
-  if (connCfg().newProject === 'clean') {
-    $('#modalRoot').innerHTML = '<div class="modal"><div class="dlg glass"><h2>Preparando o projeto limpo…</h2><p>Desligando plugins, MCPs e conectores só neste projeto. Leva alguns segundos.</p></div></div>';
-    const out = await api.resDo('cleanProject', { projectPath: path });
-    $('#modalRoot').innerHTML = '';
-    note = out.ok ? `Projeto limpo: ${out.plugins} plugin${out.plugins === 1 ? '' : 's'} e ${out.mcps} MCP${out.mcps === 1 ? '' : 's'}/conectores desligados aqui.${out.userSkills ? ` ${out.userSkills} skill(s) de usuário continuam valendo (limite do Claude Code).` : ''}` : `Não consegui deixar o projeto limpo: ${out.message}`;
-  }
-  addProject({ name, path, imported: false });
-  if (note) addEvent({ who: name, msg: note });
+// Novo projeto: tela ao lado da barra (como um "novo chat"), aberta pelos botões fixos "+ Chat" e "+ Workflow" no topo
+const NP_PERMS = [
+  ['n', 'shield', 'Perguntar', 'Aceita edições de arquivo e pede a sua aprovação para o resto, na conversa.'],
+  ['d', 'bolt', 'Automático', 'Executa tudo sem pedir permissão. Mais rápido, com menos controle.'],
+];
+const kindOf = (p) => (p.kind === 'workflow' ? 'workflow' : 'chat');
+function goNew(kind, where = 'new') {
+  UI.np = { kind, name: '', dir: null, perm: chatPermFor(), where };
+  UI.cur = { p: '_', page: kind === 'workflow' ? 'Novo workflow' : 'Novo chat' }; UI.pop = false;
+  renderAll();
+  if (where === 'dir') npPick();
 }
-async function importFlow() {
+function newPageHTML(kind) {
+  if (!UI.np || UI.np.kind !== kind) UI.np = { kind, name: '', dir: null, perm: chatPermFor(), where: 'new' };
+  const np = UI.np, wf = kind === 'workflow';
+  const folder = np.where === 'dir'
+    ? `<div class="nprow"><div class="pjpath" style="user-select:text" title="${esc(np.dir || '')}">${ic('folder', 16)}<span>${np.dir ? esc(np.dir) : 'Nenhuma pasta escolhida'}</span></div><button type="button" class="btn" data-nppick>Escolher pasta…</button></div><p class="meta">O Termix só registra a pasta, sem copiar nem mover nada.</p>`
+    : `<p class="meta">O Termix cria e organiza a pasta dentro de <b>${esc(S.settings.projectsRoot || 'a pasta de projetos')}</b>.</p>`;
+  return `<div class="npage"><div class="npinner">
+    <div class="nphead"><span class="wfmark sm">${ic(wf ? 'workflow' : 'sparkles', 26)}</span><div><h2>${wf ? 'Novo Workflow' : 'Novo Chat'}</h2>
+      <p class="meta">${wf ? 'Dois terminais lado a lado, sempre em Dangerously, para trabalhar o projeto em etapas.' : 'Conversa em bolhas com o Claude Code, sem terminal.'}</p></div></div>
+    <div class="f"><label>Nome do projeto</label><input class="inp" type="text" id="npName" value="${esc(np.name)}" placeholder="Meu SaaS" maxlength="60"></div>
+    <div class="f"><label>Pasta</label><div class="seg"><button type="button" class="${np.where === 'new' ? 'sel' : ''}" data-npwhere="new">Criar pasta nova</button><button type="button" class="${np.where === 'dir' ? 'sel' : ''}" data-npwhere="dir">Usar pasta existente</button></div>${folder}</div>
+    ${wf ? `<p class="meta npwf">${ic('alert', 14)} O Workflow usa sempre dois terminais fixos em Dangerously: sem pedir permissão e sem isolamento do sistema.</p>`
+      : `<div class="f"><label>Permissão</label><div class="npmodes">${NP_PERMS.map(([v, i, l, d]) => `<button type="button" class="npm ${v === 'd' ? 'warn' : ''} ${v === np.perm ? 'sel' : ''}" data-npp="${v}">${ic(i, 26)}<b>${l}</b><small>${d}</small></button>`).join('')}</div></div>`}
+    <div class="row2"><button class="btn pri big" data-npgo>${wf ? 'Criar workflow' : 'Criar chat'}</button></div></div></div>`;
+}
+async function npPick() {
   const dir = await api.pickFolder();
-  if (!dir) return;
-  if (S.projects.some((p) => p.path.toLowerCase() === dir.toLowerCase() && !p.archived)) { addEvent({ who: 'Projetos', msg: 'Essa pasta já está registrada.' }); return; }
-  const name = projNameClip(dir.split(/[\\/]/).filter(Boolean).pop()) || 'Projeto';
-  const found = (await api.scanSessions(dir)).length;
-  const p = addProject({ name, path: dir, imported: true, noTab: found > 0 });
+  if (!dir || !UI.np) return;
+  UI.np.dir = dir;
+  if (!UI.np.name.trim()) UI.np.name = projNameClip(dir.split(/[\\/]/).filter(Boolean).pop()) || '';
+  renderPage();
+}
+async function npSubmit() {
+  const np = UI.np; if (!np) return;
+  const wf = np.kind === 'workflow';
+  let name = projNameClip(np.name), path, imported = false, note = '';
+  if (np.where === 'dir') {
+    if (!np.dir) { addEvent({ who: 'Projetos', msg: 'Escolha a pasta do projeto.' }); return; }
+    if (S.projects.some((p) => p.path.toLowerCase() === np.dir.toLowerCase() && !p.archived)) { addEvent({ who: 'Projetos', msg: 'Essa pasta já está registrada.' }); return; }
+    path = np.dir; imported = true;
+    name = name || projNameClip(path.split(/[\\/]/).filter(Boolean).pop()) || 'Projeto';
+  } else {
+    if (!name) { const i = $('#npName'); if (i) i.focus(); return; }
+    ({ path } = await api.createProject(name, S.settings.projectsRoot));
+    if (connCfg().newProject === 'clean') {
+      $('#modalRoot').innerHTML = '<div class="modal"><div class="dlg glass"><h2>Preparando o projeto limpo…</h2><p>Desligando plugins, MCPs e conectores só neste projeto. Leva alguns segundos.</p></div></div>';
+      const out = await api.resDo('cleanProject', { projectPath: path });
+      $('#modalRoot').innerHTML = '';
+      note = out.ok ? `Projeto limpo: ${out.plugins} plugin${out.plugins === 1 ? '' : 's'} e ${out.mcps} MCP${out.mcps === 1 ? '' : 's'}/conectores desligados aqui.${out.userSkills ? ` ${out.userSkills} skill(s) de usuário continuam valendo (limite do Claude Code).` : ''}` : `Não consegui deixar o projeto limpo: ${out.message}`;
+    }
+  }
+  const found = imported && !wf ? (await api.scanSessions(path)).length : 0;
+  UI.np = null;
+  const p = addProject({ name, path, imported, noTab: found > 0, workflow: wf, first: { kind: 'chat', perm: np.perm === 'd' ? 'd' : 'n' } });
+  if (note) addEvent({ who: name, msg: note });
   if (found) await importSessionsFlow(p, true);
 }
 
@@ -1761,12 +1978,12 @@ async function importSessionsFlow(p, fromImport = false) {
   UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
   for (const t of p.tabs.slice(-picked.length)) await launch(p, t, 'resume');
 }
-function addProject({ name, path, imported, noTab }) {
-  const p = { id: uuid(), name, path, imported, archived: false, tabs: [], activeTab: null, g: S.projects.length, open: true };
-  S.projects.push(p);
+function addProject({ name, path, imported, noTab, first, workflow }) {
+  const p = { id: uuid(), name, path, imported, archived: false, tabs: [], activeTab: null, g: S.projects.length, open: true, ...(workflow ? { kind: 'workflow' } : {}) };
+  S.projects.push(p); S.settings.sideKind = kindOf(p); setCatOpen(kindOf(p), true);
   UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; UI.res = null;
   save(); renderAll();
-  if (!noTab) createTab(p, 'n');
+  if (!noTab && !workflow) { if (first && first.kind === 'chat') createTab(p, first.perm, { kind: 'chat' }); else createTab(p, first ? first.perm : 'n'); }
   return p;
 }
 
@@ -1842,14 +2059,24 @@ function disposeProjectViews(p) {
 
 const PROJ_NAME_MAX = 60; // nome do projeto: limite de tamanho (a pasta criada usa o nome; Windows aceita 255 por nome e 260 no caminho)
 const projNameClip = (s) => String(s || '').trim().slice(0, PROJ_NAME_MAX);
+const PJ_ACTS = [
+  { k: 'open', i: 'folder', t: 'Abrir pasta', d: 'Mostra a pasta no Explorador de Arquivos.' },
+  { k: 'rename', i: 'edit', t: 'Renomear', d: 'Muda só o nome na interface; a pasta fica onde está.' },
+  { k: 'archive', i: 'archive', t: 'Arquivar', d: 'Tira da lista sem apagar nada; dá para restaurar em Configurações.' },
+  { k: 'remove', i: 'x', t: 'Remover do app', d: 'Esquece o projeto aqui; os arquivos da pasta não são apagados.', bad: true },
+  { k: 'delete', i: 'trash', t: 'Excluir pasta…', d: 'Envia a pasta para a Lixeira do Windows, com confirmação.', bad: true },
+];
 async function projectMenuFlow() {
   const p = curProject();
   if (!p) return;
   UI.menu = null; renderMenu();
   const r = await modal({
     title: `<span class="clamp3" title="${esc(p.name)}">${esc(p.name)}</span>`,
-    body: `<p class="meta" style="user-select:text">${esc(p.path)}</p><p>${p.imported ? 'Pasta importada: o app só a registra, sem copiar nem mover.' : 'Pasta criada e organizada pelo app.'}</p>`,
-    buttons: [['Fechar', null], ['Abrir pasta', 'open'], ['Renomear', 'rename'], ['Arquivar', 'archive'], ['Remover do app', 'remove', 'bad']].concat(p.imported ? [] : [['Excluir pasta…', 'delete', 'bad']]),
+    body: `<div class="pjhead"><span class="pjpath" style="user-select:text" title="${esc(p.path)}">${ic('folder', 16)}<span>${esc(p.path)}</span></span><span class="pjtag">${p.imported ? 'Pasta importada' : 'Criada pelo Termix'}</span></div>
+      <p class="meta">${p.imported ? 'O app só registra a pasta, sem copiar nem mover nada.' : 'Pasta criada e organizada pelo app.'}</p>
+      <div class="pjlist">${PJ_ACTS.filter((x) => !(x.k === 'delete' && p.imported)).map((x) => `<button type="button" class="pjrow ${x.bad ? 'bad' : ''}" data-pj="${x.k}">${ic(x.i, 20)}<span><b>${x.t}</b><small>${x.d}</small></span>${ic('chevr', 14)}</button>`).join('')}</div>`,
+    buttons: [['Fechar', null], ...PJ_ACTS.map((x) => [x.t, x.k, 'hide'])],
+    onOpen: (root) => { root.querySelectorAll('[data-pj]').forEach((b) => { b.onclick = () => root.querySelector(`.foot2 [data-mb="${PJ_ACTS.findIndex((x) => x.k === b.dataset.pj) + 1}"]`).click(); }); },
   });
   if (r.value === 'open') api.openFolder(p.path);
   if (r.value === 'rename') {
@@ -1923,6 +2150,7 @@ document.addEventListener('click', async (e) => {
   const q = (s) => e.target.closest(s);
   let el;
   closeFloaters(e);
+  if (UI.res && UI.res.menu && UI.cur.page === 'Conectores' && !q('.cn-menu,[data-con="menu"]')) { UI.res.menu = ''; renderPage(); }
   if ((el = q('[data-setcolor]'))) { const [id, c] = el.dataset.setcolor.split('|'); const f = findTab(id); if (f) { f.tab.color = c; save(); } UI.menu = null; renderAll(); return; }
   if ((el = q('[data-rename]'))) { const f = findTab(el.dataset.rename); UI.menu = null; renderMenu(); if (f) renameTab(f.tab); return; }
   if ((el = q('[data-dup]'))) { const f = findTab(el.dataset.dup); UI.menu = null; if (f) createTab(f.p, f.tab.perm, { name: `${f.tab.name} (2)`, color: f.tab.color, after: f.tab.id }); return; }
@@ -1943,9 +2171,8 @@ document.addEventListener('click', async (e) => {
     renderMenu(); renderRail(); return;
   }
   if ((el = q('[data-railset]'))) { const [k, v] = el.dataset.railset.split('|'); railCfg()[k] = v === '1'; save(); renderPage(); renderRail(); renderTop(); dockRefresh(); return; }
-  if ((el = q('[data-clrflag]'))) { const [k, v] = el.dataset.clrflag.split('|'); S.settings.clear[k] = v === '1'; save(); renderPage(); return; }
   if ((el = q('[data-conn]'))) { S.settings.connectors = { v: 1, newProject: el.dataset.conn }; save(); renderPage(); return; }
-  if (q('[data-clrreset]')) { S.settings.clear = { ...CLEAR_DEF }; save(); renderPage(); renderRail(); return; }
+  if (q('[data-clrreset]')) { S.settings.clear.template = null; save(); renderPage(); return; }
   if ((el = q('[data-rail]'))) {
     const k = el.dataset.rail; railCfg()[k] = !railCfg()[k]; save();
     renderMenu(); renderRail(); renderTop(); return;
@@ -1954,8 +2181,8 @@ document.addEventListener('click', async (e) => {
   if (q('#rootAuto')) { delete S.settings.projectsRoot; save(); renderPage(); return; }
   if ((el = q('[data-bg]'))) { S.settings.bg = el.dataset.bg; save(); applyBg(); if (UI.cur.page === 'Configurações') renderPage(); return; }
   if ((el = q('[data-win]'))) { api.winCtl(el.dataset.win); return; }
-  if (q('[data-togside]')) { S.settings.sideCollapsed = !S.settings.sideCollapsed; save(); renderSide(); tween('sideW', sideTarget()); return; }
-  if ((el = q('[data-ph]'))) { projClick(el.dataset.ph); return; }
+  if (q('[data-togside]')) { toggleSide(); return; }
+  if ((el = q('[data-ph]'))) { if (e.target.closest('.chev')) projToggle(el.dataset.ph); else projClick(el.dataset.ph); return; } // barra aberta: o nome abre o projeto (e mostra as funções dele); a setinha só abre/fecha as funções, sem trocar de tela
   if ((el = q('[data-pt]'))) { projClick(el.dataset.pt); return; }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
   if ((el = q('[data-step]'))) { // botões − e + do campo numérico
@@ -1963,19 +2190,12 @@ document.addEventListener('click', async (e) => {
     inp.value = Math.min(+box.dataset.max, Math.max(+box.dataset.min, (parseInt(inp.value, 10) || 0) + (+el.dataset.step)));
     inp.dispatchEvent(new Event('input', { bubbles: true })); return;
   }
+  if ((el = q('[data-cd]'))) { codeAct(el.dataset.cd, el.dataset.cv); return; }
+  if ((el = q('[data-con]'))) { conAct(el.dataset.con, el.dataset.cv, el); return; }
   if ((el = q('[data-ract]'))) { resAct(el.dataset.ract, el.dataset.rk); return; }
   if ((el = q('[data-ctab]'))) { UI.cons.tab = el.dataset.ctab; renderPage(); return; }
   if ((el = q('[data-cper]'))) { UI.cons.per = el.dataset.cper; renderPage(); return; }
   if ((el = q('[data-cmore]'))) { UI.cons.more = !UI.cons.more; renderPage(); return; }
-  if ((el = q('[data-resscope]'))) { UI.res.scope = el.dataset.resscope; renderPage(); return; }
-  if ((el = q('[data-resst]'))) { UI.res.st = el.dataset.resst; renderPage(); return; }
-  if ((el = q('[data-resrefresh]'))) {
-    const p = curProject(), kind = UI.cur.page;
-    UI.res.files = null; UI.res.loadingFiles = false;
-    if (kind === 'Plugins') resLoadPlugins(p, true);
-    if (kind === 'MCPs') resLoadMcp(p, true);
-    renderPage(); return;
-  }
   if ((el = q('[data-go]'))) {
     const [p, pg] = el.dataset.go.split('|');
     UI.cur = { p, page: pg }; if (p !== '_') UI.last = p;
@@ -2008,8 +2228,20 @@ document.addEventListener('click', async (e) => {
     if (f && k === 'newconv') newConversation(f.p, f.tab);
     return;
   }
-  if (q('[data-newproj]')) return newProjectFlow();
-  if (q('[data-import]')) return importFlow();
+  if (q('[data-wfstart]')) { const wp = curProject(); if (wp) { wp.wfStarted = true; save(); renderAll(); } return; }
+  if ((el = q('[data-newk]'))) return goNew(el.dataset.newk);
+  if (q('[data-import]')) return goNew('chat', 'dir');
+  if (q('[data-patch]')) { const v = APP_VER && typeof PATCH_NOTES !== 'undefined' ? PATCH_NOTES.filter((e) => e.v === APP_VER) : []; showPatchNotes(v.length ? v : (typeof PATCH_NOTES !== 'undefined' ? PATCH_NOTES.slice(0, 1) : [])); return; }
+  if ((el = q('[data-sidecat]'))) {
+    const k = el.dataset.sidecat; setCatOpen(k, !catOpen(k)); save();
+    const box = document.querySelector('#side .cat[data-cat="' + k + '"]');
+    if (box) box.classList.toggle('open', catOpen(k)); else renderSide(); // barra aberta: troca a classe no lugar para a animação rodar; recolhida: redesenha
+    return;
+  }
+  if ((el = q('[data-npwhere]'))) { if (UI.np) { UI.np.where = el.dataset.npwhere; renderPage(); if (UI.np.where === 'dir' && !UI.np.dir) npPick(); } return; }
+  if (q('[data-nppick]')) return npPick();
+  if ((el = q('[data-npp]'))) { if (UI.np) { UI.np.perm = el.dataset.npp; renderPage(); } return; }
+  if (q('[data-npgo]')) return npSubmit();
   if (q('[data-projmenu]')) return projectMenuFlow();
   if (q('[data-closedlist]')) return closedListFlow();
   if (q('[data-impsess]')) return importSessionsFlow(curProject());
@@ -2060,11 +2292,15 @@ document.addEventListener('focusout', (e) => {
 
 document.addEventListener('input', (e) => {
   const id = e.target.id;
-  if (id === 'resq' && UI.res) { UI.res.q = e.target.value; repaintRes(); return; }
-  if (id === 'clrAlert' || id === 'clrClose' || id === 'clrResume') {
+  if (id === 'resq' && UI.res) {
+    UI.res.q = e.target.value; UI.res.show = CON_PAGE;
+    if (UI.res.mode === 'desc' && UI.res.src === 'reg') { clearTimeout(DISC.t); DISC.t = setTimeout(discEnsure, 350); } else repaintRes();
+    return;
+  }
+  if (id === 'clrTpl') { S.settings.clear.template = e.target.value === HANDOFF_DEF ? null : e.target.value; save(); return; } // igual ao padrão = continua "padrão do app" (acompanha melhorias futuras)
+  if (id === 'clrAlert') {
     const c = S.settings.clear;
-    if (id === 'clrAlert') { const d = e.target.value.replace(/\D/g, '').slice(0, 3); if (d !== e.target.value) e.target.value = d; c.alert = Math.min(100, Math.max(0, parseInt(d, 10) || 0)); }
-    else c[id === 'clrClose' ? 'closePrompt' : 'resumePrompt'] = e.target.value;
+    const d = e.target.value.replace(/\D/g, '').slice(0, 3); if (d !== e.target.value) e.target.value = d; c.alert = Math.min(100, Math.max(0, parseInt(d, 10) || 0));
     save(); renderRail(); return;
   }
   if (id === 'ntfCache' || id === 'ntfToast') {
@@ -2095,27 +2331,44 @@ setInterval(async () => {
   const json = JSON.stringify(data);
   const changed = UI.res && json !== UI.res.filesJson;
   if (changed) { UI.res.files = data; UI.res.filesJson = json; }
-  if (kind === 'Plugins' && resTick % 3 === 0) resLoadPlugins(p, true);
-  if (kind === 'MCPs' && resTick % 15 === 0) resLoadMcp(p, true);
+  if (resTick % 3 === 0) resLoadPlugins(p, true);
+  if (resTick % 15 === 0) resLoadMcp(p, true);
   if (changed) repaintRes();
 }, 4000);
 
 // dois modos: 'gradient' (Degradê) e 'blur' (Ofuscado); valores antigos 'acrylic'/'mica' contam como Ofuscado
 const bgMode = () => (['blur', 'acrylic', 'mica'].includes(S.settings.bg) ? 'blur' : 'gradient');
-/* ---------- moldura em "U": geometria do vidro ---------- */
-const FR = { R: 22, RI: 14, HEAD: 46, BOT: 38, SIDE_OPEN: 252, SIDE_MINI: 70, ARM_OPEN: 346, ARM_CLOSED: 12 };
-const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base de vidro não engrossa
+/* ---------- geometria do vidro: painéis flutuantes, como no Rocruzta Hub (TASK-121) ----------
+   Cabeçalho e rodapé ficam soltos sobre o fundo; a barra lateral e o braço de notificações são painéis de vidro (um recorte só, em #glass);
+   o palco (#col) é o painel de conteúdo, com vidro próprio. GAP = vão entre painéis e até a borda; RP = raio dos painéis. */
+const FR = { R: 22, RP: 18, GAP: 10, HEAD: 44, DOCK: 36, BOT: 56, SIDE_OPEN: 260, SIDE_MINI: 64, ARM_OPEN: 360, ARM_CLOSED: 10 };
+const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base não engrossa
+// abrir/fechar a barra lateral só com a largura animando (sem esmaecer): o conteúdo aberto fica com largura fixa e é revelado/escondido pela borda;
+// ao abrir, o conteúdo aberto entra no começo; ao fechar, o recolhido só entra quando a barra termina de encolher
+let sideSwapping = false;
+function toggleSide() {
+  if (sideSwapping) return;
+  sideSwapping = true;
+  const side = $('#side'), closing = !S.settings.sideCollapsed;
+  side.classList.add('anim');
+  S.settings.sideCollapsed = closing; save(); renderSide(); // o recolhido (centralizado) já entra no começo e acompanha a barra encolhendo
+  tween('sideW', closing ? FR.SIDE_MINI : FR.SIDE_OPEN, 240);
+  setTimeout(() => {
+    side.classList.remove('anim'); side.scrollLeft = 0; sideSwapping = false;
+    const cur = side.querySelector(`[data-pid="${UI.cur.p}"]`); if (cur) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' }); side.scrollLeft = 0; // traz o projeto atual à vista já com a barra no tamanho final
+  }, 250);
+}
 const sideTarget = () => (S.settings.sideCollapsed ? FR.SIDE_MINI : FR.SIDE_OPEN);
 const armTarget = () => (UI.actOpen ? FR.ARM_OPEN : FR.ARM_CLOSED);
 
-// anel fechado: contorno externo arredondado + recorte (o terminal) com os quatro cantos suavizados
-// telas que não são terminal nem chat (Plugins, Skills, MCPs, Consumo, Integrações, Configurações, sem projeto): sem recorte, contínuas com o vidro do app (TASK-042)
+// telas que não são terminal nem chat (Plugins, Skills, MCPs, Consumo, Integrações, Configurações, sem projeto): o painel de conteúdo desce até perto da base e sem o rodapé de funções (TASK-042)
 const flatMode = () => ['page', 'empty'].includes(mode());
-function framePath(W, H, S_, A, flat) {
-  const { R, RI, HEAD: h } = FR, b = GEO.bot;
-  const outer = `M${R} 0H${W - R}A${R} ${R} 0 0 1 ${W} ${R}V${H - R}A${R} ${R} 0 0 1 ${W - R} ${H}H${R}A${R} ${R} 0 0 1 0 ${H - R}V${R}A${R} ${R} 0 0 1 ${R} 0Z`;
-  const hole = `M${S_} ${h + RI}A${RI} ${RI} 0 0 1 ${S_ + RI} ${h}H${W - A - RI}A${RI} ${RI} 0 0 1 ${W - A} ${h + RI}V${H - b - RI}A${RI} ${RI} 0 0 1 ${W - A - RI} ${H - b}H${S_ + RI}A${RI} ${RI} 0 0 1 ${S_} ${H - b - RI}Z`;
-  return flat ? outer : outer + hole;
+const rrect = (x, y, w, h, r) => { r = Math.max(0, Math.min(r, w / 2, h / 2)); return `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`; };
+function framePath(W, H, S_, A, bot) {
+  const { RP, GAP, HEAD: h } = FR;
+  const side = rrect(GAP, h, S_ - 2 * GAP, H - h - bot, RP);
+  const aw = A - 2 * GAP; // painel de notificações: cresce junto com o braço
+  return aw > 2 ? side + rrect(W - A + GAP, h, aw, H - h - bot, RP) : side;
 }
 
 function layout() {
@@ -2124,15 +2377,17 @@ function layout() {
   if (!W || !H) return;
   const flat = flatMode();
   if (flat !== document.body.classList.contains('flatpage')) { document.body.classList.toggle('flatpage', flat); setTimeout(() => { if (typeof fitActive === 'function') fitActive(); }, 0); } // o palco muda de altura: reajusta o terminal
-  const d = framePath(W, H, GEO.sideW, GEO.armW, flat);
+  const bot = flat ? FR.GAP : GEO.bot; // o palco termina acima do rail inferior (terminal, chat, Web); a barra lateral e as notificações descem sempre até o chão
+  const d = framePath(W, H, GEO.sideW, GEO.armW, FR.GAP);
   $('#glass').style.clipPath = `path(evenodd, '${d}')`;
   $('#edgePath').setAttribute('d', d);
   document.documentElement.style.setProperty('--head', `${FR.HEAD}px`);
-  $('#side').style.width = `${GEO.sideW}px`;
-  $('#arm').style.width = `${GEO.armW}px`;
+  Object.assign($('#side').style, { left: `${FR.GAP}px`, width: `${GEO.sideW - 2 * FR.GAP}px` });
+  Object.assign($('#arm').style, { right: `${FR.GAP}px`, width: `${Math.max(0, GEO.armW - 2 * FR.GAP)}px` });
   $('#arm').classList.toggle('open', UI.actOpen && GEO.armW > 200);
-  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${flat ? 0 : GEO.bot}px` });
-  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: '0px', height: `${GEO.bot}px` }); // rodapé: dentro da base de vidro, sob o palco
+  document.documentElement.style.setProperty('--bot', `${FR.GAP}px`);
+  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${bot}px` });
+  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: `${FR.GAP}px`, height: `${FR.DOCK}px` }); // rail: ao lado da barra lateral, sob o palco; mesmo vão (GAP) acima, abaixo e dos lados
 }
 
 let tweening = 0; // durante a animação: sem sombra pesada e sem refazer o tamanho do terminal a cada quadro
@@ -2171,13 +2426,14 @@ async function applyBg() {
 }
 
 /* ---------- início ---------- */
+let BOOTED = false;
 (async function init() {
   const saved = await api.loadState();
+  const hadState = !!(saved && Array.isArray(saved.projects));
   if (saved && Array.isArray(saved.projects)) S = { ...saved, settings: { termOp: 88, sideCollapsed: false, ...(saved.settings || {}) } };
   S.settings.rail = S.settings.rail && S.settings.rail.v === RAIL_DEF.v ? { ...RAIL_DEF, ...S.settings.rail } : { ...RAIL_DEF };
-  S.settings.clear = { ...CLEAR_DEF, ...(S.settings.clear || {}), v: CLEAR_DEF.v };
-  if (S.settings.clear.closePrompt === GENERIC_CLOSE) S.settings.clear.closePrompt = ''; // a versão 1 gravava o texto genérico; agora vazio = automático
-  if (S.settings.clear.resumePrompt === GENERIC_RESUME) S.settings.clear.resumePrompt = '';
+  { const sc = S.settings.clear || {}; S.settings.clear = { v: CLEAR_DEF.v, alert: typeof sc.alert === 'number' ? sc.alert : CLEAR_DEF.alert, template: typeof sc.template === 'string' ? sc.template : null }; } // descarta os campos do modelo antigo (pedidos de fechar e retomar)
+  HANDOFF_DEF = await api.handoffTemplate();
   S.settings.notif = { ...NOTIF_DEF, ...(S.settings.notif || {}), v: NOTIF_DEF.v };
   if (S.lastLimits && !UI.limits) UI.limits = S.lastLimits; // últimos limites de 5 h / 7 d conhecidos (vindos do chat ou de um terminal); janelas já vencidas não aparecem (liveWin)
   for (const p of S.projects) {
@@ -2202,22 +2458,32 @@ async function applyBg() {
   const t0 = Date.now();
   await Promise.race([restoreOnOpen(), new Promise((ok) => setTimeout(ok, 8000))]); // teto: não trava a entrada se uma aba demorar
   await new Promise((ok) => setTimeout(ok, Math.max(0, 900 - (Date.now() - t0)))); // mínimo, para a animação não piscar
+  BOOTED = true;
   const sp = $('#splash');
   sp.classList.add('out');
   setTimeout(() => sp.remove(), 500);
+  setTimeout(() => maybeShowPatchNotes(hadState), 900);
 })();
 
-// ao abrir: reabre sozinho as abas que estavam abertas quando o app foi fechado, uma de cada vez (a ativa do projeto atual primeiro) para não pesar
-async function restoreOnOpen() {
-  const cur = curProject();
-  const rank = ({ p, t }) => (cur && p.id === cur.id ? (t.id === curTab(p)?.id ? 0 : 1) : 2);
-  const pend = S.projects.flatMap((p) => p.tabs.filter((t) => t.live && t.open && !t.archived).map((t) => ({ p, t }))).sort((a, b) => rank(a) - rank(b));
-  for (const { p, t } of pend) {
-    if (RT[t.id] && RT[t.id].alive) continue;
-    try { await launch(p, t, 'resume'); } catch { /* a aba mostra a própria falha */ }
-    await new Promise((ok) => setTimeout(ok, 400));
-  }
+// Reabertura sob demanda (TASK-125): ao abrir o app só o projeto que aparece é retomado; os outros têm as abas na lista (do estado salvo) e só retomam as conversas quando você abre o projeto.
+// Com 30 projetos abertos, retomar tudo na entrada demorava muito (um processo do Claude por aba de terminal). Cada projeto é retomado uma vez por abertura do app; a aba ativa vai primeiro.
+const RESTORING = new Map(); // id do projeto -> promessa (retomada já feita ou em andamento)
+function restoreProject(p) {
+  if (!p) return Promise.resolve();
+  if (RESTORING.has(p.id)) return RESTORING.get(p.id);
+  const act = p.activeTab;
+  const pr = (async () => {
+    const pend = p.tabs.filter((t) => t.live && t.open && !t.archived).sort((x, y) => (x.id === act ? 0 : 1) - (y.id === act ? 0 : 1));
+    for (const t of pend) {
+      if (RT[t.id] && RT[t.id].alive) continue;
+      try { await launch(p, t, 'resume'); } catch { /* a aba mostra a própria falha */ }
+      await new Promise((ok) => setTimeout(ok, 300));
+    }
+  })();
+  RESTORING.set(p.id, pr);
+  return pr;
 }
+async function restoreOnOpen() { await restoreProject(curProject()); }
 
 
 /* arrastar abas: pegue a aba e solte na nova posição; as outras abrem espaço na hora */

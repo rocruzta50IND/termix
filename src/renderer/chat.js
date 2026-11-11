@@ -89,7 +89,10 @@ const CHAT_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const CHAT_ICON = {
   copy: '<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
-  send: '<path d="M12 19V5M5 12l7-7 7 7"/>',
+  send: '<path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  clip: '<path d="M21.4 11.05l-9.2 9.2a6 6 0 0 1-8.5-8.5l8.6-8.6a4 4 0 0 1 5.7 5.7l-8.6 8.6a2 2 0 0 1-2.8-2.8l8.5-8.5"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
   stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>',
   laptop: '<rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 20h20"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
@@ -105,8 +108,8 @@ function chatView(tab) {
   root.innerHTML = `<div class="c-empty"><div class="c-mascot"><svg viewBox="0 0 32 32" fill="none"><path d="M5 9l8 7-8 7" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 24h11" stroke="#8cc0ff" stroke-width="3" stroke-linecap="round"/></svg></div><h2></h2><p></p></div>
     <div class="c-scroll"><div class="c-thread"><div class="c-typing"><span class="c-av">${CHAT_MARK}</span><div class="c-st"><div class="c-st1"><b class="v"></b><span class="t"></span></div><div class="c-st2"></div></div></div></div></div>
     <div class="c-comp"><div class="c-box"><div class="c-slash" role="listbox"></div>
-      <div class="c-in"><div class="c-thumbs"></div><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
-        <button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send')}</button>
+      <div class="c-in"><div class="c-thumbs"></div><button class="c-soon c-attach" type="button" data-soon="Em breve" aria-label="Anexar arquivo (em breve)" aria-disabled="true" tabindex="-1">${chatIc('plus', 20)}</button><textarea rows="1" placeholder="Descreva uma tarefa ou faça uma pergunta"></textarea>
+        <button class="c-soon c-mic" type="button" data-soon="Em breve" aria-label="Falar (em breve)" aria-disabled="true" tabindex="-1">${chatIc('mic', 18)}</button><button class="c-send" type="button" title="Enviar (Enter)" aria-label="Enviar">${chatIc('send', 20)}</button>
         <button class="c-stop" type="button" title="Parar a resposta" aria-label="Parar">${chatIc('stop')}</button></div>
       <div class="c-meta"><span class="c-env">${chatIc('laptop', 15)}Este computador</span><span class="c-env c-folder">${chatIc('folder', 15)}<span></span><em></em></span><span class="sp"></span><span class="c-mdl"></span><span class="c-perm"></span></div>
     </div></div>`;
@@ -347,7 +350,7 @@ function chatUi(tab) {
 function showChat(tab) {
   const c = chatView(tab), f = findTab(tab.id);
   chatEnsure(tab);
-  $('#termHost').classList.add('hide'); $('#chatHost').classList.remove('hide'); $('#sess').classList.add('chatmode');
+  $('#termHost').classList.add('hide'); $('#chatHost').classList.remove('hide', 'wf2'); $('#sess').classList.add('chatmode');
   $('#chatHost').querySelectorAll('.c-root').forEach((el) => el.classList.toggle('on', el === c.root));
   if (!c.loaded) {
     c.loaded = true;
@@ -373,6 +376,17 @@ function showChat(tab) {
 }
 
 /* ---------- ciclo de vida ---------- */
+// Workflow: os dois chats fixos aparecem lado a lado, cada um com o seu título e a etiqueta Dangerously
+function showWorkflow(p) {
+  const ts = p.tabs.filter((t) => t.wf).sort((x, y) => x.wf - y.wf);
+  ts.slice().sort((x) => (x.id === p.activeTab ? 1 : -1)).forEach((t) => showChat(t)); // a guia ativa é a última e fica com o foco
+  ts.forEach((t) => {
+    const c = chatView(t);
+    c.root.classList.add('on');
+    if (!c.root.querySelector('.c-wfh')) c.root.insertAdjacentHTML('afterbegin', `<div class="c-wfh"><b>Terminal ${t.wf}</b><em>${chatIc('alert', 12)} Dangerously</em></div>`);
+  });
+  $('#chatHost').classList.add('wf2');
+}
 function chatOpen(p, tab) { // chamado por launch(): a aba de chat não sobe processo até a primeira mensagem
   chatEnsure(tab); chatView(tab);
   setSt(tab, 'wait');
@@ -381,14 +395,14 @@ function chatOpen(p, tab) { // chamado por launch(): a aba de chat não sobe pro
 async function chatSpawn(p, tab) {
   const r = chatEnsure(tab), c = chatView(tab);
   const resume = !!tab.started && await api.sessionExists(p.path, tab.sessionId); // sem histórico gravado não há o que retomar
-  const res = await api.chatStart({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, resume, perm: tab.perm });
+  const res = await api.chatStart({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, resume, perm: tab.perm, handoff: !!c.handoff && !resume }); // c.handoff: resumo do Clear nativo à espera da conversa nova
   if (!res.ok) {
     r.alive = false; setSt(tab, 'fail');
     chatSys(c, res.error, true);
     addEvent({ c: tab.color, who: tab.name, msg: res.error, kind: 'error', acts: [['Tentar de novo', 'restart', tab.id]] });
     return false;
   }
-  r.alive = true; r.killing = false; r.spawnAt = Date.now(); sendSummary();
+  r.alive = true; r.killing = false; r.spawnAt = Date.now(); c.handoff = false; sendSummary();
   return true;
 }
 async function chatSendMsg(tab, text, imgs = []) {
@@ -443,45 +457,26 @@ async function chatNew(p, tab) {
   c.items = []; c.byIdx = {}; c.busy = false; c.seen = new Set(); c.loaded = true; c.modelName = '';
   chatRenderAll(c); delete MET[tab.id]; setSt(tab, 'wait'); chatUi(tab); renderRail();
 }
-// Clear do chat com as mesmas opções do terminal: "Só limpar" (conversa nova) ou "Fechar a tarefa e limpar" (o agente registra o que fez,
-// a conversa nova começa e ele retoma pelos arquivos do projeto). Aqui sabemos exatamente quando o agente terminou (evento `result`).
+// Clear do chat: um modal com Confirmar; o app monta o resumo, abre a conversa nova e o agente já o recebe (sem volta do Claude)
 async function chatClearFlow(p, tab) {
   const c = chatView(tab);
   if (c.busy || c.flow) return;
-  const pr = await clearPrompts(p);
+  const ch = await modal(clearModal());
+  if (ch.value !== 'ok') return;
+  await chatClearNative(p, tab);
+}
+// Clear nativo (TASK-117): o app monta o resumo antes de trocar a conversa e o entrega ao processo novo (`--append-system-prompt-file`); nenhuma volta do Claude
+async function chatClearNative(p, tab) {
+  const c = chatView(tab);
   if (c.busy || c.flow) return;
-  const nota = pr.fl ? `<p class="meta">Projeto no fluxo Rocruzta${pr.info.role ? ` · papel ${esc(pr.info.role)}` : ''}: o fechamento e a retomada seguem o fluxo e leem só o necessário.</p>` : '';
-  const ch = await modal({
-    title: 'Limpar o contexto?',
-    body: '<p>Uma <b>conversa nova</b> começa vazia; a atual continua guardada pelo Claude Code e pode ser retomada pelo ID. <b>Fechar a tarefa e limpar</b> pede antes ao agente para registrar o que foi feito e, ao terminar, começa a conversa nova e manda ele retomar pelos arquivos do projeto.</p>' + nota,
-    buttons: pr.canClose ? [['Cancelar', null], ['Só limpar', 'only'], ['Fechar a tarefa e limpar', 'full', 'pri']] : [['Cancelar', null], ['Só limpar', 'only', 'pri']],
-  });
-  if (ch.value === 'only') { chatNew(p, tab); return; }
-  if (ch.value !== 'full') return;
-  c.flow = { step: 'closing', t0: Date.now() }; const n0 = c.items.length; // só vale o aviso final escrito DEPOIS deste pedido
-  renderRail(); dockRefresh();
-  addEvent({ c: tab.color, who: tab.name, msg: 'Fechando a tarefa antes de limpar…' });
-  try {
-    await chatSendMsg(tab, pr.close);
-    const t0 = Date.now();
-    while (c.busy && Date.now() - t0 < 20 * 60 * 1000) await new Promise((r) => setTimeout(r, 500)); // espera o agente terminar (teto de 20 min)
-    if (!c.flow || !CH[tab.id]) return; // a aba foi fechada ou o fluxo cancelado
-    const marcou = c.items.slice(n0).some((it) => it.k === 'ai' && it.text.includes(CLEAR_MARK)); // o agente escreveu o aviso final combinado
-    if (!marcou) { // sem o aviso final (pediu aprovação, deu erro, negou algo ou foi interrompido): pergunta, como no terminal
-      c.flow = { step: 'asking', t0: Date.now() }; dockRefresh();
-      const ask = await modal({
-        title: 'A tarefa foi registrada?',
-        body: '<p>Não encontrei o aviso de que o fechamento terminou (o agente pode ter pedido a sua aprovação, ter sido interrompido, ter tido um erro ou ter deixado algo pendente). Olhe a conversa antes de decidir.</p>',
-        buttons: [['Não limpar', null], ['Limpar e retomar mesmo assim', 'ok', 'pri']],
-      });
-      if (ask.value !== 'ok') return;
-    }
-    c.flow = { step: 'clearing', t0: Date.now() }; dockRefresh();
-    await chatNew(p, tab);
-    await chatSendMsg(tab, pr.resume);
-  } finally {
-    c.flow = null; renderRail(); dockRefresh();
-  }
+  const tpl = clearTemplate();
+  const h = tpl === '' ? null : await api.handoffPrepare({ tabId: tab.id, cwd: p.path, sessionId: tab.sessionId, template: tpl }); // antes do chatNew, que troca o ID da conversa
+  if (c.busy || c.flow) { api.handoffDrop(tab.id); return; }
+  await chatNew(p, tab);
+  const n = h && h.ok ? h.chars : 0;
+  c.handoff = n > 0;
+  chatSys(c, n ? `Contexto limpo. O Claude já recebe um resumo do ponto em que vocês estavam (${n} caracteres, ~${fmtTok(Math.round(n / 3.4))} tokens) e continua sem reler o projeto.` : tpl === '' ? 'Contexto limpo. Conversa nova, sem resumo (o modelo está vazio em Configurações).' : 'Contexto limpo. Não havia histórico para resumir.');
+  addEvent({ c: tab.color, who: tab.name, msg: n ? `Contexto limpo · resumo de ${n} caracteres (~${fmtTok(Math.round(n / 3.4))} tokens) entregue ao agente` : 'Contexto limpo' });
 }
 async function chatExport(tab) { // "Exportar texto" do menu da aba, para o chat
   const c = CH[tab.id];

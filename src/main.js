@@ -107,6 +107,8 @@ function findInPath(names) {
 
 const METRICS_DIR = () => path.join(app.getPath('userData'), 'metrics');
 const BIN_DIR = () => path.join(__dirname, 'bin');
+// resumo de retomada do Clear (TASK-117): o app grava aqui e o Claude Code o lê na conversa nova (hook no terminal, arquivo no chat)
+const HANDOFF_FILE = (tabId) => path.join(METRICS_DIR(), `handoff-${String(tabId).replace(/[^\w-]/g, '')}.txt`);
 const OPEN_HINT = 'Se o comando termix-open existir, voce esta dentro do app Termix: para abrir paginas locais, como um index.html ou um servidor em localhost, use termix-open seguido do caminho do arquivo ou do endereco local, por exemplo termix-open index.html ou termix-open http://localhost:3000, em vez de start, open ou do navegador padrao. Se o comando nao existir, abra do jeito normal.';
 // ambiente do terminal do Termix: comando termix-open no PATH e BROWSER apontando para ele, só nesta sessão (terminais fora do app não mudam)
 function sessionEnv(tabId) {
@@ -239,6 +241,25 @@ ipcMain.handle('flow:info', (_e, dir) => {
     return { on: true, role: role.toUpperCase(), branch, validacao: Array.isArray(cfg.validacao) ? cfg.validacao.filter((x) => typeof x === 'string') : [] };
   } catch { return { on: false }; }
 });
+// resumo de retomada (TASK-117): monta e deixa gravado para a conversa nova ler; `drop` apaga se o Clear não aconteceu
+ipcMain.handle('handoff:prepare', (_e, a) => {
+  try {
+    if (!a || typeof a.tabId !== 'string' || typeof a.cwd !== 'string' || !/^[0-9a-f-]{36}$/i.test(String(a.sessionId))) return { ok: false };
+    let info = null;
+    try {
+      const loc = fs.readFileSync(path.join(a.cwd, 'CLAUDE.local.md'), 'utf8');
+      info = { role: ((/^\s*papel:\s*"?([A-Za-z0-9]+)/m.exec(loc) || [])[1] || '').toUpperCase(), branch: (/^\s*branch_padrao:\s*"?([\w/.-]*)/m.exec(loc) || [])[1] || '' };
+    } catch { /* sem papel definido */ }
+    const h = require('./handoff').buildHandoff({ cwd: a.cwd, sessionId: a.sessionId, info, template: typeof a.template === 'string' ? a.template : null });
+    const file = HANDOFF_FILE(a.tabId);
+    if (!h) { try { fs.unlinkSync(file); } catch { /* nada a apagar */ } return { ok: true, text: '', chars: 0 }; }
+    fs.mkdirSync(METRICS_DIR(), { recursive: true });
+    fs.writeFileSync(file, h.text, 'utf8');
+    return { ok: true, text: h.text, chars: h.chars, task: h.task, files: h.files };
+  } catch (err) { return { ok: false, error: String((err && err.message) || err) }; }
+});
+ipcMain.handle('handoff:template', () => require('./handoff').DEFAULT_TEMPLATE);
+ipcMain.on('handoff:drop', (_e, a) => { if (a && typeof a.tabId === 'string') { try { fs.unlinkSync(HANDOFF_FILE(a.tabId)); } catch { /* já consumido */ } } });
 ipcMain.handle('clip:read', () => clipboard.readText());
 ipcMain.on('clip:write', (_e, t) => clipboard.writeText(String(t)));
 // aviso do Windows quando o app está em segundo plano; clicar nele traz a janela e abre a aba
@@ -329,13 +350,13 @@ ipcMain.on('pty:kill', (_e, { tabId }) => { const p = procs.get(tabId); if (p) {
 
 /* ---------- IPC: modo Chat (claude -p em stream-json, sem terminal) ---------- */
 const chat = require('./chat')({
-  findClaude, sessionEnv, hint: OPEN_HINT,
+  findClaude, sessionEnv, hint: OPEN_HINT, handoffFile: HANDOFF_FILE,
   emit: (channel, msg) => { if (!quitting && win && !win.isDestroyed()) win.webContents.send(channel, msg); },
 });
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 ipcMain.handle('chat:start', (_e, a) => {
   if (!a || typeof a.tabId !== 'string' || !UUID_RE.test(String(a.sessionId)) || typeof a.cwd !== 'string') return { ok: false, error: 'Pedido inválido.' };
-  return chat.start({ tabId: a.tabId, cwd: a.cwd, sessionId: a.sessionId, resume: !!a.resume, perm: a.perm === 'd' ? 'd' : 'n' });
+  return chat.start({ tabId: a.tabId, cwd: a.cwd, sessionId: a.sessionId, resume: !!a.resume, perm: a.perm === 'd' ? 'd' : 'n', handoff: !!a.handoff });
 });
 ipcMain.handle('chat:send', (_e, a) => (a && typeof a.tabId === 'string' && typeof a.text === 'string' ? chat.send(a) : { ok: false }));
 ipcMain.handle('chat:permit', (_e, a) => (a && typeof a.tabId === 'string' && typeof a.requestId === 'string' ? chat.permit(a) : { ok: false }));
@@ -502,7 +523,7 @@ function cleanOldMetrics() {
   try {
     const dir = METRICS_DIR(), lim = Date.now() - 7 * 864e5;
     for (const f of fs.readdirSync(dir)) {
-      if (!/^(tab|hook|open)-.*\.json$/.test(f)) continue;
+      if (!/^(tab|hook|open)-.*\.json$/.test(f) && !/^handoff-.*\.txt$/.test(f)) continue;
       const full = path.join(dir, f);
       try { if (fs.statSync(full).mtimeMs < lim) fs.unlinkSync(full); } catch { /* ignora */ }
     }
@@ -522,11 +543,39 @@ ipcMain.handle('consumo:get', () => (consumo ? consumo.snapshot() : { updated: D
 // módulo Vibe Coding e Mutirão (DEV2-001/002, experimental): isolado em src/vibe, registra os próprios canais 'vibe:*' com try/catch; um erro nele nunca derruba o app
 let vibe = null; try { vibe = require('./vibe').create({ ipcMain, dialog, app, getWin: () => win, logError }); } catch (e) { logError(e); }
 
+if (!RUN_MODE) require('./code').setup(ipcMain); // tela Código (TASK-102)
+
 // branch git da pasta de um projeto (para o rail); vazio se não for repositório ou sem git
 ipcMain.handle('git:branch', (_e, cwd) => new Promise((resolve) => {
   if (!cwd || !fs.existsSync(cwd)) return resolve('');
   execFile('git', ['-C', cwd, 'branch', '--show-current'], { timeout: 3000, windowsHide: true }, (err, out) => resolve(err ? '' : String(out).trim()));
 }));
+
+/* Atalhos com o ícone novo. O Termix.exe é um "casco" fixo (TASK-081) e carrega o ícone antigo; o Windows usa o ícone do atalho (menu Iniciar / área de trabalho / barra de tarefas) para o botão do app.
+   Roda ANTES de criar a janela (o botão da barra de tarefas é criado com o ícone do atalho; consertar depois só valia na abertura seguinte). Ao abrir, aponta o ícone desses atalhos para assets/icon.ico (o do app instalado), sem mexer no exe e sem trocar o resto do atalho. */
+function repairShortcutIcons() {
+  if (process.platform !== 'win32' || !app.isPackaged) return;
+  try {
+    const icon = path.join(__dirname, '..', 'assets', 'icon.ico');
+    if (!fs.existsSync(icon)) return;
+    const ad = app.getPath('appData');
+    let changed = false;
+    const links = [
+      path.join(app.getPath('desktop'), 'Termix.lnk'),
+      path.join(ad, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Termix.lnk'),
+      path.join(ad, 'Microsoft', 'Internet Explorer', 'Quick Launch', 'User Pinned', 'TaskBar', 'Termix.lnk'),
+    ];
+    for (const lnk of links) {
+      if (!fs.existsSync(lnk)) continue;
+      const cur = shell.readShortcutLink(lnk);
+      if (String(cur.target || '').toLowerCase() !== process.execPath.toLowerCase()) continue; // só atalhos deste Termix
+      if (String(cur.icon || '').toLowerCase() === icon.toLowerCase()) continue;
+      shell.writeShortcutLink(lnk, 'update', { icon, iconIndex: 0 }); changed = true;
+    }
+    // o Windows guarda o ícone do botão da barra de tarefas: pede para renovar o cache de ícones (inofensivo)
+    if (changed) execFile('ie4uinit.exe', ['-show'], { windowsHide: true }, () => {});
+  } catch { /* o ícone do atalho nunca atrapalha a abertura */ }
+}
 
 /* ---------- ciclo de vida ---------- */
 if (!RUN_MODE) {
@@ -548,7 +597,7 @@ if (!RUN_MODE) {
   if (!app.requestSingleInstanceLock()) app.quit();
   else {
     app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } createWindow(); setTimeout(cleanOldMetrics, 5000); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
+    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } repairShortcutIcons(); createWindow(); setTimeout(cleanOldMetrics, 5000); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
   }
   app.on('quit', () => { if (!wantRelaunch) require('./updater').applyStagedOnQuit(); }); // TASK-069: versão nova já preparada entra no lugar ao fechar
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });

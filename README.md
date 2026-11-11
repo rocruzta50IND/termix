@@ -40,7 +40,7 @@ Uma janela só para todas as suas conversas com o **Claude Code**. O Termix orga
 ## Primeiros passos
 
 - O botão **+** da barra de abas cria uma aba no modo escolhido em **Configurações > Chat** (Chat é o padrão); o menu ao lado do **+** tem os dois modos.
-- No rodapé, **Clear** começa uma conversa nova na aba, **Reiniciar** reinicia o processo mantendo a conversa e o botão **Terminal/Chat** abre a mesma aba no outro modo.
+- No rodapé, **Clear** (um clique em Confirmar) limpa o contexto na hora e já entrega ao agente um resumo do ponto em que vocês estavam, sem ele reler o projeto (o resumo é montado pelo app, sem gastar o Claude), **Reiniciar** reinicia o processo mantendo a conversa e o botão **Terminal/Chat** abre a mesma aba no outro modo.
 - No chat, digite `/` no começo da mensagem para escolher uma skill ou comando, e cole ou arraste imagens para a caixa.
 - Para o Claude executar sem pedir permissão, use as abas em **Automático**; para aceitar edições de arquivo e perguntar o resto na conversa, **Perguntar** (em Configurações > Chat). No terminal, a opção **Dangerously** ignora as verificações de permissão e não tem isolamento do sistema: use com cuidado.
 

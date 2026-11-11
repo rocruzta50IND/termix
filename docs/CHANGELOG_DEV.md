@@ -6,6 +6,108 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-10
+
+**TASK-130 — Acabamento da barra lateral** (DEV1)
+
+- ⋯ do projeto só com os pontinhos no hover e afastado da seta; animação de abrir/fechar as funções com fade; recolher a barra lateral agora mostra o modo recolhido desde o início (`toggleSide`). `npm run check` ok. Validada pelo usuário; sem Release.
+
+**Promoção dev1 → main — TASK-129 (versão 0.6.1)** (DEV1)
+
+- Aprovada pelo usuário ("publique a 0.6.1") depois de ver as telas no app em desenvolvimento. Promovidos os commits da `dev1` desde a 0.6.0: canto arredondado em todas as telas planas (TASK-129), versão 0.6.1 com a entrada em `patchnotes.js` e a nota sobre o destino da tela Integrações em `docs/DECISOES.md`. `npm run check` ok. TASK-129 → CONCLUÍDA. Release v0.6.1 publicado em 2026-11-10 a pedido do usuário (`main` `08ecc93`): https://github.com/rocruzta50IND/termix/releases/tag/v0.6.1 — instalador 125.034.037 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.6.1.
+
+**TASK-129 — Canto arredondado em todas as telas planas (versão 0.6.1)** (DEV1)
+
+- A folha do palco (`#col`) das telas planas tinha o canto reto; agora usa `var(--r)` como o resto do app (Novo chat/workflow, Consumo, Integrações, Configurações, Conectores, Código e tela vazia). Só CSS. Versão 0.6.1 e novidades preparadas; **não publicada**. `npm run check` ok. Aguarda o usuário.
+
+**Promoção dev1 → main — TASK-102 (versão 0.6.0)** (DEV1)
+
+- A pedido do usuário ("crie a release dessas alterações"), promovidos `7e5501d`..`d0f7a09`: tela Código (primeiro corte, com terminais embaixo) e versão 0.6.0 com a entrada em `patchnotes.js`; TASK-128 no Backlog. `npm run check` ok. A TASK-102 segue em andamento (ajustes e pendências); a promoção levou só o primeiro corte. Release v0.6.0 publicado em 2026-11-10 a pedido do usuário (`main` `145c8a4`): https://github.com/rocruzta50IND/termix/releases/tag/v0.6.0 — instalador 125.033.883 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.6.0.
+
+**TASK-102 — Tela Código (primeiro corte)** (DEV1)
+
+- Terminais do projeto embaixo da tela (abas e sessão ativa, botão Terminal, divisória arrastável); folha do palco arredondada; versão **0.6.0**. TASK-128 (abas unificadas) registrada no Backlog.
+- Nova subaba **Código** em cada projeto, abaixo de Conectores, no estilo do VS Code: explorador com **Alterações** (git status, +/− por arquivo) e árvore de arquivos, abas, leitor com realce simples e diff colorido. Somente leitura; atualiza as mudanças a cada 4 s com a tela aberta. Código em `src/code.js` e `src/renderer/code.js`. `npm run check` ok; testado por CDP em instância isolada. Aguarda o usuário testar e pedir ajustes.
+
+**Limpeza do TASKS.md** (DEV1)
+
+- A pedido do usuário ("as demais que estão em andamento e aguardando validação também foram finalizadas, acredito eu"), as tarefas das seções *Em andamento*, *Aguardando validação DEV1* e *Validadas em DEV1* foram movidas para *Concluídas* (27 tarefas; o estado que tinham fica registrado em cada uma). Exceção: a **TASK-109** (pedidos de permissão em fila) nunca foi implementada e voltou ao *Backlog*. Tudo o que estava validado já está na `main` desde a 0.5.0. A TASK-116 (DEV2) foi fechada pela palavra do usuário; o DEV1 não consultou a `dev2` (trava de contexto).
+
+**Promoção dev1 → main — TASK-127 (versão 0.5.0)** (DEV1)
+
+- Aprovada pelo usuário ("perfeito isso mesmo, pode migrar e subir a release") depois de ver a tela no app em desenvolvimento. Promovidos `b9cf6f1`..`2c3dbec` (protótipo aprovado, levantamento das fontes, tela Conectores e versão 0.5.0 com a entrada em `patchnotes.js`). `npm run check` ok. TASK-127 → CONCLUÍDA. Release v0.5.0 publicado em 2026-11-10 a pedido do usuário (`main` `ef5b951`): https://github.com/rocruzta50IND/termix/releases/tag/v0.5.0 — instalador 125.024.318 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.5.0.
+
+**TASK-127 — Conectores: Plugins, Skills e MCPs numa tela só** (DEV1)
+
+- Protótipo estático aprovado pelo usuário (`docs/exemplos/conectores/index.html`, a partir das telas Skills/Conectores/Plugins/Diretório do Claude) e levantamento das fontes reais (CLI `claude plugin list --available --json`, `claude plugin marketplace`, registro público de MCP). Sem avaliação de usuários em nenhuma fonte; só instalações.
+- App: a barra lateral do projeto passa a ter **Terminais** e **Conectores** (saem Plugins, Skills e MCPs). Aba **Meus** (lista agrupada por origem, filtro por tipo/escopo/estado, ordenar, interruptor "aqui", ⋯ Gerenciar) e aba **Descobrir** (Anthropic ~316, Diretório ~3,7 mil, Meus marketplaces e Registro MCP com busca no servidor; 24 por vez + "Mostrar mais"). Menu **+ Adicionar**: conector personalizado (MCP), marketplace, instalar plugin e nova skill. Esqueleto de carregamento nas duas abas.
+- Código: `src/renderer/app.js` (bloco Conectores no lugar das três telas: `conItems`, `conMeusHTML`, `conDescHTML`, `conAct`, fluxos `plInstallQuick`, `regAddFlow`, `marketplaceFlow`, `conMore`), `src/renderer/styles.css` (bloco `cn-*`), `src/resources.js` (`marketplaceAdd`, `mcpRegistry`, `pluginsAvailable` com instalações e versão). `docs/DECISOES.md` e `docs/DESIGN.md` atualizados.
+- Validação: `npm run check` ok; testado por CDP numa instância isolada (esqueleto, Meus com 50 itens em 4 grupos, Descobrir com 316 plugins, Registro MCP com busca "github" e "Mostrar mais" 30 → 60, menu Adicionar, filtros, modais de conector/marketplace/instalar), 0 erros de JavaScript. Não testado: instalar de fato um plugin, adicionar um marketplace e ligar/desligar (só abrem os modais). Aguarda validação do usuário.
+
+**Encerramento — TASK-121, TASK-124 e TASK-125** (DEV1)
+
+- Aprovadas pelo usuário ("finalizado") depois de usar as versões 0.4.0 a 0.4.3: layout novo do Rocruzta Hub, janela de novidades, ícone dos atalhos e da barra de tarefas, reabertura sob demanda. Releases v0.4.0, v0.4.1, v0.4.2 e v0.4.3 publicados. Pendente: medir a abertura com os 30 projetos reais (TASK-125). Backlog: TASK-122 (tema claro), TASK-123 (anexar e falar), TASK-126 (ícone do `Termix.exe`) e, **no escopo MVP**, TASK-127 (Conectores: tela única para Plugins, Skills e MCPs, com busca, modal "Adicionar conector" e carregamento com esqueleto; começa por um index de exemplo).
+
+**TASK-124 (continuação) — Ícone da barra de tarefas na primeira abertura (versão 0.4.3)** (DEV1)
+
+- O conserto dos atalhos passou a rodar antes de criar a janela e renova o cache de ícones do Windows; antes o botão da barra de tarefas era criado com o ícone antigo e só a abertura seguinte mostrava o novo. `npm run check` ok; só roda no app instalado. Promovida à `main` e publicada como Release v0.4.3 em 2026-11-10 a pedido do usuário: https://github.com/rocruzta50IND/termix/releases/tag/v0.4.3 (instalador 125.018.886 bytes, sha512 conferido).
+
+**Promoção dev1 → main — TASK-125 (versão 0.4.2)** (DEV1)
+
+- Promovida a TASK-125 (reabertura sob demanda) com a versão 0.4.2 e a entrada em `patchnotes.js`. Instalador gerado em `distTermix-Setup-0.4.2.exe`; Release v0.4.2 publicado em 2026-11-10 a pedido do usuário: https://github.com/rocruzta50IND/termix/releases/tag/v0.4.2 (instalador 125.018.766 bytes, sha512 conferido; feed público mostra 0.4.2).
+
+**TASK-125 — Abrir o app rápido com muitos projetos** (DEV1)
+
+- Reabertura sob demanda: ao abrir só o projeto da tela retoma as conversas; os outros retomam quando o usuário os abre (`restoreProject`/`RESTORING` em `app.js`). Antes todas as abas de todos os projetos eram retomadas na entrada (um processo por aba de terminal). Teste por CDP com 10 projetos × 2 terminais: na entrada subiram 2 processos em vez de 20; flags `live` dos não visitados preservados. `npm run check` ok. Aguarda o usuário medir com os 30 projetos reais; versão 0.4.2 quando ele aprovar.
+
+**TASK-124 — Novidades da versão e ícone nos atalhos (versão 0.4.1)** (DEV1)
+
+- Janela "Novidades da versão" (Novo/Melhorado/Corrigido) ao abrir depois de atualizar, com o texto em `patchnotes.js`; clicar na versão do cabeçalho abre de novo. Ícone dos atalhos (menu Iniciar, área de trabalho, barra de tarefas) corrigido ao abrir, sem mexer no `Termix.exe`. Clique no nome do projeto agora abre o projeto; a setinha só abre/fecha as funções. `npm run check` ok; testado por CDP. Barra lateral abre/fecha só com a largura animando (sem esmaecer) e sem ficar deslocada para o lado. Promovida à `main` e publicada como Release v0.4.1 a pedido do usuário em 2026-11-10 (`main` `1103664`): https://github.com/rocruzta50IND/termix/releases/tag/v0.4.1 — instalador 125.018.382 bytes, sha512 conferido; o feed público já mostra 0.4.1.
+
+**Promoção dev1 → main — TASK-120 e TASK-121 (versão 0.4.0)** (DEV1)
+
+- Promovidos `1aa1fe0`..`12add1b` (registro da 0.3.9, identidade visual do Rocruzta Hub, refinamentos do layout novo e versão 0.4.0). Validado pelo usuário com o instalador 0.4.0. `npm run check` ok. Release v0.4.0 publicado em 2026-11-10 a partir da `main` (`4e2bb5c`): https://github.com/rocruzta50IND/termix/releases/tag/v0.4.0 — instalador 125.015.503 bytes, sha512 conferido com o `latest.yml`; o feed público já mostra 0.4.0.
+
+**TASK-121 — Versão 0.4.0 (instalador gerado)** (DEV1)
+
+- Versão 0.4.0 (`package.json` e `package-lock.json`) com o layout novo da TASK-121. Instalador gerado em `distTermix-Setup-0.4.0.exe` (`npm run dist`, sem erros). **Não publicado** (sem Release no GitHub, sem promoção à `main`): o usuário instala e testa primeiro.
+
+## 2026-11-09
+
+**TASK-121 — Identidade visual do Rocruzta Hub no Termix** (DEV1)
+
+- Só aparência: tokens, fonte Inter (embutida), fundo azul-marinho, painéis de vidro flutuantes (barra lateral e notificações separadas, palco como painel de conteúdo), cabeçalho e rodapé soltos (dock), abas com sublinhado na cor da aba, itens da barra lateral, botões e controles com os raios do Hub, botão primário invertido. Nada do Hub entrou como função. Referência: `rocruzta-hub` commit `3a9638a`. Só tema escuro (claro: TASK-122).
+- Mexeu em `app.js` só na geometria (`FR`, `framePath`, `layout`), na cor padrão das abas e no tema do xterm. Testado por CDP em instância isolada (terminal, chat real, Web, telas, recolhida, notificações, modal); `npm run check` ok. Aguarda validação do usuário.
+- Refinamentos pedidos pelo usuário no mesmo dia: logo só com o símbolo e ícone do app novo; barra lateral em árvore de pastas (Chats/Workflows) e recolhida de 64 px; clique único no projeto abre/fecha as funções; rail inferior de ponta a ponta (modos, ações e ajustes em três grupos); vão único de 10 px; abas rentes ao campo; sem azul chapado nos botões; campo de envio estreito com "+" e microfone "Em breve" e enviar só com ícone. O que mexeu além do CSS: `app.js` (geometria, `renderSide`, `projToggle`, pastas `sideCats`, ícones), `web.js` (grupos do rail e ícones), `chat.js` (campo de envio), `index.html` e os SVGs de `assets/`. Regressão por CDP completa (terminal vivo, chat, Web, páginas, notificações, arrastar abas, maximizar), 0 erros de JavaScript; `npm run check` ok. Aprovado pelo usuário; commit na `dev1`.
+
+**TASK-120 — Versão 0.3.9** (DEV1)
+
+- Versão 0.3.9 com a TASK-119 (shell novo, modais novos, Workflow base). TASK-119 aprovada pelo usuário.
+
+**TASK-119 — Modal "Novo projeto" com modo de trabalho e permissão** (DEV1)
+
+- Modal maior com cartões: Chat, Terminal e Workflow (em breve) e a permissão da primeira aba; testado por CDP (primeira aba criada conforme a escolha). Aguarda validação.
+
+**TASK-118 — Fechamento: versão 0.3.8 validada** (DEV1)
+
+- O usuário validou o Clear no app instalado (0.3.8). TASK-118 movida para Concluídas.
+
+**TASK-117 — Clear instantâneo com resumo nativo** (DEV1)
+
+- O botão Clear deixou de pedir ao Claude para fechar a tarefa e retomar. Um modal só com **Confirmar** limpa na hora e o app entrega ao agente um resumo que ele mesmo monta (`src/handoff.js`: últimos pedidos, fim da última resposta, arquivos alterados, git e tarefa ativa; ~80 ms, ~700 tokens). No terminal o resumo entra pelo hook de início de sessão depois do `/clear`; no chat, por `--append-system-prompt-file`.
+- Configurações > Botão Clear mostra o **modelo completo do resumo**, editável, com "Restaurar o padrão do Termix" (apagar tudo = só limpar). Saíram "Fechar a tarefa e limpar", os pedidos de fechar e retomar, o `TERMIX-CLEAR-OK` e a medição da retomada.
+- Medido (3 repetições, `claude -p`, Sonnet): ~US$ 0,008 contra ~US$ 0,072 da retomada antiga, 1 chamada ao modelo contra 6, sem ler o `TASKS.md`; as respostas sabiam os arquivos alterados na conversa. Testado em chat e terminal reais (PTY e CDP numa cópia isolada do app), com modelo personalizado e restaurar. Validado pelo usuário no uso real (3 tarefas seguidas).
+- Observação: o Electron de desenvolvimento está bloqueado pelo Controle de Aplicativo do Windows nesta máquina; os testes de interface usaram uma cópia do Termix instalado com o código novo.
+
+**TASK-118 — Publicar a versão 0.3.8** (DEV1)
+
+- Release v0.3.8 publicado (instalador 125.196.500 bytes, sha512 conferido, `latest.yml` e `.blockmap`); promoção dev1 → main `21adec6`. Leva o Clear instantâneo com resumo nativo (TASK-117).
+- No caminho, `npm run dist` falhou no NSIS com `spawn UNKNOWN`: o **Smart App Control** (que estava em Avaliação em 05/11) passou a ligado e barrava o instalador recém-gerado e o Electron de `node_modules` (log Code Integrity, ids 3033/3077). O usuário desligou o Smart App Control pelo Windows (irreversível sem reinstalar); o build passou. Assinatura de código e build por GitHub Actions ficam como ideias.
+
+**Promoção dev1 → main (versão 0.3.8)** (DEV1)
+
+- Promovidas 14 commits: TASK-117 (Clear instantâneo com resumo nativo, o único com código), TASK-116 (DEV2 no fluxo) e o registro no Backlog das TASK-104, 108, 109, 110, 111 a 115. A TASK-118 acompanha a publicação da versão. A `main` não tinha commits fora da `dev1`; promoção em fast-forward.
+
 ## 2026-11-06
 
 **TASK-116 — DEV2 adicionado ao fluxo** (DEV1)

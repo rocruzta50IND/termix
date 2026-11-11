@@ -1,5 +1,6 @@
 // Hook do Claude Code usado pelo Termix: grava o último evento da sessão (iniciou, prompt enviado,
-// terminou, pediu atenção) para o app ler. Não imprime nada e nunca falha: não atrapalha o Claude Code.
+// terminou, pediu atenção) para o app ler. Nunca falha: não atrapalha o Claude Code. Única saída: depois de um /clear (SessionStart),
+// se o app deixou um resumo de retomada para esta aba (TASK-117), entrega-o ao Claude Code como contexto da conversa nova.
 const fs = require('fs');
 const path = require('path');
 
@@ -20,5 +21,15 @@ try { raw = fs.readFileSync(0, 'utf8'); } catch { /* sem entrada */ }
     const hf = path.join(dir, `hook-${id}.json`);
     fs.writeFileSync(hf + '.tmp', JSON.stringify(out));
     fs.renameSync(hf + '.tmp', hf);
+    if (event === 'SessionStart' && j.source === 'clear') {
+      const rf = path.join(dir, `handoff-${String(id).replace(/[^\w-]/g, '')}.txt`);
+      try {
+        if (Date.now() - fs.statSync(rf).mtimeMs < 5 * 60 * 1000) {
+          const text = fs.readFileSync(rf, 'utf8');
+          process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: text } }));
+        }
+        fs.unlinkSync(rf);
+      } catch { /* sem resumo para esta aba */ }
+    }
   } catch { /* silencioso */ }
 }
