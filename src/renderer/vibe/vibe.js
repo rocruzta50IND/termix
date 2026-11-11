@@ -46,17 +46,18 @@
     const c = cyOf(id);
     if (!c.loaded) { const r = await call('cicloGet', id); c.est = (r && r.estado) || null; c.loaded = true; }
     c.pol = await call('politicaGet', id); // DEV2-014: política de autonomia do projeto
+    c.deps = (await call('deployLista', id)) || []; // DEV2-016: deploys (versões) feitos pelo Termix
     if (c.est) await cyRead(id);
     return c;
   }
   function cySave(id) { const c = cyOf(id); if (c.est) call('cicloSet', id, c.est); paintCycle(); if (MP && MP.id === id && c.est && c.est.auto) mutPaint(); }
 
   // Aviso ao humano pelo mecanismo de notificações do app (painel do sino, dica, som e Windows sem foco).
-  function notifyHuman(p, tab, msg) {
+  function notifyHuman(p, tab, msg, acts) {
     try {
       const cfg = notifCfg();
       if (cfg.perm === false) return;
-      const ev = { c: tab ? tab.color : '#A78BFA', who: `Vibe Coding${p ? ` · ${p.name}` : ''}`, tabId: tab ? tab.id : undefined, msg, kind: 'perm', acts: tab ? [['Abrir', 'open', tab.id]] : [] };
+      const ev = { c: tab ? tab.color : '#A78BFA', who: `Vibe Coding${p ? ` · ${p.name}` : ''}`, tabId: tab ? tab.id : undefined, msg, kind: 'perm', acts: [...(Array.isArray(acts) ? acts : []), ...(tab ? [['Abrir', 'open', tab.id]] : [])] };
       addEvent(ev);
       if (!document.hasFocus() && cfg.win && tab) api.notify({ tabId: tab.id, title: `Vibe Coding · ${p ? p.name : ''}`, body: msg });
       showToast(ev); beep('perm');
@@ -391,6 +392,7 @@
   function pause(id, tipo, motivo, extra = {}) {
     const c = cyOf(id);
     if (!c.est || !c.est.exec) return;
+    const acts = extra.acts; delete extra.acts; // DEV2-016: botões no sino (Autorizar deploy / Negar)
     desfazPedido(c);
     c.gen++; cancelWaits(c); c.esperando = null;
     if (extra.interromper) { try { if (isAlive(extra.interromper)) api.write(extra.interromper, '\x1b'); } catch { /* aba já encerrada */ } delete extra.interromper; }
@@ -400,7 +402,7 @@
     c.est.exec.pausa = { tipo, motivo, desde: nowIso(), ...extra };
     cySave(id);
     const t = c.est.exec.tarefas[c.est.exec.k];
-    if (tipo !== 'limite' || !(x0 && x0.tipo === 'limite')) notifyHuman(projOf(id), tabOf(c.est.dev) || tabOf(c.est.orq), `${t ? `${t.id}: ` : ''}${motivo}`);
+    if (tipo !== 'limite' || !(x0 && x0.tipo === 'limite')) notifyHuman(projOf(id), tabOf(c.est.dev) || tabOf(c.est.orq), `${t ? `${t.id}: ` : ''}${motivo}`, acts);
   }
   /* ---------- recuperação de erro (DEV2-015) ----------
      Decisão do Ygor: erro simples não trava o projeto. Dev com erro, tempo limite ou sem sinal: o Termix grava um diagnóstico
@@ -411,13 +413,13 @@
      da revisão (2 refações + Continuar), que seguem como antes. */
   const REC_TXT = { reenviar: 'reenviar ao Dev', clear_dev: '/clear no Dev e recomeçar', f5_aba: 'F5 da aba do Dev', f5_projeto: 'F5 do projeto', dividir: 'dividir a tarefa', pular: 'pular (vira pendência)' };
   const voltasMax = (c) => { const p = c && c.pol && c.pol.politica; return p && p.recuperacao && typeof p.recuperacao.voltas === 'number' ? p.recuperacao.voltas : 3; };
-  const ZERA = { etapa: 'dev', tentativas: 0, extra: 0, extraRec: 0, refazer: null, enviadoDev: null, enviadoRev: null, semCommitOk: false, rec: null, semClear: false, manterBase: false };
+  const ZERA = { etapa: 'dev', tentativas: 0, extra: 0, extraRec: 0, refazer: null, enviadoDev: null, enviadoRev: null, semCommitOk: false, rec: null, semClear: false, manterBase: false, deployRetry: null };
   // Falha no meio da tarefa: Dev = recuperação (sem pausar); orquestrador = F5 da aba dele uma vez, depois pausa.
   function falha(id, key, motivo, extra = {}) {
     const c = cyOf(id), x = c.est && c.est.exec;
     if (!x || c.est.fase !== 'execucao') return;
     const t = x.tarefas[x.k];
-    if (!t) return;
+    if (!t) return pause(id, 'erro', motivo); // DEV2-016: no fim do ciclo (handoff de DEV2..DEV5) não há tarefa para recuperar
     if (key === 'orq') {
       if (x.orqF5 && x.orqF5.tarefa === t.id && !x.orqF5.pendente) return pause(id, 'erro', `${motivo} O Termix já reabriu a aba do orquestrador (F5) nesta tarefa e ele travou de novo. Veja a aba "${ORQ_NAME}" e clique em Continuar.`, extra);
       x.orqF5 = { tarefa: t.id, motivo, pendente: true, data: nowIso() };
@@ -445,14 +447,151 @@
     notifyHuman(projOf(id), tabOf(c.est.dev) || tabOf(c.est.orq), `${t.id} virou pendência: ${motivo}${rec.resumo ? ` · Diagnóstico: ${rec.resumo}` : ''}. O ciclo segue${prox ? ` com a ${prox.id}` : ''}.`);
     return null;
   }
+  /* ---------- deploy feito pelo Termix (DEV2-016) ----------
+     Decisões do Ygor: o deploy é do Termix, em código (src/vibe/deploy.js), nunca do agente; voltar versão é por git revert.
+     Etapa 'deploy' do ciclo (zero token): portão na branch de trabalho, junção na main, tag, envio sem força, receita e volta
+     para a branch. Portão, conflito ou árvore suja vão para a recuperação (DEV2-015): o Dev conserta na branch e o Termix
+     tenta de novo. Receita que falha depois do envio: pausa com "Rodar a receita de novo", "Voltar versão" e "Seguir sem
+     publicar"; o Termix não desfaz nada sozinho. */
+  async function depRefresh(id) { const c = cyOf(id); c.deps = (await call('deployLista', id)) || []; paintCycle(); return c.deps; }
+  const proxTarefa = (id, x, item, pend) => { // a tarefa atual vira feita (ou pendência) e o ciclo segue
+    const c = cyOf(id), t = x.tarefas[x.k];
+    x.pausa = null;
+    c.est = { ...c.est, fase: 'execucao', aviso: '' };
+    if (pend) { cySave(id); pendencia(id, pend); } else { x.feitas.push({ id: t.id, titulo: t.titulo, data: nowIso(), ...item }); Object.assign(x, { ...ZERA, k: x.k + 1 }); cySave(id); }
+    if (c.est.fase === 'execucao') execLoop(id);
+  };
+  async function deployEtapa(id, g, x, t, alive) {
+    const c = cyOf(id);
+    const pt = await call('politicaTarefa', id, t);
+    if (!alive()) return 'parar';
+    if (pt && pt.deploy === 'retido') { x.feitas.push({ id: t.id, titulo: t.titulo, deploy: 'retido', data: nowIso() }); Object.assign(x, { ...ZERA, k: x.k + 1 }); cySave(id); return; }
+    if (!pt || pt.deploy === 'pausar') { x.etapa = 'dev'; pause(id, 'deploy', `Tarefa de DEPLOY: "${t.titulo}". A política não permite o deploy automático agora; o Termix só segue com a sua liberação.`, { gate: t.id }); return 'parar'; }
+    x.sub = 'deploy'; x.deployEm = nowIso(); cySave(id);
+    const r = (await call('deployExec', id, 'ciclo')) || { ok: false, etapa: 'interno', motivo: 'Erro no deploy. Veja o erros.log.' };
+    x.ultimoDeploy = { tarefa: t.id, ok: !!r.ok, etapa: r.etapa || '', tag: r.tag || '', motivo: r.motivo || '', log: r.log || '', data: nowIso() };
+    depRefresh(id);
+    if (!alive()) return 'parar';
+    if (r.ok || r.etapa === 'nada') {
+      x.feitas.push({ id: t.id, titulo: t.titulo, deploy: r.ok ? 'feito' : 'nada', tag: r.ok ? r.tag : '', data: nowIso() });
+      Object.assign(x, { ...ZERA, k: x.k + 1 });
+      cySave(id);
+      if (r.ok) notifyHuman(projOf(id), tabOf(c.est.orq), `Deploy publicado pelo Termix: ${t.id}, tag ${r.tag}.${r.aviso ? ` ${r.aviso}` : ''}`);
+      return;
+    }
+    if (['portao', 'conflito', 'arvore', 'branch'].includes(r.etapa)) {
+      x.deployRetry = t.id; cySave(id);
+      falha(id, 'dev', `${r.motivo} O deploy da ${t.id} é feito pelo Termix: corrija na branch ${x.branch} (com commit) para o deploy poder sair; não publique você.`);
+      return 'parar';
+    }
+    if (r.etapa === 'receita') { pause(id, 'deploy', `${r.motivo} O Termix não desfez nada sozinho.`, { receita: r.tag, log: r.log }); return 'parar'; }
+    pause(id, 'erro', `Deploy da ${t.id}: ${r.motivo || 'falhou'} Clique em Continuar para tentar o deploy de novo.`);
+    return 'parar';
+  }
+  // "Pedir autorização": resumo (commits que entram, portão, receita) e o ponto de aprovação em arquivo (deploys\autorizacao.json)
+  async function pedirAutorizacao(id, t) {
+    const c = cyOf(id);
+    c.pol = (await call('politicaGet', id)) || c.pol; // a política pode ter sido editada fora da tela
+    const rs = await call('deployResumo', id);
+    await call('deployAut', id, 'pedir', { tarefa: t.id, resumo: rs });
+    const txt = rs && rs.ok ? `${plural(rs.commits.length, 'commit', 'commits')} da ${rs.branch} para a ${rs.principal} (${rs.modo}); portão: ${rs.portao || 'nenhum'}; receita: ${rs.receita.length ? rs.receita.join(' · ') : 'nenhuma'}.` : ((rs && rs.motivo) || '');
+    return pause(id, 'deploy', `Autorizar o deploy da ${t.id} ("${t.titulo}")? ${txt}`, { autorizacao: { tarefa: t.id, resumo: rs && rs.ok ? rs : null }, acts: [['Autorizar deploy', 'vibedep-ok', id], ['Negar', 'vibedep-no', id]] });
+  }
+  // Decisão da autorização: painel, sino ou (DEV2-019) Telegram, pelo mesmo caminho (o arquivo de autorização).
+  async function deployDecidir(id, decisao, origem) {
+    const c = cyOf(id), x = c.est && c.est.exec, pz = x && x.pausa;
+    if (!pz || !pz.autorizacao || c.decidindo) return false;
+    c.decidindo = true;
+    try {
+      const r = await call('deployAut', id, 'decidir', { decisao, origem: origem || 'painel' });
+      const lido = r && r.ok ? r : ((await call('deployAut', id, 'ler')) || {}); // já decidido por outro caminho (ex.: Telegram)
+      const st = lido.status;
+      if (st !== 'autorizado' && st !== 'negado') return false;
+      if (x.pausa !== pz) return false;
+      const t = x.tarefas[x.k], quem = (lido.decisao && lido.decisao.origem) || origem || 'painel';
+      if (st === 'autorizado') { x.autorizadas = [...(x.autorizadas || []), t.id]; x.pausa = null; x.etapa = 'deploy'; c.est = { ...c.est, fase: 'execucao', aviso: '' }; cySave(id); execLoop(id); }
+      else proxTarefa(id, x, null, `deploy negado (${quem})`);
+      return st;
+    } finally { c.decidindo = false; }
+  }
+  // "Retomar deploy": os retidos (e os "pendentes" da DEV2-014) saem num deploy só, com a branch de trabalho atual.
+  async function deployRetidos(id) {
+    const c = cyOf(id), x = c.est && c.est.exec;
+    const pend = x ? x.feitas.filter((f) => f.deploy === 'retido' || f.deploy === 'pendente') : [];
+    if (!pend.length) return null;
+    c.depMsg = 'Deploy dos retidos em andamento…'; paintCycle();
+    const r = (await call('deployExec', id, 'retomar')) || { ok: false, motivo: 'erro no deploy' };
+    if (r.ok || r.etapa === 'nada' || r.etapa === 'receita') for (const f of pend) Object.assign(f, { deploy: r.ok || r.enviado ? 'feito' : 'nada', tag: r.enviado ? r.tag : '', receitaFalhou: r.etapa === 'receita' });
+    c.depMsg = r.ok ? `Deploy dos retidos publicado (tag ${r.tag}).` : r.etapa === 'nada' ? 'Deploy dos retidos: nada novo a publicar.' : r.etapa === 'receita' ? `${r.motivo} Use "Rodar a receita de novo" ou "Voltar para antes deste" na lista de deploys.` : `O deploy dos retidos não saiu: ${r.motivo}`;
+    cySave(id); await depRefresh(id);
+    notifyHuman(projOf(id), tabOf(c.est && c.est.orq), c.depMsg);
+    return r;
+  }
+  // "Rodar a receita de novo" (receita que falhou depois do envio, ou depois de voltar versão)
+  async function depReceita(id, tag) {
+    const c = cyOf(id), x = c.est && c.est.exec;
+    if (c.esperando) { c.depMsg = 'Um agente está trabalhando: espere a tarefa atual terminar.'; paintCycle(); return null; }
+    c.depMsg = 'Rodando a receita de novo…'; paintCycle();
+    const r = (await call('deployReceita', id, tag)) || { ok: false, motivo: 'erro ao rodar' };
+    c.depMsg = r.ok ? `Receita rodou de novo: publicado${tag ? ` (${tag})` : ''}.` : `A receita falhou de novo: ${r.motivo}`;
+    await depRefresh(id);
+    const pz = x && x.pausa;
+    if (r.ok && pz && pz.receita && pz.receita === tag && c.est.fase === 'pausado') proxTarefa(id, x, { deploy: 'feito', tag });
+    else if (r.ok && x) { for (const f of x.feitas) if (f.tag === tag) f.receitaFalhou = false; cySave(id); }
+    return r;
+  }
+  // "Voltar versão": confirmação explícita no painel; git revert na main e envio sem força (src/vibe/deploy.js)
+  async function depVoltar(id, tag) {
+    const c = cyOf(id);
+    if (c.esperando) { c.depMsg = 'Um agente está trabalhando: espere a tarefa atual terminar (ou pare o ciclo) para voltar versão.'; paintCycle(); return null; }
+    c.voltaConf = null; c.depMsg = `Voltando para antes de ${tag}…`; paintCycle();
+    const r = (await call('deployVoltar', id, tag)) || { ok: false, motivo: 'erro ao voltar versão' };
+    c.depMsg = r.ok ? `Versão voltada: git revert de ${r.revertidos.join(', ')} enviado para a ${r.principal} (${String(r.sha).slice(0, 8)}), sem força.` : `Voltar versão não foi feito: ${r.motivo}`;
+    if (r.ok) c.voltaFeita = { tag };
+    await depRefresh(id);
+    notifyHuman(projOf(id), tabOf(c.est && c.est.orq), c.depMsg);
+    return r;
+  }
+  // DEV2..DEV5: no fim do ciclo, o orquestrador reescreve o docs/HANDOFF_DEVn.md e o Termix faz o commit e envia só a devN.
+  async function fimDevN(id, g, x, alive) {
+    if (x.fimHandoff) return;
+    const fi = await call('fimInfo', id);
+    if (!alive()) return 'parar';
+    if (!fi || !fi.aplica) { x.fimHandoff = { aplica: false }; cySave(id); return; }
+    x.sub = 'fim'; cySave(id);
+    const text = await call('fimPrompt', id);
+    if (!(await ask(id, g, 'orq', text))) { if (alive()) pause(id, 'erro', `O orquestrador não terminou o ${fi.arquivo} do fim do ciclo. Clique em Continuar para pedir de novo.`); return 'parar'; }
+    const r = await call('fimEnviar', id);
+    if (!alive()) return 'parar';
+    x.fimHandoff = { aplica: true, ok: !!(r && r.ok), branch: (r && r.branch) || fi.branch, arquivo: fi.arquivo, sha: (r && r.sha) || '', motivo: (r && r.motivo) || (r ? '' : 'erro ao enviar') };
+    cySave(id);
+  }
+  async function fimReenviar(id) {
+    const c = cyOf(id), x = c.est && c.est.exec;
+    if (!x || !x.fimHandoff || !x.fimHandoff.aplica) return null;
+    const r = await call('fimEnviar', id);
+    x.fimHandoff = { ...x.fimHandoff, ok: !!(r && r.ok), sha: (r && r.sha) || x.fimHandoff.sha, motivo: (r && r.motivo) || '' };
+    cySave(id);
+    return r;
+  }
+  // a decisão da autorização pelo sino (botões do aviso). O núcleo marca o aviso como feito; aqui o Termix decide.
+  document.addEventListener('click', (e) => {
+    const el = e.target && e.target.closest && e.target.closest('[data-ev]');
+    if (!el) return;
+    const [, k, pid] = String(el.dataset.ev).split('|');
+    if (k === 'vibedep-ok') deployDecidir(pid, 'autorizar', 'sino');
+    else if (k === 'vibedep-no') deployDecidir(pid, 'negar', 'sino');
+  }, true);
   function finish(id) {
     const c = cyOf(id), x = c.est.exec;
     c.gen++; c.live = false;
     c.est = { ...c.est, fase: 'concluido', concluido: nowIso(), aviso: '' };
     cySave(id);
     if (c.est.auto && c.est.auto.mutirao) { mutFim(id); return; } // implementação automática do Mutirão (DEV2-006)
-    const np = (x.pendencias || []).length;
-    notifyHuman(projOf(id), tabOf(c.est.orq), `Projeto concluído: ${plural(x.feitas.length, 'tarefa', 'tarefas')} na branch ${x.branch || ''}${np ? `, ${plural(np, 'pendência', 'pendências')} (veja a lista no painel)` : ''}.`);
+    call('f5Encerrar', id); // DEV2-016: o servidor do F5 do projeto sai no fim do ciclo
+    const np = (x.pendencias || []).length, fh = x.fimHandoff;
+    const hand = fh && fh.aplica ? (fh.ok ? ` ${fh.arquivo} no commit e a ${fh.branch} enviada; o DEV1 é avisado pelo fluxo.` : ` O envio da ${fh.branch} com o handoff falhou: ${fh.motivo}`) : '';
+    notifyHuman(projOf(id), tabOf(c.est.orq), `Projeto concluído: ${plural(x.feitas.length, 'tarefa', 'tarefas')} na branch ${x.branch || ''}${np ? `, ${plural(np, 'pendência', 'pendências')} (veja a lista no painel)` : ''}.${hand}`);
     mutEntrega(id); // Mutirão (DEV2-005): sendo a parte de um sócio, o Termix grava e envia a entrega
   }
   // Mutirão concluído (DEV2-006): o Termix (código) faz push só da branch do dono e avisa. Promover para a main é do humano.
@@ -533,10 +672,13 @@
       x.branch = bp.branch;
       cySave(id);
       while (alive()) {
-        if (x.k >= x.tarefas.length) return finish(id);
+        // DEV2-016: "Retomar deploy" no meio de uma tarefa: os retidos saem na fronteira (nenhum agente trabalhando)
+        if (x.deployFila && (x.k >= x.tarefas.length || (x.etapa === 'dev' && !x.tentativas))) { x.deployFila = false; cySave(id); await deployRetidos(id); if (!alive()) return; }
+        if (x.k >= x.tarefas.length) { if ((await fimDevN(id, g, x, alive)) === 'parar') return; return finish(id); } // DEV2-016: fim de DEV2..DEV5
         const t = x.tarefas[x.k];
         // DEV2-014: a política é lida no início de cada tarefa (editar no meio do ciclo vale a partir da próxima)
-        if (x.etapa === 'dev' && !x.tentativas) {
+        // DEV2-016: numa tarefa de deploy em recuperação (deployRetry), o Dev conserta primeiro; o deploy volta depois da revisão
+        if (x.etapa === 'dev' && !x.tentativas && x.deployRetry !== t.id) {
           const pt = (await call('politicaTarefa', id, t)) || { deploy: t.deploy ? 'pausar' : '', humano: t.humano ? 'humano' : '' };
           if (!alive()) return;
           const liberada = (x.liberadas || []).includes(t.id);
@@ -545,8 +687,12 @@
             if (pt.humano === 'humano') return pause(id, 'humano', `A tarefa "${t.titulo}" precisa de você (acesso, dado ou decisão).`, { gate: t.id });
             return pause(id, 'humano', `Política: confirmar com você antes de cada tarefa. Próxima: ${t.id} — "${t.titulo}". Clique em Continuar para liberar.`, { gate: t.id, sempre: true });
           }
-          // deploy automático: o Termix fará o deploy (DEV2-016); a tarefa fica marcada e o ciclo segue sem pausar à toa
-          if (t.deploy && (pt.deploy === 'pendente' || pt.deploy === 'retido')) {
+          // DEV2-016: "Pedir autorização": o sino e o painel mostram "Autorizar deploy" e "Negar", com o resumo
+          if (t.deploy && pt.deploy === 'autorizar' && !(x.autorizadas || []).includes(t.id)) return pedirAutorizacao(id, t);
+          // DEV2-016: deploy automático (ou autorizado): quem faz é o Termix, em código (etapa 'deploy')
+          if (t.deploy && (pt.deploy === 'pendente' || pt.deploy === 'autorizar')) { x.etapa = 'deploy'; cySave(id); continue; }
+          // "Pausar deploy" ligado: o deploy fica retido e o resto do ciclo segue ("Retomar deploy" executa os retidos)
+          if (t.deploy && pt.deploy === 'retido') {
             x.feitas.push({ id: t.id, titulo: t.titulo, deploy: pt.deploy, data: nowIso() });
             Object.assign(x, { ...ZERA, k: x.k + 1 });
             cySave(id);
@@ -565,6 +711,7 @@
           cySave(id);
           continue;
         }
+        if (x.etapa === 'deploy') { if ((await deployEtapa(id, g, x, t, alive)) === 'parar') return; continue; } // DEV2-016
         const teto = await tetoDe(id); // as voltas da recuperação também passam pelo teto (contam no orçamento)
         if (!alive()) return;
         if (teto) return pause(id, 'limite', teto.motivo, teto.auto ? {} : { semAuto: true });
@@ -628,6 +775,8 @@
           if (!rv || !rv.ok || rv.mtime < Date.parse(x.enviadoRev) - 2000) return falha(id, 'orq', `O orquestrador não gravou revisoes\\${t.id}.json com o veredito.`); // DEV2-015: F5 dele uma vez, depois pausa
           x.ultimaRevisao = { id: t.id, veredito: rv.veredito, motivo: rv.motivo.slice(0, 300) };
           if (rv.veredito === 'aprovado') {
+            // DEV2-016: o Dev consertou o que barrou o deploy (portão, conflito): o Termix tenta o deploy de novo (as voltas continuam contando)
+            if (t.deploy && x.deployRetry === t.id) { Object.assign(x, { ...ZERA, rec: x.rec, etapa: 'deploy', deployRetry: t.id }); cySave(id); continue; }
             x.feitas.push({ id: t.id, titulo: t.titulo, commit: x.semCommitOk ? '' : x.ultimoCommit, semCommit: !!x.semCommitOk, tentativas: x.tentativas });
             Object.assign(x, { ...ZERA, k: x.k + 1 });
             cySave(id);
@@ -738,6 +887,10 @@
   setInterval(() => {
     for (const id of Object.keys(CY)) {
       const c = CY[id], e = c.est, x = e && e.exec;
+      if (x && e.fase === 'pausado' && x.pausa && x.pausa.autorizacao && !c.decidindo) { // DEV2-016: o ponto de aprovação é o arquivo
+        call('deployAut', id, 'ler').then((a) => { if (a && (a.status === 'autorizado' || a.status === 'negado')) deployDecidir(id, a.status === 'autorizado' ? 'autorizar' : 'negar', (a.decisao && a.decisao.origem) || 'arquivo'); });
+        continue;
+      }
       if (!x || !c.live) continue;
       if (e.fase === 'pausado' && x.pausa && x.pausa.tipo === 'limite' && !x.pausa.semAuto) {
         if (!c.conferindoTeto) {
@@ -813,19 +966,19 @@
     const pol = c.pol && c.pol.politica, o = pol ? pol.orcamento : { teto5: 93, teto7: 95, usd: null }, usd = custoCiclo(c);
     let fase;
     if (e.fase === 'concluido') fase = 'Concluído';
-    else if (e.fase === 'pausado') fase = PAUSA_TIT[x.pausa && x.pausa.tipo] || 'Pausado';
+    else if (e.fase === 'pausado') fase = x.pausa && x.pausa.autorizacao ? 'Aguardando autorização de deploy' : x.pausa && x.pausa.receita ? 'Deploy: a main foi enviada, a publicação falhou' : PAUSA_TIT[x.pausa && x.pausa.tipo] || 'Pausado';
     else if (e.fase === 'parado') fase = 'Parado';
     else if (!c.live) fase = 'Pausado (o Termix foi fechado)';
-    else fase = recTxt(c) || (x.etapa === 'revisao' ? 'Revisão (orquestrador)' : 'Dev trabalhando');
+    else fase = recTxt(c) || (x.k >= n ? 'Fim do ciclo: handoff (orquestrador)' : x.etapa === 'deploy' ? 'Deploy pelo Termix (portão, main, tag, receita)' : x.etapa === 'revisao' ? 'Revisão (orquestrador)' : 'Dev trabalhando');
     const rows = [
       ['Tarefa', e.fase === 'concluido' ? `${n}/${n}` : t ? `${x.k + 1}/${n} · ${esc(t.id)} — ${esc(t.titulo)}` : `${n}/${n}`],
       ['Fase', esc(fase)],
       ['Branch', esc(x.branch || '—')],
       ['Último commit', esc(x.ultimoCommit || '—')],
-      ['Tentativas', e.fase === 'concluido' || !t ? '—' : `${x.tentativas || 0} de ${maxTent(x)}`],
+      (x.rec && t && x.rec.tarefa === t.id && x.rec.voltas && e.fase !== 'concluido') ? ['Volta', `${x.rec.voltas}/${voltasMax(c)}`] : ['Tentativas', e.fase === 'concluido' || !t ? '—' : `${x.tentativas || 0} de ${maxTent(x)}`], // DEV2-016: durante a recuperação, só a volta
       ['Limites', `5 h ${pctTxt(lim5())} · 7 d ${pctTxt(lim7r())}${usd != null ? ` · US$ ${usd.toFixed(2)}` : ''} <small>(teto: 5 h ${o.teto5}% · 7 d ${o.teto7}%${o.usd != null ? ` · US$ ${o.usd}` : ''})</small>`],
     ];
-    if (x.rec && x.rec.tarefa === (t && t.id) && e.fase !== 'concluido') rows.push(['Recuperação', `${esc(recTxt(c) || '')}${x.rec.diag ? `<small class="vx-sub">Diagnóstico: ${esc(x.rec.diag)}</small>` : ''}${x.rec.tentado && x.rec.tentado.length ? `<small class="vx-sub">Já tentado: ${esc(x.rec.tentado.slice(-4).join(' · ').slice(0, 400))}</small>` : ''}`]);
+    if (x.rec && x.rec.tarefa === (t && t.id) && e.fase !== 'concluido') rows.push(['Recuperação', `${esc(recTxt(c) || '')}${x.rec.diag ? `<small class="vx-sub">${abrirLink(x.rec.diag, 'Abrir diagnóstico')}</small>` : ''}${x.rec.tentado && x.rec.tentado.length ? `<small class="vx-sub">Já tentado: ${esc(x.rec.tentado.slice(-4).join(' · ').slice(0, 400))}</small>` : ''}`]);
     if (x.ultimaRevisao) rows.push(['Última revisão', `${esc(x.ultimaRevisao.id)}: ${esc(x.ultimaRevisao.veredito)}${x.ultimaRevisao.motivo ? ` — ${esc(x.ultimaRevisao.motivo.slice(0, 160))}` : ''}`]);
     const feita = (id) => x.feitas.find((f) => f.id === id);
     const pends = x.pendencias || [];
@@ -834,13 +987,37 @@
       if (pd && !f) return `<li class="pend">${esc(tt.id)} — ${esc(tt.titulo)} <em class="vx-tag vx-pend">PENDÊNCIA</em></li>`;
       const cls = f ? 'done' : i === x.k && e.fase !== 'concluido' ? 'cur' : '';
       const tags = `${tt.deploy ? ' <em class="vx-tag">DEPLOY</em>' : ''}${tt.humano ? ' <em class="vx-tag">HUMANO</em>' : ''}${tt.semCommit ? ' <em class="vx-tag">SEM COMMIT</em>' : ''}`;
-      const extra = f ? (f.deploy === 'pendente' ? ' · deploy pendente' : f.deploy === 'retido' ? ' · deploy retido (Pausar deploy)' : f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
+      const extra = f ? (f.deploy === 'feito' ? ` · publicado pelo Termix${f.tag ? ` (${esc(f.tag)})` : ''}${f.receitaFalhou ? ', receita falhou' : ''}` : f.deploy === 'nada' ? ' · nada novo a publicar' : f.deploy === 'pendente' ? ' · deploy pendente' : f.deploy === 'retido' ? ' · deploy retido (Pausar deploy)' : f.humano ? ' · feita pelo humano' : f.semCommit ? ' · validada, sem commit' : f.commit ? ` · ${esc(f.commit.split(' ')[0])}` : '') : '';
       return `<li class="${cls}">${esc(tt.id)} — ${esc(tt.titulo)}${tags}<small>${extra}</small></li>`;
     }).join('');
     // DEV2-015: pendências (tarefas puladas ou com as voltas esgotadas), uma por tarefa, com o motivo e o diagnóstico
-    const pendHtml = pends.length ? `<div class="vx-pends"><b>${e.fase === 'concluido' ? 'Pendências do ciclo' : 'Pendências até agora'} (${pends.length})</b><ul>${pends.map((y) => `<li><b>${esc(y.id)} — ${esc(y.titulo)}</b>: ${esc(y.motivo)}${y.bloqueia ? ' <em class="vx-tag">BLOQUEIA AS PRÓXIMAS</em>' : ''}${y.diag ? `<small>Diagnóstico: ${esc(y.diag)}</small>` : ''}</li>`).join('')}</ul></div>` : '';
+    const pendHtml = pends.length ? `<div class="vx-pends"><b>${e.fase === 'concluido' ? 'Pendências do ciclo' : 'Pendências até agora'} (${pends.length})</b><ul>${pends.map((y) => `<li><b>${esc(y.id)} — ${esc(y.titulo)}</b>: ${esc(y.motivo)}${y.bloqueia ? ' <em class="vx-tag">BLOQUEIA AS PRÓXIMAS</em>' : ''}${y.diag ? `<small>${abrirLink(y.diag, 'Abrir diagnóstico')}</small>` : ''}</li>`).join('')}</ul></div>` : '';
     const divHtml = (x.divididas || []).length ? `<small class="vx-div">Divididas na recuperação: ${x.divididas.map((y) => `${esc(y.id)} em ${esc(y.partes.join(' e '))}`).join('; ')}</small>` : '';
-    return `<div class="vx"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><ol class="vx-list">${list}</ol>${divHtml}${pendHtml}</div>`;
+    return `<div class="vx"><dl>${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>${autHtml(c)}<ol class="vx-list">${list}</ol>${divHtml}${pendHtml}${depHtml(c)}</div>`;
+  }
+  // DEV2-016: link que abre um arquivo do Vibe (diagnóstico, log de deploy) no programa padrão
+  const abrirLink = (arq, txt) => `<a href="#" class="vx-link" data-vc="abrir" data-arq="${esc(arq)}" title="${esc(arq)}">${esc(txt)}</a>`;
+  // DEV2-016: resumo do pedido de autorização (commits que entram, portão, receita)
+  function autHtml(c) {
+    const x = c.est && c.est.exec, a = x && x.pausa && x.pausa.autorizacao;
+    if (!a || c.est.fase !== 'pausado') return '';
+    const r = a.resumo;
+    const corpo = r ? `<small>${esc(r.branch)} para a ${esc(r.principal)} (${esc(r.modo)}) · portão: ${esc(r.portao || 'nenhum')} · receita: ${esc(r.receita.length ? r.receita.join(' · ') : 'nenhuma')}</small><ul>${r.commits.slice(0, 12).map((l) => `<li>${esc(l)}</li>`).join('')}${r.commits.length > 12 ? `<li>… e mais ${r.commits.length - 12}</li>` : ''}</ul>` : '<small>O resumo não pôde ser montado.</small>';
+    return `<div class="vx-aut"><b>Deploy aguardando a sua autorização (${esc(a.tarefa)})</b>${corpo}</div>`;
+  }
+  // DEV2-016: lista de deploys (versões) com "Voltar para antes deste", a confirmação explícita e "Rodar a receita de novo"
+  function depHtml(c) {
+    const pode = c.pol && c.pol.info && c.pol.info.podeDeploy, deps = c.deps || [];
+    if (!pode || (!deps.length && !c.depMsg)) return '';
+    const dt = (d) => { try { return new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); } catch { return d; } };
+    const st = (d) => (d.status === 'receita-falhou' ? 'main enviada, receita falhou' : d.status === 'publicado' ? 'publicado' : d.status);
+    const lis = deps.map((d) => `<li class="${d.revertido ? 'rev' : ''}"><b>${esc(d.tag)}</b> · ${esc(dt(d.data))} · ${d.tipo === 'ff' ? 'fast-forward' : 'merge --no-ff'} · ${plural(d.commits, 'commit', 'commits')} · ${esc(st(d))}${d.revertido ? ' <em class="vx-tag">REVERTIDO</em>' : ''}<span class="vx-dacts">${!d.revertido ? `<button class="btn sm" data-vc="depvolta" data-tag="${esc(d.tag)}">Voltar para antes deste</button>` : ''}${d.status === 'receita-falhou' && !d.revertido ? `<button class="btn sm" data-vc="deprec" data-tag="${esc(d.tag)}">Rodar a receita de novo</button>` : ''}${d.log ? abrirLink(d.log, 'Abrir log') : ''}</span></li>`).join('');
+    let conf = '';
+    if (c.voltaConf) {
+      const k = deps.filter((d) => !d.revertido).findIndex((d) => d.tag === c.voltaConf);
+      conf = `<div class="vx-conf"><b>Voltar a main para antes de ${esc(c.voltaConf)}?</b> O Termix faz git revert de ${plural(k + 1, 'deploy', 'deploys')} (do mais novo até este) na main e envia a main, sem força. Nada é apagado; a tag continua no histórico. <span class="vx-dacts"><button class="btn sm pri" data-vc="depvoltaok">Confirmar: voltar versão</button><button class="btn sm" data-vc="depvoltano">Cancelar</button></span></div>`;
+    } else if (c.voltaFeita) conf = `<div class="vx-conf">Versão voltada. Rodar a receita de deploy de novo agora, com a main revertida? <span class="vx-dacts"><button class="btn sm pri" data-vc="deprecvolta">Rodar a receita</button><button class="btn sm" data-vc="depvoltafim">Agora não</button></span></div>`;
+    return `<div class="vx-deps"><b>Deploys (versões)</b>${c.depMsg ? `<small class="vx-sub">${esc(c.depMsg)}</small>` : ''}${lis ? `<ul>${lis}</ul>` : ''}${conf}</div>`;
   }
   // DEV2-015: "Recuperando (volta n/3): <ação>" enquanto a tarefa atual está numa volta de recuperação
   function recTxt(c) {
@@ -886,9 +1063,9 @@
       perguntas: `O orquestrador tem ${plural(c.perguntas.length, 'pergunta indispensável', 'perguntas indispensáveis')}. Responda para fechar o plano.`,
       fechando: 'O orquestrador está fechando o plano com as suas respostas.',
       pronto: `<b>Plano pronto${e.tarefas ? `, ${plural(e.tarefas, 'tarefa', 'tarefas')}` : ''}.</b> "Executar plano" passa as tarefas ao Dev uma a uma, com revisão do orquestrador. Commits só na branch permitida; a main/master fica intacta.`,
-      execucao: x ? (recTxt(c) ? `<b>${esc(recTxt(c))}.</b> A ${esc((x.tarefas[x.k] || {}).id || '')} falhou e o Termix está recuperando sozinho (diagnóstico e decisão do orquestrador). Esgotadas as voltas, ela vira pendência e o ciclo segue.` : `<b>Executando o plano.</b> ${x.etapa === 'revisao' ? 'O orquestrador está revisando' : 'O Dev está trabalhando'} na ${esc((x.tarefas[x.k] || {}).id || '')}. O Termix avisa se precisar de você.`) : '',
-      pausado: x && x.pausa ? `<b>${esc(PAUSA_TIT[x.pausa.tipo] || 'Pausado')}.</b> ${esc(x.pausa.motivo || '')}${(x.pausa.tipo === 'limite' && c.live) || /clique em "?Continuar/i.test(x.pausa.motivo || '') ? '' : x.pausa.gate ? ' Clique em "Continuar" para o Dev executar a tarefa, ou em "Já fiz, pular" se você mesmo a fez.' : ' Clique em "Continuar" quando quiser seguir.'}` : '',
-      concluido: (e.auto && e.auto.mutirao && e.mutFim ? (e.mutFim.ok ? `<b>Mutirão concluído na ${esc(e.mutFim.branch || '')}.</b> Push feito pelo Termix (commit ${esc(String(e.mutFim.sha || '').slice(0, 8))}). Promover para a main é com você. ` : `<span class="mp-bad">O push da branch do dono falhou: ${esc(e.mutFim.motivo || '')}</span> `) : '') + (x ? `<b>Projeto concluído.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}${(x.pendencias || []).length ? `, ${plural(x.pendencias.length, 'pendência', 'pendências')} (lista abaixo)` : ''}. A main/master não foi alterada.` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
+      execucao: x ? (recTxt(c) ? `<b>${esc(recTxt(c))}.</b> A ${esc((x.tarefas[x.k] || {}).id || '')} falhou e o Termix está recuperando sozinho (diagnóstico e decisão do orquestrador). Esgotadas as voltas, ela vira pendência e o ciclo segue.` : `<b>Executando o plano.</b> ${x.k >= x.tarefas.length ? 'O orquestrador está escrevendo o handoff do fim do ciclo' : x.etapa === 'deploy' ? 'O Termix está fazendo o deploy (portão, main, tag e receita)' : x.etapa === 'revisao' ? 'O orquestrador está revisando' : 'O Dev está trabalhando'}${x.k < x.tarefas.length ? ` na ${esc((x.tarefas[x.k] || {}).id || '')}` : ''}. O Termix avisa se precisar de você.`) : '',
+      pausado: x && x.pausa ? `<b>${esc(x.pausa.autorizacao ? 'Aguardando autorização de deploy' : x.pausa.receita ? 'Deploy: a main foi enviada, a publicação falhou' : PAUSA_TIT[x.pausa.tipo] || 'Pausado')}.</b> ${esc(x.pausa.motivo || '')}${x.pausa.autorizacao || x.pausa.receita || (x.pausa.tipo === 'limite' && c.live) || /clique em "?Continuar/i.test(x.pausa.motivo || '') ? '' : x.pausa.gate ? ' Clique em "Continuar" para o Dev executar a tarefa, ou em "Já fiz, pular" se você mesmo a fez.' : ' Clique em "Continuar" quando quiser seguir.'}` : '',
+      concluido: (e.auto && e.auto.mutirao && e.mutFim ? (e.mutFim.ok ? `<b>Mutirão concluído na ${esc(e.mutFim.branch || '')}.</b> Push feito pelo Termix (commit ${esc(String(e.mutFim.sha || '').slice(0, 8))}). Promover para a main é com você. ` : `<span class="mp-bad">O push da branch do dono falhou: ${esc(e.mutFim.motivo || '')}</span> `) : '') + (x ? `<b>Projeto concluído.</b> ${plural(x.feitas.length, 'tarefa feita', 'tarefas feitas')} na branch "${esc(x.branch || '')}"${x.feitas.some((f) => f.humano) ? `, ${x.feitas.filter((f) => f.humano).length} pelo humano` : ''}${(x.pendencias || []).length ? `, ${plural(x.pendencias.length, 'pendência', 'pendências')} (lista abaixo)` : ''}.${x.feitas.some((f) => f.deploy === 'feito') ? ' A main recebeu o deploy pelo Termix (lista de deploys abaixo).' : ' A main/master não foi alterada.'}${x.fimHandoff && x.fimHandoff.aplica ? (x.fimHandoff.ok ? ` ${esc(x.fimHandoff.arquivo)} no commit e a ${esc(x.fimHandoff.branch)} enviada; o DEV1 é avisado pelo fluxo.` : ` <span class="mp-bad">O envio da ${esc(x.fimHandoff.branch || '')} com o handoff falhou: ${esc(x.fimHandoff.motivo || '')}</span>`) : ''}` : '<b>Projeto concluído.</b>') + (e.mutirao ? (e.mutirao.ok ? ` Entrega do Mutirão enviada na branch ${esc(e.mutirao.branch || '')}.` : ` <span class="mp-bad">Entrega do Mutirão não enviada: ${esc(e.mutirao.motivo || '')}</span>`) : ''),
       parado: `<b>Vibe Coding parado em "${esc(stepName)}".</b> Nada foi apagado e as abas continuam abertas. Clique em "${go}" para seguir.`,
       erro: `<b>O plano não ficou pronto.</b>`,
     }[e.fase] || '';
@@ -896,8 +1073,12 @@
     if (e.fase === 'abrindo' && e.aviso && c.live) acts.push('<button class="btn sm" data-vc="send">Enviar o pedido agora</button>');
     if (e.fase === 'pronto' && !(c.form && c.form.modo === 'iniciar')) acts.push('<button class="btn sm pri" data-vc="antes">Executar plano…</button>'); // DEV2-014: antes, a tela "Antes de iniciar"
     if (e.fase === 'concluido' && e.mutFim && !e.mutFim.ok) acts.push('<button class="btn sm pri" data-vc="mutfim">Enviar a branch de novo</button>');
+    if (e.fase === 'concluido' && x && x.fimHandoff && x.fimHandoff.aplica && !x.fimHandoff.ok) acts.push('<button class="btn sm pri" data-vc="fimenv">Enviar a branch e o handoff de novo</button>'); // DEV2-016
+    const pzD = e.fase === 'pausado' && x && x.pausa; // DEV2-016: autorização e receita que falhou depois do envio
+    if (pzD && pzD.autorizacao) acts.push('<button class="btn sm pri" data-vc="depok">Autorizar deploy</button><button class="btn sm" data-vc="depno">Negar</button>');
+    if (pzD && pzD.receita) acts.push(`<button class="btn sm pri" data-vc="deprec" data-tag="${esc(pzD.receita)}">Rodar a receita de novo</button><button class="btn sm" data-vc="depvolta" data-tag="${esc(pzD.receita)}">Voltar versão</button><button class="btn sm" data-vc="depseguir">Seguir sem publicar</button>`);
     if (e.fase === 'concluido' && e.mutirao && !e.mutirao.ok) acts.push('<button class="btn sm pri" data-vc="mutent">Enviar a entrega de novo</button>');
-    if (paused || ['parado', 'erro'].includes(e.fase) || (e.fase === 'pausado' && !(x && x.pausa && x.pausa.tipo === 'limite' && c.live))) acts.push(`<button class="btn sm pri" data-vc="resume">${go}</button>`);
+    if (paused || ['parado', 'erro'].includes(e.fase) || (e.fase === 'pausado' && !(x && x.pausa && ((x.pausa.tipo === 'limite' && c.live) || x.pausa.autorizacao || x.pausa.receita)))) acts.push(`<button class="btn sm pri" data-vc="resume">${go}</button>`);
     if (e.fase === 'pausado' && x && x.pausa && x.pausa.gate && !x.pausa.sempre) acts.push('<button class="btn sm" data-vc="skip">Já fiz, pular</button>');
     if (ACTIVE.includes(e.fase) || ['erro', 'pronto', 'pausado'].includes(e.fase)) acts.push('<button class="btn sm" data-vc="stop">Parar Vibe Coding</button>');
     const tip = TIPS[base] ? `<p class="vibe-tip">${esc(TIPS[base])}</p>` : '';
@@ -953,7 +1134,7 @@
       <div class="vf"><label>Deploy na main</label>${sel('deploy.modo', DEPLOY_TXT, p.deploy.modo)}
         ${p.deploy.modo === 'marco' ? `<input type="text" class="inp vp-gap" data-vpf="deploy.marco" maxlength="200" placeholder="Marco, em texto livre. Ex.: v1.0 estável" value="${esc(p.deploy.marco)}">
         <label class="vf-chk"><input type="checkbox" data-vpf="deploy.marcoAtingido" ${p.deploy.marcoAtingido ? 'checked' : ''}> Marco atingido: a partir de agora o deploy é automático</label>` : ''}
-        <small>O deploy é feito pelo Termix, em código, nunca pelo agente (a trava continua barrando a main para a IA). Voltar versão: git revert. A execução do deploy ainda não está disponível nesta versão; até lá, o deploy automático fica marcado "pendente" e o ciclo segue.</small></div>
+        <small>O deploy é feito pelo Termix, em código, nunca pelo agente (a trava continua barrando a main para a IA). Voltar versão: git revert. O Termix faz o deploy: confere a árvore, roda o portão, leva a branch para a main (fast-forward ou merge --no-ff), cria a tag, envia sem força e roda a receita. A lista de versões no painel tem "Voltar para antes deste".</small></div>
       <div class="vf"><label>Receita de deploy <em class="opt">os comandos que o Termix vai rodar</em></label>
         <textarea class="inp ta" rows="3" data-vpf="deploy.receita" maxlength="4000" placeholder="Um comando por linha. Ex.: npm run build">${esc(p.deploy.receita)}</textarea>
         <small>Só fica gravada: nada é executado agora.</small></div>
@@ -1051,6 +1232,11 @@
     c.pol = (await call('politicaGet', id)) || c.pol;
     c.polMsg = r && r.ok ? (pausado ? 'Deploy pausado: nenhum deploy automático sai; o resto do ciclo continua.' : 'Deploy retomado: vale a partir da próxima tarefa de deploy.') : 'Não foi possível gravar. Veja o erros.log.';
     if (c.form && c.form.p) c.form.p.deploy = { ...c.form.p.deploy, pausado: !!pausado };
+    // DEV2-016: "Retomar deploy" executa os retidos e os pendentes da DEV2-014 (com um agente trabalhando, na fronteira da tarefa)
+    const x = c.est && c.est.exec;
+    if (r && r.ok && !pausado && x && x.feitas.some((f) => f.deploy === 'retido' || f.deploy === 'pendente')) {
+      if (c.est.fase === 'execucao' && c.live) { x.deployFila = true; c.polMsg = 'Deploy retomado: os deploys retidos saem assim que a tarefa atual terminar.'; cySave(id); } else deployRetidos(id);
+    }
     paintCycle();
     return !!(r && r.ok);
   }
@@ -1276,6 +1462,11 @@
             const k = vc.dataset.vc, id = V.id;
             if (k === 'stop') stopCycle(id); else if (k === 'resume') resumeCycle(id); else if (k === 'send') sendPrompt(id, 'plano'); else if (k === 'answers') sendAnswers(id);
             else if (k === 'antes') polOpen(id, 'iniciar'); else if (k === 'poledit') polOpen(id, 'editar'); else if (k === 'deploypause') polPausarDeploy(id, true); else if (k === 'deployresume') polPausarDeploy(id, false);
+            else if (k === 'depok') deployDecidir(id, 'autorizar', 'painel'); else if (k === 'depno') deployDecidir(id, 'negar', 'painel'); // DEV2-016
+            else if (k === 'deprec') depReceita(id, vc.dataset.tag || ''); else if (k === 'depseguir') { const x = cyOf(id).est.exec; if (x && x.pausa && x.pausa.receita) proxTarefa(id, x, null, `publicação falhou: a main foi enviada (${x.pausa.receita}), mas a receita não rodou`); }
+            else if (k === 'depvolta') { const c = cyOf(id); c.voltaConf = vc.dataset.tag; c.voltaFeita = null; paintCycle(); } else if (k === 'depvoltaok') { const c = cyOf(id); if (c.voltaConf) depVoltar(id, c.voltaConf); } else if (k === 'depvoltano') { cyOf(id).voltaConf = null; paintCycle(); }
+            else if (k === 'deprecvolta') { const c = cyOf(id), tg = c.voltaFeita && c.voltaFeita.tag; c.voltaFeita = null; depReceita(id, tg ? `${tg}-volta` : ''); } else if (k === 'depvoltafim') { cyOf(id).voltaFeita = null; paintCycle(); }
+            else if (k === 'abrir') { e.preventDefault(); call('abrirArquivo', id, vc.dataset.arq); } else if (k === 'fimenv') fimReenviar(id);
             else if (k === 'exec') execStart(id); else if (k === 'skip') skipTask(id); else if (k === 'mutent') mutEntrega(id); else if (k === 'mutfim') mutFim(id);
           }
         });
@@ -1709,7 +1900,9 @@
       tempos: (o) => { T.turno = (o && o.turno) || 30 * 60000; T.semResposta = (o && o.semResposta) || 20 * 60000; return { ...T }; },
       exec: () => V && execStart(V.id), cont: () => V && resumeCycle(V.id), skip: () => V && skipTask(V.id),
       // DEV2-015: recuperação. f5Projeto() roda o comando "reiniciar o projeto" da política; tela(k) = o texto do diagnóstico
-      f5Projeto: () => V && call('f5Projeto', V.id), tela: (k) => { const c = V && CY[V.id]; return c && c.est ? telaDe(c.est[k || 'dev']).split('\n').slice(-60).join('\n') : ''; },
+      f5Projeto: () => V && call('f5Projeto', V.id),
+      // DEV2-016: deploy. dep.lista() = versões; dep.decidir(d, origem) = o mesmo caminho do painel/sino/Telegram
+      dep: { lista: () => V && call('deployLista', V.id), decidir: (d, o) => V && deployDecidir(V.id, d, o || 'teste'), aut: () => V && call('deployAut', V.id, 'ler') }, tela: (k) => { const c = V && CY[V.id]; return c && c.est ? telaDe(c.est[k || 'dev']).split('\n').slice(-60).join('\n') : ''; },
       // DEV2-005: Mutirão. mut.* = os botões do painel; mutEntregar grava a entrega simulada do sócio (sem rodar o Vibe)
       mut: { open: (pid) => openMutirao(pid), close: () => closeMutirao(), rows: (r) => { if (!MP) return false; MP.rows = r; mutPaint(); return true; },
         state: () => (MP ? { id: MP.id, est: MP.est, conf: MP.conf, cont: MP.cont, rows: MP.rows, msg: MP.msg && MP.msg.html, gerando: MP.gerando } : null),

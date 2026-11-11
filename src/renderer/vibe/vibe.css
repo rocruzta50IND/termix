@@ -106,6 +106,17 @@
 .vx-pends small,.vx-div{display:block;color:var(--text3);font-size:11.5px;overflow-wrap:anywhere}
 .vx-div{margin-top:6px}
 .vx dd small.vx-sub{display:block;margin-top:2px}
+/* DEV2-016: deploy pelo Termix (autorização, lista de versões, confirmação de voltar versão) */
+.vx-aut,.vx-deps{margin:10px 0 0;padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:12.5px}
+.vx-aut{border-color:rgba(167,139,250,.45)}
+.vx-aut ul,.vx-deps ul{margin:6px 0 0;padding-left:18px}
+.vx-aut li,.vx-deps li{margin:4px 0;overflow-wrap:anywhere}
+.vx-aut small,.vx-deps small{display:block;color:var(--text3);font-size:11.5px;overflow-wrap:anywhere}
+.vx-deps li.rev{opacity:.65}
+.vx-dacts{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:8px}
+.vx-conf{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35)}
+.vx-conf .vx-dacts{display:flex;margin:6px 0 0}
+.vx-link{color:var(--accent,#A78BFA);text-decoration:underline;cursor:pointer}
 .vx-tag{font-style:normal;font-size:10.5px;padding:0 6px;border-radius:99px;border:1px solid rgba(251,191,36,.5);color:var(--warn);margin-left:4px}
 @media (max-width:520px){.vx dl{grid-template-columns:1fr}}
 

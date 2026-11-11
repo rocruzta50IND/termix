@@ -3,7 +3,7 @@
    - O responsável pelo projeto fica na dev1 e tem autorização total para deploy na main. Num projeto com o fluxo Rocruzta,
      só o papel DEV1 (CLAUDE.local.md) pode ligar o deploy automático; sem o fluxo, quem abre é o dono. Para DEV2..DEV5 a
      opção de deploy não existe: o fim do ciclo é enviar a própria branch e o handoff.
-   - O deploy será feito pelo Termix, em código (DEV2-016), nunca pelo agente: a trava continua barrando a main para a IA.
+   - O deploy é feito pelo Termix, em código (DEV2-016, src/vibe/deploy.js), nunca pelo agente: a trava continua barrando a main para a IA.
      Aqui ficam só a política, a gravação e as regras que o ciclo consulta (zero token).
    Gravada por projeto em %APPDATA%\Termix\vibe\<id>\politica.json; editável no meio do ciclo (vale a partir da próxima
    tarefa; teto e "Pausar deploy" valem na hora). */
@@ -103,11 +103,14 @@ function normalizar(pol, info) {
 const deployAuto = (pol) => !!pol && (pol.deploy.modo === 'sempre' || (pol.deploy.modo === 'marco' && pol.deploy.marcoAtingido));
 
 /* O que o ciclo faz com uma tarefa [DEPLOY] (zero token):
-   - 'pausar'   — Nunca / Pedir autorização / marco ainda não atingido: pausa como antes (o humano libera ou pula);
-   - 'pendente' — automático: a tarefa fica marcada "deploy pendente (DEV2-016)" e o ciclo segue, sem pausar à toa;
-   - 'retido'   — automático, mas com "Pausar deploy" ligado: o deploy não sai, fica retido, e o resto do ciclo segue. */
+   - 'pausar'    — Nunca / marco ainda não atingido / papel sem deploy: pausa como antes (o humano libera ou pula);
+   - 'autorizar' — Pedir autorização (DEV2-016): o sino e o painel mostram "Autorizar deploy" e "Negar", com o resumo;
+   - 'pendente'  — automático: o Termix faz o deploy em código (DEV2-016: src/vibe/deploy.js);
+   - 'retido'    — automático (ou autorizado), mas com "Pausar deploy" ligado: fica retido e o resto do ciclo segue;
+                   "Retomar deploy" executa os retidos. */
 function decidirDeploy(pol, info) {
   if (!pol || !(info ? info.podeDeploy : true)) return 'pausar';
+  if (pol.deploy.modo === 'pedir') return pol.deploy.pausado ? 'retido' : 'autorizar';
   if (!deployAuto(pol)) return 'pausar';
   return pol.deploy.pausado ? 'retido' : 'pendente';
 }
@@ -137,7 +140,7 @@ function trechoAgente(pol, quem, info) {
   if (quem === 'plano') {
     if (pol.humano === 'produto') out.push('Política do humano: pergunte também as decisões de produto (além do indispensável) e marque [HUMANO] as tarefas que dependem de uma decisão de produto.');
     if (pol.humano === 'sempre') out.push('Política do humano: o Termix confirma com o humano antes de cada tarefa; planeje tarefas pequenas e claras.');
-    if (deployAuto(pol) || pol.deploy.modo === 'marco') out.push('Deploy: marque [DEPLOY] a tarefa de publicação, como sempre; quem faz o deploy é o Termix, com a receita do projeto, não o Dev.');
+    if (deployAuto(pol) || pol.deploy.modo === 'marco' || pol.deploy.modo === 'pedir') out.push('Deploy: marque [DEPLOY] a tarefa de publicação, como sempre; quem faz o deploy é o Termix, com a receita do projeto, não o Dev.');
     if (info && !info.podeDeploy) out.push('Não planeje deploy na main: o fim deste ciclo é a branch de trabalho enviada e o handoff.');
   }
   return out.join(' ');

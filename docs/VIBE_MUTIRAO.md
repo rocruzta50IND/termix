@@ -307,7 +307,7 @@ Fica entre "Plano pronto" e a execução: o botão do painel passa a ser **"Exec
 Campos:
 
 - **Deploy na main:** Nunca / Pedir autorização / Automático a partir de um marco (texto livre, ex.: "v1.0 estável", com a caixa "Marco atingido"; marco sem texto não é gravado) / Sempre automático.
-- **Receita de deploy:** os comandos que o Termix vai rodar (um por linha). Só é gravada; nada roda nesta tarefa.
+- **Receita de deploy:** os comandos que o Termix vai rodar (um por linha). Desde a DEV2-016 o Termix roda a receita no deploy (seção "Deploy pelo Termix").
 - **Portão de qualidade:** o comando que precisa passar antes de qualquer deploy; sugere o `validacao` do `.claude/fluxo.json` (os itens juntos com `&&`).
 - **Orçamento:** teto em % da janela de 5 h (padrão 93, a decisão anterior, agora configurável) e da de 7 d (padrão 95) e, opcional, em US$ (custo equivalente do ciclo pela tabela da API, somado da status line das abas do Vibe: o maior valor visto por sessão). Ao atingir, o ciclo **pausa e avisa**; nas janelas, retoma sozinho quando ela virar ou quando o teto subir; no US$, só com "Continuar" depois de subir o teto.
 - **Modelo por papel:** orquestrador e dev (Padrão do Claude Code / Opus / Sonnet / Haiku). Sem tocar no núcleo: vai na chave `model` do settings que o módulo já grava para a aba do Vibe (o mesmo da trava; agora um arquivo por papel, `trava\settings-orq.json` e `trava\settings-dev.json`). Vale quando a aba abre; no meio do ciclo, na próxima vez que a aba for aberta (o "F5" da aba é a DEV2-015).
@@ -319,9 +319,9 @@ Campos:
 
 ### Como o ciclo usa a política (zero token)
 
-- Tarefa `[DEPLOY]` com "Nunca", "Pedir autorização" ou marco ainda não atingido: pausa como antes (Continuar libera, "Já fiz, pular" marca como feita pelo humano).
-- Deploy automático ("Sempre" ou marco atingido): a tarefa é marcada **"deploy pendente (DEV2-016)"**, não vai ao Dev, e o ciclo segue sem pausar à toa.
-- **"Pausar deploy"** ligado: corta na hora qualquer deploy automático; a tarefa `[DEPLOY]` fica **"deploy retido (Pausar deploy)"** e o resto do ciclo continua. "Retomar deploy" vale a partir da próxima tarefa de deploy. Com "Pedir autorização", continua pausando para autorização.
+- Tarefa `[DEPLOY]` com "Nunca" ou marco ainda não atingido: pausa como antes (Continuar libera e o Dev executa a tarefa, "Já fiz, pular" marca como feita pelo humano). Com "Pedir autorização" (DEV2-016): o sino e o painel mostram "Autorizar deploy" e "Negar" (seção "Deploy pelo Termix").
+- Deploy automático ("Sempre" ou marco atingido): a tarefa não vai ao Dev; desde a DEV2-016 **o Termix faz o deploy em código** (seção "Deploy pelo Termix"). Até a DEV2-015 ela só ficava marcada "deploy pendente".
+- **"Pausar deploy"** ligado: corta na hora qualquer deploy (automático ou com autorização); a tarefa `[DEPLOY]` fica **"deploy retido (Pausar deploy)"** e o resto do ciclo continua. **"Retomar deploy"** executa os retidos (e os "pendentes" que ficaram da DEV2-014) num deploy só: na hora, se nenhum agente estiver trabalhando; senão, na fronteira da tarefa atual.
 - `[HUMANO]` pausa sempre (o indispensável, como hoje). "Sempre" pausa antes de cada tarefa ("Continuar" libera; sem "Já fiz, pular").
 - Projeto do Mutirão (o Termix clica sozinho em "Executar plano"): sem política gravada, vale e é gravada a padrão.
 
@@ -357,7 +357,7 @@ Decisão do Ygor (2026-11-11): erro simples não pode travar o projeto. Até a D
 
 - **Voltas por tarefa:** da política (padrão **3**, de 0 a 5). Esgotadas, a tarefa vira **pendência**: o sino avisa com o resumo do diagnóstico e o ciclo segue para a próxima tarefa, em vez de parar tudo. Com 0 voltas, a falha vira pendência direto (com o diagnóstico).
 - **Pausa total só se:** o orquestrador marcou `"bloqueia_proximas": true` na decisão da tarefa que virou pendência (a próxima depende dela; "Continuar" segue com a próxima depois que o humano resolver); a main/master mudar; ou o teto da política for atingido. **As voltas contam no orçamento:** o teto (5 h, 7 d, US$) é conferido antes de cada volta, e o custo do orquestrador entra no US$ do ciclo.
-- **Painel:** a linha de fase mostra **"Recuperando (volta n/3): <ação>"** ("aguardando a decisão do orquestrador" enquanto ele decide), com o diagnóstico e o que já foi tentado; a lista marca as tarefas com a etiqueta PENDÊNCIA e as divididas; no fim do ciclo, **"Pendências do ciclo"** lista uma por tarefa pulada, com o motivo e o diagnóstico. A notificação do fim conta as pendências.
+- **Painel:** a linha de fase mostra **"Recuperando (volta n/3): <ação>"** ("aguardando a decisão do orquestrador" enquanto ele decide), com o diagnóstico e o que já foi tentado; a lista marca as tarefas com a etiqueta PENDÊNCIA e as divididas; no fim do ciclo, **"Pendências do ciclo"** lista uma por tarefa pulada, com o motivo e o diagnóstico. A notificação do fim conta as pendências. Desde a DEV2-016, durante a recuperação a linha "Tentativas" dá lugar a **"Volta n/N"** e o caminho do diagnóstico virou o link **"Abrir diagnóstico"** (abre o arquivo no programa padrão; só arquivos da pasta do Vibe).
 
 ### F5 do projeto (política)
 
@@ -366,12 +366,63 @@ Na tela "Antes de iniciar" (e no "Editar política"): **"Comando para reiniciar 
 - roda **só na pasta do projeto** (`cwd`) e só quando o orquestrador pedir `f5_projeto`;
 - passa antes pelo **verificador da trava** (`decide` de `src/vibe/trava.js`, a mesma regra das abas): `git reset --hard`, push forçado, apagar recursivo, trocar para a main, gravar fora do projeto etc. são recusados com o motivo; trocar de pasta (`cd`, `pushd`, `Set-Location`) também;
 - a saída vai para `vibe\<id>\recuperacao\f5-projeto.log`; terminou com código 0 = ok; ainda rodando depois de 15 s (servidor) = ok e fica rodando; outro código = a ação falhou e conta como volta.
+- (DEV2-016) o processo que ficou rodando tem o PID guardado em `recuperacao\f5-projeto.pid.json`; antes de um F5 novo e no fim do ciclo o Termix encerra **só esse PID, com a árvore de processos** (`taskkill /T`), depois de conferir que ele ainda é o shell que o Termix abriu (PID reaproveitado por outro programa não é encerrado). Com o app fechado à força, o processo fica (não há quem encerre).
 
 ### Arquivos novos em `vibe\<id>\`
 
 `diagnosticos\Tk-n.md` (Termix), `recuperacao\Tk-n.json` (orquestrador), `recuperacao\f5-projeto.log` (Termix), `pedidos\pedido-Tk-recuperacao-n.md` e, ao dividir, `plano.antes-de-dividir-Tk.md`. Nada é apagado.
 
 **Testar sem tokens:** o teste do módulo (`rec15.js`: diagnóstico, pedido, leitura e validação da decisão, dividir, F5 do projeto inofensivo e barrado) e o do app com o Claude Code falso da DEV2-007 (`run15.js`: `"rec:Tk"` no roteiro do falso grava a decisão; `"acao:ms"` dá demora a uma ação). `vibeTest.f5Projeto()` roda o comando da política e `vibeTest.tela('dev')` mostra o texto que vai ao diagnóstico.
+
+## Deploy pelo Termix (DEV2-016)
+
+Decisões do Ygor (2026-11-11): o DEV1 é o responsável pelo projeto e tem autorização total para deploy na main; sem o fluxo, quem abre é o dono. **O deploy é feito pelo Termix, em código, nunca pelo agente**: a trava continua barrando a main para a IA. Voltar versão é por `git revert`, nunca reset nem force; nenhuma tag remota é apagada. Para DEV2..DEV5 o fim do ciclo é enviar a própria branch com o handoff. Código: `src/vibe/deploy.js` (processo principal) e a etapa `deploy` do ciclo em `src/renderer/vibe/vibe.js`.
+
+### Quando o deploy sai
+
+Tarefa `[DEPLOY]` com a política permitindo ("Sempre", ou "Automático a partir de um marco" com o marco atingido), ou autorizada ("Pedir autorização"). A tarefa não vai ao Dev: o ciclo entra na etapa **deploy**, sem gastar tokens. Marco não atingido, "Nunca" e papéis DEV2..DEV5: pausa como antes. O deploy só roda entre tarefas (nenhum agente trabalhando na pasta) e um por vez no app.
+
+### Os passos (`deployExec`)
+
+1. **Confere:** HEAD na branch de trabalho (a do papel com o fluxo; `vibe/<pasta>` sem ele), árvore limpa (arquivos versionados; não versionados não contam), remoto `origin` e `git fetch --tags`. Se a main já tem tudo da branch: "nada novo para publicar" (a tarefa fica feita, sem tag).
+2. **Portão de qualidade** (o comando da política) **na branch de trabalho**, pelo verificador da trava. Falhou: nada é publicado e a falha vai para a **recuperação da DEV2-015** (diagnóstico, decisão do orquestrador). O Dev conserta na branch, a revisão aprova e o Termix tenta o deploy de novo; as voltas continuam contando (esgotadas, a tarefa vira pendência). Sem portão na política, segue (fica registrado no log).
+3. **Leva a branch para a main** (a main local é antes alinhada com a do origin, só por fast-forward; divergência = pausa, nunca reset):
+   - com o fluxo (DEV1): **fast-forward** da dev1 para a main, como o `/fluxo:promover`; sem fast-forward possível, **merge --no-ff**;
+   - sem o fluxo: **merge --no-ff** da `vibe/<pasta>` na main;
+   - conflito: `git merge --abort`, volta para a branch e trata como falha (vai para a recuperação: o Dev traz a main para a branch e resolve lá). Nada se perde.
+4. **Envia a main** (`refs/heads/main`, sem força), cria a **tag anotada** e envia a tag: `deploy-AAAAMMDD-HHMM` (com `-2`, `-3` se já existir) ou `v<versão>` quando a versão do `package.json` da branch for diferente da main e a tag ainda não existir. Envio da main recusado: pausa ("Continuar" tenta de novo; a main local fica com a junção e o próximo envio a leva).
+5. **Receita de deploy** com a **main em checkout**, na pasta do projeto, um comando por linha (linhas com `#` são ignoradas), cada um pelo **verificador da trava** (como o F5 do projeto: trocar de pasta é recusado), até 10 min por comando. Log em `vibe\<id>\deploys\<tag>.log` (git, portão e receita).
+6. **Volta para a branch de trabalho** e o ciclo segue. O painel marca a tarefa "publicado pelo Termix (tag)" e o sino avisa.
+
+### Receita que falha depois do envio
+
+A main e a tag **já foram enviadas** e a publicação falhou. O ciclo pausa ("Deploy: a main foi enviada, a publicação falhou") com a mensagem clara e três opções: **"Rodar a receita de novo"** (main em checkout, receita, volta; deu certo, o ciclo segue), **"Voltar versão"** e **"Seguir sem publicar"** (a tarefa vira pendência). O Termix não tenta desfazer nada sozinho.
+
+### Pedir autorização
+
+O Termix monta o resumo (commits que entram, modo fast-forward ou merge, portão, receita), grava o pedido em `vibe\<id>\deploys\autorizacao.json` (status "aguardando") e pausa ("Aguardando autorização de deploy"). O **sino** e o **painel** mostram **"Autorizar deploy"** e **"Negar"** (sem "Continuar"). Autorizado: segue para os passos acima. Negado: a tarefa vira **pendência** ("deploy negado") e o ciclo segue.
+
+**Ponto de aprovação preparado para o Telegram (DEV2-019):** a decisão é sempre gravada no arquivo de autorização (`deployAut(id, 'decidir', { decisao, origem })`), e o relógio do ciclo (5 s) lê o arquivo enquanto a pausa espera: uma decisão gravada por outro caminho (ex.: o Telegram, no processo principal) é aplicada igual à do painel, com a origem registrada.
+
+### Voltar versão
+
+No painel, **"Deploys (versões)"** lista os deploys enviados (tag, data, fast-forward ou merge, commits, status, REVERTIDO) com **"Voltar para antes deste"**, **"Abrir log"** e, se a receita falhou, **"Rodar a receita de novo"**. "Voltar para antes deste" pede **confirmação explícita** no próprio painel e então:
+
+- desfaz, do mais novo até o escolhido, cada deploy ainda não revertido: **`git revert -m 1` do merge**, ou **`git revert` dos commits do intervalo** no fast-forward (se o intervalo tiver merges, por exemplo a main trazida para a dev1, um único commit de revert com a diferença líquida do intervalo, porque o `git revert` de um intervalo com merges não funciona);
+- os reverts são feitos numa branch temporária `termix-volta-...` a partir da main; só se todos derem certo a main avança (fast-forward) e é **enviada sem força**; conflito = `git revert --abort`, a main não muda (nem a local nem a do origin) e a branch temporária fica com o que foi feito;
+- depois, pergunta se roda a receita de novo ("Rodar a receita" / "Agora não").
+
+Com um agente trabalhando, voltar versão e rodar a receita esperam (o painel avisa). Com o fluxo, depois de voltar versão a dev1 não contém os reverts: o próximo deploy sai por merge --no-ff (o que foi revertido continua revertido); se quiser, traga a main para a dev1.
+
+### Fim do ciclo de DEV2..DEV5
+
+Projeto com o fluxo e papel DEV2..DEV5 (fora do Mutirão): ao terminar as tarefas, o Termix pede ao orquestrador, num pedido curto em arquivo (`pedidos\pedido-fim-handoff.md`), para reescrever o `docs/HANDOFF_DEVn.md` em alto nível (o que mudou, riscos, como validar, status; sem código, sem commit). Depois faz o commit **só desse arquivo** e envia **só a devN** (sem força; se a devN do remoto avançou, busca e junta antes, e com conflito cancela e avisa). O painel e a notificação dizem o resultado ("Enviar a branch e o handoff de novo" se falhar). O DEV1 é avisado pelo fluxo normal. **DEV2..DEV5 nunca publicam na main**: o deploy, a receita e o voltar versão são recusados no processo principal, não só escondidos na tela.
+
+### Arquivos novos em `vibe\<id>\deploys\`
+
+`deploys.json` (registro de cada deploy: tag, branch, tipo, SHA antes e depois, commits, portão, receita, status, revertido), `<tag>.log`, `<tag>-receita-<data>.log`, `<tag>-volta-<data>.log` e `autorizacao.json`. Nada é apagado.
+
+**Testar sem tokens:** o teste do módulo com remotos bare locais (`dep16.js`: Sempre com fast-forward e com merge --no-ff, portão falhando, conflito cancelado, receita falhando depois do envio, voltar versão nos casos merge, fast-forward e intervalo com merge, autorização, pausar/retomar, marco, DEV2 recusado, fim do DEV2, F5 do projeto) e o do app com o Claude Code falso (`run16.js a|b`).
 
 ## Roteiro
 

@@ -13,12 +13,55 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 - **DEV2-014** — Política de autonomia por projeto (tela "Antes de iniciar") e "Pausar deploy". *(feita, abaixo)*
 - **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto. *(feita, abaixo)*
-- **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert.
+- **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert. *(feita, abaixo)*
 - **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
 - **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento) e 3 ajustes da DEV2-014. *(feita, abaixo)*
 - **DEV2-019** — Telegram, por último e junto com o Ygor.
 - O Mutirão fica para depois, até o Ygor aprovar o Vibe.
-- **Backlog (da DEV2-015):** o F5 do projeto guardar o PID do processo que ficou rodando (servidor) e encerrá-lo antes de um F5 novo; adaptar o roteiro de app da DEV2-007 (`run7.js`) às novas regras (recuperação no lugar das pausas por tempo limite e por tentativas da conferência); validar o F5 da aba e a decisão do orquestrador com um Claude Code real.
+- **Backlog (da DEV2-015):** validar o F5 da aba e a decisão do orquestrador com um Claude Code real. (O PID do F5 do projeto e o `run7.js` foram feitos na DEV2-016.)
+- **Backlog (da DEV2-016):** validar com um Claude Code real o Dev consertando o portão pedido pela recuperação e o handoff do fim do ciclo escrito pelo orquestrador.
+
+---
+
+## DEV2-016 — Deploy feito pelo Termix (portão, tag, voltar versão), fim de ciclo de DEV2..DEV5 e ajustes da DEV2-015
+
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do orquestrador e do Ygor)
+- **Data:** 2026-11-11
+- **Pedido:** (orquestrador termix-orq-0b, decisões do Ygor) o deploy passa a ser feito pelo Termix, em código, conforme a política de autonomia; o DEV1 (ou o dono, sem o fluxo) tem autorização total para deploy na main; para DEV2..DEV5 o fim do ciclo é enviar a própria branch com o handoff; a trava continua barrando a main para a IA; voltar versão por git revert, nunca reset nem force. Parte B: PID do F5 do projeto, painel da recuperação ("Volta n/N" e "Abrir diagnóstico") e o `run7.js` nas pausas novas. Só no módulo; testes sem agentes reais.
+- **Feito:**
+  - `git fetch` + `git log dev2..origin/dev1` vazio: nada a sincronizar.
+  - `src/vibe/deploy.js` (novo, processo principal): `deployExec` (árvore limpa e HEAD na branch de trabalho; portão na branch, pela trava; main alinhada ao origin só por fast-forward; fluxo DEV1 = fast-forward da dev1, sem fast-forward = merge --no-ff; sem fluxo = merge --no-ff da `vibe/<pasta>`; conflito = `merge --abort`; envio da main, tag anotada `deploy-AAAAMMDD-HHMM` ou `v<versão>` e envio da tag, sem força; receita com a main em checkout, cada comando pela trava, até 10 min; volta para a branch; log em `vibe\<id>\deploys\<tag>.log`, registro em `deploys.json`); `deployResumo`; `deployReceita`; `deployLista`; `deployVoltar` (do mais novo até o escolhido: `revert -m 1` do merge, `revert` do intervalo no fast-forward, ou um revert com a diferença líquida quando o intervalo tem merges; numa branch temporária, a main só avança se tudo der certo; envio sem força); `deployAut` (ponto de aprovação em `deploys\autorizacao.json`); `fimInfo`/`fimPrompt`/`fimEnviar` (DEV2..DEV5: handoff pelo orquestrador, commit só do `docs/HANDOFF_DEVn.md`, envio só da devN). Deploy, receita e voltar versão recusados para quem não pode publicar.
+  - `src/vibe/politica.js`: "Pedir autorização" vira `autorizar`; "Pausar deploy" deixa retido também com "Pedir autorização"; o planejador sabe que o deploy é do Termix também com "Pedir autorização".
+  - `src/vibe/recuperacao.js`: F5 do projeto guarda o PID (`recuperacao\f5-projeto.pid.json`) e encerra só esse PID, com a árvore (`taskkill /T`), antes de um F5 novo e no fim do ciclo (`f5Encerrar`), conferindo que ainda é o shell que o Termix abriu; exporta `CD_RX` e `matarArvore`.
+  - `src/vibe/index.js`: liga o `deploy.js` (canais `vibe:deploy*`, `vibe:fim*`) e o canal `abrirArquivo` (só arquivos da pasta do Vibe).
+  - `src/renderer/vibe/vibe.js`: etapa `deploy` no ciclo (zero token); portão, conflito, árvore suja ou branch errada vão para a recuperação e, aprovado o conserto, o Termix tenta o deploy de novo; receita que falha depois do envio pausa com "Rodar a receita de novo", "Voltar versão" e "Seguir sem publicar"; "Pedir autorização" com resumo e "Autorizar deploy"/"Negar" no sino e no painel (o relógio aplica uma decisão gravada no arquivo por outro caminho, para o Telegram); "Retomar deploy" executa os retidos e os pendentes da DEV2-014 (na fronteira da tarefa, se um agente estiver trabalhando); lista "Deploys (versões)" com "Voltar para antes deste" (confirmação explícita no painel, depois "Rodar a receita?"), "Abrir log" e "Rodar a receita de novo"; fim de DEV2..DEV5 (handoff e envio, "Enviar a branch e o handoff de novo" se falhar); `f5Encerrar` no fim do ciclo; painel da recuperação com "Volta n/N" no lugar de "Tentativas" e o link "Abrir diagnóstico"; texto do deploy na tela "Antes de iniciar" atualizado.
+  - `src/renderer/vibe/vibe.css`: estilos da autorização, da lista de versões e da confirmação (só no módulo).
+  - `package.json`: só a linha `check`, com `src/vibe/deploy.js`.
+  - `docs/VIBE_MUTIRAO.md`: seção "Deploy pelo Termix (DEV2-016)" e notas na política, na recuperação e no F5 do projeto.
+- **Decisões:**
+  - Árvore limpa = sem mudanças em arquivos versionados (não versionados não barram; se atrapalharem a troca para a main, o deploy pausa com o motivo).
+  - Sem portão na política, o deploy segue (fica no log); sem `origin`, pausa.
+  - Falhas que o Dev pode consertar (portão, conflito, árvore suja, branch errada) vão para a recuperação; falhas de infraestrutura (troca para a main, main divergente do origin, envio recusado, sem remoto) pausam e "Continuar" tenta de novo.
+  - A tag é criada só depois do envio da main (envio recusado não deixa tag local sobrando).
+  - "Pausar deploy" retém também com "Pedir autorização" (antes, na DEV2-014, continuava pausando para autorização): o pedido diz que pausar deixa a tarefa retida. Duas checagens do teste da política mudaram por isso.
+  - Voltar versão de um fast-forward cujo intervalo tem merges: um commit "Revert" com a diferença líquida do intervalo (o `git revert` de um intervalo com merges não funciona); sem merges, `git revert` dos commits do intervalo, literal.
+  - "Voltar para antes deste" desfaz também os deploys mais novos que o escolhido (a main volta para antes dele).
+  - Retidos saem num deploy só, com a branch de trabalho atual.
+  - O fim de DEV2..DEV5 não vale para a parte do sócio nem para a implementação automática do Mutirão (eles já enviam a branch pelo Mutirão).
+- **Arquivos tocados:** `src/vibe/deploy.js` (novo), `src/vibe/index.js`, `src/vibe/politica.js`, `src/vibe/recuperacao.js`, `src/renderer/vibe/vibe.js`, `src/renderer/vibe/vibe.css`, `package.json` (só `check`), `docs/VIBE_MUTIRAO.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`. Núcleo (`src/main.js`, `app.js`, preload), versão, dist, main e dev1: nada.
+- **Como validar:** `npm run check`; teste do módulo `dep16.js` (remotos bare locais, recusam não-fast-forward e exclusão); teste do app com o Claude Code falso `run16.js a|b` (instância isolada: `--user-data-dir` temporário, `CLAUDE_CONFIG_DIR` vazio, `TERMIX_VIBE_TEST=1`, falso no PATH, remoto bare); `run7.js` adaptado; testes antigos.
+- **Validação feita:** `npm run check` passou (com `deploy.js`).
+  - **Módulo, novo (`dep16.js`): 57/57** — remotos bare locais que recusam não-fast-forward e exclusão: Sempre com fast-forward (fluxo DEV1) e com merge --no-ff (sem fluxo; e fluxo sem fast-forward possível), tag `deploy-...` e `v1.1.0`, portão falhando sem publicar, conflito cancelado sem perda, nada novo, receita falhando depois do envio (mensagem e "Rodar a receita de novo"), voltar versão (merge, fast-forward literal, intervalo com merge e revert com conflito cancelado; main sempre descendente da anterior, tags intactas), autorizar/negar com origem, Pausar/Retomar (Sempre e Pedir), marco não atingido e atingido, DEV2 recusado (deploy, receita, voltar), fim de ciclo DEV2 enviando só a dev2 com só o handoff, F5 do projeto encerrando o anterior e no fim, abrir arquivo só na pasta do Vibe.
+  - **App com o agente falso (CDP), novo (`run16.js`): a 27/27 e b 9/9** — a: F5 do projeto encerrando o anterior; T2 deploy Sempre (merge --no-ff, tag, receita); T4 portão falhando → recuperação (reenviar) → Dev conserta → revisão → deploy; T6 Pedir autorização com o resumo, "Autorizar deploy"/"Negar" no painel e no sino, autorizado pelo sino; T8 negado pelo arquivo (origem telegram) → pendência; T10 retido com "Pausar deploy"; "Retomar deploy" no meio da T11 → fila → publicado na fronteira; T13 receita falhando depois do envio → opções → "Rodar a receita de novo"; fim com o servidor do F5 encerrado, lista de versões, "Voltar para antes deste" com confirmação → revert enviado → "Rodar a receita?"; sem erros no console. b (fluxo, DEV2): sem opção de deploy, [DEPLOY] pausa, handoff pelo orquestrador, commit só do `docs/HANDOFF_DEV2.md`, envio só da dev2, main e dev1 intactas.
+  - **`run7.js` adaptado e rodado: 23/23** — tempo limite do Dev vai para a recuperação (diagnóstico, reenviar) e o orquestrador mudo na revisão ganha o F5 da aba dele, sem pausar; o resto do roteiro igual.
+  - **Testes antigos:** recuperação 36/36, trava 113/113, Mutirão 31/31, implementação automática 41/41, robustez 23/23, conferências 16/16, Organizador 19/19, política 55/55 (2 checagens mudaram de propósito: "Pedir autorização" agora é `autorizar` e "Pausar deploy" com ele é `retido`), run15 29/29 (1 checagem mudou de propósito: o caminho do diagnóstico virou o link "Abrir diagnóstico").
+  - Capturas (CDP, só o conteúdo do app) em `C:\Users\CRUUUU~1\AppData\Local\Temp\claude\c5001e4e31f92b1a\92f85dfa-f629-4333-9cbe-67c92bb64cd9\scratchpad\shots`: `d1-deploy-concluido-e-versoes.png`, `d2-pedido-de-autorizacao.png`, `d3-sino-autorizar.png`, `d4-receita-falhou.png`, `d5-voltar-versao-confirmar.png`, `d6-dev2-fim-handoff.png`.
+- **Pendências:**
+  - Validar com um Claude Code real (fica para quando a cota permitir): o Dev consertando o portão pedido pela recuperação e o orquestrador escrevendo o handoff do fim do ciclo.
+  - Telegram (DEV2-019): o ponto de aprovação está pronto (arquivo de autorização + leitura pelo ciclo); falta o lado do Telegram.
+  - Com o fluxo, depois de "Voltar versão" a dev1 não tem os reverts: o próximo deploy sai por merge --no-ff (o revertido continua revertido). Trazer a main para a dev1 fica com o humano.
+  - Se o app for fechado à força, o servidor do F5 do projeto não é encerrado (não há quem encerre); no próximo F5 do mesmo projeto ele é encerrado pelo PID guardado.
+- **Próximo passo:** revisão do orquestrador e do Ygor; depois, a fila (DEV2-017).
 
 ---
 

@@ -6,6 +6,16 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-016 — Deploy feito pelo Termix, fim de ciclo de DEV2..DEV5 e ajustes da DEV2-015** (DEV2)
+
+- Tarefa `[DEPLOY]` permitida pela política: o Termix (código, sem IA) confere árvore e branch, roda o portão na branch de trabalho, leva a branch para a main (fluxo DEV1: fast-forward; senão merge --no-ff; conflito = merge --abort), envia a main e a tag anotada (`deploy-AAAAMMDD-HHMM` ou `v<versão>`) sem força, roda a receita com a main em checkout (cada comando pela trava), grava `vibe\<id>\deploys\<tag>.log` e volta para a branch.
+- Portão, conflito ou árvore suja: nada publicado, vai para a recuperação da DEV2-015 e o deploy é tentado de novo depois do conserto. Receita que falha depois do envio: aviso claro e "Rodar a receita de novo", "Voltar versão" ou "Seguir sem publicar"; nada é desfeito sozinho.
+- "Pedir autorização": resumo e "Autorizar deploy"/"Negar" no sino e no painel; ponto de aprovação em arquivo, pronto para o Telegram. "Pausar deploy" retém; "Retomar deploy" publica os retidos (na fronteira da tarefa).
+- "Voltar versão": lista de deploys no painel, confirmação explícita, git revert na main (merge: -m 1; fast-forward: o intervalo) e envio sem força; depois pergunta se roda a receita.
+- DEV2..DEV5 nunca publicam na main (recusado no processo principal); no fim do ciclo, o orquestrador reescreve o `docs/HANDOFF_DEVn.md` e o Termix faz o commit só dele e envia só a devN.
+- DEV2-015: o servidor do F5 do projeto é encerrado (só o PID dele, com a árvore) antes de um F5 novo e no fim do ciclo; painel com "Volta n/N" e "Abrir diagnóstico"; `run7.js` adaptado (23/23).
+- Testes sem IA: módulo novo 57/57 (remotos bare); app com o agente falso 27/27 e 9/9; antigos passando (política e run15 com 3 checagens ajustadas por mudanças pedidas).
+
 **DEV2-015 — Recuperação de erro no ciclo do Vibe** (DEV2)
 
 - Erro do Dev, tempo limite, silêncio, aba fechada e tentativas esgotadas pela conferência não pausam mais: o Termix grava um diagnóstico (`vibe\<id>\diagnosticos\Tk-n.md`: tela, git status, último commit, branch, motivo e o já tentado), dá `/clear` no orquestrador e pede UMA ação (reenviar, clear_dev, f5_aba, f5_projeto, dividir, pular) em `recuperacao\Tk-n.json`, e executa em código.

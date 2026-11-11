@@ -10,7 +10,7 @@
    (src/renderer/vibe/vibe.js). */
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, execFileSync } = require('child_process');
 
 const ACOES = ['reenviar', 'clear_dev', 'f5_aba', 'f5_projeto', 'dividir', 'pular'];
 const TK_RX = /^T\d+(?:\.[a-z]){0,3}$/; // T3, e as partes de uma tarefa dividida: T3.a, T3.b, T3.a.a...
@@ -25,6 +25,22 @@ const ACOES_TXT = {
 // Mudar de pasta no comando de F5 do projeto não é aceito: ele roda sempre na pasta do projeto.
 const CD_RX = /(^|[\s;&|(])(cd|chdir|pushd|popd|set-location|sl|push-location)(?=$|[\s;&|)])/i;
 
+// DEV2-016: encerra um processo e os filhos dele (só esse PID e a árvore dele). No Windows, taskkill /T.
+function matarArvore(pid) {
+  if (!(pid > 0)) return false;
+  try {
+    if (process.platform === 'win32') execFileSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true, timeout: 15000 });
+    else process.kill(pid, 'SIGTERM');
+    return true;
+  } catch { return false; }
+}
+// O PID ainda é o shell que o Termix abriu? (PID reaproveitado por outro programa não é encerrado)
+function vivoEhShell(pid) {
+  try { process.kill(pid, 0); } catch { return false; }
+  if (process.platform !== 'win32') return true;
+  try { return /"cmd.exe"/i.test(execFileSync('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], { encoding: 'utf8', windowsHide: true, timeout: 15000 })); } catch { return false; }
+}
+
 const str = (v, max) => String(v == null ? '' : v).replace(/\r/g, '').trim().slice(0, max);
 const bool = (v) => v === true || /^(true|sim|yes|1)$/i.test(String(v == null ? '' : v).trim());
 
@@ -34,6 +50,20 @@ function create({ dirOf, readJson, validId, entregaOf, pastaDe, gitRun, headOf, 
   const diagF = (id, tk, n) => path.join(dirOf(id), 'diagnosticos', `${tk}-${n}.md`);
   const recF = (id, tk, n) => path.join(dirOf(id), 'recuperacao', `${tk}-${n}.json`);
   const politica = (id) => POL.ler(id) || null;
+  const pidF = (id) => path.join(dirOf(id), 'recuperacao', 'f5-projeto.pid.json');
+  // DEV2-016: o servidor que o F5 do projeto deixou rodando é encerrado (só esse PID, com a árvore) antes de um F5 novo e no fim do ciclo
+  function f5Encerrar(id, motivo) {
+    if (!validId(id)) return { ok: false };
+    const f = pidF(id), j = readJson(f);
+    if (!j || !(j.pid > 0)) return { ok: true, nada: true };
+    const vivo = vivoEhShell(j.pid);
+    const ok = vivo ? matarArvore(j.pid) : true;
+    try { fs.unlinkSync(f); } catch { /* já apagado */ }
+    try { fs.appendFileSync(path.join(dirOf(id), 'recuperacao', 'f5-projeto.log'), `
+=== ${new Date().toISOString()} · ${vivo ? (ok ? 'encerrado' : 'NÃO encerrado') : 'já tinha terminado'}: PID ${j.pid} (${motivo || 'F5 novo'})
+`); } catch { /* sem log */ }
+    return { ok, pid: j.pid, encerrado: vivo && ok, jaTerminou: !vivo };
+  }
   const f5Cmd = (id) => { const p = politica(id); return (p && p.recuperacao && p.recuperacao.f5Projeto) || ''; };
 
   const api = {
@@ -162,6 +192,7 @@ function create({ dirOf, readJson, validId, entregaOf, pastaDe, gitRun, headOf, 
       if (veto) return { ok: false, motivo: `A trava barrou o comando de F5 do projeto: ${String(veto).slice(0, 400)}` };
       const logF = path.join(dirOf(id), 'recuperacao', 'f5-projeto.log');
       fs.mkdirSync(path.dirname(logF), { recursive: true });
+      const anterior = f5Encerrar(id, 'F5 novo'); // DEV2-016: o servidor do F5 anterior sai antes de subir de novo
       fs.appendFileSync(logF, `\n=== ${new Date().toISOString()} · ${cmd}\n`);
       const fd = fs.openSync(logF, 'a');
       const ms = Math.min(120000, Math.max(1000, Number(espera) || (TEST ? 8000 : 15000)));
@@ -171,12 +202,13 @@ function create({ dirOf, readJson, validId, entregaOf, pastaDe, gitRun, headOf, 
         let ch;
         try { ch = spawn(cmd, { cwd: pasta, shell: true, windowsHide: true, stdio: ['ignore', fd, fd] }); } catch (e) { done({ ok: false, motivo: `Não foi possível rodar o comando: ${e.message}` }); return; }
         ch.on('error', (e) => done({ ok: false, motivo: `Não foi possível rodar o comando: ${e.message}` }));
-        ch.on('exit', (code) => done(code === 0 ? { ok: true, estado: 'terminou', codigo: 0 } : { ok: false, estado: 'terminou', codigo: code, motivo: `O comando de F5 do projeto terminou com o código ${code} (veja ${logF}).` }));
-        setTimeout(() => { if (!fim) { try { ch.unref(); } catch { /* sem processo */ } done({ ok: true, estado: 'rodando' }); } }, ms);
+        ch.on('exit', (code) => { try { const j = readJson(pidF(id)); if (j && j.pid === ch.pid) fs.unlinkSync(pidF(id)); } catch { /* sem registro */ } done(code === 0 ? { ok: true, estado: 'terminou', codigo: 0 } : { ok: false, estado: 'terminou', codigo: code, motivo: `O comando de F5 do projeto terminou com o código ${code} (veja ${logF}).` }); });
+        setTimeout(() => { if (!fim) { try { ch.unref(); } catch { /* sem processo */ } try { fs.writeFileSync(pidF(id), JSON.stringify({ pid: ch.pid, comando: cmd, inicio: new Date().toISOString() })); } catch { /* sem registro */ } done({ ok: true, estado: 'rodando', pid: ch.pid, anterior: anterior.pid ? anterior : null }); } }, ms);
       });
     },
   };
+  api.f5Encerrar = (id) => f5Encerrar(id, 'fim do ciclo');
   return { api };
 }
 
-module.exports = { create, ACOES, TK_RX };
+module.exports = { create, ACOES, TK_RX, CD_RX, matarArvore };

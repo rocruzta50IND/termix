@@ -201,6 +201,10 @@ function create(deps = {}) {
   const POL = require('./politica').create({ dirOf, readJson, writeJson, validId, pastaDe: (id) => { const e = entregaOf(id); return (e && e.projeto.pasta) || MUT.pastaDe(id) || ''; } });
   // DEV2-015: recuperação de erro (diagnóstico, decisão do orquestrador por arquivo, F5 do projeto e dividir tarefa)
   const REC = require('./recuperacao').create({ dirOf, readJson, validId, entregaOf, pastaDe: (id) => MUT.pastaDe(id), gitRun, headOf, branchDe: (id, pasta) => branchFor(id, pasta).nome, pedido: (...a) => pedido(...a), POL, decide: require('./trava').decide, travaCfg: (id, pasta) => ({ projeto: pasta, vibe: dirOf(id), branch: branchFor(id, pasta).nome, protegidas: PROTEGIDAS }), TEST });
+  // DEV2-016: deploy feito pelo Termix (portão, junção na main, tag, envio sem força, receita, voltar versão por revert) e o
+  // fim do ciclo de DEV2..DEV5 (handoff e envio só da devN). src/vibe/deploy.js
+  const pastaProj = (id) => { const e = entregaOf(id); return (e && e.projeto.pasta) || MUT.pastaDe(id) || ''; };
+  const DEP = require('./deploy').create({ dirOf, readJson, writeJson, validId, pastaDe: pastaProj, gitRun, shaOf, headOf, branchDe: (id, pasta) => branchFor(id, pasta).nome, POL, decide: require('./trava').decide, travaCfg: (id, pasta) => ({ projeto: pasta, vibe: dirOf(id), branch: branchFor(id, pasta).nome, protegidas: PROTEGIDAS }), pedido: (...a) => pedido(...a), socioOuAuto: (id) => !!(MUT.socioDe(id) || MUT.autoDe(id)), TEST });
   // Branch dos agentes deste projeto: a do dono, na implementação automática do Mutirão (DEV2-006); a da parte do Mutirão,
   // se o sócio abriu o Vibe por ela; senão, a regra de branchOf.
   const branchFor = (id, pasta) => {
@@ -522,6 +526,14 @@ function create(deps = {}) {
       } catch { return { ok: false }; }
     },
     // Pedidos curtos da execução. kind: 'dev' (tarefa nova), 'refazer' (com a revisão ou o que faltou), 'revisao' (orquestrador).
+    // DEV2-016: abre um arquivo do próprio Vibe (diagnóstico, log de deploy) no programa padrão. Só dentro de vibe<id>.
+    abrirArquivo(id, file) {
+      if (!validId(id) || typeof file !== 'string') return false;
+      const f = path.resolve(file), d = path.resolve(dirOf(id));
+      if (!f.toLowerCase().startsWith(d.toLowerCase() + path.sep) || !fs.existsSync(f)) return false;
+      if (TEST && process.env.TERMIX_VIBE_NO_OPEN === '1') return true;
+      try { require('electron').shell.openPath(f); return true; } catch { return false; }
+    },
     execPrompt(id, kind, tk, extra) {
       const e = entregaOf(id);
       if (!e || !TK_RX.test(String(tk))) return null;
@@ -585,10 +597,12 @@ function create(deps = {}) {
     on('execPrompt', api.execPrompt);
     for (const [k, fn] of Object.entries(MUT.api)) on(k, fn, null); // Mutirão (DEV2-005)
     for (const [k, fn] of Object.entries(REC.api)) on(k, fn, null); // DEV2-015: recuperação de erro (recDiag, recPrompt, recLer, planoDividir, f5Projeto)
+    for (const [k, fn] of Object.entries(DEP.api)) on(k, fn, null); // DEV2-016: deploy, voltar versão e fim de ciclo de DEV2..DEV5
+    on('abrirArquivo', api.abrirArquivo, false);
     for (const [k, fn] of Object.entries(POL.api)) on(k, fn, null); // DEV2-014: política de autonomia (canais vibe:politica*)
     for (const [k, fn] of Object.entries(ORG)) on(k, fn, null); // Organizador (DEV2-010): canais vibe:org*
   }
-  Object.assign(api, POL.api, REC.api); // DEV2-014/015: também acessível pelos testes sem ipc
+  Object.assign(api, POL.api, REC.api, DEP.api); // DEV2-014/015: também acessível pelos testes sem ipc
   api.spawnSettings = spawnSettings; // usado pelo main.js (não é canal ipc)
   return api;
 }
