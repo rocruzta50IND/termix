@@ -14,7 +14,7 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - **DEV2-014** — Política de autonomia por projeto (tela "Antes de iniciar") e "Pausar deploy". *(feita, abaixo)*
 - **DEV2-015** — Recuperação de erro com diagnóstico, 3 voltas do orquestrador e "F5" da aba do Dev e do projeto. *(feita, abaixo)*
 - **DEV2-016** — Deploy feito pelo Termix, com tag, portão e voltar versão por revert. *(feita, abaixo)*
-- **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções.
+- **DEV2-017** — Vibe de tarefa (modo rápido) para projeto em andamento, criando também o painel com orquestrador e dev, com todas as funções. *(feita, abaixo)*
 - **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento) e 3 ajustes da DEV2-014. *(feita, abaixo)*
 - **DEV2-021** — Dois ajustes do deploy da DEV2-016: portão obrigatório no deploy automático e junção da main na dev1 depois de "Voltar versão". *(feita, abaixo)*
 - **DEV2-019** — Telegram, por último e junto com o Ygor.
@@ -26,7 +26,7 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ## DEV2-017 — Vibe de tarefa (modo rápido para projeto em andamento)
 
-- **Status:** EM ANDAMENTO
+- **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do orquestrador e do Ygor)
 - **Data:** 2026-11-11
 - **Pedido:** (orquestrador termix-orq-0b, decisão do Ygor) o formulário completo de entrega fica só para projeto do zero. Num projeto em andamento, o usuário descreve a tarefa e o Termix cria o mesmo painel com orquestrador e dev, com todas as funções (política, recuperação, deploy, Parar e Continuar). Só no módulo. A1 escolha inicial; A2 formulário da tarefa e entrega sintética com resumo do projeto sem IA; A3 pedido de plano curto; A4 resto igual ao Vibe; A5 histórico de tarefas com as abas reaproveitadas por /clear.
 - **Feito até agora:**
@@ -38,12 +38,16 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - **Decisões:**
   - A tarefa nova fecha a anterior no histórico ("concluida" pelo fim do ciclo; "interrompida" se ainda não tinha terminado); a entrega anterior vai para `historico\<data>\` e o ciclo para `historico\ciclo-<data>\`; nada é apagado.
   - Projeto sem git é recusado no Vibe de tarefa (é para projeto em andamento).
-- **Arquivos tocados:** `src/vibe/tarefa.js` (novo), `src/vibe/index.js`, `package.json` (só o script check), `docs/TASKS_DEV2.md`.
-- **Como validar:** `npm run check`; `tar17.js` (scratchpad).
+  - Só o Vibe de tarefa reaproveita as abas; o "Projeto novo" continua criando abas novas, como antes.
+  - Rodada real com Sonnet nas duas abas (modelo por papel da política) para gastar menos.
+- **Arquivos tocados:** `src/vibe/tarefa.js` (novo), `src/vibe/index.js`, `src/renderer/vibe/vibe.js`, `src/renderer/vibe/vibe.css`, `package.json` (só o script check), `docs/VIBE_MUTIRAO.md`, `docs/TASKS_DEV2.md`, `docs/CHANGELOG_DEV2.md`, `docs/HANDOFF_DEV2.md`. Núcleo, versão, dist, main e dev1: nada.
+- **Como validar:** `npm run check`; `tar17.js` (módulo); `run17.js` (CDP, agente falso); `run17r.js prep|run|cont|limpar` (real, isolado).
+- **Validação feita:** `npm run check` passou; módulo 33/33; app 26/26 sem erros no console.
   - Testes antigos: dep16 68/68, run16 a 28/28 e b 9/9, run7 23/23, run15 29/29, pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16; rec15 35/36 (a checagem "pedido curto" passa de 200 caracteres por causa do caminho longo do scratchpad; já falhava igual na sessão da DEV2-016, sem relação com esta tarefa). Organizador (`run10.js`) não rodado: usa credencial real e o código dele não mudou.
   - `docs/VIBE_MUTIRAO.md`: seção "Vibe de tarefa" e a tabela de arquitetura.
-- **Pendências:** rodada real curta; CHANGELOG_DEV2 e HANDOFF_DEV2.
-- **Próximo passo:** rodada real curta (`run17r.js prep|run|limpar`, projeto de brinquedo "copos" com git, Sonnet nas duas abas, teto 12 pontos da janela de 5 h); depois CHANGELOG_DEV2, HANDOFF_DEV2, commit final e relatório ao termix-orq-0b.
+  - **Rodada real curta** (projeto de brinquedo "copos" com 2 commits e remoto bare, instância isolada, `CLAUDE_CONFIG_DIR` e `TERMIX_VIBE_CLAUDE_JSON` de teste, credencial temporária apagada no fim, Sonnet nas duas abas): plano em ~1 min com 2 tarefas (T1 botão −1 copo; T2 validação [SEM COMMIT]), sem perguntas e sem publicação. A execução **pausou no teto de 7 d da política (97 % > 95 %)**, como deve; com o teto subido para 100 só nessa instância, reabrir mostrou a tela no tipo tarefa sem recomeçar sozinha e "Continuar" levou até "Tarefa concluída" (commit `62664ca` só na `vibe/copos`, main local e do remoto intactas, código correto, histórico "concluida"). **Gasto:** 37 respostas, ≈ US$ 0,99 na tabela da API do Sonnet; janela de 5 h 24 % → 27 %, 7 d 97 % → 98 % (inclui outras sessões abertas).
+- **Pendências:** nenhuma nova. Observação: a janela de 7 d real estava em 97 %; com a política padrão (teto 95 %), um ciclo real pausa até ela virar.
+- **Próximo passo:** revisão do orquestrador e do Ygor.
 
 ---
 

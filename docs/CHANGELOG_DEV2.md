@@ -6,6 +6,13 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-11
 
+**DEV2-017 — Vibe de tarefa (modo rápido para projeto em andamento)** (DEV2)
+
+- O botão Vibe Coding abre uma escolha: "Projeto novo (entrega completa)" (o formulário de sempre) ou "Tarefa num projeto em andamento". "Trocar o tipo" volta à escolha.
+- Tarefa: o que fazer, critério de pronto, o que não pode e arquivos ou telas. O Termix monta a entrega sintética com um resumo do projeto lido sem IA (branch, papel, últimos commits, README, CLAUDE.md e a tarefa em andamento do TASKS) e pede um plano curto (por grep, poucas tarefas, mesmas marcas, só o indispensável). Daí em diante, o ciclo do Vibe inteiro.
+- Histórico de tarefas por projeto (`vibe\<id>\tarefas.json`): a atual e as anteriores no painel, com feitas e pendências; nada é apagado; as abas do orquestrador e do Dev são reaproveitadas com /clear.
+- Testes: módulo 33/33, app com o agente falso 26/26, antigos passando. Rodada real curta (Sonnet): plano de 2 tarefas sem perguntas, tarefa concluída na branch de trabalho, pausa correta no teto de 7 d; ≈ US$ 0,99.
+
 **DEV2-021 — Portão obrigatório no deploy automático e junção na dev1 depois de "Voltar versão"** (DEV2)
 
 - Deploy "Sempre" ou "Marco" exige o portão de qualidade: a tela "Antes de iniciar" (e a edição da política) avisa e não grava; o processo principal também recusa o deploy. "Pedir autorização" segue podendo publicar sem portão.
