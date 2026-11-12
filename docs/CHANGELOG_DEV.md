@@ -10,7 +10,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 **TASK-133 — Clonar repositório público do GitHub pelo link** (DEV1)
 
-- Nova opção "Clonar do GitHub" em Novo projeto/mutirão, com `src/clone.js` (`git clone` seguro, sem login, sem pasta parcial em caso de erro) e aviso de que só repositórios públicos por enquanto. Clone testado por script (público, repetido, inexistente, privado). `npm run check` ok. **Não publicada**; aguarda o usuário.
+- Nova opção "Clonar do GitHub" em Novo projeto/mutirão, com `src/clone.js` (`git clone` seguro, sem login, sem pasta parcial em caso de erro) e aviso de que só repositórios públicos por enquanto. Clone testado por script (público, repetido, inexistente, privado). `npm run check` ok. **Publicação:** versão 0.6.4; `dev1` promovida à `main`, Release v0.6.4 publicado (exe, blockmap, `latest.yml`; sha512 conferido), a pedido do usuário sem teste visual prévio da tela.
 
 ---
 

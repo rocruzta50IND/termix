@@ -3,6 +3,15 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.6.4',
+    date: '12/11/2026',
+    resumo: 'Traga um projeto do GitHub só com o link.',
+    novo: [
+      'Em Novo projeto (e Novo mutirão) há a opção "Clonar do GitHub": cole o link do repositório e o Termix baixa e cria o projeto.',
+      'Por enquanto só repositórios públicos. Repositório privado vai exigir uma conexão, que ficará no Rocruzta Hub.',
+    ],
+  },
+  {
     v: '0.6.3',
     date: '11/11/2026',
     resumo: 'Novos nomes na barra lateral.',
