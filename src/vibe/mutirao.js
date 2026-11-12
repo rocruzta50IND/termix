@@ -117,8 +117,10 @@ function create(h) {
   function pedidoTexto(d) {
     const lista = d.participantes.map((p) => `${p.nome} (branch ${p.branch})`).join(', ');
     const dono = d.participantes.find((p) => p.branch === d.branchDono);
-    const intro = d.modo === 'tarefa'
-      ? `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto, que JÁ ESTÁ EM ANDAMENTO. NÃO divida o projeto inteiro: escreva UMA TAREFA para cada participante (${lista}), com o que fazer e o resultado esperado, conversando com o dono no chat sobre o que cada um vai fazer. As tarefas não podem ter arquivo em comum entre si${dono ? `, inclusive a do próprio dono (${dono.nome}, branch ${d.branchDono}), que segue trabalhando na branch dele` : '; o dono segue trabalhando na branch dele em outra parte, então evite os arquivos que ele indicar'}. Em divisao.json, "objetivo" e "criterio" descrevem o conjunto das tarefas; cada parte é uma tarefa.`
+    const intro = d.modo === 'tarefas'
+      ? `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto, que JÁ ESTÁ EM ANDAMENTO (modo "Delegar algumas tarefas"). NÃO divida o projeto inteiro: escreva UMA TAREFA para cada participante (${lista}), com o que fazer e o resultado esperado, conversando com o dono no chat sobre o que cada um vai fazer. As tarefas não podem ter arquivo em comum entre si${dono ? `, inclusive a do próprio dono (${dono.nome}, branch ${d.branchDono}), que segue trabalhando na branch dele` : '; o dono segue trabalhando na branch dele em outra parte, então evite os arquivos que ele indicar'}. Em divisao.json, "objetivo" e "criterio" descrevem o conjunto das tarefas; cada parte é uma tarefa.`
+      : d.modo === 'estado_atual'
+      ? `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto, que JÁ ESTÁ EM ANDAMENTO (modo "Do estado atual até finalizar"). Primeiro veja o que já está feito (README, docs, TASKS, ROADMAP e a estrutura de pastas do estado atual do repositório). Depois divida TODO O RESTANTE do projeto, do estado atual até finalizar, entre: ${lista}; cada um fica com a sua parte até o fim${dono ? ` (o dono, ${dono.nome}, também tem uma parte, na branch ${d.branchDono})` : ''}. Não repita o que já está pronto. Em divisao.json, "objetivo" e "criterio" são os do projeto finalizado.`
       : `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto NOVO. Divida o projeto INTEIRO (100%) entre: ${lista}; cada um fica com a sua parte do início ao fim${dono ? ` (o dono, ${dono.nome}, também tem uma parte, na branch ${d.branchDono})` : ''}.${d.entrega && d.entrega.estrutura ? ' A estrutura do projeto enviada pelo dono está em mutirao/estrutura.md: leia-a primeiro e cubra tudo o que ela descreve.' : ''}${d.entrega && d.entrega.objetivo ? ` Objetivo do projeto: ${d.entrega.objetivo}.` : ''}${d.entrega && d.entrega.criterio ? ` Critério de pronto do projeto: ${d.entrega.criterio}.` : ''}`;
     return `${intro} Leia só o necessário (CLAUDE.md, README, docs e a estrutura de pastas; sem ler o código inteiro). Grave, sem escrever nada fora da pasta mutirao/ do projeto: 1) mutirao/divisao.json = {"branchDono":"${d.branchDono}","objetivo":"objetivo do projeto inteiro, até 300 caracteres","criterio":"critério de pronto do projeto inteiro","participantes":[{"nome":"...","branch":"..."}],"partes":[{"branch":"...","titulo":"...","objetivo":"até 300 caracteres","criterio":"como saber que a parte acabou","arquivos":["arquivos ou pastas, relativos à raiz"]}]}, uma parte por participante, SEM nenhum arquivo ou pasta em comum entre as partes (uma pasta conta como tudo dentro dela; o Termix confere e recusa); 2) mutirao/partes/<branch>.md de cada um, com as 9 seções preenchidas: Objetivo, Público e usuários, Funcionalidades, Fora do escopo (inclua os arquivos das outras partes), Telas e fluxos, Dados e regras de negócio, Integrações e acessos, Tecnologia, Critério de pronto. Não altere o código nem este PEDIDO.md, não faça commit nem push: quem publica é o Termix. Ao terminar, responda apenas DIVISÃO GRAVADA e um resumo de até 3 linhas.`;
   }
@@ -288,7 +290,7 @@ function create(h) {
     }).filter(Boolean);
   }
   // soProjeto: só registra o projeto (para abrir o chat antes de definir os participantes)
-  // opts (DEV2-023): { modo: 'projeto' (a: projeto novo, 100% dividido) | 'tarefa' (b: uma tarefa por sócio), entrega: { objetivo, criterio, estrutura (.md) } }
+  // opts (DEV2-023): { modo: 'projeto' (a: projeto novo, 100% dividido) | 'estado_atual' (b1: do estado atual até finalizar) | 'tarefas' (b2: delegar algumas tarefas), entrega: { objetivo, criterio, estrutura (.md) } }
   function iniciar(id, projeto, participantes, soProjeto, opts) {
     if (!validId(id) || !projeto || !projeto.pasta) return { ok: false, motivo: 'Projeto inválido.' };
     const pp = papel(projeto.pasta);
@@ -302,7 +304,7 @@ function create(h) {
     const bs = lista.map((p) => p.branch);
     if (new Set(bs).size !== bs.length) prob.push('Duas pessoas com a mesma branch.');
     const o = opts && typeof opts === 'object' ? opts : {};
-    const modo = o.modo === 'tarefa' || o.modo === 'projeto' ? o.modo : null;
+    const modo = ['projeto', 'estado_atual', 'tarefas'].includes(o.modo) ? o.modo : null; // DEV2-023: (a) projeto | (b1) estado_atual | (b2) tarefas
     let entrega = null;
     if (o.entrega && typeof o.entrega === 'object') {
       entrega = { objetivo: String(o.entrega.objetivo || '').trim().slice(0, 300), criterio: String(o.entrega.criterio || '').trim().slice(0, 2000), estrutura: '' };

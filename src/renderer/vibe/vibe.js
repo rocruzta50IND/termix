@@ -1811,15 +1811,15 @@
       main = `<div class="mp-expl"><p><b>Só o dono do projeto usa o Mutirão.</b> Ele define com o orquestrador a divisão do trabalho; cada sócio recebe uma parte numa branch própria (dev2, dev3…), e o contador mostra as entregas até liberar a implementação automática.</p>${pp.motivo ? `<p class="mp-why">${esc(pp.motivo)}</p>` : ''}<p>Se você recebeu uma parte: sincronize a sua branch com a do dono e abra o projeto no Termix na sua branch. O aviso "Você tem uma parte do Mutirão" aparece aqui e no cabeçalho.</p></div>`;
     } else {
       const bloq = pp.pode ? '' : 'disabled';
-      const tarefa = !!(d && d.modo === 'tarefa'); // DEV2-023: (b) projeto em andamento = uma tarefa por participante
+      const tarefa = !!(d && d.modo === 'tarefas'); // DEV2-023: (b2) "Delegar algumas tarefas" = uma tarefa por participante
       const pub = d && d.publicado;
       const tab = d && d.orq ? tabOf(d.orq) : null;
       main = `${pp.motivo ? `<div class="mp-warn">${esc(pp.motivo)}</div>` : ''}
         ${!pp.fluxo ? '<p class="mp-why">Projeto sem o fluxo Rocruzta: o Mutirão exige um remoto git (origin) que todos os sócios acessem.</p>' : ''}
-        <dl class="mp-dl">${d ? `<dt>Tipo</dt><dd>${tarefa ? 'Projeto em andamento: uma tarefa por participante' : 'Projeto novo: o projeto inteiro dividido'}</dd>` : ''}${est.fase ? `<dt>Fase</dt><dd>${esc(est.fase.l)}</dd>` : ''}<dt>Branch do dono</dt><dd>${esc(pp.branchDono || '—')}${pp.criar ? ` <small>(será criada a partir de ${esc(pp.atual || 'atual')} ao publicar)</small>` : ''}</dd><dt>Remoto</dt><dd>${esc(pp.remoto || 'nenhum')}</dd></dl>
+        <dl class="mp-dl">${d ? `<dt>Tipo</dt><dd>${tarefa ? 'Projeto em andamento: delegar algumas tarefas (uma por participante)' : d.modo === 'estado_atual' ? 'Projeto em andamento: do estado atual até finalizar, todo o restante dividido' : 'Projeto novo: o projeto inteiro dividido'}</dd>` : ''}${est.fase ? `<dt>Fase</dt><dd>${esc(est.fase.l)}</dd>` : ''}<dt>Branch do dono</dt><dd>${esc(pp.branchDono || '—')}${pp.criar ? ` <small>(será criada a partir de ${esc(pp.atual || 'atual')} ao publicar)</small>` : ''}</dd><dt>Remoto</dt><dd>${esc(pp.remoto || 'nenhum')}</dd></dl>
         <div class="mp-sec"><b>1. Participantes</b> <small>nome e branch de cada sócio</small>${mutRowsHtml(bloq)}</div>
         <div class="mp-sec"><b>2. ${tarefa ? 'Tarefas' : 'Divisão'} com o orquestrador</b>
-          <p class="mp-small">O chat é o terminal da aba "${esc(MUT_NAME)}", ao lado. Converse com ele à vontade; "${tarefa ? 'Gerar tarefas' : 'Gerar divisão'}" manda um pedido curto para ele gravar <code>mutirao/divisao.json</code> e ${tarefa ? 'uma tarefa por participante (o projeto está em andamento: não é dividir o projeto inteiro)' : 'uma parte por sócio (o projeto inteiro, 100%)'}.</p>
+          <p class="mp-small">O chat é o terminal da aba "${esc(MUT_NAME)}", ao lado. Converse com ele à vontade; "${tarefa ? 'Gerar tarefas' : 'Gerar divisão'}" manda um pedido curto para ele gravar <code>mutirao/divisao.json</code> e ${tarefa ? 'uma tarefa por participante (não é dividir o projeto inteiro)' : d && d.modo === 'estado_atual' ? 'uma parte por participante (todo o restante, do estado atual até finalizar)' : 'uma parte por participante (o projeto inteiro, 100%)'}.</p>
           <div class="vibe-confirm mp-left"><button class="btn sm" data-mp="chat" ${bloq}>${tab ? 'Ir para o chat' : 'Abrir o chat'}</button><button class="btn sm pri" data-mp="gerar" ${bloq || (MP.gerando ? 'disabled' : '')}>${MP.gerando ? (tarefa ? 'Escrevendo…' : 'Dividindo…') : MP.conf ? 'Gerar de novo' : tarefa ? 'Gerar tarefas' : 'Gerar divisão'}</button><button class="btn sm" data-mp="conf" ${MP.gerando ? 'disabled' : ''}>Conferir</button></div>
           ${mutConfHtml()}</div>
         <div class="mp-sec"><b>3. Publicar</b> <small>commit só de mutirao/ na branch ${esc(pp.branchDono || 'do dono')} e push só dela</small>
@@ -2082,7 +2082,7 @@
     } finally { mutStBusy = false; if (mutStAgain) { mutStAgain = false; mutStatus(); } }
   }
 
-  const MN0 = () => ({ orig: 'novo', pid: '', rows: [{ nome: '', branch: 'dev2' }], pp: null, ppKey: '', busy: false, err: '', objetivo: '', criterio: '', estrutura: null });
+  const MN0 = () => ({ modoB: 'estado_atual', orig: 'novo', pid: '', rows: [{ nome: '', branch: 'dev2' }], pp: null, ppKey: '', busy: false, err: '', objetivo: '', criterio: '', estrutura: null });
   // (a) projeto novo: o .md da estrutura do projeto, escolhido e conferido como na entrega do Vibe (as 9 seções)
   async function mnEstrutura(testPath) {
     const r = await call('pick', 'estrutura', testPath);
@@ -2122,7 +2122,8 @@
     const proj = novo
       ? `<div class="f"><label>Nome do projeto</label><input class="inp" type="text" id="npName" value="${esc(np.name)}" placeholder="Meu SaaS" maxlength="60"></div>
     <div class="f"><label>Pasta</label><div class="seg"><button type="button" class="${np.where === 'new' ? 'sel' : ''}" data-npwhere="new">Criar pasta nova</button><button type="button" class="${np.where === 'dir' ? 'sel' : ''}" data-npwhere="dir">Usar pasta existente</button><button type="button" class="${np.where === 'git' ? 'sel' : ''}" data-npwhere="git">Clonar do GitHub</button></div>${folder}</div>`
-      : `<div class="f"><label>Projeto do Termix</label><select class="inp" id="mnProj">${ps.length ? `<option value="" ${MN.pid ? '' : 'selected'}>Escolha o projeto…</option>` : '<option value="">Nenhum projeto no Termix</option>'}${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === MN.pid ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select><p class="meta">Projeto em andamento: cada participante recebe uma tarefa (o orquestrador ajuda a escrever o resultado esperado e confere os arquivos em comum). Você segue trabalhando na sua branch enquanto as entregas chegam.</p></div>`;
+      : `<div class="f"><label>Projeto do Termix</label><select class="inp" id="mnProj">${ps.length ? `<option value="" ${MN.pid ? '' : 'selected'}>Escolha o projeto…</option>` : '<option value="">Nenhum projeto no Termix</option>'}${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === MN.pid ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+    <div class="f"><label>O que fazer com ele</label><div class="seg"><button type="button" class="${MN.modoB === 'estado_atual' ? 'sel' : ''}" data-mnmodo="estado_atual">Do estado atual até finalizar</button><button type="button" class="${MN.modoB === 'tarefas' ? 'sel' : ''}" data-mnmodo="tarefas">Delegar algumas tarefas</button></div>${MN.modoB === 'tarefas' ? '<p class="meta">Você define uma ou mais tarefas para os sócios (o orquestrador ajuda a escrever o resultado esperado e confere os arquivos em comum) e segue trabalhando na sua branch enquanto as entregas chegam.</p>' : '<p class="meta">Todo o restante do projeto, do estado atual do repositório até finalizar, é dividido entre os participantes, cada um com a sua parte até o fim.</p>'}</div>`;
     const rows = MN.rows.map((r, i) => `<div class="nprow"><input class="inp" type="text" data-mnn="${i}" value="${esc(r.nome || '')}" placeholder="Nome" maxlength="60"><input class="inp" type="text" data-mnb="${i}" value="${esc(r.branch || '')}" placeholder="branch (ex.: dev2)" maxlength="60"><button type="button" class="btn" data-mnrm="${i}" title="Tirar" ${MN.rows.length < 2 ? 'disabled' : ''}>×</button></div>`).join('');
     const label = MN.busy || np.busy ? (np.busy ? 'Clonando…' : 'Criando…') : novo && np.where === 'git' ? 'Clonar e criar mutirão' : 'Criar mutirão';
     return `<div class="npage"><div class="npinner">
@@ -2132,8 +2133,8 @@
     ${proj}
     ${entrega}
     ${mnPapelHTML(np)}
-    <div class="f"><label>Participantes</label><p class="meta">Nome e branch de cada um (dev2, dev3…). Para ter ${novo ? 'uma parte' : 'uma tarefa'} também, inclua-se com a sua branch${MN.pp && MN.pp.branchDono ? ` (${esc(MN.pp.branchDono)})` : ''}${novo ? '' : ', o normal num projeto em andamento'}. main/master não vale.</p>${rows}<div class="nprow"><button type="button" class="btn" data-mnadd>Adicionar participante</button></div></div>
-    <p class="meta">Em seguida, o projeto abre com o painel do Mutirão: o chat com o orquestrador do dono, ${novo ? 'a divisão de 100% do projeto' : 'uma tarefa por participante'}, a conferência de arquivos em comum e a publicação. As entregas aparecem na pasta "Mutirão" e no sino.</p>
+    <div class="f"><label>Participantes</label><p class="meta">Nome e branch de cada um (dev2, dev3…). Para ter ${!novo && MN.modoB === 'tarefas' ? 'uma tarefa' : 'uma parte'} também, inclua-se com a sua branch${MN.pp && MN.pp.branchDono ? ` (${esc(MN.pp.branchDono)})` : ''}; ela fica separada das outras, sem arquivo em comum. main/master não vale.</p>${rows}<div class="nprow"><button type="button" class="btn" data-mnadd>Adicionar participante</button></div></div>
+    <p class="meta">Em seguida, o projeto abre com o painel do Mutirão: o chat com o orquestrador do dono, ${novo ? 'a divisão de 100% do projeto' : MN.modoB === 'tarefas' ? 'uma tarefa por participante' : 'a divisão de todo o restante'}, a conferência de arquivos em comum e a publicação. As entregas aparecem na pasta "Mutirão" e no sino.</p>
     ${MN.err ? `<p class="meta nperr">${MN.err}</p>` : ''}
     <div class="row2"><button class="btn pri big" data-mngo ${bloq ? 'disabled' : ''}>${label}</button></div></div></div>`;
   }
@@ -2170,7 +2171,7 @@
       }
     } finally { MN.busy = false; mnRepaint(); }
     if (note) addEvent({ who: p.name, msg: note });
-    const opts = MN.orig === 'novo' ? { modo: 'projeto', entrega: { objetivo: MN.objetivo, criterio: MN.criterio, estrutura: MN.estrutura && MN.estrutura.path } } : { modo: 'tarefa' };
+    const opts = MN.orig === 'novo' ? { modo: 'projeto', entrega: { objetivo: MN.objetivo, criterio: MN.criterio, estrutura: MN.estrutura && MN.estrutura.path } } : { modo: MN.modoB === 'tarefas' ? 'tarefas' : 'estado_atual' };
     const res = await call('mutIniciar', p.id, { nome: p.name, pasta: p.path }, rows, false, opts);
     UI.np = null; MN = MN0();
     UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; save(); renderAll();
@@ -2183,10 +2184,11 @@
   }
   document.addEventListener('click', (e) => {
     if (!onNovo()) return;
-    const b = e.target.closest('[data-mnorig],[data-mnadd],[data-mnrm],[data-mngo],[data-mnest]');
+    const b = e.target.closest('[data-mnorig],[data-mnadd],[data-mnrm],[data-mngo],[data-mnest],[data-mnmodo]');
     if (!b) return;
     mnRowsRead();
     if (b.dataset.mnorig) { MN.orig = b.dataset.mnorig; MN.err = ''; }
+    else if (b.dataset.mnmodo) MN.modoB = b.dataset.mnmodo === 'tarefas' ? 'tarefas' : 'estado_atual';
     else if (b.hasAttribute('data-mnadd')) { const used = MN.rows.map((r) => r.branch); let n = 2; while (used.includes(`dev${n}`)) n++; MN.rows.push({ nome: '', branch: `dev${n}` }); }
     else if (b.dataset.mnrm != null) MN.rows.splice(+b.dataset.mnrm, 1);
     else if (b.hasAttribute('data-mnest')) { mnEstrutura(); return; }
@@ -2203,7 +2205,7 @@
     s.ent = ct.lista.filter((x) => x.entregue).map((x) => x.branch);
     for (const x of novas) {
       const tudo = ct.n && ct.k === ct.n;
-      const ev = { c: '#b98cff', who: `Mutirão · ${p.name}`, msg: `${x.nome} (${x.branch}) entregou ${s.modo === 'tarefa' ? 'a tarefa' : 'a parte'}: ${ct.k}/${ct.n}.${tudo ? ' Todas as entregas chegaram: a implementação automática está liberada no painel.' : ''}`, kind: 'perm' };
+      const ev = { c: '#b98cff', who: `Mutirão · ${p.name}`, msg: `${x.nome} (${x.branch}) entregou ${s.modo === 'tarefas' ? 'a tarefa' : 'a parte'}: ${ct.k}/${ct.n}.${tudo ? ' Todas as entregas chegaram: a implementação automática está liberada no painel.' : ''}`, kind: 'perm' };
       try { addEvent(ev); showToast(ev); } catch { /* sem aviso */ }
     }
     return novas;
