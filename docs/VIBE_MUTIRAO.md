@@ -1,6 +1,6 @@
 # Vibe Coding e Mutirão — desenho do módulo
 
-Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005) a implementação automática do Mutirão, com o pedido em arquivo como padrão (DEV2-006), a robustez do ciclo (DEV2-007) e o fechamento das pendências do MVP (DEV2-009: marcas do plano vistas numa rodada real, conferência de deploy sem marca, plano final do Mutirão com o projeto inteiro e conflito resolvido por lado), atrás da chave **Configurações > Experimental > Vibe Coding e Mutirão (experimental)**, desligada por padrão.
+Desenho aprovado pelo Ygor (2026-11-06). Frente exclusiva da dev2 (numeração DEV2-xxx). Estado atual: casca (DEV2-001), tela de entrega do Vibe Coding (DEV2-002) criação dos agentes com plano e perguntas (DEV2-003) execução autônoma do plano com trava em código (DEV2-004) a tela do Mutirão com divisão, parte do sócio e contador de entregas (DEV2-005) a implementação automática do Mutirão, com o pedido em arquivo como padrão (DEV2-006), a robustez do ciclo (DEV2-007) e o fechamento das pendências do MVP (DEV2-009: marcas do plano vistas numa rodada real, conferência de deploy sem marca, plano final do Mutirão com o projeto inteiro e conflito resolvido por lado). Desde a DEV2-024, **sem chave experimental**: o módulo funciona sempre (as chaves saíram de Configurações de propósito; a dev2 não vai para a main e o Rodrigo implementa de forma nativa depois; um `state.json` antigo com a chave desligada é ignorado, sem apagar o valor).
 
 ## Princípios e regras dos agentes (decisões do Ygor, 2026-11-06)
 
@@ -271,7 +271,7 @@ Pedido do orquestrador (Ygor e Rodrigo, 2026-11-12), com a correção e a especi
 - **"Novo mutirão"** (barra lateral; página interna `Novo workflow`) é a tela de criação do Mutirão. O **Workflow antigo deixa de ser criado**; os projetos de Workflow que já existem continuam abrindo e funcionando como antes (nada é migrado nem apagado).
 - **Pasta "Mutirão"** da barra lateral: lista os **mutirões** (projetos com o Mutirão do dono, que continuam também em "Projetos") com as entregas **k/N** ao lado do nome, e depois os Workflows antigos, como antes. Clicar num mutirão abre o projeto com o **painel do Mutirão** (o monitoramento). A dica do nome mostra a fase.
 - O botão **"Mutirão" saiu do cabeçalho**. O "Vibe Coding" do cabeçalho continua igual, e o aviso "Sua parte do Mutirão" do sócio também.
-- **Chave experimental desligada:** a tela "Novo mutirão", a pasta e o painel funcionam do mesmo jeito (o Mutirão agora é nativo). Só o lado do sócio (aviso da parte e o Vibe Coding preenchido) depende da chave, porque usa o Vibe Coding, que continua experimental. *Pergunta ao Ygor.*
+- **Sem chave (DEV2-024):** a tela "Novo mutirão", a pasta, o painel e o lado do sócio (aviso da parte e o Vibe Coding preenchido) funcionam sempre. (Na DEV2-023, o lado do sócio ainda dependia da chave do Vibe.)
 
 ### Uma tela, duas entradas (três modos)
 
@@ -280,9 +280,16 @@ Pedido do orquestrador (Ygor e Rodrigo, 2026-11-12), com a correção e a especi
   - **(b1) "Do estado atual até finalizar"** (modo `estado_atual`, o padrão): todo o restante do projeto é dividido entre os participantes, cada um com a sua parte até o fim. A mesma lógica do (a), partindo do estado atual do repositório (o orquestrador lê o que já está feito e não repete).
   - **(b2) "Delegar algumas tarefas"** (modo `tarefas`): o dono define uma ou mais tarefas para vários sócios (uma por participante); o orquestrador ajuda a escrever cada uma com o resultado esperado e o Termix confere os arquivos em comum. O dono continua trabalhando na branch dele enquanto as entregas chegam. Não é o "Delegar tarefa" proposto ao Rodrigo (uma pessoa só), que não foi implementado.
 - Em todos os modos, o **dono pode se incluir como participante** com a branch dele (no b2 é o normal), sempre com a parte separada das outras, sem arquivo em comum (a conferência de sempre). A entrega do próprio dono entra na junção como "já estava integrada". A junção no fim é a mesma: implementação automática.
-- A tarefa do (b2) usa o mesmo formato da parte (`mutirao/partes/<branch>.md`, 9 seções focadas na tarefa), para o lado do sócio continuar igual (aviso, Vibe preenchido, entrega). O Vibe Coding dentro do projeto e o "Usar pasta existente" com várias pastas ficam para a DEV2-024.
+- A tarefa do (b2) usa o mesmo formato da parte (`mutirao/partes/<branch>.md`, 9 seções focadas na tarefa), para o lado do sócio continuar igual (aviso, Vibe preenchido, entrega). Desde a DEV2-024, o sócio do (b2) abre o **Vibe de tarefa** (DEV2-017), não o formulário completo de projeto (ver "Sócio do (b2)" abaixo).
 - Quem pode: só o dono (com o fluxo, o DEV1; sem o fluxo, quem abre, desde que haja remoto). A tela confere pela pasta antes de criar (projeto ativo e "Usar pasta existente") e mostra a explicação a quem não é dono, com o botão desligado. "Criar pasta nova" nasce sem git: a tela avisa que é preciso git e origin antes de publicar.
 - "Criar mutirão" cria (a) ou escolhe (b) o projeto, registra o Mutirão do dono com o **modo** (`projeto`, `estado_atual` ou `tarefas`, também no pedido ao orquestrador) e abre o projeto com o painel, que segue o fluxo de sempre: chat com o orquestrador, "Gerar divisão" (ou "Gerar tarefas" no b2), conferência, publicação, entregas e implementação automática.
+
+### Sócio do (b2): Vibe de tarefa (DEV2-024)
+
+- O modo do mutirão vai na divisão publicada: o pedido ao orquestrador já traz `"modo"` no formato do `divisao.json`, e o Termix confere e grava o campo antes do commit de "Publicar divisão" (o sócio só tem o que chega pelo git).
+- No (b2), "Abrir o Vibe Coding com a minha parte" abre o **Vibe de tarefa** já no formulário da tarefa, preenchido com a tarefa do sócio: **o que fazer** (título, objetivo e a indicação de ler `mutirao/partes/<b>.md`), **critério de pronto**, **o que não pode** (não mexer fora da tarefa nem nos arquivos das outras) e **arquivos** (os da tarefa). Um aviso diz que a tarefa veio do Mutirão e que os agentes trabalham só na branch dele. O rascunho anterior da mesma tarefa é mantido.
+- Com a tarefa concluída, a entrega é a mesma de sempre (`mutirao/entregas/<b>.json` e push só da branch `<b>`).
+- No (a) e no (b1), o Vibe abre como antes (escolha inicial; o projeto novo vem preenchido pela parte).
 
 ### Monitoramento
 

@@ -6,13 +6,13 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-018, DEV2-021 a DEV2-023 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa", na DEV2-015 a recuperação de erro do ciclo e, na DEV2-016, o deploy feito pelo Termix e o fim de ciclo dos devs auxiliares, na DEV2-017, o Vibe de tarefa para projeto em andamento, na DEV2-022, a sincronização com a dev1 0.6.4 e, na DEV2-023, o Mutirão nativo)
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-016, DEV2-017, DEV2-018, DEV2-021, DEV2-022, DEV2-023 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Tarefas:** DEV2-001 a DEV2-018, DEV2-021 a DEV2-023 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa", na DEV2-015 a recuperação de erro do ciclo e, na DEV2-016, o deploy feito pelo Termix e o fim de ciclo dos devs auxiliares, na DEV2-017, o Vibe de tarefa para projeto em andamento, na DEV2-022, a sincronização com a dev1 0.6.4, na DEV2-023, o Mutirão nativo e, na DEV2-024, o fim das chaves experimentais e o "Usar pasta existente" com várias pastas)
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-016, DEV2-017, DEV2-018, DEV2-021, DEV2-022, DEV2-023, DEV2-024 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-12
 
 ## Resumo do que mudou
 
-Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em Configurações (desligada por padrão).
+Módulo separado "Vibe Coding e Mutirão". Até a DEV2-023 ficava atrás de chaves experimentais em Configurações; **desde a DEV2-024 as chaves saíram de propósito** e o módulo funciona sempre (ver DEV2-024 abaixo).
 
 - **DEV2-001:** a casca do módulo, com dois botões no cabeçalho ("Vibe Coding" e "Mutirão").
 - **DEV2-002:** a tela de entrega do projeto, um formulário engessado (objetivo, fluxo desenhado, um .md com a estrutura do projeto, critério de pronto, o que os agentes não podem fazer e os acessos), com um modelo .md para baixar.
@@ -98,6 +98,12 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
   - "Pausar deploy" retém a tarefa; "Retomar deploy" publica os retidos (com um agente trabalhando, só ao fim da tarefa atual);
   - "Voltar versão": lista de deploys no painel, com confirmação explícita; desfaz por revert na principal e envia sem forçar; depois pergunta se roda a receita de novo;
   - DEV2..DEV5: nunca publicam na principal (recusado no processo principal, não só na tela); no fim do ciclo o orquestrador reescreve o handoff da dev em alto nível e o Termix faz o commit só dele e envia só a branch da dev;
+- **DEV2-024 (EXPERIMENTO): sem chaves experimentais e "Usar pasta existente" com várias pastas.** Pedido do orquestrador, autorizado pelo Ygor e pelo Rodrigo ("implementar tudo, fica mais fácil o feedback"):
+  - **as chaves saíram de propósito:** "Vibe Coding e Mutirão (experimental)" e "Importar projeto com várias pastas" não aparecem mais em Configurações (o título "Experimental" saiu junto). O Vibe Coding, o Mutirão (inclusive o lado do sócio) e o Organizador funcionam sempre. Um arquivo de estado antigo com a chave desligada não esconde nada: o valor salvo é ignorado e não é apagado. Motivo: a dev2 não vai para a main; o Rodrigo analisa e implementa de forma nativa depois. O botão "Vibe Coding" continua no mesmo lugar do cabeçalho;
+  - **mudança no núcleo (alto nível):** o "Usar pasta existente" das telas "Novo projeto" e "Novo mutirão" passou a aceitar várias pastas no diálogo do Windows (pelo Organizador; sem o módulo, o seletor de uma pasta de sempre). Com uma pasta, nada muda. Com mais de uma, abre o mapa do Organizador (papel de cada pasta e a escolha da conversa a retomar), e "Carregar" cria um projeto por pasta, com as abas pelo papel, e encerra a tela de origem. A nota do campo diz que dá para escolher várias. O botão separado "Importar projeto (várias pastas)" saiu;
+  - **novo no mapa:** a conversa de orquestrador e a de dev mais recentes (cada uma a mais nova entre as pastas daquele papel) vêm marcadas para retomar, com a indicação "recomendada"; o usuário troca ou desmarca. Antes a retomada vinha desmarcada;
+  - **Mutirão (b2) "Delegar algumas tarefas":** o sócio abre o Vibe de tarefa (DEV2-017), preenchido com a tarefa dele, e não o formulário completo de projeto. O modo do mutirão passou a ir na divisão publicada (o Termix grava o campo antes de publicar), porque o sócio só tem o que chega pelo git. Os modos (a) e (b1) abrem o Vibe como antes;
+  - sem mudança de layout; o botão "Delegar tarefa" não foi criado (é a próxima tarefa).
 - **DEV2-023 (EXPERIMENTO): Mutirão nativo.** Mudanças no núcleo, em alto nível, para o Rodrigo:
   - a página "Novo mutirão" passou a desenhar a tela de criação do Mutirão (fornecida pelo módulo) e não cria mais o Workflow antigo; os Workflows que já existem continuam abrindo e aparecem na pasta "Mutirão" como antes (nada migrado nem apagado);
   - a escolha de pasta do "Novo projeto" (criar, usar existente, clonar) virou uma função reaproveitada pelo Mutirão, sem mudar o comportamento do "Novo projeto";
@@ -123,7 +129,8 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 
 ## Impacto e riscos
 
-- **Desligado por padrão:** sem ligar a chave, o app fica igual ao de hoje (a pergunta ao módulo ao abrir um terminal só responde "não é do Vibe").
+- **Sem chaves (DEV2-024):** o módulo fica sempre ativo; antes, sem ligar a chave, o app ficava igual ao da dev1. A pergunta ao módulo ao abrir um terminal continua respondendo "não é do Vibe" para as abas comuns.
+- **Retomada recomendada (DEV2-024):** a conversa marcada é a mais recente; se ela estiver aberta em outro terminal agora, o mapa avisa ("em uso?"), mas a marca continua; retomar a mesma conversa em dois lugares mistura o histórico.
 - A trava cobre os caminhos comuns, mas **não é uma sandbox**: um script escrito e rodado pelo próprio agente poderia escapar. Por isso o Termix também confere o git depois de cada tarefa e pausa se a branch principal mudar.
 - **Arquivo de configuração do Claude Code:** o Termix grava nele uma única marca por projeto do Vibe. Leitura e gravação cuidadosas (cópia de segurança, releitura, troca atômica, nada se o arquivo não for lido), mas as sessões abertas do Claude Code também escrevem nele. No teste foi usado um arquivo de teste; falta validar no real.
 - Apagar de forma recursiva é recusado até dentro do projeto (escolha conservadora).
@@ -145,6 +152,8 @@ Módulo separado "Vibe Coding e Mutirão", atrás de uma chave experimental em C
 - **Configurações aninhadas:** "Notificações", "Conectores" e "Projetos arquivados" aparecem dentro do cartão do "Botão Clear", provavelmente por um bloco não fechado na montagem da página de Configurações.
 
 ## Como validar
+
+- DEV2-024, sem custo de IA: numa instância isolada com o agente falso e um arquivo de estado com as chaves desligadas, Configurações sem chaves, o "Vibe Coding" no cabeçalho, "Usar pasta existente" com uma pasta (como antes) e com várias (mapa com as recomendadas, trocar e desmarcar, "Carregar" criando um projeto por pasta), e o sócio do (b2) caindo no Vibe de tarefa preenchido. O teste do Organizador usa pastas de brinquedo e conversas falsas numa pasta de configuração do Claude Code de teste. Nunca testar num projeto real.
 
 - DEV2-017, sem custo de IA: o teste do módulo (resumo do projeto, campos obrigatórios, projeto sem git recusado, entrega da tarefa, pedido do plano, histórico de duas tarefas seguidas e da interrompida, trava na aba) e, numa instância isolada com o agente falso, a escolha inicial, o formulário com o resumo, a tarefa 1 até o fim do ciclo de um dev auxiliar e a tarefa 2 nas mesmas abas, com o painel do histórico. Nunca testar num projeto real.
 - DEV2-016, sem custo de IA: o teste do módulo com remotos locais de teste (deploy com avanço direto e com junção, portão falhando, conflito cancelado, autorizar e negar, pausar e retomar, marco não atingido, receita falhando depois do envio, voltar versão nos dois casos, fim de ciclo da DEV2 enviando só a dev2, DEV2 sem publicar, F5 do projeto encerrando o anterior) e, numa instância isolada com o agente falso, o ciclo com deploy concluído, pedido de autorização no sino e no painel e a lista de versões com "Voltar para antes deste". Nunca testar num projeto real.

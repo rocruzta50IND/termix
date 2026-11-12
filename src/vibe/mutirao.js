@@ -235,7 +235,7 @@ function create(h) {
     // DEV2-024: no (b2) "Delegar algumas tarefas" o sócio abre o Vibe de TAREFA (DEV2-017), preenchido com a tarefa dele
     const mesma = atual.mutirao === pt.branch && atual.tarefa && typeof atual.tarefa === 'object';
     const tarefa = pt.modo !== 'tarefas' ? atual.tarefa : mesma && atual.tarefa.oQue ? atual.tarefa : {
-      oQue: `${pt.titulo ? `${pt.titulo}: ` : ''}${pt.objetivo || 'Tarefa do Mutirão.'} Detalhes na sua tarefa do Mutirão: mutirao/partes/${pt.branch}.md (leia antes).`.slice(0, 4000),
+      oQue: `${pt.titulo ? `${pt.titulo}: ` : ''}${pt.objetivo || 'Tarefa do Mutirão'}${/[.!?]\s*$/.test(pt.objetivo || '') ? '' : '.'} Detalhes na sua tarefa do Mutirão: mutirao/partes/${pt.branch}.md (leia antes).`.slice(0, 4000),
       criterio: (pt.criterio || 'Ver a seção "Critério de pronto" de mutirao/partes/' + pt.branch + '.md.').slice(0, 2000),
       naoPode: `Não alterar arquivos fora da sua tarefa do Mutirão; não mexer nos arquivos das outras tarefas.`.slice(0, 2000),
       arquivos: pt.arquivos.slice(0, 60).join('; ').slice(0, 2000),
