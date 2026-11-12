@@ -24,6 +24,24 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-022 — Sincronizar a dev2 com a dev1 (0.6.4) e conferir o módulo depois da renomeação
+
+- **Status:** CONCLUÍDA NA DEV2 (EXPERIMENTO; aguardando o orquestrador)
+- **Data:** 2026-11-12
+- **Pedido:** (orquestrador termix-orq-ec, autorizado pelo Ygor) sincronizar a dev2 com a dev1 (TASK-132 Chat/Workflow viram Projeto/Mutirão na interface, 0.6.3; TASK-133 clonar repositório do GitHub, 0.6.4), rodar os testes antigos sem IA e conferir no app (agente falso, CDP) as chaves em Configurações, o botão do Organizador, o Vibe Coding e o painel do Mutirão. Corrigir só no módulo. Não renomear o "Mutirão" do módulo; só anotar as colisões.
+- **Feito até agora:**
+  - Merge `--no-ff` de origin/dev1 (5 commits) no commit d9d2351; único conflito no `check` do `package.json`: linha da dev1 (com `src/clone.js`) somada às linhas do módulo.
+  - `npm run check` ok. Testes sem IA: dep16 68/68, rec15 35/36 (a falha conhecida do caminho longo do scratchpad), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33; app com o agente falso: run7 23/23, run15 29/29, run16 a 28/28 e b 9/9, run17 26/26. Organizador (`run10.js`) não rodado: usa credencial e IA reais.
+  - Novo `run22.js` (CDP, agente falso, instância isolada): 15/15. Chaves em Configurações (um só título "Experimental", liga e desliga); botão "Importar projeto (várias pastas)…" na tela "Novo Projeto" ao lado de "Criar chat", abre o diálogo, e fica fora do "Novo Mutirão"; Vibe Coding com a escolha inicial e o formulário da tarefa; painel do Mutirão abre e fecha; sem erros de JavaScript.
+  - Nada quebrou: o módulo acha a tela pela página interna `Novo chat`, que a dev1 manteve (só o título visível mudou).
+  - Correção (só módulo): o texto da chave do Organizador dizia "na tela Novo chat"; agora "na tela Novo projeto". `docs/ORGANIZADOR.md` atualizado.
+- **Decisões:** não renomear o "Mutirão" do módulo (decisão pendente do Ygor).
+- **Arquivos tocados:** `package.json` (só o conflito do sync), `src/renderer/vibe/organizador.js`, `docs/ORGANIZADOR.md`, docs da dev2.
+- **Como validar:** `npm run check`; `run22.js` no scratchpad (capturas d22-config, d22-novo-projeto, d22-vibe-escolha, d22-vibe-tarefa, d22-mutirao, d22-app).
+- **Colisão de nome "Mutirão" (para a decisão do Ygor):** cabeçalho do módulo ("Vibe Coding" e "Mutirão", sem distinção do Mutirão do núcleo); título do painel lateral do módulo ("Mutirão"); aba "Mutirão · Orquestrador"; avisos e sino ("Mutirão concluído…", "Entrega do Mutirão…", "Você tem uma parte do Mutirão"); nota "parte do Mutirão" no formulário do Vibe; chave em Configurações ("Vibe Coding e Mutirão (experimental)"). No núcleo, desde a TASK-132: categoria "Mutirão" na barra lateral, "Novo mutirão" e a tela "Novo Mutirão" (antigo Workflow).
+- **Pendências:** decisão do nome do Mutirão do módulo.
+- **Próximo passo:** aguardar o orquestrador.
+
 ## DEV2-017 — Vibe de tarefa (modo rápido para projeto em andamento)
 
 - **Status:** CONCLUÍDA NA DEV2 (aguardando revisão do orquestrador e do Ygor)

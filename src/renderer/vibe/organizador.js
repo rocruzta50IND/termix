@@ -230,7 +230,7 @@
   }
 
   /* ---------- ganchos na interface ---------- */
-  // botão na tela "Novo chat" (DEV2-011: desde a TASK-119 o diálogo "Novo projeto" virou uma tela ao lado da barra),
+  // botão na tela "Novo chat" (DEV2-022: desde a TASK-132 o título visível é "Novo Projeto"; a página interna segue "Novo chat") (DEV2-011: desde a TASK-119 o diálogo "Novo projeto" virou uma tela ao lado da barra),
   // ao lado de "Criar chat". Só no Novo chat: o organizador abre abas de terminal num projeto do tipo chat, não um workflow.
   function mountNovo() {
     const page = document.getElementById('page');
@@ -255,7 +255,7 @@
     box.id = 'orgConf';
     const draw = () => {
       const v = on();
-      box.innerHTML = `${page.querySelector('#vibeConf') ? '' : '<h5 style="margin:22px 0 8px">Experimental</h5>'}<div class="card" style="padding:6px 18px;margin-top:10px"><div class="row"><div class="grow">Importar projeto com várias pastas (experimental)<small>Mostra o botão “Importar projeto (várias pastas)…” na tela Novo chat. O Termix analisa as pastas sem custo de IA (git, papel do fluxo, tarefas, handoff e conversas), mostra um mapa para confirmar e abre abas novas que se localizam pelo checkpoint. Retomar conversas antigas é opcional. Nada é movido, renomeado ou apagado.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-org-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-org-set="0">Não</button></div></div></div>`;
+      box.innerHTML = `${page.querySelector('#vibeConf') ? '' : '<h5 style="margin:22px 0 8px">Experimental</h5>'}<div class="card" style="padding:6px 18px;margin-top:10px"><div class="row"><div class="grow">Importar projeto com várias pastas (experimental)<small>Mostra o botão “Importar projeto (várias pastas)…” na tela Novo projeto. O Termix analisa as pastas sem custo de IA (git, papel do fluxo, tarefas, handoff e conversas), mostra um mapa para confirmar e abre abas novas que se localizam pelo checkpoint. Retomar conversas antigas é opcional. Nada é movido, renomeado ou apagado.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-org-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-org-set="0">Não</button></div></div></div>`;
     };
     draw();
     box.addEventListener('click', (e) => {

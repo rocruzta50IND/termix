@@ -4,6 +4,15 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ---
 
+## 2026-11-12
+
+**DEV2-022 — Sincronização com a dev1 (0.6.4) e conferência do módulo** (DEV2)
+
+- A dev2 recebeu a dev1 0.6.4 (Chat/Workflow viram Projeto/Mutirão na interface; clonar repositório do GitHub). Único conflito: a lista do `npm run check`, somando as duas.
+- Conferido no app com o agente falso: chaves em Configurações, botão do Organizador na tela "Novo Projeto", Vibe Coding (escolha e tarefa) e painel do Mutirão. Nada quebrou; o texto da chave do Organizador passou a dizer "Novo projeto".
+- Testes sem IA todos como antes (rec15 com a falha conhecida do caminho longo); run22 15/15.
+- O nome "Mutirão" agora existe no núcleo (antigo Workflow) e no módulo; não foi renomeado, aguarda o Ygor.
+
 ## 2026-11-11
 
 **DEV2-017 — Vibe de tarefa (modo rápido para projeto em andamento)** (DEV2)
