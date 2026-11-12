@@ -6,6 +6,13 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-12
 
+**DEV2-024 — Sem chaves experimentais, várias pastas no "Usar pasta existente" e sócio do b2 no Vibe de tarefa** (DEV2)
+
+- Saíram de Configurações as chaves do Vibe/Mutirão e do Organizador (e o título "Experimental"), de propósito: a dev2 não vai para a main. Tudo funciona sempre; um state.json com a chave desligada é ignorado, sem apagar dado.
+- "Usar pasta existente" (Novo projeto e Novo mutirão) aceita várias pastas: com uma, nada muda; com mais de uma, abre o mapa do Organizador, com a conversa mais recente de orquestrador e de dev marcadas como "recomendada"; "Carregar" cria um projeto por pasta. O botão "Importar projeto (várias pastas)" saiu.
+- Mutirão (b2): o sócio abre o Vibe de tarefa preenchido com a tarefa dele; o modo vai na divisão publicada.
+- Testes: npm run check ok. Sem IA: dep16 68/68, rec15 35/36 (falha conhecida do caminho longo), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33, mut23 97/97 (+6: modo publicado e rascunho da tarefa do b2), **novo org24 13/13** (pastas de brinquedo e conversas falsas numa CLAUDE_CONFIG_DIR de teste; recomendada de orquestrador e de dev). App com o agente falso (CDP, instância isolada, state.json com as chaves desligadas): run7 23/23, run15 29/29, run16 a 28/28 e b 9/9, run17 26/26, run22 10/10 (3a/3b reescritos: sem chaves e sem botão), run23 52/52 (sem ligar a chave; sócio do b2 no Vibe de tarefa), **novo run24 24/24**. run10 não rodado (credencial real).
+
 **DEV2-023 — Mutirão nativo** (DEV2)
 
 - "Novo mutirão" cria o Mutirão: (a) projeto novo já como mutirão (objetivo, .md da estrutura e critério; 100% dividido) ou (b) projeto ativo com "Do estado atual até finalizar" ou "Delegar algumas tarefas". O dono pode se incluir como participante. O Workflow antigo não é mais criado; os existentes abrem como antes.

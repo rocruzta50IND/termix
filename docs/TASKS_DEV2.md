@@ -24,6 +24,22 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-024 — Sem chaves experimentais, "Usar pasta existente" com várias pastas e sócio do b2 no Vibe de tarefa
+
+- **Status:** CONCLUÍDA NA DEV2 (EXPERIMENTO; aguardando o orquestrador)
+- **Data:** 2026-11-12
+- **Pedido:** (orquestrador termix-orq-ec, autorizado pelo Ygor e pelo Rodrigo: "implementar tudo, fica mais fácil o feedback") 1) tirar todas as chaves experimentais; 2) "Usar pasta existente" (Novo projeto e Novo mutirão) aceitar várias pastas, abrindo o mapa do Organizador com as conversas mais recentes de orquestrador e de dev marcadas como recomendadas; tirar o botão separado; 3) no b2, o sócio abrir o Vibe de tarefa preenchido.
+- **Feito:**
+  - Chaves: `vibe.js` e `organizador.js` não leem mais `S.settings.vibe.on` / `S.settings.organizador.on` (valor salvo ignorado, não apagado); saíram os cartões de Configurações e o título "Experimental"; o "Vibe Coding" segue no cabeçalho; o lado do sócio funciona sempre.
+  - Núcleo (`app.js`): `npPick` usa `window.TermixOrg.pick` (várias pastas; sem o módulo, o seletor de uma pasta); com mais de uma, `TermixOrg.mapaDe` (análise e mapa direto) e, ao carregar, encerra a tela de origem. Nota do campo cita Ctrl/Shift.
+  - Organizador: `linhas()` marca a conversa mais nova de cada papel (Orquestrador e Dev, entre as pastas daquele papel) com `rec`; selo `chip.orgrec` "recomendada" e " · recomendada" na lista; trocar tira o selo. Botão "Importar projeto (várias pastas)" e chave saíram.
+  - Mutirão (`mutirao.js`): `modo` no formato do `divisao.json` do pedido e gravado pelo Termix antes do commit de publicar; `parte()` devolve o modo; `aplicar()` grava o rascunho da tarefa no b2; `mutVibe` abre `openVibe('tarefa')`, com aviso da tarefa do Mutirão.
+- **Decisões:** uma recomendada por papel (a mais nova entre as pastas do papel; as outras com aba nova); Gerente/Outro sem recomendação; conversa "em uso?" segue marcada, com o aviso; nome do mapa = o digitado ou a 1ª pasta sem "-ORQ"; "Voltar" do mapa aberto pelo npPick só fecha; (a) e (b1) abrem o Vibe como antes (escolha inicial); o "Importar pasta existente" da tela vazia não mudou.
+- **Arquivos tocados:** `src/renderer/app.js`, `src/renderer/vibe/vibe.js`, `src/renderer/vibe/organizador.js`, `src/renderer/vibe/organizador.css`, `src/vibe/mutirao.js`, `docs/ORGANIZADOR.md`, `docs/VIBE_MUTIRAO.md`, `docs/DECISOES.md`, `docs/DESIGN.md`, docs da dev2.
+- **Como validar:** npm run check ok. Sem IA: dep16 68/68, rec15 35/36 (falha conhecida do caminho longo), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33, mut23 97/97 (+6: modo publicado e rascunho da tarefa do b2), **novo org24 13/13** (pastas de brinquedo e conversas falsas numa CLAUDE_CONFIG_DIR de teste; recomendada de orquestrador e de dev). App com o agente falso (CDP, instância isolada, state.json com as chaves desligadas): run7 23/23, run15 29/29, run16 a 28/28 e b 9/9, run17 26/26, run22 10/10 (3a/3b reescritos: sem chaves e sem botão), run23 52/52 (sem ligar a chave; sócio do b2 no Vibe de tarefa), **novo run24 24/24**. run10 não rodado (credencial real). Capturas `shots/n24-*` no scratchpad da sessão.
+- **Pendências:** retomada real (`--resume`) sem rodada com IA; botão "Delegar tarefa" é a próxima tarefa.
+- **Próximo passo:** aguardar o orquestrador.
+
 ## DEV2-023 — Mutirão nativo: "Novo mutirão" cria o Mutirão e a pasta "Mutirão" monitora
 
 - **Status:** CONCLUÍDA NA DEV2 (EXPERIMENTO; aguardando o orquestrador)
