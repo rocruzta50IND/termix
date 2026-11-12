@@ -11,6 +11,7 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 - Merge de origin/dev1 (TASK-134, modo `--embed`, 0.7.0) na dev2; um conflito em `package.json`, resolvido mantendo os dois lados. `npm install` necessário (dependência `ws`).
 - Delegar estacionado por uma constante (`DELEGAR_ATIVO = false`): sem botão, sem "Conta neste PC", sem vigia; código mantido; testes ligam por variável de ambiente de teste.
 - `--embed` conferido: o módulo funciona; o botão "Vibe Coding" fica invisível porque o cabeçalho é escondido; Mutirão (barra) e pop-up Retomar funcionam.
+- Testes do módulo no repositório (`tools/vibe-testes/`, README, `npm run test:vibe`, sem caminho fixo, fora do `check`); rodados na 0.7.0 a partir dali: run7 23, run15 29, run16 28 e 9, run17 26, run22 10, run23 52, run24 26, run25 35, run26 44, embed-delegar27 15, sem Electron 13/13.
 - Pendências adiadas (Telegram, Mutirão com IA real, validações reais, clique no diálogo de fechar) registradas no TASKS_DEV2; HANDOFF_DEV2 reescrito como manual de integração.
 - Testes: run26 44/44, run24 26/26, run25 35/35, run23 52/52, checagem nova 15/15; sem Electron todos como antes (rec15 35/36 conhecida).
 

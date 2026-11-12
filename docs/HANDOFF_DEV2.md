@@ -45,29 +45,32 @@ A integração é manual, pelo fluxo (`/fluxo:integrar`). Nada deve ser feito pe
 - **`src/preload.js`:** uma linha, o método `vibe`, que só aceita canais `vibe:*`.
 - **`src/renderer/index.html`:** duas linhas (o estilo e o script do módulo). O módulo carrega os próprios arquivos de interface por dentro.
 - **`src/renderer/app.js`:** (a) a pasta "Mutirão" da barra lateral lista também os mutirões, com as entregas k/N; (b) "Novo mutirão" desenha a tela fornecida pelo módulo (o Workflow antigo deixa de ser criado; os existentes continuam abrindo); (c) a escolha de pasta do "Novo projeto" virou uma função reaproveitada (resolve criar, usar existente ou clonar) e o "Usar pasta existente" aceita várias pastas pelo Organizador; (d) uma chamada ao módulo ao adicionar um projeto existente (oferta da estrutura e dos chats antigos).
-- **`package.json`:** a lista do `npm run check` ganhou os arquivos do módulo. Nenhuma dependência nova, nenhuma mudança de versão.
+- **`package.json`:** a lista do `npm run check` ganhou os arquivos do módulo e a seção de scripts ganhou `test:vibe`. Nenhuma dependência nova, nenhuma mudança de versão.
 - Estilos: o módulo traz o próprio CSS (`vibe.css`, `organizador.css`, `retomar.css`, `delegar.css`); o `styles.css` da dev1 só ganhou uma linha para o k/N do Mutirão na barra.
 
 ### 2.2 Pontos de risco no merge
 
-- **`package.json`:** a linha do `check` é longa e muda dos dois lados; ao resolver, manter os arquivos da dev1 (inclusive `src/embed.js`) e os do módulo. Foi exatamente o único conflito na sincronização com a 0.7.0.
+- **`package.json`:** a linha do `check` é longa e muda dos dois lados; ao resolver, manter os arquivos da dev1 (inclusive `src/embed.js`) e os do módulo. Foi exatamente o único conflito na sincronização com a 0.7.0. **Aviso para bisect:** o commit `09884c6` da dev2 tem marcadores de conflito no `package.json` (saiu assim por engano), corrigidos no `3679197`; só importa se alguém fizer bisect pela dev2, o estado final está limpo.
 - **`src/renderer/app.js`:** o ponto de maior risco; os trechos do módulo estão em funções do "Novo projeto" e da barra lateral (renderização das categorias). Se a dev1 mexer nelas, o merge precisa manter os dois lados.
 - **`src/main.js`:** o trecho do `--settings` do Claude Code e o do evento de fechar a janela. Se a dev1 mudar como as abas de Claude Code são abertas, o ponto do módulo precisa acompanhar.
 - **Modo `--embed` (`src/embed.js`):** o módulo usa só o `window.termix.vibe(...)` do preload, que o embed já repassa pelo WebSocket; nada do módulo precisou mudar no embed.
 
 ### 2.3 Testes a rodar depois da integração
 
-Os scripts de teste ficam **fora do repositório** (na pasta de trabalho da sessão da dev2) por serem de uso interno; peça-os ao Ygor se quiser rodá-los. Resultados esperados, todos sem custo de IA:
+Os testes estão no repositório, em **`tools/vibe-testes/`** (com um `README.md` com um comando por teste, o esperado e os avisos). **Não fazem parte do `npm run check`**, que continua o da dev1. **Nunca rodam em projeto real e nunca gastam IA**: usam repositórios de brinquedo, remotos locais, um Claude Code falso e uma configuração do Claude Code de teste; tudo fica na pasta temporária do sistema. Pré-requisito: `npm install`.
 - `npm run check`: sem erro.
-- Sem Electron: dep16 68/68, rec15 35/36 (a falha é conhecida: uma checagem de tamanho do pedido quebra quando o caminho da pasta de teste é longo), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33, mut23 97/97, org26a 14/14, del25 77/77, ret26 38/38.
-- Com Electron e agente falso (instância isolada, uma por vez): run26 (pop-up e coleta), run24 (Organizador, projeto único), run25 (Delegar, ligado só pelo modo de teste), run23 (Mutirão nativo), e os run7, run15, run16, run17, run22. Resultados da dev2 na 0.7.0: run26 44/44, run24 26/26, run25 35/35 (com o Delegar ligado só pelo modo de teste), run23 52/52, mais uma checagem nova do Delegar estacionado e do `--embed` com 15/15.
+- **Sem Electron, tudo de uma vez:** `npm run test:vibe`. Esperado: "Todos como esperado" (dep16 68, rec15 36 [35 com 1 falha conhecida se o caminho temporário for longo], pol14 55, trava13 113, mod5 31, mod6 41, mod7 23, mod9 16, tar17 33, mut23 97, org26a 14, del25 77, ret26 38).
+- **Com Electron e agente falso, um de cada vez:** `node tools/vibe-testes/rodar-electron.js <teste>` (sem argumento, lista). Esperado: run7 23, run15 29, run16 a 28, run16 b 9, run17 26, run22 10, run23 52, run24 26, run25 35, run26 44, embed-delegar27 15 (Delegar estacionado e modo `--embed`).
+- **Resultados da dev2 na 0.7.0, rodados a partir de `tools/vibe-testes/`:** todos os acima como esperado (run26 44/44, run24 26/26, run7 23/23, run15 29/29, run16 28/28 e 9/9, run17 26/26, run22 10/10, run23 52/52, run25 35/35, embed-delegar27 15/15; sem Electron 13 de 13 como esperado).
+- Rodar um por vez e sem outro Termix de teste aberto: com processos do Electron sobrando de uma rodada anterior, o run25 chegou a falhar por tempo e passou 35/35 ao ser repetido sozinho.
+
 
 ---
 
 ## 3. Como testar em 5 minutos no app real
 
 Sem custo de IA, sem mexer em projeto real. Use uma pasta de brinquedo com `git init` e um commit.
-1. `npm start` na dev2. Em "Novo projeto > Usar pasta existente", escolha a pasta de brinquedo: aparece a oferta "Criar estrutura do projeto" (escolha "Agora não"/sem coleta); o projeto abre.
+1. Depois de integrar: `npm install` e `npm start` na dev1. Em "Novo projeto > Usar pasta existente", escolha a pasta de brinquedo: aparece a oferta "Criar estrutura do projeto" (escolha "Agora não"/sem coleta); o projeto abre.
 2. Feche e reabra o app e abra o projeto: o pop-up **"Retomar projeto"** aparece (Inicializar orquestrador e dev, Retomar últimas conversas, Agora não). "Agora não" fecha sem efeito.
 3. No cabeçalho, **"Vibe Coding"**: a escolha "Projeto novo" ou "Tarefa num projeto em andamento"; abra o formulário da tarefa e veja o resumo do projeto montado sem IA. Não precisa enviar.
 4. Pasta "Mutirão" da barra lateral e "Novo mutirão": a tela de criação do módulo. Não precisa criar.
@@ -120,7 +123,7 @@ Sem custo de IA, sem mexer em projeto real. Use uma pasta de brinquedo com `git 
 - **git** no PATH; o remoto é necessário para Mutirão e Delegar.
 - **Fluxo Rocruzta** (`.claude/fluxo.json` e papéis): o deploy, o Delegar e o fim de ciclo dos devs auxiliares dependem do papel do fluxo; sem o fluxo, o dono do projeto é quem manda.
 - **Sem dependências npm novas.**
-- **Testes:** os scripts ficam fora do repositório; se o Rodrigo quiser incorporá-los ao projeto, é uma decisão dele.
+- **Testes:** em `tools/vibe-testes/` (README com os comandos); um atalho `npm run test:vibe` foi acrescentado à seção de scripts do `package.json`, sem tocar no `check`.
 - **`npm install` depois do merge:** a dev1 0.7.0 trouxe a dependência `ws` (do `--embed`); sem ela o modo `--embed` não sobe.
 
 ---
@@ -177,7 +180,7 @@ Sem custo de IA, sem mexer em projeto real. Use uma pasta de brinquedo com `git 
 - **017:** Vibe de tarefa (modo rápido para projeto em andamento, com histórico de tarefas).
 - **023:** Mutirão nativo (a página "Novo mutirão" passa a criar o Mutirão do módulo; modos de projeto novo, do estado atual e "delegar algumas tarefas").
 - **025:** Delegar tarefa (pedido, recebimento, entrega, análise só do handoff, aprovar e reprovar) e rodapé do mapa do Organizador.
-- **027:** sincronização com a dev1 0.7.0 e verificação do `--embed`; o Delegar foi **estacionado** (constante única, código mantido, vigia e contas mock fora da interface); pendências movidas para o TASKS_DEV2.
+- **027:** sincronização com a dev1 0.7.0, verificação do `--embed`, testes do módulo levados para `tools/vibe-testes/`; o Delegar foi **estacionado** (constante única, código mantido, vigia e contas mock fora da interface); pendências movidas para o TASKS_DEV2.
 
 ### Como validar (resumo)
 
