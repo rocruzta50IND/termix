@@ -1966,8 +1966,10 @@ async function npSubmit() {
   const { name, path, imported, note } = r;
   const found = imported && !wf ? (await api.scanSessions(path)).length : 0;
   UI.np = null;
-  const p = addProject({ name, path, imported, noTab: found > 0, workflow: wf, first: { kind: 'chat', perm: np.perm === 'd' ? 'd' : 'n' } });
+  const ret = imported && !wf && window.TermixRet; // DEV2-026: pasta existente = projeto de desenvolvimento: estrutura, chats antigos, orquestrador e dev
+  const p = addProject({ name, path, imported, noTab: found > 0 || !!ret, workflow: wf, first: { kind: 'chat', perm: np.perm === 'd' ? 'd' : 'n' } });
   if (note) addEvent({ who: name, msg: note });
+  if (ret) { if (await ret.aoAdicionar(p, { pastas: [path] })) return; if (!found) createTab(p, np.perm === 'd' ? 'd' : 'n', { kind: 'chat' }); }
   if (found) await importSessionsFlow(p, true);
 }
 

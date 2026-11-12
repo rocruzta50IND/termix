@@ -2301,6 +2301,11 @@
   window.TermixVibeBridge = {
     openTarefa: (id) => { try { S.settings.vibe = { ...(S.settings.vibe || {}), last: id }; save(); } catch { /* sem preferência */ } return openVibe('tarefa'); },
     closeMut: () => { if (MP) closeMutirao(); },
+    // DEV2-026 (Retomar projeto): estado do ciclo, abas do ciclo (o /clear nunca as toca), ciclos rodando (aviso ao fechar o app) e "Continuar ciclo"
+    cicloDe: async (id) => { const c = await cyLoad(id); const e = c && c.est; return e ? { fase: e.fase, live: !!c.live, auto: !!e.auto, tarefa: !!e.tarefa, abas: [e.orq, e.dev].filter(Boolean), concluido: e.fase === 'concluido', aviso: e.aviso || '' } : null; },
+    cicloAbas: (id) => { const e = CY[id] && CY[id].est; return e ? [e.orq, e.dev].filter(Boolean) : []; },
+    cicloAtivos: () => Object.keys(CY).filter((id) => CY[id].est && CY[id].live && BUSY.includes(CY[id].est.fase)).map((id) => { const p = projOf(id); return { id, nome: p ? p.name : id, auto: !!CY[id].est.auto, fase: CY[id].est.fase }; }),
+    continuar: (id) => resumeCycle(id),
   };
   // DEV2-010: o Organizador (importar projeto com várias pastas) vem em arquivos próprios, carregados daqui (o index.html não muda)
   try {
@@ -2308,5 +2313,7 @@
     const s = document.createElement('script'); s.src = 'vibe/organizador.js'; document.body.appendChild(s);
     const l2 = document.createElement('link'); l2.rel = 'stylesheet'; l2.href = 'vibe/delegar.css'; document.head.appendChild(l2); // DEV2-025
     const s2 = document.createElement('script'); s2.src = 'vibe/delegar.js'; document.body.appendChild(s2);
+    const l3 = document.createElement('link'); l3.rel = 'stylesheet'; l3.href = 'vibe/retomar.css'; document.head.appendChild(l3); // DEV2-026
+    const s3 = document.createElement('script'); s3.src = 'vibe/retomar.js'; document.body.appendChild(s3);
   } catch (e) { console.error('vibe: organizador', e); }
 })();

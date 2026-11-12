@@ -188,6 +188,15 @@
     let p = projOfPath(main.a.pasta);
     if (!p) p = addProject({ name: String(st.nome).slice(0, 60), path: main.a.pasta, imported: true, noTab: true });
     const ligacoes = [], pend = [];
+    // DEV2-026: com o módulo "Retomar projeto", o projeto único passa pela estrutura (oferta, chats antigos e coleta) e entra com
+    // orquestrador e dev. Só "Agora não" (ou erro) cai no caminho antigo abaixo (orquestrador com o pedido de localização + dev).
+    let tratado = false;
+    if (window.TermixRet && !p.tabs.some((t) => t.open && !t.archived)) {
+      if (st.fim) try { st.fim(); } catch { /* sem retorno */ }
+      UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
+      tratado = await window.TermixRet.aoAdicionar(p, { pastas: itens.map((x) => x.pasta) });
+    }
+    if (tratado) { call('orgRegistrar', prep.grupo, p.tabs.filter((t) => t.open).map((t) => ({ pasta: main.a.pasta, projeto: p.id, aba: t.id, papel: t.name }))); return; }
     const aberta = (nome) => p.tabs.find((t) => t.open && !t.archived && String(t.name).toLowerCase() === nome.toLowerCase());
     if (!aberta('Orquestrador')) {
       const out = await abaComPedido(p, st.perm, 'Orquestrador', COR.Orquestrador, prep.pedidos[main.a.pasta]);
