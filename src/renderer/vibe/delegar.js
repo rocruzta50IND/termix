@@ -8,6 +8,12 @@
    Usa o que o app.js expõe no escopo global (S, save, modal, esc, createTab, findTab, launch, renderAll, addEvent, showToast,
    RT, UI, api) e fala com o processo principal só pelos canais 'vibe:deleg*'. */
 (() => {
+  /* DEV2-027: ESTACIONADO. O "Delegar tarefa" fica fora da interface até o Rodrigo fazer o login do Hub (com PIN).
+     Para religar: DELEGAR_ATIVO = true (e trocar a fonte das contas em src/vibe/contas.js). Com false: sem botão no cabeçalho, sem
+     "Conta neste PC" em Configurações, sem a vigia de 5 min e nenhuma conta mock visível. O código inteiro continua aqui. */
+  const DELEGAR_ATIVO = false;
+  let TESTE_ON = false; // só os testes automáticos (TERMIX_VIBE_TEST=1 + TERMIX_DELEGAR_TESTE=1) ligam sem mudar a constante
+  const ON = () => DELEGAR_ATIVO || TESTE_ON;
   const call = async (ch, ...a) => { try { return await window.termix.vibe(ch, ...a); } catch (e) { console.error('delegar:', ch, e); return null; } };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const COR = '#b98cff';
@@ -188,6 +194,7 @@
     D = null; fitSoon();
   }
   function abrir(pid) {
+    if (!ON()) return;
     const col = document.getElementById('col');
     if (!col) return;
     let id = pid || atual();
@@ -344,6 +351,7 @@
   function paintTop() {
     const top = document.getElementById('topbar'), box = top && top.querySelector('.vibebtns');
     if (!box) return;
+    if (!ON()) { box.querySelectorAll('[data-deleg-open],[data-deleg-part]').forEach((e) => e.remove()); return; }
     if (!box.querySelector('[data-deleg-open]')) {
       const b = document.createElement('button');
       b.className = 'vibebtn deleg'; b.dataset.delegOpen = '1'; b.title = 'Delegar tarefa: pedir a uma pessoa que faça uma tarefa numa branch dela';
@@ -372,6 +380,7 @@
 
   /* ---------- Configurações: conta neste PC (provisório, mock até o login do Hub) ---------- */
   async function mountConf() {
+    if (!ON()) return;
     const page = document.getElementById('page');
     if (!page || !page.querySelector('#rngOp') || page.querySelector('#delegConf')) return;
     const host = page.querySelector('.page');
@@ -395,7 +404,7 @@
   /* ---------- vigia: a cada 5 min (e no "Atualizar" do painel), sem IA ---------- */
   let vigiando = false;
   async function vigia() {
-    if (vigiando) return 0;
+    if (!ON() || vigiando) return 0;
     vigiando = true; let n = 0;
     try {
       CONTA = (await call('delegConta')) || CONTA;
@@ -451,6 +460,7 @@
   /* gancho de teste: só com o app aberto em modo de teste (TERMIX_VIBE_TEST=1) */
   call('status').then((s) => {
     if (!s || !s.test) return;
+    if (s.delegarTeste) { TESTE_ON = true; paintTop(); mountConf(); }
     window.delegarTest = {
       abrir: (id) => abrir(id), fechar: () => fechar(), vigia: () => vigia(), st: () => JSON.parse(JSON.stringify(ST)), conta: async (n) => { await call('delegContaSet', n); CONTA = (await call('delegConta')) || CONTA; for (const k of Object.keys(PREV)) delete PREV[k]; return CONTA; },
       state: () => (D ? { id: D.id, info: D.info, painel: D.painel, caixa: D.caixa, form: { ...D.form }, rev: D.rev && { ...D.rev }, entr: D.entr, msg: D.msg && D.msg.html, busy: D.busy } : null),

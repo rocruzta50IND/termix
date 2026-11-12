@@ -1,214 +1,188 @@
 <!-- fluxo:v1 — escrito pelo DEV2, lido pelo DEV1. É a ÚNICA parte da dev2 que o DEV1 vê antes de o usuário aprovar a entrega. -->
 # HANDOFF DEV2 → DEV1
 
-Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (ou experimento) e o inclui no commit/push da dev2.
+Manual de integração da dev2 para o Rodrigo (e para a IA dele). O DEV2 reescreve este arquivo a cada entrega e o inclui no commit/push da dev2.
 
-**Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
+**Regras de escrita:** alto nível, sem código, diffs ou trechos de arquivos. Podem aparecer nomes de arquivo, funções públicas e formatos de dados. O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
-- **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-018, DEV2-021 a DEV2-026 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa", na DEV2-015 a recuperação de erro do ciclo e, na DEV2-016, o deploy feito pelo Termix e o fim de ciclo dos devs auxiliares, na DEV2-017, o Vibe de tarefa para projeto em andamento, na DEV2-022, a sincronização com a dev1 0.6.4, na DEV2-023, o Mutirão nativo e, na DEV2-024, o fim das chaves experimentais e o "Usar pasta existente" com várias pastas e, na DEV2-025, o botão "Delegar tarefa" com contas provisórias (mock))
-- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-016, DEV2-017, DEV2-018, DEV2-021, DEV2-022, DEV2-023, DEV2-024, DEV2-025 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
+- **Status:** AGUARDANDO DECISÃO  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
+- **Tarefas:** DEV2-001 a DEV2-018 e DEV2-021 a DEV2-027
+- **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-016, DEV2-017, DEV2-018, DEV2-021, DEV2-022, DEV2-023, DEV2-024, DEV2-025, DEV2-026, DEV2-027 (numeração própria DEV2-xxx; a dev2 não usa TASK-xxx; os números 019 e 020 não foram usados nesta entrega)
+- **Base:** a dev2 está sincronizada com a dev1 na **versão 0.7.0** (TASK-134, modo `--embed`). Zero commits atrás da dev1.
 - **Data:** 2026-11-12
 
-## Resumo do que mudou
+---
 
-Módulo separado "Vibe Coding e Mutirão". Até a DEV2-023 ficava atrás de chaves experimentais em Configurações; **desde a DEV2-024 as chaves saíram de propósito** e o módulo funciona sempre (ver DEV2-024 abaixo).
+## 1. Resumo em 1 minuto
 
-- **DEV2-001:** a casca do módulo, com dois botões no cabeçalho ("Vibe Coding" e "Mutirão").
-- **DEV2-002:** a tela de entrega do projeto, um formulário engessado (objetivo, fluxo desenhado, um .md com a estrutura do projeto, critério de pronto, o que os agentes não podem fazer e os acessos), com um modelo .md para baixar.
-- **DEV2-003:** com a entrega pronta, o Termix cria no projeto duas abas de Claude Code (um orquestrador e um dev), pede o plano e só as perguntas indispensáveis, mostra o andamento e guarda o estado sem recomeçar sozinho ao reabrir o app.
-- **DEV2-004:** a execução autônoma do plano, com uma **trava em código**. No teste anterior o orquestrador planejou fazer commit na branch principal apesar da regra; como as abas do Vibe trabalham sem pedir aprovação, a regra passou a ser aplicada pelo próprio Termix:
-  - as abas do Vibe (e só elas) abrem com uma configuração própria que verifica cada comando e cada gravação do agente e recusa, com o motivo, o que mexeria na branch principal, sairia da branch permitida, forçaria envio, descartaria trabalho, apagaria em massa ou fora do projeto, gravaria fora do projeto ou em arquivos de segredo;
-  - o Termix cria ou confere a branch de trabalho (a do papel em projetos com o fluxo; uma branch própria nos outros), sem descartar nada;
-  - o Termix marca a pasta do projeto como confiável no arquivo de configuração do Claude Code (decisão do Ygor), mexendo só nessa marca, com cópia de segurança;
-  - "Executar plano" passa as tarefas ao dev uma a uma, com contexto limpo e pedidos curtos; o Termix confere o git depois de cada tarefa e o orquestrador revisa pelo resumo; até duas refações por tarefa;
-  - pausas que retomam de onde pararam: limite de uso da janela de 5 horas (93 %, retoma sozinha), tarefa de publicação ou que precise do humano, erro ou agente sem resposta; painel com o andamento e notificação ao concluir;
-  - correções da etapa anterior: o botão de iniciar não aparece como ação principal com um ciclo em andamento, e o aviso "Terminou" falso das abas do Vibe foi silenciado.
-- **DEV2-005:** o Mutirão, para dividir um projeto entre sócios:
-  - só o dono do projeto usa (com o fluxo, o DEV1; sem o fluxo, quem abrir, desde que o projeto tenha um remoto git); os outros veem só a explicação;
-  - a tela é um painel ao lado do terminal; o chat com o orquestrador do dono é uma aba do próprio Termix, com a mesma trava do Vibe;
-  - o dono informa os participantes e a branch de cada um; o orquestrador grava a divisão e a parte de cada sócio numa pasta própria do projeto; o Termix confere e recusa partes que compartilhem arquivos; publicar envia só essa pasta, só na branch do dono;
-  - o sócio que abre o projeto na branch dele, depois de sincronizar, vê o aviso da parte e abre o Vibe Coding já preenchido por ela; ao concluir, o Termix grava a entrega e envia só a branch do sócio;
-  - o dono vê um contador de entregas lido do remoto (sem custo de IA); com todas entregues aparece o botão da implementação automática, que fica para a próxima tarefa;
-  - pequena correção: as cópias de segurança da configuração do Claude Code ficam limitadas às 10 mais recentes.
-- **DEV2-006:** a implementação automática do Mutirão, última peça do MVP:
-  - com todas as entregas, o dono aperta um botão e o próprio Termix (sem IA) confere que o projeto não tem mudanças pendentes e está na branch do dono, busca o remoto e junta a entrega de cada sócio na branch do dono, uma por vez; se uma entrega conflitar, o Termix cancela só aquela junção sem descartar nada, registra a branch e os arquivos, e as outras continuam entrando;
-  - o Termix monta, a partir da divisão, das partes, das entregas e dos conflitos, uma entrega pronta para o Vibe Coding, e o orquestrador do dono planeja até o fim (primeiro os conflitos, depois ligar as partes, lacunas e validação final), com as perguntas só do indispensável;
-  - sem perguntas e com o plano conferido, a execução segue sozinha no mesmo ciclo da etapa anterior, na branch do dono (a trava passa a permitir juntar branches nela e continua barrando a principal);
-  - no fim, o Termix envia só a branch do dono e avisa que promover para a principal é com o humano;
-  - a tela do Mutirão mostra as fases (juntando, conflitos, planejando, executando, concluído), o resultado de cada junção e um atalho para o painel do Vibe;
-  - padronização: todo pedido do Termix aos agentes do Vibe passa a ir num arquivo, e só uma linha curta é digitada (como o Mutirão já fazia);
-  - correções: o botão da parte do sócio sai na hora ao trocar para outro projeto; a lista de arquivos alterados lida do git perdia a primeira letra do primeiro arquivo; uma regra de bloqueio que o Claude Code acusava como inútil saiu (o bloqueio continua pelo verificador).
-- **DEV2-007:** robustez do ciclo, para fechar o que ficou sem teste:
-  - tarefa só de validação ou conferência: o plano a marca e o Termix aceita a tarefa sem commit novo quando o resumo do dev traz o resultado da validação (antes ela virava refação);
-  - limite de tentativas: depois de duas refações o ciclo pausa, avisa e mostra o motivo; "Continuar" dá mais uma tentativa, não uma rodada inteira;
-  - tempo limite: agente que não termina o turno em 30 minutos (ou fica 20 sem sinal) é interrompido, o ciclo pausa e avisa quem travou;
-  - "Parar" no meio do turno não deixa o ciclo inconsistente: pedido ainda não enviado é desfeito (não conta como tentativa e a caixa de texto é limpa); turno interrompido é conferido e refeito de forma limpa ao continuar;
-  - envio final do Mutirão com a branch do dono mais nova no remoto (outra máquina): o Termix busca o remoto e junta antes de enviar, sem reescrever histórico nem descartar; com conflito, cancela a junção, não envia nada e explica.
-- **DEV2-008:** um guia de validação do MVP para o Ygor testar no Termix real, com caixas de marcar: preparação, custos esperados, o cuidado com o arquivo de configuração do Claude Code (o que muda, a cópia de segurança, como conferir e desfazer), um roteiro do Vibe Coding de ponta a ponta, um roteiro opcional do Mutirão com dono e sócias num único PC, o que observar, as limitações conhecidas e o modelo do veredito. Pequena correção de texto: o aviso de pausa não repete mais a instrução de continuar.
-- **DEV2-009:** fechamento das pendências do MVP que não dependiam do Ygor:
-  - numa rodada real de planejamento (projeto de brinquedo com publicação e um dado que só o cliente tem), o planejador marcou sozinho as tarefas de publicação, as que dependem do humano e a validação final; o pedido não precisou mudar;
-  - correção de um alarme falso: uma linha do plano que **proibia** enviar para a branch principal era lida como ordem de enviar (no Mutirão, isso também impediria a execução automática);
-  - nova conferência sem custo de IA: plano sem nenhuma tarefa de publicação marcada, mas com título que fala em publicar ou fazer deploy, mostra um aviso;
-  - Mutirão: a entrega montada para o plano final traz o objetivo e o critério de pronto do projeto inteiro e os passos de publicação e do humano achados na divisão e nos documentos do projeto, e o pedido manda planejá-los com as marcas;
-  - visto com um Claude Code real: parar o agente no meio do turno e limpar o contexto em seguida funciona (o comando chega inteiro);
-  - a trava passa a permitir resolver um conflito escolhendo um lado, só com uma junção em andamento, na branch permitida e em arquivo ainda em conflito.
-- **DEV2-010:** "Importar projeto (várias pastas)", atrás de uma chave experimental própria (desligada por padrão):
-  - para projetos com mais de uma pasta (ex.: a do dev e a do orquestrador): o Termix analisa cada pasta só lendo, sem custo de IA (git, papel do fluxo, tarefas em andamento, handoff, último checkpoint e a lista de conversas do Claude Code), e mostra um mapa para confirmar o papel de cada pasta e a aba que será criada, com avisos quando algo é ambíguo e dicas de economia;
-  - "Carregar" abre abas novas com o papel no nome; cada uma recebe um pedido curto, guardado em arquivo e anexado na linha digitada, para ler só o essencial e dizer onde paramos; retomar uma conversa antiga é opcional, por pasta, desmarcado;
-  - "Organizar com IA" (opcional) lê um resumo montado pelo Termix e grava a organização na pasta de dados do app; sugestões que mexeriam em arquivos ficam só como proposta;
-  - nada é movido, renomeado ou apagado nas pastas do usuário;
-  - como o núcleo abre cada aba na pasta do projeto, cada pasta vira um projeto do Termix, agrupado pelo módulo.
-- **DEV2-011:** a dev2 recebeu tudo o que a dev1 tem até a versão 0.6.1 (layout novo, telas Conectores e Código) e o módulo foi conferido nele:
-  - Vibe Coding, Mutirão e as chaves em Configurações funcionam no layout novo;
-  - como o diálogo "Novo projeto" deixou de existir, o botão "Importar projeto (várias pastas)" passou para a tela "Novo chat", ao lado de "Criar chat";
-  - o painel do Mutirão foi ajustado para encostar no palco arredondado, sem borda dupla;
-  - os testes do módulo sem custo de IA passaram.
-- **DEV2-012:** prova técnica do ciclo do Vibe com agentes reais no layout novo, num projeto de brinquedo isolado (fora das pastas do Ygor, com a configuração do Claude Code de teste):
-  - a chave ligada pela interface; o plano veio com três tarefas pequenas e a validação final, sem perguntas e sem publicação;
-  - "Parar" no meio de uma tarefa, fechar e reabrir o app: o painel mostra onde parou e nada recomeça sozinho; "Continuar" leva até "Projeto concluído", com a notificação;
-  - os commits ficaram só na branch de trabalho; a principal, local e no remoto, não mudou; um pedido proposital de commit na principal foi recusado pela trava, com o motivo na aba;
-  - gasto de cerca de 7 pontos da janela de 5 horas (abaixo do teto combinado de 15);
-  - nada quebrou no módulo e nenhuma linha mudou.
-- **DEV2-013:** a trava passa a recusar, com o motivo, a troca de branch para a principal (main/master) nas abas do Vibe. Na DEV2-012 um agente conseguiu trocar para a principal; o commit seguinte foi recusado, mas ele ficou nela. Agora a troca é barrada em todas as formas comuns (direta, criando branch nova a partir da principal, destacada, pelo remoto, pela "branch anterior"). Trocar para a branch permitida ou para outras branches, criar branch a partir da permitida e só ler a principal continuam permitidos. As operações de git do próprio Termix (conferir a branch, o Mutirão juntar as entregas, a conferência depois de cada tarefa) não passam pela trava, então o Mutirão segue igual. Sem custo de IA: 34 casos novos no teste da trava, e os testes antigos do módulo continuam passando.
-- **DEV2-014:** política de autonomia por projeto, escolhida antes de iniciar a produção autônoma (decisões do Ygor de 2026-11-11):
-  - uma tela "Antes de iniciar", entre o plano pronto e a execução, com três modelos prontos (Supervisionado, Autônomo até a branch, que é o padrão, e Autônomo com deploy) e ajustes por cima: deploy na principal, os comandos de deploy, o comando de qualidade que precisa passar antes, o teto de uso (janelas de 5 h e de 7 d e, opcional, em dólares), o modelo de IA do orquestrador e do dev e quando chamar o humano;
-  - só o responsável pelo projeto (papel DEV1 com o fluxo; o dono, sem o fluxo) vê e liga o deploy; para os outros papéis a opção não aparece e o fim do ciclo é enviar a própria branch e o resumo da entrega;
-  - a política fica gravada por projeto, é relida ao reabrir o app e pode ser editada no meio do ciclo sem parar nada (vale a partir da próxima tarefa); o botão "Pausar deploy" fica sempre à vista no painel e corta na hora qualquer deploy automático, sem parar o resto;
-  - o ciclo passa a ler a política: com deploy automático, a tarefa de publicação fica marcada como pendente e o ciclo segue (quem fará o deploy é o Termix, em código, na próxima etapa; nada é executado agora); sem ele, pausa como antes; o teto de uso, antes fixo, passa a ser o da política e, ao ser atingido, o ciclo pausa e avisa;
-  - o modelo de IA por papel vai na configuração que o módulo já gera para as abas do Vibe, sem mudar o núcleo;
-  - os agentes recebem só o trecho da política que importa ao planejador; os pedidos continuam curtos e em arquivo.
-- **DEV2-018:** ajustes da política e uma proposta ao DEV1:
-  - a tela "Antes de iniciar" agora rola inteira: os botões do rodapé do modal do Vibe ficam fora do conteúdo e não cobrem mais o fim do formulário ("Quando chamar você"); mudança só no estilo do módulo, sem tocar no modal do núcleo;
-  - a interface deixou de mostrar números internos de tarefa: a tarefa de deploy aparece como "deploy pendente" e o texto do deploy diz que a execução ainda não está disponível nesta versão;
-  - o arquivo da política entrou na checagem de sintaxe do projeto (a sugestão anterior ao DEV1 sobre isso foi resolvida);
-  - decisões do orquestrador sobre a DEV2-014, mantidas como estavam: o teto de 7 dias pausa com padrão de 95 %, a pausa por teto avisa e "Decisões de produto" vale a partir do próximo plano; o envio automático da própria branch e do handoff no fim do ciclo de DEV2..DEV5 entra na DEV2-016;
-  - documento novo de proposta ao DEV1 (só documento, nada implementado): o botão "Delegar tarefa" com perfil e PIN por sócio (veja "Sugestões ao DEV1").
-- **DEV2-015:** recuperação de erro do ciclo (decisão do Ygor: erro simples não pode travar o projeto):
-  - quando o Dev erra, estoura o tempo ou fica sem sinal, o Termix grava um diagnóstico (tela da aba, situação do git, motivo e o que já foi tentado) e pede ao orquestrador uma única ação de uma lista fechada: reenviar com explicação, recomeçar com o contexto limpo, reabrir a aba do Dev retomando a conversa, reiniciar o projeto (comando opcional da política), dividir a tarefa em duas ou pular;
-  - até 3 voltas por tarefa (configurável de 0 a 5, contam no orçamento); depois, a tarefa vira pendência, o Termix avisa e o ciclo segue. Só pausa se a próxima tarefa depender dela, se a principal mudar ou se o teto for atingido; uma decisão ilegível também pausa;
-  - se quem travou foi o orquestrador, o Termix reabre a aba dele uma vez e, travando de novo, pausa e avisa;
-  - o comando de reiniciar o projeto roda só na pasta do projeto e passa antes pela trava; o limite de refações pela revisão não mudou;
-  - o painel mostra "Recuperando (volta n/3)" e, no fim, a lista de pendências. Testado só com o agente falso, sem custo de IA.
-- **DEV2-016:** deploy feito pelo Termix e fim de ciclo dos devs auxiliares (decisões do Ygor: o DEV1, ou o dono sem o fluxo, tem autorização total para deploy na main; o deploy é do Termix, nunca do agente; voltar versão só por revert):
-  - numa tarefa de deploy permitida pela política, o próprio Termix, sem IA: confere a branch e a árvore, roda o portão de qualidade na branch de trabalho, leva a branch para a principal (com o fluxo, avanço direto como na promoção; sem avanço direto possível ou sem o fluxo, uma junção), envia a principal e uma marca de versão (tag) sem forçar, roda a receita de deploy com cada comando conferido pela trava, grava o log e volta para a branch de trabalho;
-  - portão que falha, conflito na junção ou mudanças pendentes não publicam nada: vão para a recuperação da DEV2-015 (o Dev conserta na branch e o Termix tenta de novo); conflito é sempre cancelado sem perder nada;
-  - receita que falha depois do envio: o Termix avisa que a principal já foi enviada e a publicação falhou, e oferece rodar a receita de novo, voltar versão ou seguir sem publicar; não desfaz nada sozinho;
-  - "Pedir autorização": o sino e o painel mostram o resumo (commits que entram, portão, receita) com "Autorizar deploy" e "Negar"; negar vira pendência; o ponto de aprovação fica num arquivo, pronto para o Telegram responder pelo mesmo caminho;
-  - "Pausar deploy" retém a tarefa; "Retomar deploy" publica os retidos (com um agente trabalhando, só ao fim da tarefa atual);
-  - "Voltar versão": lista de deploys no painel, com confirmação explícita; desfaz por revert na principal e envia sem forçar; depois pergunta se roda a receita de novo;
-  - DEV2..DEV5: nunca publicam na principal (recusado no processo principal, não só na tela); no fim do ciclo o orquestrador reescreve o handoff da dev em alto nível e o Termix faz o commit só dele e envia só a branch da dev;
-- **DEV2-026 (EXPERIMENTO): "Retomar projeto" e estrutura legível do projeto.** Pedido do Rodrigo, autorizado pelo Ygor. Tudo no módulo isolado (arquivos novos `retomar` no processo principal e na interface), com uma chamada no núcleo (ao adicionar projeto) e o aviso ao fechar o app no `main.js`:
-  - várias pastas viram **um projeto só**, com pasta principal, **um** orquestrador e **um** dev;
-  - o Termix detecta, sem IA, se o projeto tem guia, lista de tarefas e estado; sem eles, oferece "Criar estrutura do projeto" ao adicionar (só para projetos que já existem);
-  - os chats antigos do Claude Code daquela(s) pasta(s) são listados (data, tamanho, custo estimado, teto de 5) e coletados em segundo plano, um por vez, em **somente leitura e em cópia** (a conversa original não ganha a pergunta), com um prompt fixo de 8 itens; um orquestrador novo consolida em `CLAUDE.md` (só acrescenta), `docs/TASKS.md` e `docs/ESTADO.md`, **sem commit**;
-  - pop-up "Retomar projeto" uma vez por projeto a cada abertura do app, montado sem IA: "Inicializar orquestrador e dev" (principal; `/clear` nas abas existentes, cria as que faltam; o orquestrador recebe um pedido curto e o dev não recebe nada), "Retomar últimas conversas" (com o aviso de custo), "Continuar ciclo" (quando há ciclo do Vibe parado) e "Agora não"; sem pop-up em modo chat;
-  - aviso ao fechar o app com ciclo do Vibe ou Mutirão rodando; o `/clear` nunca toca nas abas do ciclo;
-  - depois do resumo, o Vibe de tarefa abre com a pendência principal preenchida e a nota de que leva o projeto até a próxima entrega.
-  - O fluxo Rocruzta e o `/fluxo:init` ficam fora da criação da estrutura (decisão do Ygor).
-- **DEV2-025 (EXPERIMENTO): botão "Delegar tarefa".** Pedido do orquestrador, autorizado pelo Ygor e pelo Rodrigo ("implementar tudo; o login no Hub ele faz"). **As contas são um mock:** a conta deste PC é escolhida em Configurações entre cinco nomes fixos, sem PIN e sem verificação; o login do Hub e o PIN ficam com o Rodrigo e, quando existirem, só o arquivo de contas do módulo muda.
-  - **o que é:** um botão no cabeçalho, ao lado do "Vibe Coding", para o responsável do projeto (papel DEV1 num projeto com o fluxo) passar **uma** tarefa a **uma** pessoa. Sem o fluxo, ou sem ser o responsável, o clique só explica e não faz nada. O layout não mudou; o lugar final do botão é do Rodrigo.
-  - **pedido:** o responsável escolhe a pessoa (sem a própria conta) e a branch (a próxima devN livre entre dev2 e dev5; ocupada = pedido aberto) e diz em poucas palavras o que quer; o orquestrador dele escreve a tarefa completa (objetivo, contexto, o que ler, critério de pronto, o que não fazer, resultado esperado); ele revisa e confirma. Em código, sem IA, sem forçar e sem descartar nada, o Termix cria a devN a partir da dev1 (se não existir), registra no `.claude/fluxo.json` e grava o pedido e um índice numa pasta própria do repositório **na branch do responsável**, com push só dela. Nada é escrito na branch do dev.
-  - **recebimento:** com a conta escolhida, o Termix de quem recebe confere o remoto a cada 5 minutos e no "Atualizar", sem IA; avisa no sino e no projeto; nada começa sozinho. "Começar" confere ou troca para a branch do pedido (sem descartar nada), sincroniza com a dev1 e grava na branch do dev um marcador mínimo de estado (commit e push só dela), e abre o orquestrador com o pedido em arquivo; há também o Vibe de tarefa preenchido. O projeto precisa já existir no Termix de quem recebe.
-  - **entrega e análise:** "Entregar" faz o orquestrador reescrever o handoff e o Termix grava o handoff e o marcador "entregue" (push só da devN). Do lado do responsável, a vigia lê **só o marcador de estado** (trava de contexto: nunca código, diff nem log da devN) e avisa no sino; "Analisar entrega" extrai só o handoff e o orquestrador lê apenas ele e o pedido original; aprovar ou reprovar fica gravado no índice. **A integração continua manual** pelo fluxo; o Termix não junta branches.
-  - **painel:** reaproveita o do Mutirão: delegadas a você e pedidos do projeto, com para quem, branch, estado (enviado, em andamento, entregue, aprovado, reprovado) e datas.
-  - **ajuste pequeno:** no mapa do Organizador, os botões do rodapé não cobrem mais o último cartão (só o conteúdo rola).
-  - **para o Rodrigo decidir:** o lugar do botão; o login do Hub e o PIN; se o campo "quem é cada branch" entra no `fluxo.json` (hoje a pessoa fica só no índice do pedido); a integração automática e o Telegram ficam fora.
-- **DEV2-024 (EXPERIMENTO): sem chaves experimentais e "Usar pasta existente" com várias pastas.** Pedido do orquestrador, autorizado pelo Ygor e pelo Rodrigo ("implementar tudo, fica mais fácil o feedback"):
-  - **as chaves saíram de propósito:** "Vibe Coding e Mutirão (experimental)" e "Importar projeto com várias pastas" não aparecem mais em Configurações (o título "Experimental" saiu junto). O Vibe Coding, o Mutirão (inclusive o lado do sócio) e o Organizador funcionam sempre. Um arquivo de estado antigo com a chave desligada não esconde nada: o valor salvo é ignorado e não é apagado. Motivo: a dev2 não vai para a main; o Rodrigo analisa e implementa de forma nativa depois. O botão "Vibe Coding" continua no mesmo lugar do cabeçalho;
-  - **mudança no núcleo (alto nível):** o "Usar pasta existente" das telas "Novo projeto" e "Novo mutirão" passou a aceitar várias pastas no diálogo do Windows (pelo Organizador; sem o módulo, o seletor de uma pasta de sempre). Com uma pasta, nada muda. Com mais de uma, abre o mapa do Organizador (papel de cada pasta e a escolha da conversa a retomar), e "Carregar" cria um projeto por pasta, com as abas pelo papel, e encerra a tela de origem. A nota do campo diz que dá para escolher várias. O botão separado "Importar projeto (várias pastas)" saiu;
-  - **novo no mapa:** a conversa de orquestrador e a de dev mais recentes (cada uma a mais nova entre as pastas daquele papel) vêm marcadas para retomar, com a indicação "recomendada"; o usuário troca ou desmarca. Antes a retomada vinha desmarcada;
-  - **Mutirão (b2) "Delegar algumas tarefas":** o sócio abre o Vibe de tarefa (DEV2-017), preenchido com a tarefa dele, e não o formulário completo de projeto. O modo do mutirão passou a ir na divisão publicada (o Termix grava o campo antes de publicar), porque o sócio só tem o que chega pelo git. Os modos (a) e (b1) abrem o Vibe como antes;
-  - sem mudança de layout; o botão "Delegar tarefa" não foi criado (é a próxima tarefa).
-- **DEV2-023 (EXPERIMENTO): Mutirão nativo.** Mudanças no núcleo, em alto nível, para o Rodrigo:
-  - a página "Novo mutirão" passou a desenhar a tela de criação do Mutirão (fornecida pelo módulo) e não cria mais o Workflow antigo; os Workflows que já existem continuam abrindo e aparecem na pasta "Mutirão" como antes (nada migrado nem apagado);
-  - a escolha de pasta do "Novo projeto" (criar, usar existente, clonar) virou uma função reaproveitada pelo Mutirão, sem mudar o comportamento do "Novo projeto";
-  - a pasta "Mutirão" da barra lateral lista também os mutirões (que continuam em "Projetos"), com as entregas k/N ao lado do nome; o clique abre o projeto com o painel do Mutirão;
-  - layout sem mudança: as mesmas classes da tela "Novo projeto" e da barra; só uma linha de CSS para o k/N.
-  - No módulo: a tela tem (a) projeto novo já como mutirão (o dono sobe objetivo, .md da estrutura e critério; o projeto inteiro é dividido) e (b) projeto ativo, com "Do estado atual até finalizar" (todo o restante dividido) ou "Delegar algumas tarefas" (uma tarefa por participante, o dono segue na branch dele). O dono pode se incluir como participante, com a parte separada. Painel com tipo, fase e status de cada responsável; entregas novas avisam no sino (conferência sem IA a cada 5 min); com todas, a implementação automática de sempre. O botão "Mutirão" saiu do cabeçalho; o Mutirão do dono funciona com a chave experimental desligada.
-- **DEV2-022 (EXPERIMENTO):** a dev2 recebeu a dev1 0.6.4 (renomeação Chat/Workflow para Projeto/Mutirão e o clone do GitHub). O módulo foi conferido no app depois da renomeação: chaves, botão "Importar projeto (várias pastas)" na tela "Novo Projeto", Vibe Coding e painel do Mutirão seguem funcionando. Só o texto da chave do Organizador mudou para "Novo projeto".
-- **DEV2-021 (EXPERIMENTO):** deploy automático ("Sempre" ou "Marco") passa a exigir o portão de qualidade (a tela não grava sem ele e o Termix recusa o deploy); depois de "Voltar versão", com o fluxo, o Termix junta a principal na dev1 (sem força; conflito é cancelado, nada se perde), e o painel explica que trazer de volta o que foi revertido exige "reverter o revert".
-  - ajustes da DEV2-015: o servidor deixado pelo "F5 do projeto" é encerrado (só ele, com os filhos) antes de um F5 novo e no fim do ciclo; durante a recuperação o painel mostra só "Volta n/N" e um link "Abrir diagnóstico".
-- **DEV2-017 (EXPERIMENTO):** "Vibe de tarefa", o modo rápido para projeto em andamento (decisão do Ygor: o formulário completo fica só para projeto do zero):
-  - o botão Vibe Coding abre primeiro uma escolha: "Projeto novo (entrega completa)" ou "Tarefa num projeto em andamento"; os dois formulários permitem trocar o tipo;
-  - a tarefa tem quatro campos (o que fazer, critério de pronto, o que não pode e os arquivos ou telas envolvidos) e mostra o resumo do projeto que vai ao orquestrador, montado pelo Termix sem IA (branch, papel do fluxo, últimos commits, começo do README e do guia do projeto e a tarefa em andamento da lista de tarefas);
-  - o Termix monta com isso uma entrega própria (como a do Mutirão) e pede ao orquestrador um plano curto: ler só o necessário por busca, poucas tarefas, as mesmas marcas de publicação, humano e validação, e só as perguntas indispensáveis; daí em diante é o mesmo ciclo do Vibe (política, recuperação, deploy, fim de ciclo dos devs auxiliares, Parar e Continuar);
-  - histórico: várias tarefas seguidas no mesmo projeto; o painel mostra a atual e as anteriores (concluídas, interrompidas, feitas e pendências); uma tarefa nova não apaga a anterior; as abas do orquestrador e do dev são reaproveitadas com limpeza de contexto;
-  - rodada real curta num projeto de brinquedo isolado (modelo Sonnet nas duas abas): plano de 2 tarefas sem perguntas, a tarefa feita na branch de trabalho, a principal intacta; o ciclo pausou corretamente no teto de 7 dias da política (97 %) e seguiu depois que o teto foi subido só na instância de teste; gasto de cerca de US$ 1 na tabela da API.
+**O que é:** um módulo isolado, "Vibe Coding e Mutirão", que fica quase todo em `src/vibe/` (processo principal) e `src/renderer/vibe/` (interface). Ele pega um projeto, cria um **orquestrador** e um **dev** (duas abas de Claude Code), planeja, executa tarefa por tarefa com uma **trava em código** (a IA não mexe na main, não força push, não apaga em massa), faz o deploy pelo Termix e se recupera de erros sozinho. Inclui também o **Mutirão** (dividir um projeto entre sócios pelo git), o **Organizador** (projeto com várias pastas), o **"Retomar projeto"** (estrutura legível + chats antigos + pop-up) e a **política de autonomia por projeto**.
 
-## Áreas e arquivos afetados
+**O que entra:** tudo, funcionando sem chaves experimentais (desde a DEV2-024 não há chave em Configurações). Botões "Vibe Coding" (cabeçalho), Mutirão (painel lateral e pasta "Mutirão" da barra), pop-up "Retomar projeto" ao abrir um projeto, mapa do Organizador em "Usar pasta existente" com várias pastas.
 
-- Módulo isolado: a pasta do processo principal ganhou o verificador da trava (DEV2-004) e a parte do Mutirão (DEV2-005); a pasta da interface ganhou o ciclo de execução, o painel do Vibe e o painel do Mutirão. Na DEV2-016, um arquivo novo do deploy no processo principal e a etapa de deploy no ciclo da interface. Na DEV2-017, um arquivo novo do Vibe de tarefa no processo principal e a escolha inicial, o formulário da tarefa e o histórico na interface; a checagem de sintaxe do projeto ganhou esse arquivo.
-- Núcleo: na DEV2-004, **uma linha do processo principal virou três**, no ponto em que o terminal é aberto: o núcleo pergunta ao módulo se a aba é do Vibe e, sendo, usa a configuração com a trava; as outras abas seguem iguais. Na DEV2-001, a **ponte ganhou uma linha** (o canal do módulo, só para os pedidos "vibe") e a **página principal ganhou duas linhas** (o estilo e o script do módulo). A checagem de sintaxe do projeto passou a incluir os arquivos do módulo. Da DEV2-005 à DEV2-011, nenhuma outra linha do núcleo (na DEV2-011, só a resolução dos conflitos da sincronização, mantendo a versão da dev1 e somando as linhas do módulo).
-- Dados: na pasta de dados do app, por projeto (a política de autonomia desde a DEV2-014, entrega, plano, resultados e revisões de cada tarefa, configuração da trava, histórico) e uma pasta de cópias de segurança da configuração do Claude Code. Na pasta do projeto do usuário, só o que os agentes fazem na branch de trabalho, a troca de branch feita pelo Termix e, no Mutirão, a pasta da divisão, das partes e das entregas (enviadas só para a branch do dono ou do sócio). Na implementação automática, as junções e o trabalho dos agentes ficam na branch do dono, que o Termix envia ao remoto no fim. Na DEV2-016, uma pasta de deploys por projeto (registro, logs e o pedido de autorização). Na DEV2-017, o histórico de tarefas por projeto.
-- Documentação: desenho do módulo, tarefas e changelog próprios da dev2, uma linha nas decisões e, na DEV2-018, a proposta do botão "Delegar tarefa" ao DEV1. Na DEV2-018, a lista da checagem de sintaxe do projeto ganhou o arquivo da política do módulo.
+**O que está ADIADO (a dev2 assume depois, ver seção 5):**
+- **Delegar tarefa:** código pronto e testado, mas **estacionado** (fora da interface) até o Rodrigo fazer o login do Hub com PIN.
+- **Telegram (DEV2-019):** não começou.
+- **Mutirão com IA real** e as validações com Claude Code real (itens do backlog das DEV2-015, 016, 025 e 026).
 
-## Impacto e riscos
+**O que o RODRIGO decide (seção 6):** o lugar final dos botões no layout; o login do Hub com PIN (e religar o Delegar); as 3 sugestões da DEV2-026; e a integração, que continua **manual**.
 
-- **Delegar tarefa (DEV2-025):** grava na pasta própria do repositório do projeto (na dev1 os pedidos e o índice; na branch do dev, só o marcador de estado) e acrescenta a devN ao `.claude/fluxo.json`; cria a devN no remoto a partir da dev1 quando não existe (envio simples, sem força). Se o remoto recusar, nada é forçado e o motivo aparece. Com a conta mock, qualquer pessoa pode se passar por outra: serve para organizar o trabalho, não é proteção. A vigia só roda em projetos com o fluxo.
-- **Sem chaves (DEV2-024):** o módulo fica sempre ativo; antes, sem ligar a chave, o app ficava igual ao da dev1. A pergunta ao módulo ao abrir um terminal continua respondendo "não é do Vibe" para as abas comuns.
-- **Retomada recomendada (DEV2-024):** a conversa marcada é a mais recente; se ela estiver aberta em outro terminal agora, o mapa avisa ("em uso?"), mas a marca continua; retomar a mesma conversa em dois lugares mistura o histórico.
-- A trava cobre os caminhos comuns, mas **não é uma sandbox**: um script escrito e rodado pelo próprio agente poderia escapar. Por isso o Termix também confere o git depois de cada tarefa e pausa se a branch principal mudar.
-- **Arquivo de configuração do Claude Code:** o Termix grava nele uma única marca por projeto do Vibe. Leitura e gravação cuidadosas (cópia de segurança, releitura, troca atômica, nada se o arquivo não for lido), mas as sessões abertas do Claude Code também escrevem nele. No teste foi usado um arquivo de teste; falta validar no real.
-- Apagar de forma recursiva é recusado até dentro do projeto (escolha conservadora).
-- Testados sem tokens (com um Claude Code falso no teste, DEV2-007): limite de tentativas, tempo limite, parar antes e durante o turno, tarefa sem commit e envio final com o remoto à frente. Com tokens: a resolução de um conflito pelo dev e pela revisão reais. Ainda não testados com tokens: entrega real do Vibe de um sócio e o plano final do Mutirão com os passos de publicação (validado pelo pedido gerado). A marcação de publicação/humano pelo planejador real foi vista na DEV2-009 (Vibe comum). Depois de parar um agente, o indicador da aba fica "trabalhando" até o próximo pedido (só visual).
-- **Mutirão:** o Termix faz commit e envia ao remoto (só a pasta do Mutirão, só na branch do dono ou do sócio, nunca na principal). No teste, um pedido longo digitado na aba recém-aberta chegou cortado; por isso o pedido do Mutirão vai num arquivo e só uma linha é digitada. O Vibe do sócio não rodou até o fim no teste (a entrega foi simulada).
-- **Implementação automática:** o Termix junta branches e envia a branch do dono ao remoto sem perguntar (só ela, nunca a principal; nada é descartado, e uma junção com conflito é cancelada e vira tarefa). Ela só começa com o projeto sem mudanças pendentes. No teste, as entregas dos sócios foram feitas por script, não pelo Vibe deles.
-- **Recuperação (DEV2-015):** o ciclo segue sozinho em vez de pausar nos erros do Dev, então uma tarefa pode terminar como pendência sem o humano ver na hora (o sino avisa e a lista fica no painel). A reabertura da aba e a decisão do orquestrador ainda não foram vistas com um Claude Code real. Desde a DEV2-016 o servidor do F5 do projeto é encerrado antes de um F5 novo e no fim do ciclo (com o app fechado à força, só no próximo F5).
-- **Deploy (DEV2-016):** é a primeira vez que o Termix (não a IA) escreve na branch principal e no remoto: junção, marca de versão e envio, sempre sem forçar, e reverts para voltar versão. Só para o DEV1 ou o dono. Testado só com repositórios locais de teste (o remoto de teste recusa reescrita e exclusão), nunca num projeto real. A receita roda comandos do projeto com a principal em checkout; cada comando passa pela trava, mas a trava não é uma sandbox. Depois de voltar versão num projeto com o fluxo, a dev1 não tem os reverts: o próximo deploy sai por junção (o revertido continua revertido).
-- **Vibe de tarefa (DEV2-017):** o plano parte de um resumo lido sem IA e do próprio repositório; num projeto grande o orquestrador pode ler mais do que o pedido sugere (o pedido manda ler só o necessário). A tarefa nova reaproveita as abas do ciclo anterior (com limpeza de contexto); fechadas, o Termix cria abas novas.
-- **Política (DEV2-014):** o teto de 7 dias passa a pausar (padrão 95 %) e a pausa por teto passa a avisar. Desde a DEV2-016, "Pedir autorização" pede a autorização no sino e no painel em vez de só pausar, e "Pausar deploy" também retém nesse modo.
-- **Nome "Mutirão" em dois lugares (DEV2-022):** desde a TASK-132 o núcleo chama de "Mutirão" o antigo Workflow, e o módulo tem a sua função "Mutirão" (dividir o projeto entre sócios). Não foi renomeado, aguarda o Ygor. Pontos do módulo onde o nome colide: cabeçalho do módulo ("Vibe Coding" e "Mutirão", sem distinção do Mutirão do núcleo); título do painel lateral do módulo ("Mutirão"); aba "Mutirão · Orquestrador"; avisos e sino ("Mutirão concluído…", "Entrega do Mutirão…", "Você tem uma parte do Mutirão"); nota "parte do Mutirão" no formulário do Vibe; chave em Configurações ("Vibe Coding e Mutirão (experimental)"). No núcleo, desde a TASK-132: categoria "Mutirão" na barra lateral, "Novo mutirão" e a tela "Novo Mutirão" (antigo Workflow).
-- Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
+---
 
-## Sugestões ao DEV1
+## 2. Como integrar
 
-Três sugestões do pedido da DEV2-026. A decisão é do DEV1.
+A integração é manual, pelo fluxo (`/fluxo:integrar`). Nada deve ser feito pela dev2 na dev1 nem na main.
 
-- **1. Retomada de conversa por ID como gargalo de tokens**
-  - **Situação hoje:** ao reabrir o app (e no botão de retomar), cada aba abre a conversa antiga pelo ID (`--resume`).
-  - **O que observamos:** depois de horas o cache do prompt expirou, então a primeira mensagem reprocessa o histórico inteiro, com custo alto e sem aviso. Em conversas longas isso pesa na cota de 5h e de 7d.
-  - **Proposta:** como padrão, abrir com contexto limpo e o estado em arquivo (guia, tarefas, estado); deixar a retomada por ID como opção explícita, com o aviso de custo. A DEV2-026 faz isso só no módulo, sem mexer no núcleo.
-  - **Para que serve:** reduzir o consumo de tokens ao abrir o dia e ao reiniciar o app, sem perder o contexto do projeto.
-  - **Decisão:** fica com o DEV1.
-- **2. Padrão orquestrador + dev nos projetos de desenvolvimento**
-  - **Situação hoje:** o núcleo abre uma aba por conversa, sem papéis; só o módulo do Vibe e o Organizador criam orquestrador e dev.
-  - **O que observamos:** os sócios usam 9 ou 10 chats sem papel definido, e fica difícil saber qual guarda o conhecimento. O dev aberto sem tarefa não gasta token.
-  - **Proposta:** todo projeto de desenvolvimento nasce com orquestrador (decide, mantém a estrutura) e dev (executa), com a estrutura mínima em arquivo.
-  - **Para que serve:** retomar o trabalho por arquivos legíveis e dar um lugar certo para cada conversa.
-  - **Decisão:** fica com o DEV1.
-- **3. Chat simples/temporário para o dia a dia**
-  - **Situação hoje:** o Termix é para desenvolvimento; usar o app para perguntas rápidas cria conversas permanentes que viram ruído na lista e na retomada.
-  - **O que observamos:** projetos em modo chat (bolhas) ficam sem pop-up e sem estrutura, e as conversas soltas acumulam.
-  - **Proposta:** um chat simples e temporário (sem retomada automática e com arquivamento fácil) para o uso do dia a dia; isso também resolve os projetos em modo bolhas.
-  - **Para que serve:** separar o uso rápido do trabalho de desenvolvimento e manter a lista de chats limpa.
-  - **Decisão:** fica com o DEV1.
+**Passos:**
+1. Na dev1, com a árvore limpa, rodar `/fluxo:integrar` e pedir a dev2. Liberar a leitura da dev2 só depois de ler este handoff.
+2. Integrar por **merge** (não rebase, sem force). A dev2 já contém a dev1 0.7.0, então deve ser um merge sem conflito nos arquivos da dev1; a versão do `package.json` é a da dev1 (0.7.0).
+3. Rodar `npm run check` e os testes da seção 2.3.
+4. Abrir o app e seguir a seção 3.
+5. Commit do merge no padrão do fluxo (`TASK-XXX: integrar dev2 na dev1 (...)`), atualizar `docs/TASKS.md` e `docs/CHANGELOG_DEV.md` da dev1.
 
-- **Botão "Delegar tarefa" (proposta, só documento):** ver `docs/PROPOSTA_DELEGAR_TAREFA.md`. Automatiza o que hoje é manual para passar uma tarefa a um segundo dev: criar e registrar a dev2, o orquestrador da dev1 escrever o pedido com o resultado esperado, o pedido chegar pelo git à pessoa nomeada, o aviso de entrega e a análise só pelo handoff, com integração só com a aprovação do DEV1. Inclui perfil por sócio com PIN (a conta GitHub é compartilhada), as opções de onde guardar o PIN, o que pode ser reaproveitado do plugin fluxo e do Mutirão, as fases sugeridas e as perguntas em aberto. A ressalva de segurança está explícita: organiza e evita conflito, mas não é proteção forte.
-- **Conferência de conversa existente ignora `CLAUDE_CONFIG_DIR`:** a conferência "esta conversa existe?" olha só a pasta padrão do Claude Code no perfil do usuário. Com a variável apontando para outra pasta, ao reabrir o app a aba tenta abrir uma conversa nova com o mesmo identificador e aparece "Falha ao iniciar ou retomar a conversa". Sem a variável (uso normal) não acontece.
-- **Aba "trabalhando" depois de um Esc:** interrompida com Esc, a aba fica "trabalhando" por até 20 segundos, porque o Claude Code não avisa o fim do turno nesse caso (só visual).
-- **Configurações aninhadas:** "Notificações", "Conectores" e "Projetos arquivados" aparecem dentro do cartão do "Botão Clear", provavelmente por um bloco não fechado na montagem da página de Configurações.
+### 2.1 Arquivos de núcleo que o módulo toca (todo o resto é arquivo novo)
 
-## Como validar
+- **`src/main.js`:** (a) carrega o módulo com um `require('./vibe')` protegido por try/catch, passando ipcMain, dialog, app e a janela, para que um erro nele nunca derrube o app; (b) ao abrir um terminal, pergunta ao módulo se a aba é do Vibe e, sendo, usa os `--settings` com a **trava**; as outras abas seguem iguais; (c) no fechamento da janela, o aviso "há ciclo do Vibe ou Mutirão rodando" (diálogo nativo, só aparece com ciclo ativo).
+- **`src/preload.js`:** uma linha, o método `vibe`, que só aceita canais `vibe:*`.
+- **`src/renderer/index.html`:** duas linhas (o estilo e o script do módulo). O módulo carrega os próprios arquivos de interface por dentro.
+- **`src/renderer/app.js`:** (a) a pasta "Mutirão" da barra lateral lista também os mutirões, com as entregas k/N; (b) "Novo mutirão" desenha a tela fornecida pelo módulo (o Workflow antigo deixa de ser criado; os existentes continuam abrindo); (c) a escolha de pasta do "Novo projeto" virou uma função reaproveitada (resolve criar, usar existente ou clonar) e o "Usar pasta existente" aceita várias pastas pelo Organizador; (d) uma chamada ao módulo ao adicionar um projeto existente (oferta da estrutura e dos chats antigos).
+- **`package.json`:** a lista do `npm run check` ganhou os arquivos do módulo. Nenhuma dependência nova, nenhuma mudança de versão.
+- Estilos: o módulo traz o próprio CSS (`vibe.css`, `organizador.css`, `retomar.css`, `delegar.css`); o `styles.css` da dev1 só ganhou uma linha para o k/N do Mutirão na barra.
 
-- DEV2-025, sem custo de IA: o teste do módulo com um remoto local e duas "máquinas" (Rodrigo DEV1 e Ygor DEV2) cobre o ciclo inteiro (delegar, aviso só para o Ygor, Começar, Entregar, vigia, Analisar só o handoff, Aprovar e Reprovar), a branch ocupada passando para a dev3, o não responsável, o projeto sem fluxo e que nada é forçado nem descartado (confere os comandos git executados). Numa instância isolada com o agente falso: o botão, o dropdown, o aviso de quem recebe, o painel com os estados, o Vibe de tarefa preenchido e o rodapé do mapa corrigido.
+### 2.2 Pontos de risco no merge
 
-- DEV2-024, sem custo de IA: numa instância isolada com o agente falso e um arquivo de estado com as chaves desligadas, Configurações sem chaves, o "Vibe Coding" no cabeçalho, "Usar pasta existente" com uma pasta (como antes) e com várias (mapa com as recomendadas, trocar e desmarcar, "Carregar" criando um projeto por pasta), e o sócio do (b2) caindo no Vibe de tarefa preenchido. O teste do Organizador usa pastas de brinquedo e conversas falsas numa pasta de configuração do Claude Code de teste. Nunca testar num projeto real.
+- **`package.json`:** a linha do `check` é longa e muda dos dois lados; ao resolver, manter os arquivos da dev1 (inclusive `src/embed.js`) e os do módulo. Foi exatamente o único conflito na sincronização com a 0.7.0.
+- **`src/renderer/app.js`:** o ponto de maior risco; os trechos do módulo estão em funções do "Novo projeto" e da barra lateral (renderização das categorias). Se a dev1 mexer nelas, o merge precisa manter os dois lados.
+- **`src/main.js`:** o trecho do `--settings` do Claude Code e o do evento de fechar a janela. Se a dev1 mudar como as abas de Claude Code são abertas, o ponto do módulo precisa acompanhar.
+- **Modo `--embed` (`src/embed.js`):** o módulo usa só o `window.termix.vibe(...)` do preload, que o embed já repassa pelo WebSocket; nada do módulo precisou mudar no embed.
 
-- DEV2-017, sem custo de IA: o teste do módulo (resumo do projeto, campos obrigatórios, projeto sem git recusado, entrega da tarefa, pedido do plano, histórico de duas tarefas seguidas e da interrompida, trava na aba) e, numa instância isolada com o agente falso, a escolha inicial, o formulário com o resumo, a tarefa 1 até o fim do ciclo de um dev auxiliar e a tarefa 2 nas mesmas abas, com o painel do histórico. Nunca testar num projeto real.
-- DEV2-016, sem custo de IA: o teste do módulo com remotos locais de teste (deploy com avanço direto e com junção, portão falhando, conflito cancelado, autorizar e negar, pausar e retomar, marco não atingido, receita falhando depois do envio, voltar versão nos dois casos, fim de ciclo da DEV2 enviando só a dev2, DEV2 sem publicar, F5 do projeto encerrando o anterior) e, numa instância isolada com o agente falso, o ciclo com deploy concluído, pedido de autorização no sino e no painel e a lista de versões com "Voltar para antes deste". Nunca testar num projeto real.
-- DEV2-018, sem custo de IA: numa instância isolada sem abas de agente, abrir "Executar plano…" e rolar a tela "Antes de iniciar" até o fim (com e sem os campos de deploy, e numa janela baixa): "Quando chamar você" e os botões do formulário ficam inteiros acima do rodapé; nenhum número interno de tarefa aparece no modal. Ler `docs/PROPOSTA_DELEGAR_TAREFA.md`.
-- Seguir o guia de validação do MVP (documento novo da DEV2-008), no Termix real rodando da dev2.
-- Rodar a checagem de sintaxe do projeto.
-- DEV2-014, sem custo de IA: o teste da política (o papel define as opções, modelos, deploy, teto, gravação e reabrir, "Pausar deploy", modelo de IA nas abas e pedidos) e, numa instância isolada sem abas de agente, a tela "Antes de iniciar", o painel e o projeto de outro papel sem a opção de deploy.
-- DEV2-009, sem custo de IA: o verificador da trava com os casos de conflito (escolher um lado passa só com junção em andamento, na branch permitida, em arquivo em conflito) e o teste do módulo das conferências do plano e da entrega do Mutirão.
-- Sem gastar tokens: rodar o verificador da trava direto com entradas simuladas (cada regra com um caso permitido e um bloqueado).
-- Numa instância isolada, com um projeto pequeno e um plano de poucas tarefas: "Executar plano" leva cada tarefa pelo dev e pela revisão até "Projeto concluído"; os commits ficam só na branch de trabalho; a branch principal não muda; pedir de propósito a um agente um commit na branch principal é recusado (pedir a troca para a branch principal também é recusado (DEV2-013)); o limite injetado no modo de teste pausa e retoma; uma tarefa marcada como publicação pausa; "Parar" e reabrir o app mostram onde parou sem recomeçar.
-- No real: conferir que a marca de pasta confiável apareceu só na entrada do projeto e que existe a cópia de segurança.
-- Mutirão, sem custo de IA: o teste do módulo com um remoto local (dono e dois sócios) cobre papel, conferência (inclusive a recusa de arquivo em comum), publicação, parte do sócio, entrega e contador. Com IA, numa instância isolada: o dono gera a divisão com o orquestrador, publica; cada sócio sincroniza, vê a parte e abre o Vibe preenchido; o contador vai de 0 a N e mostra o botão da implementação automática.
-- Implementação automática, sem custo de IA: o teste do módulo com um remoto local cobre projeto com mudanças pendentes (recusado), junção sem conflito, junção com conflito (cancelada sem perder nada, a outra entra), a entrega montada para o plano, os pedidos em arquivo, a trava (juntar na branch do dono pode, na principal não) e o envio só da branch do dono. Com IA, numa instância isolada: com duas entregas, o botão leva até "Concluído" e a branch do dono chega ao remoto com a principal intacta; com conflito, o plano começa pela tarefa do conflito.
-- Robustez (sem custo de IA): o teste do módulo cobre a marca de tarefa sem commit e o envio final com o remoto à frente (sem conflito, com conflito, com mudança pendente, fora da branch do dono); numa instância isolada com um agente falso, o ciclo inteiro do Mutirão passa pelo limite de tentativas, parar antes e durante o turno, tempo limite do dev, silêncio da revisão, tarefa sem commit e envio final integrando o remoto.
+### 2.3 Testes a rodar depois da integração
+
+Os scripts de teste ficam **fora do repositório** (na pasta de trabalho da sessão da dev2) por serem de uso interno; peça-os ao Ygor se quiser rodá-los. Resultados esperados, todos sem custo de IA:
+- `npm run check`: sem erro.
+- Sem Electron: dep16 68/68, rec15 35/36 (a falha é conhecida: uma checagem de tamanho do pedido quebra quando o caminho da pasta de teste é longo), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33, mut23 97/97, org26a 14/14, del25 77/77, ret26 38/38.
+- Com Electron e agente falso (instância isolada, uma por vez): run26 (pop-up e coleta), run24 (Organizador, projeto único), run25 (Delegar, ligado só pelo modo de teste), run23 (Mutirão nativo), e os run7, run15, run16, run17, run22. Resultados da dev2 na 0.7.0: run26 44/44, run24 26/26, run25 35/35 (com o Delegar ligado só pelo modo de teste), run23 52/52, mais uma checagem nova do Delegar estacionado e do `--embed` com 15/15.
+
+---
+
+## 3. Como testar em 5 minutos no app real
+
+Sem custo de IA, sem mexer em projeto real. Use uma pasta de brinquedo com `git init` e um commit.
+1. `npm start` na dev2. Em "Novo projeto > Usar pasta existente", escolha a pasta de brinquedo: aparece a oferta "Criar estrutura do projeto" (escolha "Agora não"/sem coleta); o projeto abre.
+2. Feche e reabra o app e abra o projeto: o pop-up **"Retomar projeto"** aparece (Inicializar orquestrador e dev, Retomar últimas conversas, Agora não). "Agora não" fecha sem efeito.
+3. No cabeçalho, **"Vibe Coding"**: a escolha "Projeto novo" ou "Tarefa num projeto em andamento"; abra o formulário da tarefa e veja o resumo do projeto montado sem IA. Não precisa enviar.
+4. Pasta "Mutirão" da barra lateral e "Novo mutirão": a tela de criação do módulo. Não precisa criar.
+5. "Usar pasta existente" com **duas pastas**: abre o mapa do Organizador (pasta principal, um orquestrador e um dev), com os botões do rodapé fora da área que rola.
+6. Confirmar que **não aparece** "Delegar tarefa" no cabeçalho nem "Conta neste PC" em Configurações (estacionado de propósito).
+7. Opcional, no modo `--embed` do Hub: o botão "Vibe Coding" fica no cabeçalho do Termix, que o `--embed` esconde (ver seção 4.2); o resto funciona.
+
+---
+
+## 4. O QUE O RODRIGO PRECISA CRIAR para a nossa parte funcionar inteira
+
+### 4.1 Login do Hub com PIN (para religar o "Delegar tarefa")
+
+**Situação:** o Delegar está pronto e testado, mas as contas hoje são um **mock** (5 nomes fixos, sem PIN) e, por decisão do Ygor, o botão está **fora da interface** até o login existir. Nenhuma conta mock aparece em lugar nenhum, a vigia de 5 minutos não roda e o código inteiro continua no repositório.
+
+**O que o módulo espera receber do login (contrato):**
+- **Identidade da pessoa:** um nome único e estável (o mesmo que será gravado no pedido, no índice e no marcador); hoje é um dos cinco nomes. Se o Hub tiver um id interno, ele deve vir junto, mas o nome é o que é usado para endereçar pedidos.
+- **A lista de pessoas** possíveis (para o campo "Para quem"); a conta ativa é excluída da lista de quem recebe.
+- **A conta ativa neste PC:** quem está logado agora no Hub/Termix. Se ninguém estiver logado, o módulo trata como "sem conta" e não vigia nem envia.
+- **A branch devN da pessoa** **não** vem do login: é escolhida no pedido (próxima devN livre entre dev2 e dev5). A relação pessoa-branch fica no índice do pedido; a proposta sugere (e o Rodrigo decide) guardar também no `.claude/fluxo.json` (ver 6).
+
+**Onde ligar:** (1) trocar a fonte dos dados em `src/vibe/contas.js`: as funções `listarContas()` e `contaAtual()` (e `definirConta()`, que deixa de existir quando a conta vem do login) passam a ler do Hub; o resto do módulo (`src/vibe/delegar.js` e a interface) não muda; (2) mudar a constante `DELEGAR_ATIVO` para verdadeiro em `src/renderer/vibe/delegar.js`, que religa o botão no cabeçalho, o painel, a vigia de 5 minutos e os avisos; (3) tirar o campo "Conta neste PC (provisório)" de Configurações (ele só existe para o mock).
+
+**O que usa a conta (para o Rodrigo não esquecer nada):**
+- **Vigia (a cada 5 min e no "Atualizar"):** só roda com conta ativa; lê, sem IA, os pedidos para a conta em `.termix/delegar/` da dev1 (`git fetch` + `git show`) e, para o responsável, só o marcador de estado de cada devN.
+- **Pedido:** arquivo por pedido e um `indice.json` em `.termix/delegar/` na **dev1**, com para quem (nome da conta), de quem, branch devN, datas e estado (enviado, em andamento, entregue, aprovado, reprovado).
+- **Marcador na devN:** `estado-<pedido>.json` em `.termix/delegar/` na branch do dev, só com estado e datas, escrito quando a pessoa clica "Começar" e "Entregar".
+- **Quem é responsável:** continua sendo o papel DEV1 do projeto com o fluxo (não vem da conta).
+
+**Proposta completa (`docs/PROPOSTA_DELEGAR_TAREFA.md`, seções 3 a 5), em resumo:**
+- **Seção 3 (login):** perfil por sócio com nome e PIN; o PIN guardado **só como hash**, com sal por pessoa e algoritmo lento, mínimo de 6 dígitos, bloqueio local depois de tentativas erradas e cópia local para funcionar sem rede. Opções de armazenamento: A) repositório privado de perfis da empresa sincronizado por git (sugerida), B) arquivo de perfis por projeto, C) pasta de nuvem compartilhada, D) serviço com banco (única com limite de tentativas e revogação reais). Autor dos commits: `user.name` com o nome do sócio e o e-mail compartilhado. **Ressalva:** com a conta GitHub compartilhada, perfil e PIN organizam o trabalho e evitam engano, **não são proteção forte**.
+- **Seção 4 (reaproveitamento):** o plugin fluxo (branches, papel, sincronizar, integrar com a trava de contexto), o Mutirão (troca de pedidos e entregas pelo git) e o sino de notificações.
+- **Seção 5 (fases):** 1 perfis com PIN; 2 quem é quem no projeto (mapa branch-pessoa no `fluxo.json`, papel da máquina deduzido, `CLAUDE.local.md` gerado); 3 pedido; 4 recebimento; 5 entrega e aviso; 6 "Analisar entrega"; 7 Telegram. **As fases 3 a 6 já estão implementadas pela dev2 (com o mock)**; faltam as fases 1 e 2, que são do Rodrigo, e a 7.
+
+### 4.2 Lugar final dos botões Vibe Coding, Mutirão e Delegar
+
+**Hoje:** o "Vibe Coding" fica no cabeçalho (barra de cima), em um grupo de botões do módulo; o "Delegar tarefa" ficaria ao lado dele (está estacionado); o Mutirão tem três pontos de entrada: a pasta "Mutirão" da barra lateral, a tela "Novo mutirão" e o painel ao lado do terminal, aberto a partir do projeto. O pop-up "Retomar projeto" aparece sozinho ao abrir um projeto e não depende de botão.
+
+**No modo `--embed` do Hub:** o `--embed` esconde o cabeçalho do Termix (o Hub é a janela). Como os botões do módulo estão nesse cabeçalho, **no `--embed` o botão "Vibe Coding" e o "Delegar tarefa" não aparecem**; o Mutirão pela barra lateral e o pop-up "Retomar projeto" não dependem do cabeçalho. O Rodrigo precisa decidir um lugar que exista nos dois modos (por exemplo, na barra lateral, no rodapé ou no menu do projeto) ou um botão do Hub que chame o módulo. **Conferido (DEV2-027, Edge e CDP, só o conteúdo):** no `--embed` a interface carrega o módulo inteiro e o canal do módulo responde pelo WebSocket; o botão "Vibe Coding" **existe, mas fica invisível** (o cabeçalho é escondido), então não há clique possível para o usuário; o painel do Mutirão (aberto pela pasta "Mutirão" da barra) e o pop-up "Retomar projeto" aparecem e funcionam; clicar o botão escondido por script abre normalmente a escolha do Vibe. Nada do `--embed` foi alterado. **Pontos de entrada para o novo lugar dos botões:** o botão do cabeçalho (que dispara a tela do Vibe), a função que abre o painel do Mutirão de um projeto, a que abre o painel do Delegar (só com `DELEGAR_ATIVO`) e a ponte da interface que abre o Vibe de tarefa já preenchido. A lógica não depende de onde o botão fica.
+
+### 4.3 Telegram (DEV2-019)
+
+**O que já existe:** o ponto de aprovação do deploy é um **arquivo** por projeto (`autorizacao.json`, na pasta de deploys do módulo, com estado aguardando, autorizado, negado ou fechado, o resumo do deploy e a origem da decisão). A interface (sino e painel) e, no futuro, o Telegram gravam a decisão pelo **mesmo caminho** (ação "decidir" do módulo de deploy) e o ciclo apenas lê o arquivo. Ou seja, o ciclo já está pronto para uma decisão vinda de fora.
+
+**O que falta:** o lado do bot (receber a decisão do chat), o aviso ao chat (pedido de autorização, ciclo concluído, entrega), e como o bot alcança o app do usuário. Se o Rodrigo quiser **centralizar no Hub**: o Hub recebe a mensagem do Telegram e chama o app pelo mesmo caminho que o clique do sino (gravar a decisão com origem "telegram"); o aviso sairia do mesmo evento que hoje vira notificação no sino. A DEV2-019 fica para depois, junto com o Ygor.
+
+### 4.4 Outras dependências do núcleo
+
+- **Claude Code instalado** e acessível (as abas são terminais de Claude Code); o módulo grava uma marca de pasta confiável no arquivo de configuração do Claude Code, com cópia de segurança.
+- **git** no PATH; o remoto é necessário para Mutirão e Delegar.
+- **Fluxo Rocruzta** (`.claude/fluxo.json` e papéis): o deploy, o Delegar e o fim de ciclo dos devs auxiliares dependem do papel do fluxo; sem o fluxo, o dono do projeto é quem manda.
+- **Sem dependências npm novas.**
+- **Testes:** os scripts ficam fora do repositório; se o Rodrigo quiser incorporá-los ao projeto, é uma decisão dele.
+- **`npm install` depois do merge:** a dev1 0.7.0 trouxe a dependência `ws` (do `--embed`); sem ela o modo `--embed` não sobe.
+
+---
+
+## 5. PENDÊNCIAS DA DEV2 (adiadas; a dev2 assume depois)
+
+- **DEV2-019 Telegram.** *Motivo:* decisão do Ygor (por último e junto com ele) e depende de onde fica o bot (talvez o Hub). *Pronto:* o arquivo de autorização do deploy, lido pelo ciclo, e o sino. *Falta:* o bot, o aviso e a decisão pelo chat.
+- **Delegar religado depois do login.** *Motivo:* o login do Hub com PIN é do Rodrigo; o Ygor estacionou o botão até lá. *Pronto:* todo o fluxo (pedido, recebimento, entrega, análise só do handoff, aprovar e reprovar), com testes. *Falta:* trocar a fonte das contas, ligar `DELEGAR_ATIVO` e validar com contas reais, com um orquestrador real escrevendo a tarefa.
+- **Mutirão com IA real.** *Motivo:* regra de não gastar IA real nesta entrega. *Pronto:* tudo testado com agente falso e remotos locais, e uma rodada real do Vibe comum. *Falta:* o dono gerar a divisão com o orquestrador real, o Vibe de um sócio de ponta a ponta e a implementação automática com IA.
+- **Validações com Claude Code real (backlog das DEV2-015, 016, 025 e 026).** *Motivo:* mesmo, sem custo de IA agora. *Pronto:* testes com agente falso. *Falta:* o F5 da aba e a decisão do orquestrador na recuperação; o Dev consertando o portão do deploy e o handoff do fim do ciclo escrito pelo orquestrador; a tarefa escrita pelo orquestrador no Delegar; a coleta dos chats antigos e o "Continuar ciclo" do pop-up.
+- **Clique no diálogo nativo do aviso ao fechar.** *Motivo:* o diálogo é nativo e o teste automático não o aciona. *Pronto:* o teste confirma que o app não fecha com ciclo rodando e que o processo principal recebe a lista de projetos. *Falta:* conferir à mão os dois botões ("Fechar e interromper" e "Cancelar").
+
+---
+
+## 6. Decisões do Rodrigo
+
+1. **Sugestão 1 (da DEV2-026): retomada de conversa por ID como gargalo de tokens.** Hoje cada aba reabre a conversa pelo ID; depois de horas o cache do prompt expirou e a primeira mensagem reprocessa o histórico inteiro, com custo alto e sem aviso. *Proposta:* abrir com contexto limpo e o estado em arquivos (guia, tarefas, estado) como padrão, e deixar a retomada por ID como opção explícita com aviso de custo. O módulo já faz isso só no pop-up "Retomar projeto". A decisão sobre o núcleo é dele.
+2. **Sugestão 2: padrão orquestrador + dev nos projetos de desenvolvimento.** Hoje o núcleo abre uma aba por conversa, sem papéis; os sócios acabam com 9 ou 10 chats sem papel. *Proposta:* todo projeto de desenvolvimento nasce com orquestrador (decide, mantém a estrutura) e dev (executa), com a estrutura mínima em arquivo. O dev aberto sem tarefa não gasta token.
+3. **Sugestão 3: chat simples e temporário para o dia a dia.** Perguntas rápidas criam conversas permanentes que viram ruído na lista e na retomada; projetos em modo bolhas ficam sem pop-up e sem estrutura. *Proposta:* um chat simples e temporário, sem retomada automática e com arquivamento fácil.
+4. **Lugar final dos botões** (seção 4.2), incluindo o comportamento no `--embed`.
+5. **Login do Hub e PIN** (seção 4.1), incluindo a opção de armazenamento do PIN e se o mapa branch-pessoa entra no `fluxo.json`.
+6. **Integração:** continua **manual**; o Termix não junta branches da dev2 nem do Delegar. Se a decisão for não integrar, a dev2 segue como experimento.
+7. **O nome "Mutirão" em dois lugares:** desde a TASK-132 o núcleo chama de Mutirão o antigo Workflow, e o módulo tem a sua função "Mutirão" (dividir o projeto entre sócios). Não foi renomeado; o Rodrigo decide o nome.
+
+---
+
+## 7. Limitações conhecidas e detalhes por tarefa
+
+### Limitações conhecidas
+
+- A trava cobre os caminhos comuns, mas **não é uma sandbox**: um script escrito e rodado pelo próprio agente poderia escapar; por isso o Termix também confere o git depois de cada tarefa e pausa se a principal mudar. Apagar de forma recursiva é recusado até dentro do projeto.
+- O arquivo de configuração do Claude Code recebe uma marca por projeto do Vibe, com cópia de segurança (10 mais recentes) e troca atômica; as sessões abertas do Claude Code também escrevem nele. Validado só com um arquivo de teste.
+- **Deploy:** é a primeira vez que o Termix (não a IA) escreve na main e no remoto, sem forçar, só para o DEV1 ou o dono. Testado só com repositórios locais; a receita roda comandos do projeto com a principal em checkout.
+- **Recuperação de erro:** o ciclo pode terminar uma tarefa como pendência sem o humano ver na hora (o sino avisa e a lista fica no painel).
+- **Delegar:** estacionado; com a conta mock qualquer pessoa pode se passar por outra (organiza, não protege). A integração é manual.
+- A conferência "esta conversa existe?" olha só a pasta padrão do Claude Code (ignora `CLAUDE_CONFIG_DIR`).
+- Depois de um Esc, a aba fica "trabalhando" por até 20 segundos (só visual).
+- Em Configurações, "Notificações", "Conectores" e "Projetos arquivados" aparecem dentro do cartão do "Botão Clear" (bloco provavelmente não fechado na dev1; não é do módulo).
+- No modo `--embed` os botões do cabeçalho do módulo não aparecem (seção 4.2).
+
+### Detalhes por tarefa (histórico enxuto)
+
+- **001 a 003:** casca do módulo, tela de entrega do projeto (formulário engessado e modelo .md), as duas abas (orquestrador e dev), plano e perguntas indispensáveis.
+- **004:** execução autônoma com a **trava em código**; Termix cria/confere a branch de trabalho, marca a pasta como confiável e passa as tarefas ao dev uma a uma, com conferência do git e até duas refações; pausas por limite de uso, publicação, humano ou erro.
+- **005 e 006:** o Mutirão (dono e sócios, divisão publicada na branch do dono, parte do sócio, entrega, contador) e a implementação automática (juntar as entregas, conflitos primeiro, planejar e executar na branch do dono, enviar só ela).
+- **007 e 009:** robustez do ciclo (tarefa só de validação, limite de tentativas, tempo limite, "Parar" consistente, envio final com remoto à frente; alarme falso do plano e conflito resolvido escolhendo um lado).
+- **008 e 012:** guia de validação do MVP e prova técnica do ciclo com agentes reais num projeto de brinquedo (cerca de 7 pontos da janela de 5 horas).
+- **010, 024 e 026:** Organizador (várias pastas; hoje um projeto único com pasta principal), fim das chaves experimentais, "Retomar projeto" (estrutura legível, chats antigos coletados em cópia e só leitura, pop-up, aviso ao fechar).
+- **011, 022 e 027:** sincronizações com a dev1 (0.6.1, 0.6.4 e 0.7.0) e conferência do módulo em cada uma.
+- **013:** a trava passa a recusar a troca para a branch principal.
+- **014 e 018:** política de autonomia por projeto (modelos Supervisionado, Autônomo até a branch e Autônomo com deploy, teto de uso, "Pausar deploy") e ajustes; proposta do Delegar.
+- **015:** recuperação de erro (diagnóstico, ação do orquestrador numa lista fechada, até 3 voltas, pendências).
+- **016 e 021:** deploy pelo Termix (portão, avanço direto ou junção, tag, receita, voltar versão por revert, autorização), fim de ciclo dos devs auxiliares, portão obrigatório no deploy automático e junção da main na dev1 depois de voltar versão.
+- **017:** Vibe de tarefa (modo rápido para projeto em andamento, com histórico de tarefas).
+- **023:** Mutirão nativo (a página "Novo mutirão" passa a criar o Mutirão do módulo; modos de projeto novo, do estado atual e "delegar algumas tarefas").
+- **025:** Delegar tarefa (pedido, recebimento, entrega, análise só do handoff, aprovar e reprovar) e rodapé do mapa do Organizador.
+- **027:** sincronização com a dev1 0.7.0 e verificação do `--embed`; o Delegar foi **estacionado** (constante única, código mantido, vigia e contas mock fora da interface); pendências movidas para o TASKS_DEV2.
+
+### Como validar (resumo)
+
+Ver as seções 2.3 e 3. Todos os testes são sem custo de IA, com repositórios, remotos e agentes de teste, numa instância isolada do Termix. Nunca testar num projeto real.
 
 ## Decisão do DEV1 / usuário
 
-(Preenchido depois. Por decisão do Ygor, o DEV1 só é avisado no MVP do Vibe/Mutirão.)
+(Preenchido depois.)

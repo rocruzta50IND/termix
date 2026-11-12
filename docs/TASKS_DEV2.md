@@ -5,7 +5,7 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - Numeração própria: **DEV2-001, DEV2-002...** A sequência TASK-xxx é do DEV1 e não é usada aqui.
 - A dev2 trabalha nas frentes **Vibe Coding** e **Mutirão** (desenho em `docs/VIBE_MUTIRAO.md`) e, desde a DEV2-010, no **Organizador** (importar projeto com várias pastas, `docs/ORGANIZADOR.md`).
 - Estas tarefas não vão para `docs/TASKS.md` nem para `docs/CHANGELOG_DEV.md`; o histórico fica em `docs/CHANGELOG_DEV2.md`.
-- O DEV1 não é notificado até o MVP do Vibe/Mutirão; `docs/HANDOFF_DEV2.md` fica como "EXPERIMENTO (não entregar)".
+- **Estado (DEV2-027, 2026-11-12):** a dev2 está pronta para a integração manual do Rodrigo, em reunião com o Ygor. `docs/HANDOFF_DEV2.md` está com status **AGUARDANDO DECISÃO** e é o manual de integração (o DEV1 só lê o handoff antes de aprovar). O que estava "EXPERIMENTO (não entregar)" passou a ser a entrega proposta.
 
 ---
 
@@ -18,10 +18,41 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - **DEV2-018** — Proposta ao Rodrigo do botão "Delegar tarefa" (só documento) e 3 ajustes da DEV2-014. *(feita, abaixo)*
 - **DEV2-021** — Dois ajustes do deploy da DEV2-016: portão obrigatório no deploy automático e junção da main na dev1 depois de "Voltar versão". *(feita, abaixo)*
 - **DEV2-025** — Botão "Delegar tarefa" (contas provisórias, pedido na dev1, entrega por marcador) e rodapé do mapa do Organizador. *(feita, abaixo)*
-- **DEV2-019** — Telegram, por último e junto com o Ygor.
-- O Mutirão fica para depois, até o Ygor aprovar o Vibe.
-- **Backlog (da DEV2-015):** validar o F5 da aba e a decisão do orquestrador com um Claude Code real. (O PID do F5 do projeto e o `run7.js` foram feitos na DEV2-016.)
+- **DEV2-027** — Sincronização com a dev1 0.7.0 e preparação para a integração: Delegar estacionado, pendências adiadas e handoff como manual. *(feita, abaixo)*
+- **DEV2-019, Mutirão com IA real e validações reais:** adiados, ver "Pendências da dev2 (adiadas)" logo abaixo.
+- **Backlog antigo (agora em "Adiado"):** (da DEV2-015) validar o F5 da aba e a decisão do orquestrador com um Claude Code real. (O PID do F5 do projeto e o `run7.js` foram feitos na DEV2-016.)
 - **Backlog (da DEV2-016):** validar com um Claude Code real o Dev consertando o portão pedido pela recuperação e o handoff do fim do ciclo escrito pelo orquestrador.
+
+---
+
+## Pendências da dev2 (adiadas)
+
+Decisão do Ygor (2026-11-12): fica fora desta entrega; a dev2 assume depois. Cada item com o motivo, o que já está pronto e o que falta.
+
+- **DEV2-019 Telegram.** *Motivo:* por último e junto com o Ygor; depende de onde fica o bot (talvez o Hub). *Pronto:* o arquivo de autorização do deploy (`autorizacao.json`), que o ciclo lê, e o sino. *Falta:* o bot, o aviso ao chat e a decisão pelo chat gravada pelo mesmo caminho (ação "decidir", origem "telegram").
+- **Delegar religado depois do login (DEV2-025).** *Motivo:* o login do Hub com PIN é do Rodrigo; o Ygor estacionou o botão até lá. *Pronto:* o fluxo inteiro, testado (del25 77/77 e run25). *Falta:* trocar a fonte das contas em `src/vibe/contas.js`, ligar `DELEGAR_ATIVO = true` em `src/renderer/vibe/delegar.js`, tirar o campo "Conta neste PC" e validar com contas e orquestrador reais. Para os testes automáticos, o Delegar liga com `TERMIX_VIBE_TEST=1` e `TERMIX_DELEGAR_TESTE=1`.
+- **Mutirão com IA real.** *Motivo:* sem custo de IA real nesta entrega. *Pronto:* tudo com agente falso e remotos locais. *Falta:* divisão pelo orquestrador real, Vibe de um sócio de ponta a ponta e a implementação automática com IA.
+- **Validações com Claude Code real.** *Motivo:* mesmo. *Backlog 015:* o F5 da aba e a decisão do orquestrador. *Backlog 016:* o Dev consertando o portão pedido pela recuperação e o handoff do fim do ciclo escrito pelo orquestrador. *Backlog 025:* o orquestrador escrevendo a tarefa completa e o handoff do Delegar. *Backlog 026:* a coleta dos chats antigos e o "Continuar ciclo" do pop-up.
+- **Clique no diálogo nativo do aviso ao fechar o app (DEV2-026).** *Motivo:* diálogo nativo, o teste automático não o aciona. *Pronto:* o app não fecha com ciclo rodando e o processo principal recebe a lista. *Falta:* conferir à mão "Fechar e interromper" e "Cancelar".
+- **Botões do módulo no `--embed` (decisão do Rodrigo).** *Pronto:* o módulo funciona no embed. *Falta:* um lugar para o "Vibe Coding" que exista sem o cabeçalho (ver DEV2-027).
+
+---
+
+## DEV2-027 — Sincronização com a dev1 0.7.0, Delegar estacionado e handoff como manual de integração
+
+- **Status:** CONCLUÍDA, aguardando a reunião Ygor + Rodrigo (integração manual)
+- **Data:** 2026-11-12
+- **Pedido:** (orquestrador termix-orq-ec, autorizado pelo Ygor; mais o complemento A/B/C) sincronizar a dev2 com a dev1; conferir o módulo no 0.7.0 e no `--embed`; estacionar o Delegar; adiar Telegram, Mutirão com IA real e validações reais; reescrever o handoff como manual de integração.
+- **Feito:**
+  - **Merge** de `origin/dev1` (eb6a2bb, TASK-134, 0.7.0) na dev2, sem rebase e sem force. **Um conflito**, em `package.json` (a linha do `check`): resolvido mantendo os dois lados (arquivos do módulo + `src/embed.js`); versão 0.7.0. O primeiro commit do merge (09884c6) saiu com marcadores por engano de um comando encadeado e foi corrigido no commit seguinte (3679197); o resto do merge entrou sem conflito. Depois do merge foi preciso `npm install` (nova dependência `ws` da dev1).
+  - **Delegar estacionado:** constante `DELEGAR_ATIVO = false` em `src/renderer/vibe/delegar.js`. Com false: sem botão no cabeçalho, sem "Conta neste PC" em Configurações, sem vigia de 5 min, `TermixDelegar.open` não abre; nenhum nome mock aparece. O código todo foi mantido (renderer, `src/vibe/delegar.js`, `contas.js`). Os testes ligam o Delegar só com `TERMIX_VIBE_TEST=1` + `TERMIX_DELEGAR_TESTE=1` (o status do módulo devolve `delegarTeste`); run25 e del25 continuam inteiros, sem apagar nada.
+  - **`--embed`:** conferido por Edge headless e CDP (só o conteúdo). O `--embed` esconde o cabeçalho, onde ficam os botões do módulo: o "Vibe Coding" existe no DOM mas fica invisível (sem como clicar); o painel do Mutirão (pela barra lateral) e o pop-up "Retomar projeto" aparecem e funcionam; o canal do módulo responde pelo WebSocket. Comportamento do `--embed` não alterado.
+  - **Documentação:** HANDOFF_DEV2 reescrito como manual de integração (status AGUARDANDO DECISÃO, IDs 001 a 018 e 021 a 027); "Pendências da dev2 (adiadas)" neste arquivo; frase do topo atualizada.
+- **Decisões:** o merge mantém a versão da dev1; Delegar estacionado por constante única; pendências adiadas com motivo.
+- **Arquivos tocados:** `package.json` (merge), `src/renderer/vibe/delegar.js`, `src/vibe/index.js` (campo `delegarTeste` no status), docs da dev2.
+- **Como validar:** `npm run check` ok. Sem IA: dep16 68/68, rec15 35/36 (falha conhecida do caminho longo), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33, mut23 97/97, org26a 14/14, del25 77/77, ret26 38/38. Com Electron e agente falso: run26 44/44, run24 26/26, run25 35/35, run23 52/52; checagem nova (Delegar estacionado no app normal e `--embed`) 15/15.
+- **Pendências:** ver "Pendências da dev2 (adiadas)"; a integração é manual (Rodrigo).
+- **Próximo passo:** aguardar a decisão da reunião.
 
 ---
 

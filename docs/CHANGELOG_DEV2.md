@@ -6,6 +6,14 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-12
 
+**DEV2-027 — Sincronização com a dev1 0.7.0, Delegar estacionado e handoff como manual de integração** (DEV2)
+
+- Merge de origin/dev1 (TASK-134, modo `--embed`, 0.7.0) na dev2; um conflito em `package.json`, resolvido mantendo os dois lados. `npm install` necessário (dependência `ws`).
+- Delegar estacionado por uma constante (`DELEGAR_ATIVO = false`): sem botão, sem "Conta neste PC", sem vigia; código mantido; testes ligam por variável de ambiente de teste.
+- `--embed` conferido: o módulo funciona; o botão "Vibe Coding" fica invisível porque o cabeçalho é escondido; Mutirão (barra) e pop-up Retomar funcionam.
+- Pendências adiadas (Telegram, Mutirão com IA real, validações reais, clique no diálogo de fechar) registradas no TASKS_DEV2; HANDOFF_DEV2 reescrito como manual de integração.
+- Testes: run26 44/44, run24 26/26, run25 35/35, run23 52/52, checagem nova 15/15; sem Electron todos como antes (rec15 35/36 conhecida).
+
 **DEV2-026 — "Retomar projeto", estrutura legível do projeto e coleta dos chats antigos** (DEV2, EXPERIMENTO)
 
 - Várias pastas viram **um projeto só**, com pasta principal (a de papel dev ou a com o commit mais recente; o usuário troca no mapa), um orquestrador e um dev. As outras pastas não são movidas nem apagadas.

@@ -323,7 +323,7 @@ function create(deps = {}) {
   }
 
   const api = {
-    status: () => ({ ...state, test: TEST }),
+    status: () => ({ ...state, test: TEST, delegarTeste: TEST && process.env.TERMIX_DELEGAR_TESTE === '1' }),
     sections: () => SECTIONS.map((s) => s.label),
 
     async template(testPath) {
