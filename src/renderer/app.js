@@ -1904,7 +1904,7 @@ function newPageHTML(kind) {
   const folder = np.where === 'git'
     ? `<div class="nprow"><input class="inp" type="text" id="npUrl" value="${esc(np.url)}" placeholder="https://github.com/dono/repositorio" spellcheck="false" autocomplete="off" ${np.busy ? 'disabled' : ''}></div><p class="meta npwf">${ic('alert', 14)} Só repositórios <b>públicos</b> por enquanto. Repositório privado vai exigir uma conexão, que ficará no Rocruzta Hub.</p>${np.err ? `<p class="meta nperr">${esc(np.err)}</p>` : ''}<p class="meta">O Termix baixa o repositório para <b>${esc(S.settings.projectsRoot || 'a pasta de projetos')}</b> e cria o projeto nele.</p>`
     : np.where === 'dir'
-    ? `<div class="nprow"><div class="pjpath" style="user-select:text" title="${esc(np.dir || '')}">${ic('folder', 16)}<span>${np.dir ? esc(np.dir) : 'Nenhuma pasta escolhida'}</span></div><button type="button" class="btn" data-nppick>Escolher pasta…</button></div><p class="meta">O Termix só registra a pasta, sem copiar nem mover nada.</p>`
+    ? `<div class="nprow"><div class="pjpath" style="user-select:text" title="${esc(np.dir || '')}">${ic('folder', 16)}<span>${np.dir ? esc(np.dir) : 'Nenhuma pasta escolhida'}</span></div><button type="button" class="btn" data-nppick>Escolher pasta…</button></div><p class="meta">O Termix só registra a pasta, sem copiar nem mover nada. Para um projeto com mais de uma pasta (ex.: a do dev e a do orquestrador), escolha várias com Ctrl ou Shift.</p>`
     : `<p class="meta">O Termix cria e organiza a pasta dentro de <b>${esc(S.settings.projectsRoot || 'a pasta de projetos')}</b>.</p>`;
   if (wf && window.TermixMut) return window.TermixMut.pageHTML(np, folder); // DEV2-023: "Novo mutirão" cria um Mutirão (o Workflow antigo não é mais criado)
   return `<div class="npage"><div class="npinner">
@@ -1917,8 +1917,16 @@ function newPageHTML(kind) {
     <div class="row2"><button class="btn pri big" data-npgo ${np.busy ? 'disabled' : ''}>${np.busy ? 'Clonando…' : np.where === 'git' ? (wf ? 'Clonar e criar workflow' : 'Clonar e criar chat') : (wf ? 'Criar workflow' : 'Criar chat')}</button></div></div></div>`;
 }
 async function npPick() {
-  const dir = await api.pickFolder();
-  if (!dir || !UI.np) return;
+  // DEV2-024: o seletor aceita várias pastas (pelo Organizador da dev2, quando carregado). Uma pasta: como sempre.
+  // Mais de uma: abre o mapa do Organizador (papel de cada pasta e a conversa a retomar) e "Carregar" cria um projeto por pasta.
+  const org = window.TermixOrg;
+  const dirs = org ? await org.pick() : [await api.pickFolder()].filter(Boolean);
+  if (!dirs || !dirs.length || !UI.np) return;
+  if (dirs.length > 1 && org) {
+    const np = UI.np; np.dir = null; renderPage();
+    return org.mapaDe(dirs, np.name, () => { if (UI.np === np) UI.np = null; });
+  }
+  const dir = dirs[0];
   UI.np.dir = dir;
   if (!UI.np.name.trim()) UI.np.name = projNameClip(dir.split(/[\\/]/).filter(Boolean).pop()) || '';
   renderPage();

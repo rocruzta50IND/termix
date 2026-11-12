@@ -8,7 +8,7 @@
    Desligado (padrão), não mostra nada. Fala com o processo principal só pelos canais 'vibe:*' (window.termix.vibe).
    Desenho: docs/VIBE_MUTIRAO.md. */
 (() => {
-  const on = () => { try { return !!(S && S.settings && S.settings.vibe && S.settings.vibe.on); } catch { return false; } };
+  const on = () => true; // DEV2-024: sem chave experimental; o Vibe e o Mutirão (inclusive o lado do sócio) funcionam sempre. Um S.settings.vibe.on salvo é ignorado (não é apagado).
   const call = async (ch, ...a) => { try { return await window.termix.vibe(ch, ...a); } catch (e) { console.error('vibe:', ch, e); return null; } };
 
   function openScreen(k) {
@@ -1322,6 +1322,7 @@
     return `<div class="vibe-form">
       <p>Descreva a tarefa. O Termix monta a entrega com um resumo do projeto e cria (ou reaproveita) o orquestrador e o dev, que trabalham sozinhos até o fim da tarefa. <a href="#" class="vx-link" data-vmodo="">Trocar o tipo</a></p>
       <p class="vibe-tip">Cite os arquivos ou telas: o orquestrador lê só o necessário e gasta menos tokens.</p>
+      ${V.mut ? `<div class="vibe-note">Tarefa pré-preenchida pela sua <b>tarefa do Mutirão</b> (branch ${esc(V.mut)}). Confira e inicie. Os agentes trabalham só na branch ${esc(V.mut)} e, ao concluir, o Termix envia a entrega.</div>` : ''}
       <div class="vf"><label for="vfProj">1. Projeto <em>obrigatório</em></label>
         <select class="inp" id="vfProj">${ps.length ? '' : '<option value="">Nenhum projeto no Termix. Crie um projeto antes.</option>'}${ps.length ? `<option value="" ${V.id ? '' : 'selected'}>Escolha o projeto…</option>` : ''}${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === V.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div id="vtHist">${V.id ? tarHistHtml(V.id) : ''}</div>
@@ -1607,13 +1608,13 @@
     R.querySelectorAll('[data-vpick]').forEach((b) => { b.onclick = () => pick(b.dataset.vpick); });
   }
 
-  async function openVibe() {
+  async function openVibe(modo0 = '') { // DEV2-024: modo0 = 'tarefa' abre direto no Vibe de tarefa (sócio do b2)
     if (V) return;
     const ps = projects();
     let last = '';
     try { last = (S.settings.vibe && S.settings.vibe.last) || ''; } catch { /* sem preferência */ }
     const id = projOf(last) ? last : ps.length === 1 ? ps[0].id : '';
-    V = { root: null, id, modo: '', f: EMPTY(), t: EMPTY_T(), res: null, fx: { fluxo: null, estrutura: null }, entrega: null, msg: null, busy: false, timer: null }; // modo (DEV2-017): '' = escolha inicial
+    V = { root: null, id, modo: modo0 === 'tarefa' || modo0 === 'projeto' ? modo0 : '', f: EMPTY(), t: EMPTY_T(), res: null, fx: { fluxo: null, estrutura: null }, entrega: null, msg: null, busy: false, timer: null }; // modo (DEV2-017): '' = escolha inicial
     const p = modal({
       title: 'Vibe Coding',
       body: body(),
@@ -1956,7 +1957,7 @@
     if (!r || !r.ok) { mutMsg('bad', esc((r && r.motivo) || 'Não foi possível abrir a parte.')); return false; }
     try { S.settings.vibe = { ...(S.settings.vibe || {}), last: id }; save(); } catch { /* sem preferência */ }
     closeMutirao();
-    openVibe();
+    openVibe(r.modo === 'tarefas' ? 'tarefa' : ''); // DEV2-024: (b2) direto no Vibe de tarefa; (a) e (b1) abrem como antes
     return true;
   }
 
@@ -2064,7 +2065,7 @@
      escolhe o projeto, registra o Mutirão do dono (mutIniciar) e abre o projeto com o painel do Mutirão, que segue o fluxo
      de sempre (chat com o orquestrador, divisão, conferência, publicação, entregas e implementação automática).
      A pasta "Mutirão" da barra lateral lê MUT_ST (resumo do mutirao.json de cada projeto, sem git e sem IA) e, no clique,
-     abre o projeto com o painel (monitoramento). Funciona com a chave experimental ligada ou não. */
+     abre o projeto com o painel (monitoramento). */
   const MUT_ST = {}; // por projeto com o Mutirão do dono: { publicado, k, n, contado, fase }
   let mutStBusy = false, mutStAgain = false;
   async function mutStatus() {
@@ -2107,7 +2108,7 @@
     if (MN.orig === 'novo' && np.where === 'new') return `<p class="meta npwf">${ic('alert', 14)} A pasta nova nasce sem git. O Mutirão exige git e um remoto (origin) que todos os sócios acessem: configure-os antes de publicar a divisão.</p>`;
     if (MN.orig === 'novo' && np.where === 'git') return '<p class="meta">O repositório clonado já vem com o remoto (origin). Se ele usa o fluxo Rocruzta, só o DEV1 divide o trabalho.</p>';
     if (!pp) return MN.ppKey ? '<p class="meta">Conferindo o projeto…</p>' : '';
-    if (!pp.dono) return `<p class="meta npwf">${ic('alert', 14)} <span><b>Só o dono do projeto cria o Mutirão.</b> ${esc(pp.motivo || '')} Se você recebeu uma parte, sincronize a sua branch com a do dono e abra o projeto no Termix na sua branch: o aviso "Sua parte do Mutirão" aparece no cabeçalho (com a chave experimental ligada).</span></p>`;
+    if (!pp.dono) return `<p class="meta npwf">${ic('alert', 14)} <span><b>Só o dono do projeto cria o Mutirão.</b> ${esc(pp.motivo || '')} Se você recebeu uma parte, sincronize a sua branch com a do dono e abra o projeto no Termix na sua branch: o aviso "Sua parte do Mutirão" aparece no cabeçalho.</span></p>`;
     if (pp.motivo) return `<p class="meta npwf">${ic('alert', 14)} ${esc(pp.motivo)}</p>`;
     return `<p class="meta">Você é o dono: branch <b>${esc(pp.branchDono)}</b>${pp.criar ? ` (criada a partir da ${esc(pp.atual || 'atual')} ao publicar)` : ''}, remoto ${esc(pp.remoto)}.</p>`;
   }
@@ -2272,48 +2273,26 @@
     const top = document.getElementById('topbar');
     if (!top) return;
     const cur = top.querySelector('.vibebtns');
-    if (!on()) { if (cur) cur.remove(); return; } // DEV2-023: o painel do Mutirão é nativo e não fecha com a chave
-    if (cur) { checkPart(); return; }
+        if (cur) { checkPart(); return; }
     const anchor = top.querySelector('[data-togact]');
     if (!anchor) return;
     const box = document.createElement('div');
     box.className = 'vibebtns';
-    box.innerHTML = '<button class="vibebtn" data-vibe-open="vibe" title="Vibe Coding (experimental)"><i></i>Vibe Coding</button>'; // DEV2-023: o Mutirão saiu do cabeçalho (fica em "Novo mutirão" e na pasta "Mutirão")
+    box.innerHTML = '<button class="vibebtn" data-vibe-open="vibe" title="Vibe Coding"><i></i>Vibe Coding</button>'; // DEV2-023: o Mutirão saiu do cabeçalho (fica em "Novo mutirão" e na pasta "Mutirão")
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-vibe-open]'); if (b) { e.stopPropagation(); openScreen(b.dataset.vibeOpen); } });
     const before = top.querySelector('#updchip') || anchor;
     top.insertBefore(box, before);
     checkPart();
   }
 
-  /* chave em Configurações: anexada ao fim da página quando ela é desenhada */
-  function mountConf() {
-    const page = document.getElementById('page');
-    if (!page || !page.querySelector('#rngOp') || page.querySelector('#vibeConf')) return;
-    const host = page.querySelector('.page');
-    if (!host) return;
-    const box = document.createElement('div');
-    box.id = 'vibeConf';
-    const draw = () => {
-      const v = on();
-      box.innerHTML = `<h5 style="margin:22px 0 8px">Experimental</h5><div class="card" style="padding:6px 18px"><div class="row"><div class="grow">Vibe Coding e Mutirão (experimental)<small>Mostra no cabeçalho o botão Vibe Coding. O Vibe Coding recebe a entrega, cria o orquestrador e o dev, prepara o plano e o executa tarefa a tarefa, com commits só numa branch própria (a main/master nunca é alterada); o sócio do Mutirão vê a parte dele no cabeçalho e a faz pelo Vibe Coding. O Mutirão do dono fica em "Novo mutirão" e na pasta "Mutirão", com ou sem esta chave.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-vibe-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-vibe-set="0">Não</button></div></div></div>`;
-    };
-    draw();
-    box.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-vibe-set]');
-      if (!b) return;
-      e.stopPropagation();
-      S.settings.vibe = { ...(S.settings.vibe || {}), on: b.dataset.vibeSet === '1' };
-      save(); draw(); mountTop();
-    });
-    host.appendChild(box);
-  }
+  /* DEV2-024: a chave "Vibe Coding e Mutirão (experimental)" saiu de Configurações (a dev2 não vai para a main; o Rodrigo
+     implementa de forma nativa depois). */
 
   function boot() {
     try {
-      const top = document.getElementById('topbar'), page = document.getElementById('page');
+      const top = document.getElementById('topbar');
       if (top) new MutationObserver(mountTop).observe(top, { childList: true });
-      if (page) new MutationObserver(mountConf).observe(page, { childList: true });
-      mountTop(); mountConf();
+      mountTop();
     } catch (e) { console.error('vibe: início', e); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();

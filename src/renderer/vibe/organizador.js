@@ -1,12 +1,13 @@
 'use strict';
-/* Organizador (DEV2-010, experimental) — lado da interface: "Importar projeto (várias pastas)".
+/* Organizador (DEV2-010) — lado da interface: projeto com várias pastas. Desde a DEV2-024, sem chave experimental e sem
+   botão próprio: o "Usar pasta existente" do núcleo (npPick) chama window.TermixOrg.pick e, com mais de uma pasta,
+   window.TermixOrg.mapaDe, que abre o mapa com as conversas mais recentes de orquestrador e de dev marcadas (recomendadas).
    Carregado pelo vibe.js (o núcleo não muda). Usa o que o app.js expõe no escopo global (S, save, modal, esc, createTab,
    findTab, addProject, launch, renderAll, addEvent, RT, UI, api) e fala com o processo principal só pelos canais
-   'vibe:org*'. Desligado (padrão), não mostra nada.
+   'vibe:org*'.
    Desenho (docs/ORGANIZADOR.md): o núcleo abre cada aba na pasta do projeto, então cada pasta vira um projeto do Termix
    (ou reaproveita o que já existe) e o módulo guarda o grupo em <userData>\organizador\<grupo>\grupo.json. */
 (() => {
-  const on = () => { try { return !!(S && S.settings && S.settings.organizador && S.settings.organizador.on); } catch { return false; } };
   const call = async (ch, ...a) => { try { return await window.termix.vibe(ch, ...a); } catch (e) { console.error('organizador:', ch, e); return null; } };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const PAPEIS = ['Orquestrador', 'Dev', 'Gerente', 'Outro'];
@@ -89,7 +90,32 @@
     if (!st.nome) st.nome = st.pastas[0].split(/[\\/]/).pop();
     st.analise = await call('orgAnalisar', st.pastas);
     if (!st.analise) { addEvent({ who: 'Importar projeto', msg: 'Não foi possível analisar as pastas. Veja o erros.log.' }); return; }
-    st.rows = st.analise.lista.map((a) => ({ a, abrir: a.existe, papel: a.papel, aba: `${a.papel} · ${a.nome}`, abaManual: false, ret: false, sess: (a.sessoes[0] || {}).id || '' }));
+    st.rows = linhas(st.analise);
+    return mapa(st);
+  }
+  // Linhas do mapa. DEV2-024: a conversa mais recente de orquestrador e a de dev (entre as pastas com esse papel) vêm
+  // marcadas para retomar, como recomendação (rec); o usuário pode trocar ou desmarcar. As outras pastas seguem com a aba nova.
+  function linhas(an) {
+    const rows = an.lista.map((a) => ({ a, abrir: a.existe, papel: a.papel, aba: `${a.papel} · ${a.nome}`, abaManual: false, ret: false, rec: '', sess: (a.sessoes[0] || {}).id || '' }));
+    for (const papel of ['Orquestrador', 'Dev']) {
+      let best = null;
+      for (const r of rows) {
+        if (r.papel !== papel || !r.a.existe) continue;
+        for (const s of r.a.sessoes || []) if (!best || s.mtime > best.s.mtime) best = { r, s };
+      }
+      if (best) { best.r.ret = true; best.r.sess = best.s.id; best.r.rec = best.s.id; }
+    }
+    return rows;
+  }
+  // DEV2-024: entrada pelo "Usar pasta existente" (Novo projeto e Novo mutirão) com mais de uma pasta: análise e mapa direto.
+  async function mapaDe(pastas, nome, fim) {
+    const ps = (pastas || []).filter(Boolean);
+    if (!ps.length) return;
+    const base = ps[0].split(/[\\/]/).filter(Boolean).pop() || '';
+    const st = { nome: String(nome || '').trim() || base.replace(/[-_ .]*orq(uestrador)?$/i, '') || base, pastas: ps, perm: 'n', fim };
+    st.analise = await call('orgAnalisar', ps);
+    if (!st.analise) { addEvent({ who: 'Projetos', msg: 'Não foi possível analisar as pastas. Veja o erros.log.' }); return; }
+    st.rows = linhas(st.analise);
     return mapa(st);
   }
 
@@ -108,6 +134,7 @@
     const ss = a.sessoes || [];
     const busy = (s) => Date.now() - s.mtime < 3 * 60000;
     const sel = ss.find((s) => s.id === r.sess);
+    const rec = r.rec && r.ret && r.sess === r.rec;
     const avisos = [...(a.avisos || [])];
     if (proj) avisos.push(`Já está no Termix como "${proj.name}": a aba nova entra nele.`);
     if (r.ret && sel && busy(sel)) avisos.push('Essa conversa parece estar em uso agora em outro terminal: abrir a mesma conversa em dois lugares mistura o histórico.');
@@ -122,8 +149,8 @@
         <div class="f"><label>Papel <span class="meta">(sugerido: ${esc(a.papel)} — ${esc(a.motivo || '')})</span></label><select class="inp" data-o="papel">${PAPEIS.map((p) => `<option ${p === r.papel ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
         <div class="f"><label>Aba que será criada</label><input class="inp" type="text" data-o="aba" maxlength="60" value="${esc(r.aba)}"></div>
       </div>
-      <div class="orgret"><label class="orgck"><input type="checkbox" data-o="ret" ${r.ret ? 'checked' : ''} ${ss.length ? '' : 'disabled'}>Retomar uma conversa antiga em vez do pedido de localização</label>
-        ${ss.length ? `<select class="inp" data-o="sess" ${r.ret ? '' : 'disabled'}>${ss.map((s) => `<option value="${s.id}" ${s.id === r.sess ? 'selected' : ''}>${quando(s.mtime)} · ${kb(s.size)} · ${esc((s.titulo || s.primeiro || s.id.slice(0, 8)).slice(0, 70))}${busy(s) ? ' · em uso?' : ''}</option>`).join('')}</select>` : '<span class="meta">nenhuma conversa do Claude Code nesta pasta</span>'}</div>
+      <div class="orgret"><label class="orgck"><input type="checkbox" data-o="ret" ${r.ret ? 'checked' : ''} ${ss.length ? '' : 'disabled'}>Retomar uma conversa antiga em vez do pedido de localização</label>${rec ? ' <span class="chip orgrec" title="A conversa mais recente encontrada para este papel">recomendada</span>' : ''}
+        ${ss.length ? `<select class="inp" data-o="sess" ${r.ret ? '' : 'disabled'}>${ss.map((s) => `<option value="${s.id}" ${s.id === r.sess ? 'selected' : ''}>${quando(s.mtime)} · ${kb(s.size)} · ${esc((s.titulo || s.primeiro || s.id.slice(0, 8)).slice(0, 70))}${s.id === r.rec ? ' · recomendada' : ''}${busy(s) ? ' · em uso?' : ''}</option>`).join('')}</select>` : '<span class="meta">nenhuma conversa do Claude Code nesta pasta</span>'}</div>
       ${avisos.length ? `<div class="orgav">${avisos.map((x) => `<div>⚠ ${esc(x)}</div>`).join('')}</div>` : ''}
     </div>`;
   }
@@ -132,7 +159,7 @@
     const an = st.analise;
     const r = await modal({
       title: `Mapa do projeto: ${esc(st.nome)}`,
-      body: `<p class="meta">Confira o papel de cada pasta e a aba que será criada. Cada aba nova recebe um pedido curto para ler só o essencial (tarefas em andamento, handoff, CLAUDE.md e o último checkpoint) e dizer onde paramos. Retomar uma conversa antiga é opcional.</p>
+      body: `<p class="meta">Confira o papel de cada pasta e a aba que será criada. Cada aba nova recebe um pedido curto para ler só o essencial (tarefas em andamento, handoff, CLAUDE.md e o último checkpoint) e dizer onde paramos. Retomar uma conversa antiga é opcional.${st.rows.some((x) => x.rec) ? ' O Termix deixou marcadas, como <b>recomendação</b>, as conversas mais recentes de orquestrador e de dev: troque ou desmarque à vontade.' : ''}</p>
         ${an.avisos.length || an.ambiguo ? `<div class="orgav top">${an.avisos.map((x) => `<div>⚠ ${esc(x)}</div>`).join('')}${an.ambiguo ? '<div>A análise ficou ambígua em algum ponto: ajuste o papel à mão ou use “Organizar com IA” (opcional).</div>' : ''}</div>` : ''}
         <div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="nome" maxlength="60" value="${esc(st.nome)}"></div>
         <div id="orgRows">${st.rows.map(rowHtml).join('')}</div>
@@ -163,7 +190,7 @@
     });
     st.nome = (r.form.nome || '').trim() || st.nome;
     st.perm = r.form.perm === 'd' ? 'd' : 'n';
-    if (r.value === 'back') return abrir(st);
+    if (r.value === 'back') return st.fim ? undefined : abrir(st);
     if (r.value === 'ia') return organizar(st);
     if (r.value === 'ok') return carregar(st);
   }
@@ -198,6 +225,7 @@
       }
     }
     call('orgRegistrar', prep.grupo, ligacoes);
+    if (st.fim) try { st.fim(); } catch { /* sem retorno */ } // DEV2-024: a tela "Novo projeto"/"Novo mutirão" que abriu o mapa é encerrada
     if (primeiro) { UI.cur = { p: primeiro.id, page: 'Terminais' }; renderAll(); }
     addEvent({ who: `Importar projeto · ${st.nome}`, msg: `${ligacoes.length} aba(s) criada(s). As abas novas recebem o pedido de localização assim que o Claude Code abrir; os pedidos ficam em ${prep.dir}.` });
     return Promise.all(pend);
@@ -229,53 +257,14 @@
     if (r.value === 'ok' && st) return mapa(st);
   }
 
-  /* ---------- ganchos na interface ---------- */
-  // botão na tela "Novo chat" (DEV2-022: desde a TASK-132 o título visível é "Novo Projeto"; a página interna segue "Novo chat") (DEV2-011: desde a TASK-119 o diálogo "Novo projeto" virou uma tela ao lado da barra),
-  // ao lado de "Criar chat". Só no Novo chat: o organizador abre abas de terminal num projeto do tipo chat, não um workflow.
-  function mountNovo() {
-    const page = document.getElementById('page');
-    if (!page || !on() || page.querySelector('[data-org-open]')) return;
-    try { if (!UI.cur || UI.cur.page !== 'Novo chat') return; } catch { return; }
-    const row = page.querySelector('.npage .row2');
-    if (!row) return;
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'btn big'; b.dataset.orgOpen = '1'; b.textContent = 'Importar projeto (várias pastas)…';
-    b.title = 'Projeto com mais de uma pasta (ex.: a do dev e a do orquestrador)';
-    b.onclick = (e) => { e.stopPropagation(); abrir(); };
-    row.classList.add('org-row2');
-    row.appendChild(b);
-  }
-  // chave em Configurações > Experimental (própria, desligada por padrão)
-  function mountConf() {
-    const page = document.getElementById('page');
-    if (!page || !page.querySelector('#rngOp') || page.querySelector('#orgConf')) return;
-    const host = page.querySelector('.page');
-    if (!host) return;
-    const box = document.createElement('div');
-    box.id = 'orgConf';
-    const draw = () => {
-      const v = on();
-      box.innerHTML = `${page.querySelector('#vibeConf') ? '' : '<h5 style="margin:22px 0 8px">Experimental</h5>'}<div class="card" style="padding:6px 18px;margin-top:10px"><div class="row"><div class="grow">Importar projeto com várias pastas (experimental)<small>Mostra o botão “Importar projeto (várias pastas)…” na tela Novo projeto. O Termix analisa as pastas sem custo de IA (git, papel do fluxo, tarefas, handoff e conversas), mostra um mapa para confirmar e abre abas novas que se localizam pelo checkpoint. Retomar conversas antigas é opcional. Nada é movido, renomeado ou apagado.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-org-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-org-set="0">Não</button></div></div></div>`;
-    };
-    draw();
-    box.addEventListener('click', (e) => {
-      const b = e.target.closest('[data-org-set]');
-      if (!b) return;
-      e.stopPropagation();
-      S.settings.organizador = { ...(S.settings.organizador || {}), on: b.dataset.orgSet === '1' };
-      save(); draw();
-    });
-    host.appendChild(box);
-  }
+  /* DEV2-024: sem chave em Configurações e sem o botão "Importar projeto (várias pastas)": a função passou para o
+     "Usar pasta existente" do núcleo, que chama estas duas. pick: diálogo do Windows com várias pastas (no modo de teste,
+     window.__npTestPaths substitui o diálogo). */
+  window.TermixOrg = {
+    pick: async () => { const out = await call('orgPick', window.__npTestPaths); return out && out.ok ? out.pastas || [] : null; },
+    mapaDe,
+  };
 
-  function boot() {
-    try {
-      const page = document.getElementById('page');
-      if (page) new MutationObserver(() => setTimeout(() => { mountConf(); mountNovo(); }, 0)).observe(page, { childList: true }); // depois da chave do Vibe
-      mountConf(); mountNovo();
-    } catch (e) { console.error('organizador: início', e); }
-  }
   // gancho de teste (o caminho das pastas só é aceito pelo processo principal com TERMIX_VIBE_TEST=1)
-  window.orgTest = { abrir: (st) => abrir(st), mapa: (st) => mapa(st), carregar: (st) => carregar(st), organizar: (st) => organizar(st), ver: (g) => verOrganizacao(null, g), analisar: (ps) => call('orgAnalisar', ps) };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  window.orgTest = { mapaDe: (ps, nome) => mapaDe(ps, nome), linhas: (an) => linhas(an), abrir: (st) => abrir(st), mapa: (st) => mapa(st), carregar: (st) => carregar(st), organizar: (st) => organizar(st), ver: (g) => verOrganizacao(null, g), analisar: (ps) => call('orgAnalisar', ps) };
 })();

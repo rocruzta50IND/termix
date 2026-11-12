@@ -85,6 +85,7 @@ function create(h) {
   }
 
   // Parte do sócio: o projeto está na branch <b> e existe mutirao/partes/<b>.md na pasta (depois de sincronizar com a do dono).
+  const MODOS = ['projeto', 'estado_atual', 'tarefas'];
   function parte(pasta) {
     if (!pasta || !fs.existsSync(pasta)) return { tem: false };
     const b = headOf(pasta);
@@ -100,6 +101,7 @@ function create(h) {
       tem: true, branch: b, arquivo: md, nome: String(part.nome || '').slice(0, 80), titulo: String(pt.titulo || '').slice(0, 160),
       objetivo: String(pt.objetivo || '').slice(0, 300), criterio: String(pt.criterio || '').slice(0, 4000),
       arquivos: Array.isArray(pt.arquivos) ? pt.arquivos.slice(0, 200).map(String) : [], branchDono: String(div.branchDono || '').slice(0, 60),
+      modo: MODOS.includes(div.modo) ? div.modo : 'projeto', // DEV2-024: no (b2) "tarefas" o sócio abre o Vibe de tarefa
       estruturaOk: est.ok, entregue: ent ? { data: ent.data || '', commits: Array.isArray(ent.commits) ? ent.commits.length : 0 } : null,
     };
   }
@@ -122,7 +124,7 @@ function create(h) {
       : d.modo === 'estado_atual'
       ? `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto, que JÁ ESTÁ EM ANDAMENTO (modo "Do estado atual até finalizar"). Primeiro veja o que já está feito (README, docs, TASKS, ROADMAP e a estrutura de pastas do estado atual do repositório). Depois divida TODO O RESTANTE do projeto, do estado atual até finalizar, entre: ${lista}; cada um fica com a sua parte até o fim${dono ? ` (o dono, ${dono.nome}, também tem uma parte, na branch ${d.branchDono})` : ''}. Não repita o que já está pronto. Em divisao.json, "objetivo" e "criterio" são os do projeto finalizado.`
       : `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto NOVO. Divida o projeto INTEIRO (100%) entre: ${lista}; cada um fica com a sua parte do início ao fim${dono ? ` (o dono, ${dono.nome}, também tem uma parte, na branch ${d.branchDono})` : ''}.${d.entrega && d.entrega.estrutura ? ' A estrutura do projeto enviada pelo dono está em mutirao/estrutura.md: leia-a primeiro e cubra tudo o que ela descreve.' : ''}${d.entrega && d.entrega.objetivo ? ` Objetivo do projeto: ${d.entrega.objetivo}.` : ''}${d.entrega && d.entrega.criterio ? ` Critério de pronto do projeto: ${d.entrega.criterio}.` : ''}`;
-    return `${intro} Leia só o necessário (CLAUDE.md, README, docs e a estrutura de pastas; sem ler o código inteiro). Grave, sem escrever nada fora da pasta mutirao/ do projeto: 1) mutirao/divisao.json = {"branchDono":"${d.branchDono}","objetivo":"objetivo do projeto inteiro, até 300 caracteres","criterio":"critério de pronto do projeto inteiro","participantes":[{"nome":"...","branch":"..."}],"partes":[{"branch":"...","titulo":"...","objetivo":"até 300 caracteres","criterio":"como saber que a parte acabou","arquivos":["arquivos ou pastas, relativos à raiz"]}]}, uma parte por participante, SEM nenhum arquivo ou pasta em comum entre as partes (uma pasta conta como tudo dentro dela; o Termix confere e recusa); 2) mutirao/partes/<branch>.md de cada um, com as 9 seções preenchidas: Objetivo, Público e usuários, Funcionalidades, Fora do escopo (inclua os arquivos das outras partes), Telas e fluxos, Dados e regras de negócio, Integrações e acessos, Tecnologia, Critério de pronto. Não altere o código nem este PEDIDO.md, não faça commit nem push: quem publica é o Termix. Ao terminar, responda apenas DIVISÃO GRAVADA e um resumo de até 3 linhas.`;
+    return `${intro} Leia só o necessário (CLAUDE.md, README, docs e a estrutura de pastas; sem ler o código inteiro). Grave, sem escrever nada fora da pasta mutirao/ do projeto: 1) mutirao/divisao.json = {"branchDono":"${d.branchDono}","modo":"${d.modo || 'projeto'}","objetivo":"objetivo do projeto inteiro, até 300 caracteres","criterio":"critério de pronto do projeto inteiro","participantes":[{"nome":"...","branch":"..."}],"partes":[{"branch":"...","titulo":"...","objetivo":"até 300 caracteres","criterio":"como saber que a parte acabou","arquivos":["arquivos ou pastas, relativos à raiz"]}]}, uma parte por participante, SEM nenhum arquivo ou pasta em comum entre as partes (uma pasta conta como tudo dentro dela; o Termix confere e recusa); 2) mutirao/partes/<branch>.md de cada um, com as 9 seções preenchidas: Objetivo, Público e usuários, Funcionalidades, Fora do escopo (inclua os arquivos das outras partes), Telas e fluxos, Dados e regras de negócio, Integrações e acessos, Tecnologia, Critério de pronto. Não altere o código nem este PEDIDO.md, não faça commit nem push: quem publica é o Termix. Ao terminar, responda apenas DIVISÃO GRAVADA e um resumo de até 3 linhas.`;
   }
 
   // Conferência do Termix (zero token): formato, uma parte por participante, as 9 seções e nenhum arquivo em comum.
@@ -184,6 +186,9 @@ function create(h) {
       if (!sw.ok) return { ok: false, motivo: `O Termix não conseguiu ir para a branch "${br}" sem descartar nada (${(sw.err || '').split('\n')[0].slice(0, 200)}). Guarde as mudanças e tente de novo.` };
     }
     if (headOf(pasta) !== br) return { ok: false, motivo: `O projeto não está na branch "${br}".` };
+    // DEV2-024: o modo do mutirão vai na divisão publicada (o lado do sócio só tem o que veio pelo git): no (b2) o sócio abre o Vibe de tarefa
+    const dvf = path.join(pasta, 'mutirao', 'divisao.json'), dv = parseJson(readText(dvf) || '');
+    if (dv && dv.modo !== (d.modo || 'projeto')) writeJson(dvf, { ...dv, modo: d.modo || 'projeto' });
     const SPEC = ['mutirao/divisao.json', 'mutirao/partes', ...(exists(path.join(pasta, 'mutirao', 'estrutura.md')) ? ['mutirao/estrutura.md'] : [])]; // o PEDIDO.md fica fora do commit; estrutura.md = a do dono (DEV2-023)
     const add = gitRun(pasta, ['add', '--', ...SPEC]);
     if (!add.ok) return { ok: false, motivo: `git add falhou: ${(add.err || '').slice(0, 200)}` };
@@ -222,13 +227,21 @@ function create(h) {
   function aplicar(id, pasta) {
     const pt = parte(pasta);
     if (!pt.tem) return { ok: false, motivo: 'Não há parte do Mutirão para a branch atual deste projeto.' };
-    grava(id, 'socio', { branch: pt.branch, arquivo: pt.arquivo, titulo: pt.titulo, projeto: { id, pasta }, aplicado: new Date().toISOString() });
+    grava(id, 'socio', { branch: pt.branch, arquivo: pt.arquivo, titulo: pt.titulo, modo: pt.modo, projeto: { id, pasta }, aplicado: new Date().toISOString() });
     const rf = path.join(dirOf(id), 'rascunho.json');
     const atual = readJson(rf) || {};
     const objetivo = (pt.objetivo || `Parte do Mutirão: ${pt.titulo || pt.branch}`).slice(0, 300);
     const criterio = pt.criterio || 'Ver a seção "Critério de pronto" da parte.';
-    writeJson(rf, { ...atual, objetivo: atual.mutirao === pt.branch && atual.objetivo ? atual.objetivo : objetivo, criterio: atual.mutirao === pt.branch && atual.criterio ? atual.criterio : criterio, estrutura: pt.arquivo, fluxo: atual.fluxo || '', proibido: atual.proibido || `Não alterar arquivos fora da sua parte do Mutirão: ${pt.arquivos.slice(0, 30).join(', ')}${pt.arquivos.length > 30 ? '…' : ''}.`.slice(0, 4000), acessos: atual.acessos || '', nadaFornecer: !!atual.nadaFornecer, mutirao: pt.branch, projectId: id, salvo: new Date().toISOString() });
-    return { ok: true, parte: pt };
+    // DEV2-024: no (b2) "Delegar algumas tarefas" o sócio abre o Vibe de TAREFA (DEV2-017), preenchido com a tarefa dele
+    const mesma = atual.mutirao === pt.branch && atual.tarefa && typeof atual.tarefa === 'object';
+    const tarefa = pt.modo !== 'tarefas' ? atual.tarefa : mesma && atual.tarefa.oQue ? atual.tarefa : {
+      oQue: `${pt.titulo ? `${pt.titulo}: ` : ''}${pt.objetivo || 'Tarefa do Mutirão.'} Detalhes na sua tarefa do Mutirão: mutirao/partes/${pt.branch}.md (leia antes).`.slice(0, 4000),
+      criterio: (pt.criterio || 'Ver a seção "Critério de pronto" de mutirao/partes/' + pt.branch + '.md.').slice(0, 2000),
+      naoPode: `Não alterar arquivos fora da sua tarefa do Mutirão; não mexer nos arquivos das outras tarefas.`.slice(0, 2000),
+      arquivos: pt.arquivos.slice(0, 60).join('; ').slice(0, 2000),
+    };
+    writeJson(rf, { ...atual, ...(tarefa ? { tarefa } : {}), objetivo: atual.mutirao === pt.branch && atual.objetivo ? atual.objetivo : objetivo, criterio: atual.mutirao === pt.branch && atual.criterio ? atual.criterio : criterio, estrutura: pt.arquivo, fluxo: atual.fluxo || '', proibido: atual.proibido || `Não alterar arquivos fora da sua parte do Mutirão: ${pt.arquivos.slice(0, 30).join(', ')}${pt.arquivos.length > 30 ? '…' : ''}.`.slice(0, 4000), acessos: atual.acessos || '', nadaFornecer: !!atual.nadaFornecer, mutirao: pt.branch, projectId: id, salvo: new Date().toISOString() });
+    return { ok: true, parte: pt, modo: pt.modo };
   }
   const socioDe = (id) => { const s = ler(id).socio; return s && validBranch(s.branch) ? s : null; };
 
