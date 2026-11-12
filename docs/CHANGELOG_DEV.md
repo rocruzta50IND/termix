@@ -6,6 +6,22 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-12
+
+**TASK-133 — Clonar repositório público do GitHub pelo link** (DEV1)
+
+- Nova opção "Clonar do GitHub" em Novo projeto/mutirão, com `src/clone.js` (`git clone` seguro, sem login, sem pasta parcial em caso de erro) e aviso de que só repositórios públicos por enquanto. Clone testado por script (público, repetido, inexistente, privado). `npm run check` ok. **Publicação:** versão 0.6.4; `dev1` promovida à `main`, Release v0.6.4 publicado (exe, blockmap, `latest.yml`; sha512 conferido), a pedido do usuário sem teste visual prévio da tela.
+
+---
+
+## 2026-11-11
+
+**TASK-132 — Chat/Workflow viram Projeto/Mutirão na interface (versão 0.6.3)** (DEV1)
+
+- Só textos visíveis da barra lateral e do título da tela de criação (os nomes internos não mudaram); `npm run check` ok. **Publicação:** `dev1` promovida à `main` (ce6bebf, fast-forward); Release **v0.6.3** publicado com exe, blockmap e `latest.yml`; sha512 conferido. Instalador não testado em Windows limpo.
+
+---
+
 ## 2026-11-10
 
 **TASK-130 — Acabamento da barra lateral** (DEV1)

@@ -544,6 +544,7 @@ ipcMain.handle('consumo:get', () => (consumo ? consumo.snapshot() : { updated: D
 let vibe = null; try { vibe = require('./vibe').create({ ipcMain, dialog, app, getWin: () => win, logError }); } catch (e) { logError(e); }
 
 if (!RUN_MODE) require('./code').setup(ipcMain); // tela Código (TASK-102)
+if (!RUN_MODE) require('./clone').setup(ipcMain, { resolveRoot, slug }); // clonar repositório público do GitHub (TASK-133)
 
 // branch git da pasta de um projeto (para o rail); vazio se não for repositório ou sem git
 ipcMain.handle('git:branch', (_e, cwd) => new Promise((resolve) => {

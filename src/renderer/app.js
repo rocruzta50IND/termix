@@ -78,7 +78,7 @@ const STATES = {
 
 let S = { projects: [], settings: { termOp: 88, sideCollapsed: false } };
 const UI = { cur: { p: null, page: 'Terminais' }, last: null, actOpen: false, pop: false, menu: null, events: [], res: null, env: null, limits: null };
-document.addEventListener('input', (e) => { if (e.target.id === 'npName' && UI.np) UI.np.name = e.target.value; }); // o nome digitado na tela de novo projeto sobrevive a redesenhos
+document.addEventListener('input', (e) => { if (e.target.id === 'npName' && UI.np) UI.np.name = e.target.value; if (e.target.id === 'npUrl' && UI.np) { UI.np.url = e.target.value; UI.np.err = ''; } }); // o nome digitado na tela de novo projeto sobrevive a redesenhos
 const RT = {};  // runtime por aba: terminal, estado, processo
 const MET = {}; // métricas por aba vindas da status line
 
@@ -887,11 +887,11 @@ function renderSide() {
   const cp = curProject();
   if (cp && UI.kindFor !== cp.id) { UI.kindFor = cp.id; S.settings.sideKind = kindOf(cp); setCatOpen(kindOf(cp), true); } // abriu outro projeto (por aviso, por exemplo): a pasta dele (Chats ou Workflows) abre
   const onNew = UI.cur.p === '_' && /^Novo /.test(UI.cur.page);
-  const CATS = [['chat', 'Chats', 'bubble', 'Nenhum chat ainda.'], ['workflow', 'Workflows', 'wfnodes', 'Nenhum workflow ainda.']];
+  const CATS = [['chat', 'Projetos', 'bubble', 'Nenhum projeto ainda.'], ['workflow', 'Mutirão', 'wfnodes', 'Nenhum mutirão ainda.']];
   const byKind = (k) => all.filter((p) => kindOf(p) === k);
   const newBtns = col
-    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo chat">${ic('newchat', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo workflow">${ic('newwf', 18)}</button></div>`
-    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('newchat', 16)}<span>Novo chat</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('newwf', 16)}<span>Novo workflow</span></button></div>`;
+    ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo projeto">${ic('newchat', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo mutirão">${ic('newwf', 18)}</button></div>`
+    : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('newchat', 16)}<span>Novo projeto</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('newwf', 16)}<span>Novo mutirão</span></button></div>`;
   const isCur = (p, n) => UI.cur.p === p && UI.cur.page === n;
   const toggle = `<button class="tbtn" data-togside title="${col ? 'Abrir' : 'Fechar'} barra lateral">${ic('panel', 19)}</button>`;
   const projMini = (p) => {
@@ -1885,25 +1885,27 @@ const NP_PERMS = [
 ];
 const kindOf = (p) => (p.kind === 'workflow' ? 'workflow' : 'chat');
 function goNew(kind, where = 'new') {
-  UI.np = { kind, name: '', dir: null, perm: chatPermFor(), where };
+  UI.np = { kind, name: '', dir: null, perm: chatPermFor(), where, url: '', busy: false, err: '' };
   UI.cur = { p: '_', page: kind === 'workflow' ? 'Novo workflow' : 'Novo chat' }; UI.pop = false;
   renderAll();
   if (where === 'dir') npPick();
 }
 function newPageHTML(kind) {
-  if (!UI.np || UI.np.kind !== kind) UI.np = { kind, name: '', dir: null, perm: chatPermFor(), where: 'new' };
+  if (!UI.np || UI.np.kind !== kind) UI.np = { kind, name: '', dir: null, perm: chatPermFor(), where: 'new', url: '', busy: false, err: '' };
   const np = UI.np, wf = kind === 'workflow';
-  const folder = np.where === 'dir'
+  const folder = np.where === 'git'
+    ? `<div class="nprow"><input class="inp" type="text" id="npUrl" value="${esc(np.url)}" placeholder="https://github.com/dono/repositorio" spellcheck="false" autocomplete="off" ${np.busy ? 'disabled' : ''}></div><p class="meta npwf">${ic('alert', 14)} Só repositórios <b>públicos</b> por enquanto. Repositório privado vai exigir uma conexão, que ficará no Rocruzta Hub.</p>${np.err ? `<p class="meta nperr">${esc(np.err)}</p>` : ''}<p class="meta">O Termix baixa o repositório para <b>${esc(S.settings.projectsRoot || 'a pasta de projetos')}</b> e cria o projeto nele.</p>`
+    : np.where === 'dir'
     ? `<div class="nprow"><div class="pjpath" style="user-select:text" title="${esc(np.dir || '')}">${ic('folder', 16)}<span>${np.dir ? esc(np.dir) : 'Nenhuma pasta escolhida'}</span></div><button type="button" class="btn" data-nppick>Escolher pasta…</button></div><p class="meta">O Termix só registra a pasta, sem copiar nem mover nada.</p>`
     : `<p class="meta">O Termix cria e organiza a pasta dentro de <b>${esc(S.settings.projectsRoot || 'a pasta de projetos')}</b>.</p>`;
   return `<div class="npage"><div class="npinner">
-    <div class="nphead"><span class="wfmark sm">${ic(wf ? 'workflow' : 'sparkles', 26)}</span><div><h2>${wf ? 'Novo Workflow' : 'Novo Chat'}</h2>
+    <div class="nphead"><span class="wfmark sm">${ic(wf ? 'workflow' : 'sparkles', 26)}</span><div><h2>${wf ? 'Novo Mutirão' : 'Novo Projeto'}</h2>
       <p class="meta">${wf ? 'Dois terminais lado a lado, sempre em Dangerously, para trabalhar o projeto em etapas.' : 'Conversa em bolhas com o Claude Code, sem terminal.'}</p></div></div>
     <div class="f"><label>Nome do projeto</label><input class="inp" type="text" id="npName" value="${esc(np.name)}" placeholder="Meu SaaS" maxlength="60"></div>
-    <div class="f"><label>Pasta</label><div class="seg"><button type="button" class="${np.where === 'new' ? 'sel' : ''}" data-npwhere="new">Criar pasta nova</button><button type="button" class="${np.where === 'dir' ? 'sel' : ''}" data-npwhere="dir">Usar pasta existente</button></div>${folder}</div>
+    <div class="f"><label>Pasta</label><div class="seg"><button type="button" class="${np.where === 'new' ? 'sel' : ''}" data-npwhere="new">Criar pasta nova</button><button type="button" class="${np.where === 'dir' ? 'sel' : ''}" data-npwhere="dir">Usar pasta existente</button><button type="button" class="${np.where === 'git' ? 'sel' : ''}" data-npwhere="git">Clonar do GitHub</button></div>${folder}</div>
     ${wf ? `<p class="meta npwf">${ic('alert', 14)} O Workflow usa sempre dois terminais fixos em Dangerously: sem pedir permissão e sem isolamento do sistema.</p>`
       : `<div class="f"><label>Permissão</label><div class="npmodes">${NP_PERMS.map(([v, i, l, d]) => `<button type="button" class="npm ${v === 'd' ? 'warn' : ''} ${v === np.perm ? 'sel' : ''}" data-npp="${v}">${ic(i, 26)}<b>${l}</b><small>${d}</small></button>`).join('')}</div></div>`}
-    <div class="row2"><button class="btn pri big" data-npgo>${wf ? 'Criar workflow' : 'Criar chat'}</button></div></div></div>`;
+    <div class="row2"><button class="btn pri big" data-npgo ${np.busy ? 'disabled' : ''}>${np.busy ? 'Clonando…' : np.where === 'git' ? (wf ? 'Clonar e criar workflow' : 'Clonar e criar chat') : (wf ? 'Criar workflow' : 'Criar chat')}</button></div></div></div>`;
 }
 async function npPick() {
   const dir = await api.pickFolder();
@@ -1913,10 +1915,17 @@ async function npPick() {
   renderPage();
 }
 async function npSubmit() {
-  const np = UI.np; if (!np) return;
+  const np = UI.np; if (!np || np.busy) return;
   const wf = np.kind === 'workflow';
   let name = projNameClip(np.name), path, imported = false, note = '';
-  if (np.where === 'dir') {
+  if (np.where === 'git') {
+    if (!np.url.trim()) { np.err = 'Cole o link do repositório.'; renderPage(); return; }
+    np.busy = true; np.err = ''; renderPage();
+    const r = await api.cloneProject(np.url, S.settings.projectsRoot);
+    np.busy = false;
+    if (!r || !r.ok) { np.err = (r && r.error) || 'Não consegui clonar.'; renderPage(); return; }
+    path = r.path; name = name || projNameClip(r.name) || 'Projeto';
+  } else if (np.where === 'dir') {
     if (!np.dir) { addEvent({ who: 'Projetos', msg: 'Escolha a pasta do projeto.' }); return; }
     if (S.projects.some((p) => p.path.toLowerCase() === np.dir.toLowerCase() && !p.archived)) { addEvent({ who: 'Projetos', msg: 'Essa pasta já está registrada.' }); return; }
     path = np.dir; imported = true;

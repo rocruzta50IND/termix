@@ -49,6 +49,7 @@ contextBridge.exposeInMainWorld('termix', {
   onChatExit: (fn) => ipcRenderer.on('chat:exit', (_e, m) => fn(m)),
 
   createProject: (name, root) => ipcRenderer.invoke('project:create', name, root),
+  cloneProject: (url, root) => ipcRenderer.invoke('project:clone', url, root),
   pickProjectsRoot: () => ipcRenderer.invoke('project:pickRoot'),
   pickFolder: () => ipcRenderer.invoke('project:pick'),
   scanSessions: (p) => ipcRenderer.invoke('sessions:scan', p),
