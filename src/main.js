@@ -9,6 +9,7 @@ process.on('unhandledRejection', logError);
 const { execFile } = require('child_process');
 const { pathToFileURL } = require('url');
 const { setupWeb } = require('./web');
+const embed = require('./embed'); // TASK-134: modo --embed (Rocruzta Hub); sem a flag não faz nada
 
 // Modo "executar script": o Claude Code chama os encaminhadores (hooks e status line) como comando externo.
 // Sem Node.js instalado, o próprio Termix os executa: `Termix.exe --termix-run <script>`. Não abre janela nem pega a trava de instância única.
@@ -607,10 +608,10 @@ if (!RUN_MODE) {
     } catch {}
   }
   // uma instância só: abrir de novo (atalho, menu Iniciar) traz a janela que já existe, em vez de duas escrevendo no mesmo estado
-  if (!app.requestSingleInstanceLock()) app.quit();
+  if (!embed.enabled && !app.requestSingleInstanceLock()) app.quit();
   else {
     app.on('second-instance', () => { if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } });
-    app.whenReady().then(() => { if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } repairShortcutIcons(); createWindow(); setTimeout(cleanOldMetrics, 5000); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
+    app.whenReady().then(() => { if (embed.enabled) { win = embed.start(() => { quitting = true; killAll(); app.exit(0); }); setTimeout(cleanOldMetrics, 5000); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); return; } if (require('./updater').holdForRunningInstaller(dialog)) { app.exit(0); return; } repairShortcutIcons(); createWindow(); setTimeout(cleanOldMetrics, 5000); require('./updater').setupUpdater(() => win, { quit: () => { quitting = true; killAll(); app.quit(); } }); setInterval(pollMetrics, 1500); setInterval(pollHooks, 300); setInterval(pollOpens, 300); });
   }
   app.on('quit', () => { if (!wantRelaunch) require('./updater').applyStagedOnQuit(); }); // TASK-069: versão nova já preparada entra no lugar ao fechar
   app.on('window-all-closed', () => { killAll(); if (wantRelaunch) app.relaunch(); app.quit(); });

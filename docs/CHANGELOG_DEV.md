@@ -8,6 +8,14 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-12
 
+**TASK-134 — Modo embutível (`--embed`) e versão 0.7.0** (DEV1)
+
+- O Termix passa a rodar dentro da janela do Rocruzta Hub: com `--embed` não abre janela, serve a interface em `127.0.0.1` (token, `Host` e `Origin` conferidos) e liga o `window.termix` ao processo principal por WebSocket (`src/embed.js`, `src/renderer/embed.css`, dependência `ws`). Dentro do Hub: sem barra de título nem moldura, só os anéis de consumo, notificações e tema controlados pelo Hub. Sem a flag, nada muda.
+- **Publicação:** versão 0.7.0 (`package.json` e lock), novidades em `patchnotes.js`; `dev1` promovida à `main` (fast-forward); Release **v0.7.0** com instalador, blockmap e `latest.yml`. O Hub embute o Termix instalado a partir desta versão.
+- Validado: `npm run check`; terminal real por WebSocket; testado dentro do Hub pelo usuário. O executável empacotado foi conferido em `--embed` antes de publicar.
+
+---
+
 **TASK-133 — Clonar repositório público do GitHub pelo link** (DEV1)
 
 - Nova opção "Clonar do GitHub" em Novo projeto/mutirão, com `src/clone.js` (`git clone` seguro, sem login, sem pasta parcial em caso de erro) e aviso de que só repositórios públicos por enquanto. Clone testado por script (público, repetido, inexistente, privado). `npm run check` ok. **Publicação:** versão 0.6.4; `dev1` promovida à `main`, Release v0.6.4 publicado (exe, blockmap, `latest.yml`; sha512 conferido), a pedido do usuário sem teste visual prévio da tela.

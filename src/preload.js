@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('termix', {
   setMaterial: (kind) => ipcRenderer.invoke('win:material', kind),
   winCtl: (kind) => ipcRenderer.send('win:ctl', kind),
   notify: (n) => ipcRenderer.send('notify:show', n),
+  hubEvento: (ev) => ipcRenderer.send('hub:evento', ev), // TASK-136: só no modo --embed; o Rocruzta Hub mostra as notificações
   flowInfo: (dir) => ipcRenderer.invoke('flow:info', dir),
   handoffPrepare: (a) => ipcRenderer.invoke('handoff:prepare', a),
   handoffTemplate: () => ipcRenderer.invoke('handoff:template'),

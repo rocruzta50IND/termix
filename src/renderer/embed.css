@@ -1,0 +1,113 @@
+/* TASK-135: aparência quando o Termix roda DENTRO do Rocruzta Hub (modo --embed; este arquivo só é carregado nele).
+   O Hub é a janela: cabeçalho, botões de janela, atualização, notificações e tema são dele. Aqui o Termix só preenche a área que o Hub dá. */
+html.embed, html.embed body { background: transparent; }
+html.embed .bg { display: none; }
+html.embed #frame { inset: 0; }
+html.embed .shadow { filter: none; }
+html.embed #topbar { display: none; }
+html.embed #arm { display: none; }
+/* Embutido: sem a tela de abertura (logo do Termix). Ela esperava as abas serem retomadas e ficava por cima do app já visível. O Hub mostra "Abrindo..." até a tela carregar. */
+html.embed #splash { display: none; }
+/* A tela do app é um retângulo: sombra grande que passa da borda dele seria cortada e apareceria como um quadrado escuro. Sem sombra externa; fica só o brilho de borda. */
+html.embed .col { box-shadow: inset 0 1px 0 var(--edge), 0 0 0 .5px var(--border); }
+html.embed .glass { box-shadow: inset 0 1px 0 var(--edge), 0 0 0 .5px var(--border); }
+/* Transparência de verdade: com `color-scheme: dark` na raiz o Chromium pinta o fundo da página de #121212 (opaco), o que aparecia como um quadrado preto
+   atrás do Termix. A raiz fica neutra e o esquema escuro vale só do corpo para baixo (campos e barras de rolagem continuam escuros). */
+html.embed { color-scheme: normal; }
+html.embed body { color-scheme: dark; }
+/* Rodapé (Terminais, Web, Clear...): a sombra dele descia abaixo da área do app e era cortada na borda, formando uma faixa escura. */
+html.embed #fpill, html.embed .fpill { box-shadow: inset 0 1px 0 var(--edge), 0 0 0 .5px var(--border); }
+
+/* TASK-026: painéis acoplados, separados por linhas de 1px (sidebar | abas e conteúdo | barra inferior), sem caixas flutuantes. */
+html.embed #edge path { stroke: rgba(255, 255, 255, .08); }
+html.embed .col { border-radius: 0; box-shadow: none; }
+html.embed #appfoot { background: var(--sheet); border-top: 1px solid rgba(255, 255, 255, .08); box-sizing: border-box; }
+html.embed #appfoot .fpill { background: none; box-shadow: none; border-radius: 0; padding: 0 8px; }
+html.embed .side { border-radius: 0; }
+
+/* Mesma paleta do Hub (tokens do Claude Desktop): tudo opaco, sem vidro. O Hub e o Termix passam a parecer uma tela só. */
+html.embed:not([data-hub-theme="light"]) {
+  --sheet: #191919; --pane: #1f1f1f; --glass: #1f1f1f; --glass2: #2a2a2a; --dense: #1f1f1f;
+  --border: #2c2c2c; --border2: #3d3d3d; --hover: rgba(255, 255, 255, .06); --edge: transparent;
+  --field: #262626; --field-h: #2e2e2e; --text: #ececec; --term-op: 1;
+}
+html.embed #glass { background: var(--pane); }
+html.embed .stage.panel.glass, html.embed .glass { background: var(--sheet); }
+html.embed #page, html.embed .col { background: var(--sheet); }
+html.embed .c-in { background: var(--field); border: 1px solid var(--border2); box-shadow: none; }
+html.embed .c-in:focus-within { border-color: #5a5a5a; box-shadow: none; }
+
+/* O terminal, o chat, as abas e as barras do Termix pintavam um preto azulado próprio (rgba(10,12,16)); aqui tudo usa o mesmo cinza do Hub. */
+html.embed .term, html.embed .whost, html.embed .chatv, html.embed .sess.reserve, html.embed .wbar, html.embed .wdet,
+html.embed #page.wfpage:not(.hide), html.embed .tabsbar { background: var(--sheet); }
+html.embed .tabsbar { --bar-bg: transparent; --tab-bg: transparent; border-bottom: 1px solid var(--border); }
+html.embed .c-row.ai .c-bub { background: var(--pane); border-color: var(--border); }
+html.embed .c-row.me .c-bub { background: var(--glass2); border-color: var(--border2); }
+/* barra lateral escondida: o botão de reabrir fica no canto da barra de abas */
+#sidereopen { display: none; }
+body.sidehidden #sidereopen { display: grid; position: absolute; left: 8px; top: 6px; z-index: 6; width: 28px; height: 28px; place-items: center; border-radius: 7px; color: var(--text2); }
+body.sidehidden #sidereopen:hover { background: var(--hover); color: var(--text); }
+body.sidehidden #edge { display: none; }
+body.sidehidden #tabsRow { padding-left: 44px; }
+/* tema claro: o campo de entrada usa --field, que o Hub define em termix.css */
+html.embed[data-hub-theme="light"] .c-in { background: var(--field); }
+html.embed[data-hub-theme="light"] .c-row.ai .c-bub { background: var(--pane); }
+
+/* Variáveis semânticas usadas no styles.css (com valor padrão para o Termix solto): popups, anéis de selo, texto sobre botão primário e película de contraste. */
+html.embed:not([data-hub-theme="light"]) { --pop: #262626; --pop2: #333333; --ring-c: #1f1f1f; --on-text: #191919; }
+html.embed[data-hub-theme="light"] .c-code, html.embed[data-hub-theme="light"] .c-pm .pmb, html.embed[data-hub-theme="light"] .c-th { background: rgba(15, 23, 42, .06); }
+
+/* Tema claro: cores de texto pastel (feitas para fundo escuro) escurecidas, geradas a partir do styles.css. */
+html.embed[data-hub-theme="light"] .rmeta2 .m{color:#137168}
+html.embed[data-hub-theme="light"] .btn.bad{color:#850000}
+html.embed[data-hub-theme="light"] .tab .pw{color:#850000}
+html.embed[data-hub-theme="light"] .mi.warn{color:#850000}
+html.embed[data-hub-theme="light"] .ev .h .kd-done{color:#077e4f}
+html.embed[data-hub-theme="light"] .ev .h .kd-perm{color:#857000}
+html.embed[data-hub-theme="light"] .ev .h .kd-error{color:#850000}
+html.embed[data-hub-theme="light"] .ev .h .kd-cache{color:#003f85}
+html.embed[data-hub-theme="light"] .tag.ok{color:#02842f}
+html.embed[data-hub-theme="light"] .tag.warn{color:#856b00}
+html.embed[data-hub-theme="light"] .tag.bad{color:#850000}
+html.embed[data-hub-theme="light"] .note{color:#003285}
+html.embed[data-hub-theme="light"] .btn.sm.bad{color:#850000}
+html.embed[data-hub-theme="light"] .resmsg.ok{color:#02842f}
+html.embed[data-hub-theme="light"] .resmsg.bad{color:#850000}
+html.embed[data-hub-theme="light"] .restartnote{color:#856b00}
+html.embed[data-hub-theme="light"] .c-bub code .k-k{color:#2c0085}
+html.embed[data-hub-theme="light"] .k-k{color:#2c0085}
+html.embed[data-hub-theme="light"] .k-s{color:#107534}
+html.embed[data-hub-theme="light"] .k-f{color:#004985}
+html.embed[data-hub-theme="light"] .c-sys.err{color:#850000}
+html.embed[data-hub-theme="light"] .c-pm .pma button.neg{color:#850000}
+html.embed[data-hub-theme="light"] .c-warn{color:#850000}
+html.embed[data-hub-theme="light"] .npm.warn.sel svg{color:#853f00}
+html.embed[data-hub-theme="light"] .pjrow.bad b{color:#820303}
+html.embed[data-hub-theme="light"] [data-npwf]{color:#853f00}
+html.embed[data-hub-theme="light"] .c-wfh em{color:#853f00}
+html.embed[data-hub-theme="light"] .npwf{color:#853f00}
+html.embed[data-hub-theme="light"] .t-plugin{color:#003685}
+html.embed[data-hub-theme="light"] .t-skill{color:#127344}
+html.embed[data-hub-theme="light"] .t-mcp{color:#845601}
+html.embed[data-hub-theme="light"] .cd-ln.add .t{color:#147135}
+html.embed[data-hub-theme="light"] .cd-ln.del .t{color:#7d0808}
+html.embed[data-hub-theme="light"] .hl-n{color:#3b681d}
+html.embed[data-hub-theme="light"] .hl-f{color:#79680c}
+html.embed[data-hub-theme="light"] .hl-h{color:#005285}
+html.embed:not([data-hub-theme="light"]) { --popc: 38 38 38; }
+html.embed[data-hub-theme="light"] { --popc: 245 243 238; }
+html.embed[data-hub-theme="light"] .note { background: rgba(59, 130, 246, .10); color: #1e3a8a; }
+html.embed[data-hub-theme="light"] .c-tool .ti, html.embed[data-hub-theme="light"] .ti { color: #1d4ed8; }
+html.embed[data-hub-theme="light"] .pav { color: color-mix(in srgb, var(--c1, #475569) 55%, #000); }
+html.embed .ring::before { background: var(--pop); box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
+html.embed body.flatpage #col { border-radius: 0; }
+html.embed[data-hub-theme="light"] .mchk.on, html.embed[data-hub-theme="light"] .mchk.on * { color: var(--on-text); }
+
+/* Azul único do Hub (o da logo, chapado): os destaques do Termix usam o mesmo tom. */
+html.embed { --brand: #3570dc; --accent: #3570dc; --brand-2: #5a9ef0; --brand-rgb: 53 112 220; }
+
+/* Ícones no mesmo estilo do Hub: traço de 1.6 e botões de barra lateral do mesmo tamanho (ícone de 18px) abertos ou fechados. */
+html.embed svg.i { stroke-width: 1.6; }
+html.embed .tbtn[data-togside] { width: 30px; height: 30px; }
+html.embed .tbtn[data-togside] svg, html.embed #sidereopen svg { width: 18px; height: 18px; }
+html.embed #sidereopen { width: 30px; height: 30px; }

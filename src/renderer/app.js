@@ -66,6 +66,8 @@ const ICONS = {
   sort: '<path d="M8 4.5v15M4.5 16l3.5 3.5 3.5-3.5M16 19.5v-15M12.5 8l3.5-3.5L19.5 8"/>',
   save: '<path d="M5 4.5h11l3 3v12H5z"/><path d="M8 4.5v5h7v-5M8 19.5v-6h8v6"/>',
 };
+// Embutido no Hub: os ícones em comum (barra lateral, mais, check, fechar, terminal, sino) usam os mesmos desenhos do Hub.
+if (window.termixEmbed) Object.assign(ICONS, {"panel": "<rect x=\"3.5\" y=\"4.5\" width=\"17\" height=\"15\" rx=\"3\"/><path d=\"M9.5 4.5v15\"/>", "plus": "<path d=\"M12 5v14M5 12h14\"/>", "check": "<path d=\"m5 12.5 4.5 4.5L19 7.5\"/>", "x": "<path d=\"M18 6 6 18M6 6l12 12\"/>", "terminal": "<path d=\"m4 17 6-6-6-6M12 19h8\"/>", "bell": "<path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\"/><path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\"/>", "minus": "<path d=\"M5 12h14\"/>"}); // mesmos desenhos do Hub
 const ic = (name, size = 18) => `<svg class="i" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
 const STATES = {
   work: ['s-work', 'Trabalhando'],
@@ -110,6 +112,7 @@ function addEvent(ev) {
   // aberto o painel, o aviso já nasce visto; fechado, conta no selo do sino até a pessoa abrir e fechar o painel
   UI.events.unshift({ id: ++evSeq, ts: Date.now(), done: false, seen: UI.actOpen, acts: [], ...ev });
   UI.events = UI.events.slice(0, EV_MAX);
+  if (EMBED) api.hubEvento({ id: UI.events[0].id, tabId: ev.tabId, quem: ev.who, tipo: ev.kind, msg: ev.msg, ts: UI.events[0].ts }); // dentro do Hub: quem mostra é o Hub (sino e aviso do Windows)
   renderAct(); renderTop();
 }
 function markSeen() { for (const e of UI.events) e.seen = true; }
@@ -138,7 +141,7 @@ function beep(kind) {
 let toastEl = null, toastTimer = 0;
 function showToast(ev) {
   const cfg = notifCfg();
-  if (!cfg.toast || UI.actOpen) return;
+  if (EMBED || !cfg.toast || UI.actOpen) return; // embutido: o aviso curto é do Hub
   const bell = document.querySelector('[data-togact]');
   if (!bell) return;
   if (!toastEl) {
@@ -174,7 +177,12 @@ function ago(ts) {
 const pending = () => UI.events.filter((e) => !e.seen && !e.done).length;
 
 /* ---------- terminais ---------- */
+// Tema claro do Hub (atributo data-hub-theme na raiz): texto escuro e cores ANSI com contraste sobre fundo claro.
+const LIGHT_ANSI = { black: '#2a2926', red: '#b3261e', green: '#1f7a46', yellow: '#8a5a00', blue: '#1d4ed8', magenta: '#8e24aa', cyan: '#0e7490', white: '#5c5a54',
+  brightBlack: '#6b6862', brightRed: '#d32f2f', brightGreen: '#2e7d32', brightYellow: '#a16207', brightBlue: '#2563eb', brightMagenta: '#a21caf', brightCyan: '#0891b2', brightWhite: '#18181a' };
+const isLightHub = () => document.documentElement.dataset.hubTheme === 'light';
 function termTheme() {
+  if (isLightHub()) return { ...LIGHT_ANSI, background: 'rgba(0,0,0,0)', foreground: '#18181a', cursor: '#1d4ed8', selectionBackground: 'rgba(59,130,246,.30)', scrollbarSliderBackground: 'rgba(15,23,42,.18)', scrollbarSliderHoverBackground: 'rgba(15,23,42,.32)', scrollbarSliderActiveBackground: 'rgba(15,23,42,.42)' };
   return { background: 'rgba(0,0,0,0)', foreground: '#ececea', cursor: '#60befa', selectionBackground: 'rgba(59,130,246,.38)', scrollbarSliderBackground: 'rgba(255,255,255,.14)', scrollbarSliderHoverBackground: 'rgba(255,255,255,.28)', scrollbarSliderActiveBackground: 'rgba(255,255,255,.38)' };
 }
 
@@ -439,6 +447,8 @@ function openTab(tabId) {
   save(); renderAll();
 }
 api.onNotifyClick(({ tabId }) => openTab(tabId));
+// Hub (tela Início): abre um chat novo no projeto atual e envia a primeira mensagem. Se o app ainda estiver carregando, tenta de novo por alguns segundos.
+
 api.onFocus(() => renderChrome()); // voltar ao app limpa o selo da aba que já está à vista
 api.onHook(({ tabId, data }) => {
   const f = findTab(tabId);
@@ -692,7 +702,12 @@ const liveWin = (d) => d && d.resets * 1000 > Date.now();
 
 /* ---------- rail: informações da sessão ativa (no lugar da status line do terminal) ---------- */
 const RAIL_DEF = { v: 2, on: true, reserve: false, fade: true, meta: false, ctx: true, h5: true, d7: true, cache: true, footFade: false }; // v: versão dos padrões (ao subir, as escolhas salvas voltam ao padrão novo)
-const railCfg = () => S.settings.rail || RAIL_DEF;
+const railCfg = () => {
+  const c = S.settings.rail || RAIL_DEF;
+  // embutido (TASK-135): só os anéis, sem a barra de consumo no topo; na primeira vez liga todos (depois vale a escolha do usuário)
+  if (EMBED && !S.settings.railEmbed) { Object.assign(c, { on: true, ctx: true, h5: true, d7: true, cache: true }); S.settings.railEmbed = 1; }
+  return c;
+};
 function fmtDur(secs) { // 45s, 12m, 4h38m, 5d18h
   secs = Math.max(0, Math.floor(secs));
   if (secs < 60) return `${secs}s`;
@@ -2377,7 +2392,9 @@ const bgMode = () => (['blur', 'acrylic', 'mica'].includes(S.settings.bg) ? 'blu
 /* ---------- geometria do vidro: painéis flutuantes, como no Rocruzta Hub (TASK-121) ----------
    Cabeçalho e rodapé ficam soltos sobre o fundo; a barra lateral e o braço de notificações são painéis de vidro (um recorte só, em #glass);
    o palco (#col) é o painel de conteúdo, com vidro próprio. GAP = vão entre painéis e até a borda; RP = raio dos painéis. */
-const FR = { R: 22, RP: 18, GAP: 10, HEAD: 44, DOCK: 36, BOT: 56, SIDE_OPEN: 260, SIDE_MINI: 64, ARM_OPEN: 360, ARM_CLOSED: 10 };
+const EMBED = !!window.termixEmbed; // TASK-135: rodando dentro do Rocruzta Hub (sem cabeçalho, janela e notificações próprios)
+// Embutido no Hub: painéis acoplados e encostados nas bordas, separados só por linhas de 1px (sem vão, raio nem cabeçalho solto).
+const FR = { R: 22, RP: EMBED ? 0 : 18, GAP: EMBED ? 0 : 10, HEAD: EMBED ? 0 : 44, DOCK: 36, BOT: EMBED ? 36 : 56, SIDE_OPEN: EMBED ? 224 : 260, SIDE_MINI: EMBED ? 0 : 64, ARM_OPEN: 360, ARM_CLOSED: EMBED ? 0 : 10 };
 const GEO = { sideW: FR.SIDE_OPEN, armW: FR.ARM_CLOSED, bot: FR.BOT }; // bot fixo: a base não engrossa
 // abrir/fechar a barra lateral só com a largura animando (sem esmaecer): o conteúdo aberto fica com largura fixa e é revelado/escondido pela borda;
 // ao abrir, o conteúdo aberto entra no começo; ao fechar, o recolhido só entra quando a barra termina de encolher
@@ -2413,17 +2430,22 @@ function layout() {
   if (!W || !H) return;
   const flat = flatMode();
   if (flat !== document.body.classList.contains('flatpage')) { document.body.classList.toggle('flatpage', flat); setTimeout(() => { if (typeof fitActive === 'function') fitActive(); }, 0); } // o palco muda de altura: reajusta o terminal
+  if (EMBED) { // no Hub, recolher a barra lateral a esconde por inteiro (como no Claude Desktop); um botão no canto reabre
+    document.body.classList.toggle('sidehidden', GEO.sideW < 8);
+    if (!$('#sidereopen')) $('#col').insertAdjacentHTML('beforeend', '<button id="sidereopen" data-togside title="Mostrar a barra lateral" aria-label="Mostrar a barra lateral">' + ic('panel', 18) + '</button>');
+  }
+  const sw = GEO.sideW;
   const bot = flat ? FR.GAP : GEO.bot; // o palco termina acima do rail inferior (terminal, chat, Web); a barra lateral e as notificações descem sempre até o chão
-  const d = framePath(W, H, GEO.sideW, GEO.armW, FR.GAP);
+  const d = framePath(W, H, sw, GEO.armW, FR.GAP);
   $('#glass').style.clipPath = `path(evenodd, '${d}')`;
   $('#edgePath').setAttribute('d', d);
   document.documentElement.style.setProperty('--head', `${FR.HEAD}px`);
-  Object.assign($('#side').style, { left: `${FR.GAP}px`, width: `${GEO.sideW - 2 * FR.GAP}px` });
+  Object.assign($('#side').style, { left: `${FR.GAP}px`, width: `${Math.max(0, sw - 2 * FR.GAP)}px` });
   Object.assign($('#arm').style, { right: `${FR.GAP}px`, width: `${Math.max(0, GEO.armW - 2 * FR.GAP)}px` });
   $('#arm').classList.toggle('open', UI.actOpen && GEO.armW > 200);
   document.documentElement.style.setProperty('--bot', `${FR.GAP}px`);
-  Object.assign($('#col').style, { left: `${GEO.sideW}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${bot}px` });
-  Object.assign($('#appfoot').style, { left: `${GEO.sideW}px`, right: `${GEO.armW}px`, bottom: `${FR.GAP}px`, height: `${FR.DOCK}px` }); // rail: ao lado da barra lateral, sob o palco; mesmo vão (GAP) acima, abaixo e dos lados
+  Object.assign($('#col').style, { left: `${sw}px`, top: `${FR.HEAD}px`, right: `${GEO.armW}px`, bottom: `${bot}px` });
+  Object.assign($('#appfoot').style, { left: `${sw}px`, right: `${GEO.armW}px`, bottom: `${FR.GAP}px`, height: `${FR.DOCK}px` }); // rail: ao lado da barra lateral, sob o palco; mesmo vão (GAP) acima, abaixo e dos lados
 }
 
 let tweening = 0; // durante a animação: sem sombra pesada e sem refazer o tamanho do terminal a cada quadro
@@ -2447,7 +2469,7 @@ function applyWinShape() {
   const mx = !!UI.maxed;
   document.body.classList.toggle('osmat', mat);
   document.body.classList.toggle('maxed', mx);
-  FR.R = mx ? 0 : mat ? 8 : 22; // maximizado: tela cheia, sem margem nem cantos; com material: cantos do Windows 11 (~8 px)
+  FR.R = EMBED ? 0 : mx ? 0 : mat ? 8 : 22; // maximizado: tela cheia, sem margem nem cantos; com material: cantos do Windows 11 (~8 px)
   document.documentElement.style.setProperty('--R', FR.R + 'px');
 }
 async function applyBg() {
@@ -2578,3 +2600,5 @@ document.addEventListener('pointerup', endTabDrag);
 document.addEventListener('pointercancel', endTabDrag);
 
 setInterval(() => { if (mode() === 'noterm') renderPage(); }, 15000);
+
+new MutationObserver(() => { for (const id in RT) if (RT[id].term) RT[id].term.options.theme = termTheme(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-hub-theme'] });
