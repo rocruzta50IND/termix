@@ -6,6 +6,14 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-12
 
+**DEV2-025 — Botão "Delegar tarefa" e rodapé do mapa do Organizador** (DEV2)
+
+- Novo botão "Delegar tarefa" no cabeçalho, ao lado do "Vibe Coding": o responsável (DEV1, projeto com o fluxo) passa uma tarefa a uma pessoa. Quem pode: só o responsável; sem o fluxo ou sem ser o responsável o clique só explica. Contas **provisórias** (mock de 5 nomes em `src/vibe/contas.js`, escolhida em Configurações, sem PIN; o login do Hub e o PIN ficam com o Rodrigo).
+- O orquestrador do responsável escreve a tarefa; ele revisa e confirma; o Termix cria a devN livre a partir da dev1 (se preciso), registra no `.claude/fluxo.json` e grava o pedido e o índice na dev1 (`.termix/delegar`), com push só da dev1. Quem recebe vê o aviso no sino e no projeto (a cada 5 min e no "Atualizar", sem IA), e só começa quando clica em "Começar": troca/confere a branch sem descartar nada, sincroniza com a dev1 e grava o marcador de estado na devN.
+- "Entregar" grava o handoff e o marcador (push só da devN); a vigia do responsável lê só o marcador (trava de contexto) e avisa no sino; "Analisar entrega" lê só o handoff; "Aprovar/Reprovar" ficam no índice. O Termix não junta branches: a integração segue pelo fluxo. Painel do projeto com os estados e as datas, reaproveitando o painel do Mutirão. "Começar com Vibe de tarefa" abre o Vibe de tarefa preenchido.
+- Mapa do Organizador: os botões do rodapé não cobrem mais o último cartão (só o conteúdo rola).
+- Testes: npm run check ok. Sem IA: dep16 68/68, rec15 35/36 (falha conhecida do caminho longo), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33, mut23 97/97, org24 13/13, **novo del25 77/77** (módulo com remoto bare local e duas "máquinas": Rodrigo DEV1 e Ygor DEV2). App com o agente falso (CDP, instância isolada, uma por vez): run7 23/23, run15 29/29, run16 a 28/28 e b 9/9, run17 26/26, run22 10/10, run23 52/52, run24 25/25 (+1: rodapé do mapa), **novo run25 35/35**. run10 não rodado (credencial real).
+
 **DEV2-024 — Sem chaves experimentais, várias pastas no "Usar pasta existente" e sócio do b2 no Vibe de tarefa** (DEV2)
 
 - Saíram de Configurações as chaves do Vibe/Mutirão e do Organizador (e o título "Experimental"), de propósito: a dev2 não vai para a main. Tudo funciona sempre; um state.json com a chave desligada é ignorado, sem apagar dado.
