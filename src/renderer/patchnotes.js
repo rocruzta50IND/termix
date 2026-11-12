@@ -3,6 +3,15 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.7.0',
+    date: '12/11/2026',
+    resumo: 'O Termix agora também roda dentro do Rocruzta Hub.',
+    novo: [
+      'Aberto pelo Rocruzta Hub, o Termix aparece dentro da janela do Hub, sem janela própria: o Hub mostra as notificações dele, acompanha o tema claro ou escuro e o atualiza.',
+      'Aberto sozinho, pelo atalho de sempre, o Termix continua igual.',
+    ],
+  },
+  {
     v: '0.6.4',
     date: '12/11/2026',
     resumo: 'Traga um projeto do GitHub só com o link.',

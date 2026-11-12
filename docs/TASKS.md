@@ -415,6 +415,19 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Concluídas
 
+### TASK-134 — Modo embutível do Termix (`--embed`): servir a interface numa porta local para o Rocruzta Hub
+
+- **Responsável:** DEV1
+- **Status:** CONCLUÍDA (2026-11-12) — aprovada pelo usuário ("ficou perfeito" depois de testar dentro do Hub) e publicada na versão 0.7.0, para o Hub embutir o Termix instalado em qualquer máquina. Só ADICIONA a função; a lógica do Termix não muda.
+- **Objetivo:** com `--embed=<porta>` o Termix não abre janela: sobe um servidor em `127.0.0.1` (token, `Host` conferido) que serve a interface e liga o `window.termix` ao main por WebSocket. Sem a flag, tudo continua exatamente como hoje.
+- **Desenho:** `src/embed.js` novo e isolado; `main.js` só ganha ganchos mínimos (registrar handlers, `win` de mentira que transmite eventos). O `preload.js` continua sendo a única fonte da lista de métodos (o servidor o reaproveita). Diálogos nativos, aba Web e dock ficam fora do primeiro corte.
+- **Contexto:** Hub `docs/DECISOES.md` §12 e Hub TASK-024.
+- **Feito:** `src/embed.js` (servidor local com token, `Host` e `Origin` conferidos, só a interface é servida; `window.termix` pela mesma lista do `preload.js`), 3 ganchos em `main.js` e a dependência `ws`. Com `--embed` o app encerra sozinho se o Hub (`HUB_PARENT_PID`) morrer. Sem a flag nada muda. `npm run check` ok; terminal real testado por WebSocket.
+- **Fora do primeiro corte:** diálogos nativos (escolher pasta), aba Web e dock, atualização automática, notificações; controle de fluxo (backpressure) e histórico para reconectar.
+- **Embutido no Hub (2026-11-12, pedido do usuário):** `src/renderer/embed.css` (sem barra de título, moldura nem fundo; só no modo `--embed`), `window.termixEmbed` (anéis sempre ligados, sem barra de consumo no topo, sem painel e aviso curto próprios), eventos de notificação enviados ao Hub por `HUB_EVENT` na saída e `POST /__cmd` (só `notify:click`) para abrir a aba. O tema (claro e escuro) é do Hub: o Termix só aplica o que o Hub injeta. Sem a flag nada muda.
+- **Publicação:** versão 0.7.0 (`dev1` promovida à `main` em fast-forward; `npm run dist`; Release v0.7.0 com instalador, blockmap e `latest.yml`). Com o instalador, o Hub abre o Termix com `--embed` sem precisar da pasta de código (o Hub exige versão >= 0.7.0 para embutir o instalado).
+- **Próximo passo:** ajustes em produção conforme o uso (diálogos nativos, aba Web e dock no modo embutido).
+
 ### TASK-133 — Clonar repositório público do GitHub pelo link (tela Novo projeto)
 
 - **Responsável:** DEV1
