@@ -257,3 +257,16 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - **Recebimento:** sem IA, a cada 5 min e no "Atualizar" (`git fetch` e `git show origin/dev1:.termix/delegar/indice.json`); aviso no sino e no projeto; "Começar" é explícito. Começar confere ou troca a branch (sem descartar), sincroniza com a dev1 e grava o marcador `em_andamento` **na branch do dev** (commit e push só da devN). O Termix não clona projeto: a pasta precisa existir no Termix de quem recebe.
 - **Entrega e trava de contexto:** "Entregar" grava o handoff e o marcador `entregue` (commit e push só da devN). A vigia do responsável lê **só o marcador** (estado e datas): nunca código, diff ou log da devN. "Analisar entrega" (o clique é o pedido explícito do usuário) extrai **só o `docs/HANDOFF_DEVn.md`** e o orquestrador lê apenas ele e o pedido original. Aprovar/reprovar ficam no índice (dev1).
 - **Integração manual:** o Termix **não junta branches**; a integração segue pelo fluxo (`/fluxo:integrar`). Fora desta tarefa: PIN, login do Hub, integração automática, Telegram.
+
+
+## Retomar projeto e estrutura legível (DEV2-026, experimento da dev2)
+
+Pedido do Rodrigo, autorizado pelo Ygor (12/11/2026). Detalhes em `docs/ORGANIZADOR.md`.
+
+- **Padrão:** todo projeto de desenvolvimento inicia com orquestrador + dev; o dev aberto sem tarefa não gasta token. Uso simples: só o orquestrador.
+- **Contexto limpo com o estado em arquivo** é o caminho barato; retomar conversa antiga reprocessa o histórico inteiro e só é oferecido como secundário, com o aviso de custo. Não mexemos na retomada por ID do núcleo (vira sugestão ao DEV1).
+- **Estrutura mínima** = guia (`CLAUDE.md`, só acrescenta), `docs/TASKS.md`, `docs/ESTADO.md`. Gravada na branch de trabalho **sem commit automático**. Sem `/fluxo:init` (o fluxo será separado depois, entre Termix e Hub).
+- **Várias pastas = um projeto**, com pasta principal; as outras não são movidas nem apagadas.
+- **Chats antigos:** coleta em segundo plano, um por vez, só leitura (`--tools ""`, `dontAsk`), em cópia (`--fork-session`), Sonnet, teto de 5 (os mais recentes). Cada chat é reprocessado uma vez, com custo estimado na tela. Só para projetos que já existem; projetos novos nascem estruturados.
+- **Pop-up** uma vez por projeto por abertura do app; sem pop-up em modo chat. **Fechar o app** com ciclo do Vibe ou Mutirão pede confirmação; o `/clear` nunca toca nas abas do ciclo.
+- **Testes** só com claude falso e `CLAUDE_CONFIG_DIR` de teste; nada de IA real.

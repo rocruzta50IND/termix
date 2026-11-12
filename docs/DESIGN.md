@@ -148,3 +148,13 @@ O Termix adota **só a identidade visual** do Rocruzta Hub (projeto separado, qu
 - **Painel:** reaproveita o do Mutirão (`.mutp`, 380 px à direita do terminal, cabeçalho com "Atualizar" e fechar); cartões `.mp-sec`, avisos `.mp-warn`, mensagens `.vibe-msg`; itens de pedido (`.dl-item`) com o título, o estado (selo `.vx-tag`: enviado cinza, em andamento âmbar, entregue lilás, aprovado verde, reprovado vermelho), a branch e as datas. Revisão da tarefa numa caixa `.vc-md` com rolagem.
 - **Configurações:** seção "Delegar tarefa" no fim da página, com o seletor "Conta neste PC (provisório)" (mesma linha `.row` dos outros ajustes).
 - **Mapa do Organizador (rodapé):** no modal do mapa só o conteúdo rola; os botões (Cancelar, Voltar, Organizar com IA, Carregar) ficam numa faixa fixa abaixo dele e não cobrem mais o último cartão (mesmo recurso da DEV2-018, só no estilo do módulo: `.dlg.orgdlg:has(.orgbody)` em `organizador.css`).
+
+
+## Retomar projeto (DEV2-026)
+
+Sem mudar o layout: usa o modal padrão (`.dlg`, largura `orgdlg`) e os controles de sempre.
+
+- **Pop-up "Retomar projeto: <nome>":** lista de pares rótulo/valor (Última sessão, Última tarefa com "Próximo passo" em texto de apoio, Branch, Ciclo do Vibe), aviso de custo em texto de apoio e, sem estrutura, uma faixa de aviso no topo com a lista de chats.
+- **Botões** (da esquerda para a direita): "Agora não", "Retomar últimas conversas", "Inicializar orquestrador e dev" (ou "Inicializar e criar estrutura"), "Continuar ciclo". O principal (`.pri`) é o último; com ciclo parado é "Continuar ciclo".
+- **Lista de chats antigos:** caixas de seleção, o mais recente marcado, custo estimado, teto de 5 e o botão pequeno "Copiar prompt".
+- **Cartão da coleta** (`.retcard`, vidro): progresso k/N e "Cancelar".

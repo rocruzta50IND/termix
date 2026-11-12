@@ -6,7 +6,7 @@ Resumo da entrega atual da dev2. O DEV2 reescreve este arquivo a cada entrega (o
 **Regras de escrita:** descreva *o quê* e *por quê*, em alto nível. **Não cole código, diffs nem trechos de arquivos.** O DEV1 só tem acesso a este resumo até o usuário aprovar; se a entrega for reprovada, ele não deve ficar com o conteúdo da dev2 no contexto.
 
 - **Status:** EXPERIMENTO (não entregar)  <!-- AGUARDANDO DECISÃO | APROVADA | REPROVADA | EXPERIMENTO (não entregar) -->
-- **Tarefas:** DEV2-001 a DEV2-018, DEV2-021 a DEV2-025 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa", na DEV2-015 a recuperação de erro do ciclo e, na DEV2-016, o deploy feito pelo Termix e o fim de ciclo dos devs auxiliares, na DEV2-017, o Vibe de tarefa para projeto em andamento, na DEV2-022, a sincronização com a dev1 0.6.4, na DEV2-023, o Mutirão nativo e, na DEV2-024, o fim das chaves experimentais e o "Usar pasta existente" com várias pastas e, na DEV2-025, o botão "Delegar tarefa" com contas provisórias (mock))
+- **Tarefas:** DEV2-001 a DEV2-018, DEV2-021 a DEV2-026 (MVP do Vibe/Mutirão, a robustez do ciclo, o guia de validação, o fechamento das pendências, o importar projeto com várias pastas, a sincronização com a dev1 na versão 0.6.1, a prova do ciclo real no layout novo, a trava barrando a troca para a branch principal, a política de autonomia por projeto, na DEV2-018 ajustes da política e a proposta do botão "Delegar tarefa", na DEV2-015 a recuperação de erro do ciclo e, na DEV2-016, o deploy feito pelo Termix e o fim de ciclo dos devs auxiliares, na DEV2-017, o Vibe de tarefa para projeto em andamento, na DEV2-022, a sincronização com a dev1 0.6.4, na DEV2-023, o Mutirão nativo e, na DEV2-024, o fim das chaves experimentais e o "Usar pasta existente" com várias pastas e, na DEV2-025, o botão "Delegar tarefa" com contas provisórias (mock))
 - **IDs de tarefa usados pela dev2:** DEV2-001, DEV2-002, DEV2-003, DEV2-004, DEV2-005, DEV2-006, DEV2-007, DEV2-008, DEV2-009, DEV2-010, DEV2-011, DEV2-012, DEV2-013, DEV2-014, DEV2-015, DEV2-016, DEV2-017, DEV2-018, DEV2-021, DEV2-022, DEV2-023, DEV2-024, DEV2-025 (a dev2 tem numeração própria DEV2-xxx e não usa TASK-xxx)
 - **Data:** 2026-11-12
 
@@ -98,6 +98,14 @@ Módulo separado "Vibe Coding e Mutirão". Até a DEV2-023 ficava atrás de chav
   - "Pausar deploy" retém a tarefa; "Retomar deploy" publica os retidos (com um agente trabalhando, só ao fim da tarefa atual);
   - "Voltar versão": lista de deploys no painel, com confirmação explícita; desfaz por revert na principal e envia sem forçar; depois pergunta se roda a receita de novo;
   - DEV2..DEV5: nunca publicam na principal (recusado no processo principal, não só na tela); no fim do ciclo o orquestrador reescreve o handoff da dev em alto nível e o Termix faz o commit só dele e envia só a branch da dev;
+- **DEV2-026 (EXPERIMENTO): "Retomar projeto" e estrutura legível do projeto.** Pedido do Rodrigo, autorizado pelo Ygor. Tudo no módulo isolado (arquivos novos `retomar` no processo principal e na interface), com uma chamada no núcleo (ao adicionar projeto) e o aviso ao fechar o app no `main.js`:
+  - várias pastas viram **um projeto só**, com pasta principal, **um** orquestrador e **um** dev;
+  - o Termix detecta, sem IA, se o projeto tem guia, lista de tarefas e estado; sem eles, oferece "Criar estrutura do projeto" ao adicionar (só para projetos que já existem);
+  - os chats antigos do Claude Code daquela(s) pasta(s) são listados (data, tamanho, custo estimado, teto de 5) e coletados em segundo plano, um por vez, em **somente leitura e em cópia** (a conversa original não ganha a pergunta), com um prompt fixo de 8 itens; um orquestrador novo consolida em `CLAUDE.md` (só acrescenta), `docs/TASKS.md` e `docs/ESTADO.md`, **sem commit**;
+  - pop-up "Retomar projeto" uma vez por projeto a cada abertura do app, montado sem IA: "Inicializar orquestrador e dev" (principal; `/clear` nas abas existentes, cria as que faltam; o orquestrador recebe um pedido curto e o dev não recebe nada), "Retomar últimas conversas" (com o aviso de custo), "Continuar ciclo" (quando há ciclo do Vibe parado) e "Agora não"; sem pop-up em modo chat;
+  - aviso ao fechar o app com ciclo do Vibe ou Mutirão rodando; o `/clear` nunca toca nas abas do ciclo;
+  - depois do resumo, o Vibe de tarefa abre com a pendência principal preenchida e a nota de que leva o projeto até a próxima entrega.
+  - O fluxo Rocruzta e o `/fluxo:init` ficam fora da criação da estrutura (decisão do Ygor).
 - **DEV2-025 (EXPERIMENTO): botão "Delegar tarefa".** Pedido do orquestrador, autorizado pelo Ygor e pelo Rodrigo ("implementar tudo; o login no Hub ele faz"). **As contas são um mock:** a conta deste PC é escolhida em Configurações entre cinco nomes fixos, sem PIN e sem verificação; o login do Hub e o PIN ficam com o Rodrigo e, quando existirem, só o arquivo de contas do módulo muda.
   - **o que é:** um botão no cabeçalho, ao lado do "Vibe Coding", para o responsável do projeto (papel DEV1 num projeto com o fluxo) passar **uma** tarefa a **uma** pessoa. Sem o fluxo, ou sem ser o responsável, o clique só explica e não faz nada. O layout não mudou; o lugar final do botão é do Rodrigo.
   - **pedido:** o responsável escolhe a pessoa (sem a própria conta) e a branch (a próxima devN livre entre dev2 e dev5; ocupada = pedido aberto) e diz em poucas palavras o que quer; o orquestrador dele escreve a tarefa completa (objetivo, contexto, o que ler, critério de pronto, o que não fazer, resultado esperado); ele revisa e confirma. Em código, sem IA, sem forçar e sem descartar nada, o Termix cria a devN a partir da dev1 (se não existir), registra no `.claude/fluxo.json` e grava o pedido e um índice numa pasta própria do repositório **na branch do responsável**, com push só dela. Nada é escrito na branch do dev.
@@ -154,6 +162,27 @@ Módulo separado "Vibe Coding e Mutirão". Até a DEV2-023 ficava atrás de chav
 - Sem dependências novas, sem mudança de versão, sem mexer em chat, Clear ou atualização.
 
 ## Sugestões ao DEV1
+
+Três sugestões do pedido da DEV2-026. A decisão é do DEV1.
+
+- **1. Retomada de conversa por ID como gargalo de tokens**
+  - **Situação hoje:** ao reabrir o app (e no botão de retomar), cada aba abre a conversa antiga pelo ID (`--resume`).
+  - **O que observamos:** depois de horas o cache do prompt expirou, então a primeira mensagem reprocessa o histórico inteiro, com custo alto e sem aviso. Em conversas longas isso pesa na cota de 5h e de 7d.
+  - **Proposta:** como padrão, abrir com contexto limpo e o estado em arquivo (guia, tarefas, estado); deixar a retomada por ID como opção explícita, com o aviso de custo. A DEV2-026 faz isso só no módulo, sem mexer no núcleo.
+  - **Para que serve:** reduzir o consumo de tokens ao abrir o dia e ao reiniciar o app, sem perder o contexto do projeto.
+  - **Decisão:** fica com o DEV1.
+- **2. Padrão orquestrador + dev nos projetos de desenvolvimento**
+  - **Situação hoje:** o núcleo abre uma aba por conversa, sem papéis; só o módulo do Vibe e o Organizador criam orquestrador e dev.
+  - **O que observamos:** os sócios usam 9 ou 10 chats sem papel definido, e fica difícil saber qual guarda o conhecimento. O dev aberto sem tarefa não gasta token.
+  - **Proposta:** todo projeto de desenvolvimento nasce com orquestrador (decide, mantém a estrutura) e dev (executa), com a estrutura mínima em arquivo.
+  - **Para que serve:** retomar o trabalho por arquivos legíveis e dar um lugar certo para cada conversa.
+  - **Decisão:** fica com o DEV1.
+- **3. Chat simples/temporário para o dia a dia**
+  - **Situação hoje:** o Termix é para desenvolvimento; usar o app para perguntas rápidas cria conversas permanentes que viram ruído na lista e na retomada.
+  - **O que observamos:** projetos em modo chat (bolhas) ficam sem pop-up e sem estrutura, e as conversas soltas acumulam.
+  - **Proposta:** um chat simples e temporário (sem retomada automática e com arquivamento fácil) para o uso do dia a dia; isso também resolve os projetos em modo bolhas.
+  - **Para que serve:** separar o uso rápido do trabalho de desenvolvimento e manter a lista de chats limpa.
+  - **Decisão:** fica com o DEV1.
 
 - **Botão "Delegar tarefa" (proposta, só documento):** ver `docs/PROPOSTA_DELEGAR_TAREFA.md`. Automatiza o que hoje é manual para passar uma tarefa a um segundo dev: criar e registrar a dev2, o orquestrador da dev1 escrever o pedido com o resultado esperado, o pedido chegar pelo git à pessoa nomeada, o aviso de entrega e a análise só pelo handoff, com integração só com a aprovação do DEV1. Inclui perfil por sócio com PIN (a conta GitHub é compartilhada), as opções de onde guardar o PIN, o que pode ser reaproveitado do plugin fluxo e do Mutirão, as fases sugeridas e as perguntas em aberto. A ressalva de segurança está explícita: organiza e evita conflito, mas não é proteção forte.
 - **Conferência de conversa existente ignora `CLAUDE_CONFIG_DIR`:** a conferência "esta conversa existe?" olha só a pasta padrão do Claude Code no perfil do usuário. Com a variável apontando para outra pasta, ao reabrir o app a aba tenta abrir uma conversa nova com o mesmo identificador e aparece "Falha ao iniciar ou retomar a conversa". Sem a variável (uso normal) não acontece.
