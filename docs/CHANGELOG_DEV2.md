@@ -6,6 +6,13 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-12
 
+**DEV2-023 — Mutirão nativo** (DEV2)
+
+- "Novo mutirão" cria o Mutirão: (a) projeto novo já como mutirão (objetivo, .md da estrutura e critério; 100% dividido) ou (b) projeto ativo com "Do estado atual até finalizar" ou "Delegar algumas tarefas". O dono pode se incluir como participante. O Workflow antigo não é mais criado; os existentes abrem como antes.
+- Pasta "Mutirão" lista os mutirões com as entregas (k/N) e abre o painel com a fase e o status de cada responsável; entregas novas chegam no sino (conferência sem IA a cada 5 min).
+- O botão "Mutirão" saiu do cabeçalho; o painel funciona com a chave experimental desligada.
+- Testes: mut23 91/91 e run23 50/50 novos; os antigos como antes (rec15 com a falha conhecida).
+
 **DEV2-022 — Sincronização com a dev1 (0.6.4) e conferência do módulo** (DEV2)
 
 - A dev2 recebeu a dev1 0.6.4 (Chat/Workflow viram Projeto/Mutirão na interface; clonar repositório do GitHub). Único conflito: a lista do `npm run check`, somando as duas.

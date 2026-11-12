@@ -264,7 +264,7 @@ Abaixo do contador, um quadro "Implementação automática" com as fases **Junta
 
 ## Mutirão nativo (DEV2-023)
 
-Pedido do orquestrador (Ygor e Rodrigo, 2026-11-12), com a correção do Ygor no mesmo dia. **Para que serve:** a empresa recebe um projeto urgente; um sócio fica responsável (o **dono**) e os outros ajudam com partes que não se sobrepõem.
+Pedido do orquestrador (Ygor e Rodrigo, 2026-11-12), com a correção e a especificação final do Ygor no mesmo dia. **Para que serve:** a empresa recebe um projeto urgente; um sócio fica responsável (o **dono**) e os outros ajudam com partes que não se sobrepõem.
 
 ### Onde fica
 
@@ -273,20 +273,22 @@ Pedido do orquestrador (Ygor e Rodrigo, 2026-11-12), com a correção do Ygor no
 - O botão **"Mutirão" saiu do cabeçalho**. O "Vibe Coding" do cabeçalho continua igual, e o aviso "Sua parte do Mutirão" do sócio também.
 - **Chave experimental desligada:** a tela "Novo mutirão", a pasta e o painel funcionam do mesmo jeito (o Mutirão agora é nativo). Só o lado do sócio (aviso da parte e o Vibe Coding preenchido) depende da chave, porque usa o Vibe Coding, que continua experimental. *Pergunta ao Ygor.*
 
-### Dois caminhos
+### Uma tela, duas entradas (três modos)
 
-- **(a) Projeto novo:** nome e pasta com as opções do "Novo projeto" (criar pasta, usar existente, clonar do GitHub), mais a entrega do dono: **objetivo**, **.md da estrutura do projeto** (o mesmo da entrega do Vibe, conferido com as 9 seções; obrigatório) e **critério de pronto**. O Termix copia o .md para `mutirao/estrutura.md` (vai junto na publicação) e pede ao orquestrador que divida o **projeto inteiro (100%)**: cada sócio fica com a sua parte do início ao fim.
-- **(b) Projeto em andamento** (um projeto ativo do Termix): **não é dividir 100%**. O dono define **uma tarefa por participante**; o orquestrador ajuda a escrever cada uma com o resultado esperado, e o Termix confere os arquivos em comum. O dono continua trabalhando na branch dele enquanto espera as entregas.
-- Nos dois, o **dono pode se incluir como participante** com a branch dele (no b é o normal). A parte ou tarefa do dono também não pode ter arquivo em comum com as outras (a conferência de sempre).
-- A tarefa do (b) usa o mesmo formato da parte (`mutirao/partes/<branch>.md`, 9 seções focadas na tarefa), para o lado do sócio continuar igual (aviso, Vibe preenchido, entrega). *Pendência: abrir o Vibe de tarefa (DEV2-017) para o sócio no caminho (b).*
+- **(a) Iniciar um projeto já como mutirão** (entregas urgentes; modo `projeto`): nome e pasta com as opções do "Novo projeto" (criar pasta, usar existente, clonar do GitHub), mais a entrega do dono: **objetivo**, **.md da estrutura do projeto** (o mesmo da entrega do Vibe, conferido com as 9 seções; obrigatório) e **critério de pronto**. O Termix copia o .md para `mutirao/estrutura.md` (vai junto na publicação) e pede ao orquestrador que divida o **projeto inteiro (100%)**: cada um fica com a sua parte do início ao fim.
+- **(b) Selecionar um projeto ativo e gerar um mutirão dele**, com duas opções:
+  - **(b1) "Do estado atual até finalizar"** (modo `estado_atual`, o padrão): todo o restante do projeto é dividido entre os participantes, cada um com a sua parte até o fim. A mesma lógica do (a), partindo do estado atual do repositório (o orquestrador lê o que já está feito e não repete).
+  - **(b2) "Delegar algumas tarefas"** (modo `tarefas`): o dono define uma ou mais tarefas para vários sócios (uma por participante); o orquestrador ajuda a escrever cada uma com o resultado esperado e o Termix confere os arquivos em comum. O dono continua trabalhando na branch dele enquanto as entregas chegam. Não é o "Delegar tarefa" proposto ao Rodrigo (uma pessoa só), que não foi implementado.
+- Em todos os modos, o **dono pode se incluir como participante** com a branch dele (no b2 é o normal), sempre com a parte separada das outras, sem arquivo em comum (a conferência de sempre). A entrega do próprio dono entra na junção como "já estava integrada". A junção no fim é a mesma: implementação automática.
+- A tarefa do (b2) usa o mesmo formato da parte (`mutirao/partes/<branch>.md`, 9 seções focadas na tarefa), para o lado do sócio continuar igual (aviso, Vibe preenchido, entrega). O Vibe Coding dentro do projeto e o "Usar pasta existente" com várias pastas ficam para a DEV2-024.
 - Quem pode: só o dono (com o fluxo, o DEV1; sem o fluxo, quem abre, desde que haja remoto). A tela confere pela pasta antes de criar (projeto ativo e "Usar pasta existente") e mostra a explicação a quem não é dono, com o botão desligado. "Criar pasta nova" nasce sem git: a tela avisa que é preciso git e origin antes de publicar.
-- "Criar mutirão" cria (a) ou escolhe (b) o projeto, registra o Mutirão do dono com o **modo** (`projeto` ou `tarefa`) e abre o projeto com o painel, que segue o fluxo de sempre: chat com o orquestrador, "Gerar divisão" (ou "Gerar tarefas"), conferência, publicação, entregas e implementação automática.
+- "Criar mutirão" cria (a) ou escolhe (b) o projeto, registra o Mutirão do dono com o **modo** (`projeto`, `estado_atual` ou `tarefas`, também no pedido ao orquestrador) e abre o projeto com o painel, que segue o fluxo de sempre: chat com o orquestrador, "Gerar divisão" (ou "Gerar tarefas" no b2), conferência, publicação, entregas e implementação automática.
 
 ### Monitoramento
 
 - **Fase** (no painel e na dica da pasta), lida do `mutirao.json` sem git nem IA: Dividindo → Aguardando entregas (k/N) → Todas as entregas (N/N) → Juntando entregas → Conflitos: X → Planejando → Executando → Concluído.
 - **Status de cada responsável:** nome, branch, entregou ou não e quando (o contador da DEV2-005, `git fetch` + `git show`, zero token).
-- **Entregas chegam de forma nativa:** com o app aberto, o Termix confere a cada 5 minutos (e 20 s depois de abrir) os mutirões publicados que ainda não têm todas as entregas; o que chegou vira **aviso no sino** ("Ana (dev2) entregou a tarefa: 1/2"; na última, "Todas as entregas chegaram: a implementação automática está liberada no painel") e atualiza o k/N da pasta. O "Atualizar" do painel faz o mesmo na hora.
+- **Entregas chegam de forma nativa:** com o app aberto, o Termix confere a cada 5 minutos (e 20 s depois de abrir) os mutirões publicados que ainda não têm todas as entregas; o que chegou vira **aviso no sino** ("Ana (dev2) entregou a tarefa: 1/2" no b2, "a parte" nos outros; na última, "Todas as entregas chegaram: a implementação automática está liberada no painel") e atualiza o k/N da pasta. O "Atualizar" do painel faz o mesmo na hora.
 - Com N/N, o painel mostra **"Implementação automática"** (a junção da DEV2-006, igual). A entrega do próprio dono entra na junção como "já estava integrada".
 
 ### Mudanças no núcleo (alto nível)
