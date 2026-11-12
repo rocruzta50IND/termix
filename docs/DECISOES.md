@@ -98,6 +98,10 @@ Decisões de produto tomadas com o usuário e o motivo delas. Esta é a fonte de
 - **Configurações > Conectores — projeto novo criado pelo Termix:** *Automático* (padrão) = nasce como o Claude Code monta; *Limpo* = nasce com todos os plugins desligados (local) e todos os MCPs/conectores desligados. Medido numa sessão real: projeto normal 5 plugins, 9 MCPs/conectores, 50 skills e 62 ferramentas; projeto limpo 0 plugins do usuário, MCPs todos desligados, 29 skills e 32 ferramentas (o resto é do próprio Claude Code). Limites: skills e comandos de **usuário** não têm como ser desligados por projeto; plugins, MCPs e conectores instalados depois ficam ligados; projetos **importados** nunca são alterados.
 - Segurança de tela: do MCP só aparece o endereço (sem parâmetros) ou o nome do comando, nunca os argumentos (podem ter chaves).
 
+## Clonar repositório do GitHub (TASK-133)
+- **Só públicos, sem login:** o Termix clona pelo link com o `git` do PC (`git clone`), sem guardar credencial e sem API do GitHub; por isso não conta como integração. A tela avisa que repositório privado exigirá conexão, que ficará no Rocruzta Hub.
+- Aceita `github.com/dono/repo` (com ou sem `https://`, `.git`, barra) e `dono/repo`; recusa `/tree`, `/pull` e outros sites. Clona a branch padrão para a pasta de projetos do app.
+
 ## Tela Integrações: destino futuro (decisão do usuário em 2026-11-10)
 - **Hoje:** a tela só confere se o Claude Code está no PATH (`claude --version`) e mostra o card do Codex como "Em breve". O Termix não guarda credencial nenhuma; o login do Claude acontece no terminal, na primeira sessão.
 - **Destino:** quando o Termix virar um módulo do **Rocruzta Hub** (repositório próprio e isolado), as conexões (GitHub, Claude, Codex e outras) passam a ser feitas e guardadas **só no Hub**, que entrega aos apps internos o que precisarem, quando precisarem. Então esta tela **será migrada para a central ou eliminada do Termix**. Por isso **não se constroem novas integrações aqui** (por exemplo, login do GitHub para clonar repositório privado) até essa decisão chegar.

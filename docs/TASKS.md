@@ -28,6 +28,16 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-133 — Clonar repositório público do GitHub pelo link (tela Novo projeto)
+
+- **Responsável:** DEV1
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1 (2026-11-12) — pedido do usuário; **não publicada** (a versão será definida na publicação).
+- **Feito:** terceira opção "Clonar do GitHub" na tela Novo projeto/Novo mutirão: campo do link, aviso fixo "só repositórios públicos; privado exigirá conexão no Rocruzta Hub", botão "Clonar e criar…" com estado "Clonando…". `src/clone.js` (novo): `parse` aceita `https://github.com/dono/repo` (com/sem `.git` e barra), `github.com/dono/repo` e `dono/repo`; recusa `/tree`, `/pull`, outros sites e links inválidos; clona a branch padrão em `<pasta de projetos>/<repo>` (ou `-2`, `-3`), com `git clone -- <url> <pasta>` por `execFile` (link nunca vira texto de comando), `GIT_TERMINAL_PROMPT=0` e `credential.helper` vazio (sem janela de login; privado falha rápido); se falhar, remove a pasta parcial. Erros traduzidos (privado/inexistente, sem Git, sem internet, tempo esgotado de 5 min). Não mexe em integrações: não guarda credencial, o privado fica para o Hub.
+- **Arquivos tocados:** `src/clone.js`, `src/main.js`, `src/preload.js`, `src/renderer/app.js`, `src/renderer/styles.css`, `package.json` (`check`).
+- **Como validar:** `npm run check` ok; testado por script: `octocat/Hello-World` clona (e a segunda vez vira `hello-world-2`), repositório inexistente e privado (`rocruzta-hub`) dão a mensagem de "privado ou link errado", sem pasta sobrando, 11 formatos de link conferidos. **Não conferi a tela visualmente.**
+- **Pendências:** escolher a branch; repositório privado (depende do Rocruzta Hub); barra de progresso real (hoje só "Clonando…").
+- **Próximo passo:** o usuário testa a tela; com o aprovado, versão nova, promoção e Release.
+
 ## Validadas em DEV1
 
 ## Prontas

@@ -837,6 +837,8 @@ table.t tr.dim td{color:var(--text2)}
 .nprow{display:flex;gap:10px;align-items:center;margin-top:10px}
 .nprow .pjpath{flex:1}
 .npage .seg{margin-bottom:2px}
+.npage .nperr{color:var(--err,#f0616d)}
+.npage .nprow .inp{flex:1}
 .npwf{display:flex;gap:8px;align-items:flex-start;color:#f0a35e}
 .npwf svg{flex:none;margin-top:2px}
 .npage .row2{margin-top:22px}
