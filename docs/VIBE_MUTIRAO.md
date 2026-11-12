@@ -499,6 +499,53 @@ Daí em diante é **o mesmo ciclo do Vibe**: perguntas, "Plano pronto", "Antes d
 
 Canais `vibe:tarefaResumo`, `vibe:tarefaNova`, `vibe:tarefaFim` e `vibe:tarefaHist`. No modo de teste, `vibeTest.modo('projeto'|'tarefa'|'')` e `vibeTest.tarefa({ oQue, criterio, naoPode, arquivos })`. **Testar sem tokens:** `tar17.js` (módulo: resumo, conferência, entrega sintética, pedido do plano, histórico de 2 tarefas seguidas e a interrompida, trava na aba) e `run17.js` (app com o Claude Code falso: escolha inicial, formulário com o resumo, tarefa 1 até o fim do ciclo do DEV2, tarefa 2 nas mesmas abas com `/clear` e o painel com o histórico).
 
+## Delegar tarefa (DEV2-025)
+
+O responsável (papel DEV1 num projeto com o fluxo) passa **uma** tarefa a **uma** pessoa. É diferente do Mutirão (vários sócios, divisão do projeto): aqui o pedido é avulso, vai pelo git e o ciclo inteiro (pedir, receber, começar, entregar, analisar, decidir) acontece no Termix. Base: `docs/PROPOSTA_DELEGAR_TAREFA.md`; as decisões abaixo (do Ygor e do orquestrador) valem por cima dela. Experimento da dev2: não vai para a main; o Rodrigo decide o lugar final do botão e faz o login do Hub.
+
+### Contas (mock até o login do Hub)
+
+- `src/vibe/contas.js` é o **ponto único**: `listarContas()` (lista fixa Ygor, Zanata, Rodrigo, Glayon, Gilbram) e `contaAtual()` (a escolha gravada em `<userData>\vibe\conta.json`). **É um mock**: sem PIN e sem verificação; qualquer pessoa escolhe qualquer nome. Quando o login do Hub existir, só esse arquivo muda.
+- Em **Configurações**, o campo "Conta neste PC (provisório)" diz quem está usando este Termix. Sem conta escolhida, o botão explica e não delega; quem recebe não vê avisos.
+- Quem recebe é escolhido num dropdown com a lista **sem a conta do próprio responsável**.
+
+### Quem pode e onde fica
+
+- Botão **"Delegar tarefa"** no cabeçalho, ao lado do "Vibe Coding" (o layout não mudou; o lugar final é com o Rodrigo). Abre um painel ao lado do terminal, o mesmo lugar e o mesmo estilo do painel do Mutirão (os dois não ficam abertos juntos).
+- Só o **responsável**: papel DEV1 no `CLAUDE.local.md`, projeto com `.claude/fluxo.json`, remoto `origin`, conta escolhida, projeto na branch dele (dev1). Quem não pode vê o botão, mas o clique só **explica o motivo** e não faz nada: "só o responsável (DEV1) delega", "este projeto não usa o fluxo", "escolha a conta em Configurações".
+
+### O pedido (responsável)
+
+1. Escolhe **para quem** e a **branch**: a próxima devN livre entre dev2 e dev5 (**ocupada** = tem pedido aberto: enviado, em andamento ou entregue); o responsável pode trocar.
+2. Escreve em poucas palavras o que quer. O Termix grava o pedido ao orquestrador **em arquivo** (`vibe\<id>\pedidos\pedido-delegar-<id>.md`) e digita uma linha curta na aba do orquestrador do responsável (uma aba "Orquestrador" já aberta, fora as do Vibe e do Mutirão, ou uma aba nova "Delegar · Orquestrador"). O orquestrador escreve a tarefa completa em `vibe\<id>\delegar\<id do pedido>\tarefa.md`: **Objetivo, Contexto, O que ler, Critério de pronto, O que não fazer, Resultado esperado**.
+3. No fim do turno o Termix **confere em código** (seções presentes e preenchidas, nada que pareça segredo) e mostra o texto. O responsável **revisa e confirma** ("Confirmar e enviar"); também pode pedir de novo ou cancelar.
+4. Ao confirmar, **em código, sem IA, sem forçar e sem descartar nada**: se a devN não existe no remoto, é criada a partir da dev1 (`push` simples, que só cria); a devN é acrescentada em `.claude/fluxo.json` (só o acréscimo); o pedido vai para a **branch do responsável**: `.termix/delegar/<id>.md` e o índice `.termix/delegar/indice.json` (id, para quem, de quem, branch, título, resumo, datas, estado). Commit só desses arquivos e push **só da dev1**. O pedido **não** é escrito na branch do dev.
+
+### Quem recebe
+
+- Com o app aberto e uma conta escolhida, o Termix confere **a cada 5 minutos e no "Atualizar" do painel**, sem IA: `git fetch origin dev1` e leitura de `origin/dev1:.termix/delegar/indice.json`, nos projetos que ele conhece e que usam o fluxo. Há pedido para a conta? **Aviso no sino** e botão **"Tarefa delegada a você (n)"** no cabeçalho do projeto; no painel, o resumo e os botões. **Nada começa sozinho.**
+- **"Começar"**: confere ou troca para a branch do pedido (com mudanças não salvas ele **não troca** e explica; nunca descarta nada), sincroniza com a dev1 (`merge --ff-only` da própria branch e `merge` da dev1; conflito cancela a junção sem perder nada), cria o `CLAUDE.local.md` (papel DEVn) só se não existir (se existir e não bater, recusa e manda rodar `/fluxo:papel`), grava na **devN** o marcador mínimo `.termix/delegar/estado-<id>.json` (estado `em_andamento` e datas), commit só dele e push só da devN, e abre a aba do orquestrador com o pedido em arquivo (`@arquivo`).
+- **"Começar com Vibe de tarefa"** / **"Seguir com Vibe de tarefa"**: o mesmo, e abre o Vibe de tarefa (DEV2-017) com o rascunho preenchido pelas seções do pedido.
+- O projeto precisa **já existir no Termix** de quem recebe: o Termix não clona nada. Se a pasta não existir, o aviso explica que é preciso adicionar a pasta do projeto.
+
+### Entrega
+
+- **"Entregar"** (quem recebeu): o orquestrador reescreve `docs/HANDOFF_DEVn.md` em alto nível (mesmo texto do fim de ciclo da DEV2-016); no fim do turno o Termix confere que o handoff é novo, grava o marcador `entregue`, faz o commit **só do handoff e do marcador** e o push **só da devN** (se a devN do remoto avançou, junta antes, sem reescrever nada; conflito cancela). "Enviar agora" repete o passo à mão.
+- **Vigia do responsável** (5 min e "Atualizar"): `git fetch origin <devN>` e `git show origin/<devN>:.termix/delegar/estado-<id>.json`: **só o marcador**. Aviso no sino quando começa e quando entrega. Nunca lê código, diff nem log da devN: é a **trava de contexto** do WORKFLOW (o teste confere os comandos git executados).
+- **"Analisar entrega"** (clique = pedido explícito do usuário): o Termix extrai **só `docs/HANDOFF_DEVn.md`** do remoto da devN para um arquivo do módulo e pede ao orquestrador do responsável que leia **apenas** esse arquivo e o pedido original (critério de pronto e resultado esperado) e dê um parecer. Quem decide é o responsável.
+- **"Aprovar" / "Reprovar"** (com observação ou motivo): gravado no índice do pedido na dev1 (commit e push só da dev1). **A integração continua manual**, pelo fluxo (`/fluxo:integrar`): o Termix **não junta branches**. Aprovado ou reprovado libera a branch.
+
+### Painel e avisos
+
+- O painel do projeto lista: "Delegadas a você" (quem recebe) e "Pedidos do projeto" (responsável) com para quem, branch, estado (**enviado, em andamento, entregue, aprovado, reprovado**) e as datas (enviado, iniciado, entregue, decidido).
+- Avisos no sino: pedido novo para você; entrega do dev; início do dev; aprovação ou reprovação da entrega (vista com o app aberto). Depois de reabrir o app, estados que já mudaram não são anunciados de novo; o painel mostra o estado.
+
+### Arquivos, canais e testes
+
+- Código: `src/vibe/contas.js`, `src/vibe/delegar.js` (canais `vibe:deleg*`: Conta, ContaSet, Info, Pedido, Conferir, Enviar, Painel, Analisar, Decidir, Caixa, Comecar, ComecarPrompt, Vibe, EntregarPrompt, Entregar), `src/renderer/vibe/delegar.js` e `delegar.css`. Fica no repositório do projeto: `.termix/delegar/` (na dev1 o índice e os pedidos; na devN os marcadores).
+- Testes sem IA: `del25.js` (módulo, com remoto bare local, duas "máquinas" com duas pastas de dados: Rodrigo DEV1 e Ygor DEV2; ciclo inteiro, branch ocupada → dev3, não responsável, projeto sem fluxo, nada forçado, e a trava de contexto pelos comandos git executados) e `run25.js` (app com o agente falso, CDP, uma instância por vez: botão, dropdown, aviso do lado de quem recebe, painel com os estados, Vibe de tarefa preenchido, entrega, análise e aprovação).
+- Não faz (fica com o Rodrigo): **login do Hub e PIN**, **integração automática**, **Telegram** (DEV2-019), mudança de layout.
+
 ## Roteiro
 
 Renumerado pelo Ygor em 2026-11-06.

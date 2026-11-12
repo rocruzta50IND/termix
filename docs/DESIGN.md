@@ -142,3 +142,9 @@ O Termix adota **só a identidade visual** do Rocruzta Hub (projeto separado, qu
 - Diff: adicionado em verde, removido em vermelho, trechos (`@@`) em azul; duas colunas de numeração. Cores de arquivo por extensão e letra do estado (M amarelo, U/A verde, D vermelho).
 - Terminais embaixo: divisória arrastável (faixa de 5 px na base do editor e 9 px no topo das abas), com linha azul ao passar o mouse.
 - **Canto das telas planas (0.6.1):** a folha do palco (`#col`) tem `border-radius: var(--r)` em todas as telas planas (Novo chat/workflow, Consumo, Integrações, Configurações, Conectores, Código, tela vazia), não só na Código.
+
+## Delegar tarefa (DEV2-025)
+- **Botão:** "Delegar tarefa" no cabeçalho, logo depois do "Vibe Coding", mesmo estilo (`.vibebtn`, ponto lilás). Para quem tem tarefa delegada, aparece também "Tarefa delegada a você (n)" (mesmo estilo de "Sua parte do Mutirão"). O layout do cabeçalho não mudou.
+- **Painel:** reaproveita o do Mutirão (`.mutp`, 380 px à direita do terminal, cabeçalho com "Atualizar" e fechar); cartões `.mp-sec`, avisos `.mp-warn`, mensagens `.vibe-msg`; itens de pedido (`.dl-item`) com o título, o estado (selo `.vx-tag`: enviado cinza, em andamento âmbar, entregue lilás, aprovado verde, reprovado vermelho), a branch e as datas. Revisão da tarefa numa caixa `.vc-md` com rolagem.
+- **Configurações:** seção "Delegar tarefa" no fim da página, com o seletor "Conta neste PC (provisório)" (mesma linha `.row` dos outros ajustes).
+- **Mapa do Organizador (rodapé):** no modal do mapa só o conteúdo rola; os botões (Cancelar, Voltar, Organizar com IA, Carregar) ficam numa faixa fixa abaixo dele e não cobrem mais o último cartão (mesmo recurso da DEV2-018, só no estilo do módulo: `.dlg.orgdlg:has(.orgbody)` em `organizador.css`).

@@ -4,6 +4,10 @@
 - **De:** dev2 (DEV2-018), a pedido do Ygor
 - **Data:** 2026-11-11
 - **Natureza:** proposta de produto em alto nível, **sem código**. A dev2 não implementa nada disto: o botão, o perfil e o PIN são do núcleo do Termix e ficam com o DEV1, se ele aprovar.
+- **Status (DEV2-025, 2026-11-12):** **implementada como experimento da dev2**, com as decisões do Ygor e do orquestrador por cima desta proposta (ver "Delegar tarefa" em `docs/VIBE_MUTIRAO.md`).
+  - **Feito:** botão "Delegar tarefa" no cabeçalho (só o responsável: DEV1 com o fluxo); pedido escrito pelo orquestrador do responsável e revisado por ele; pedido e índice na dev1 (`.termix/delegar`), commit e push só da dev1; devN livre (dev2 a dev5, ocupada = pedido aberto) criada a partir da dev1 e registrada no `.claude/fluxo.json`; recebimento sem IA (a cada 5 min e no "Atualizar"), aviso no sino e no projeto, "Começar" explícito, marcador de estado na devN (respostas às perguntas 2 e 3: o Termix do responsável lê só o marcador; quem recebe grava o marcador na própria branch); "Entregar" com o handoff; "Analisar entrega" lendo só o handoff; aprovar/reprovar gravados no índice; painel com os estados.
+  - **Ficou com o Rodrigo:** o **login do Hub e o PIN** (seção 3 e perguntas 1, 4 e 7: hoje a conta é um **mock** com 5 nomes, em `src/vibe/contas.js`, escolhida em Configurações, sem PIN); o lugar final do botão; a **integração** (`/fluxo:integrar`, que continua manual: o Termix não junta branches); o **Telegram** (DEV2-019); o mapa branch → pessoa no `fluxo.json` (a pessoa fica só no índice do pedido); "sair da lista" da devN sem pedidos abertos (a branch só fica livre para um novo pedido; o nome não é removido do `fluxo.json`).
+  - **Diferenças em relação ao texto abaixo:** a branch é a próxima livre (pergunta 5: rotativa); o botão exige o fluxo (pergunta 6); o Vibe de tarefa abre por "Começar com Vibe de tarefa"/"Seguir com Vibe de tarefa" (pergunta 8: sem esperar nada, o pedido também abre numa aba de orquestrador); reprovada não volta a "aberta": o pedido fica reprovado e um novo pedido libera a branch.
 
 ---
 

@@ -355,11 +355,11 @@
     const id = atual(), n = (id && ST[id] && ST[id].pend) || 0;
     const cur = box.querySelector('[data-deleg-part]');
     if (!n) { if (cur) cur.remove(); return; }
-    if (cur && cur.dataset.delegPart === id) { cur.lastChild.textContent = ` (${n})`; return; }
+    if (cur && cur.dataset.delegPart === id) { cur.lastChild.textContent = `Tarefa delegada a você (${n})`; return; }
     if (cur) cur.remove();
     const b = document.createElement('button');
     b.className = 'vibebtn part'; b.dataset.delegPart = id; b.title = 'Você tem uma tarefa delegada neste projeto';
-    b.innerHTML = '<i></i>Tarefa delegada a você<span> (' + n + ')</span>';
+    b.innerHTML = `<i></i>Tarefa delegada a você (${n})`;
     b.onclick = (e) => { e.stopPropagation(); abrir(b.dataset.delegPart); };
     box.appendChild(b);
   }
@@ -442,6 +442,7 @@
       if (top) new MutationObserver(paintTop).observe(top, { childList: true });
       if (page) new MutationObserver(mountConf).observe(page, { childList: true });
       document.addEventListener('click', () => setTimeout(paintTop, 80), true);
+      setInterval(paintTop, 3000); // o cabeçalho nem sempre é redesenhado ao trocar de projeto (mesma cautela do vibe.js)
       paintTop(); mountConf();
     } catch (e) { console.error('delegar: início', e); }
   }
