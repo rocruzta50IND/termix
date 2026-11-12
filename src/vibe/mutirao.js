@@ -250,10 +250,38 @@ function create(h) {
     return out;
   }
 
+  // DEV2-023: fase do mutirão do dono, para o painel e a pasta "Mutirão" da barra lateral (lida do mutirao.json, sem git
+  // nem IA). Dividindo → Aguardando entregas (k/N) → Juntando → Conflitos → Planejando → Executando → Concluído.
+  function faseDe(d) {
+    if (!d) return null;
+    const a = d.auto, ct = d.contador, n = (d.participantes || []).length;
+    if (a) {
+      if (a.fase === 'concluido') return { k: 'concluido', l: 'Concluído' };
+      if (a.fase === 'push') return { k: 'concluido', l: 'Concluído (falta enviar a branch)' };
+      if (a.fase === 'juntando') return { k: 'juntando', l: `Juntando entregas (${a.k || 0}/${a.n || n})` };
+      if (a.fase === 'erro') return { k: 'juntando', l: 'Juntando entregas (parou)' };
+      if (a.fase === 'executando') return { k: 'executando', l: 'Executando' };
+      const ruins = (a.juncoes || []).filter((j) => j.status === 'conflito' || j.status === 'erro').length;
+      if (ruins) return { k: 'conflitos', l: `Conflitos: ${ruins}` };
+      return { k: 'planejando', l: a.fase === 'parado' ? 'Planejando (parado)' : 'Planejando' };
+    }
+    if (!d.publicado) return { k: 'dividindo', l: 'Dividindo' };
+    if (ct && ct.n && ct.k === ct.n) return { k: 'entregue', l: `Todas as entregas (${ct.k}/${ct.n})` };
+    return { k: 'aguardando', l: `Aguardando entregas (${ct ? `${ct.k}/${ct.n}` : `?/${n}`})` };
+  }
   function estado(id, pasta) {
     const m = ler(id);
     const pp = papel(pasta);
-    return { dono: m.dono || null, socio: m.socio || null, papel: pp, parte: parte(pasta) };
+    return { dono: m.dono || null, socio: m.socio || null, papel: pp, parte: parte(pasta), fase: faseDe(m.dono) };
+  }
+  // DEV2-023: resumo dos mutirões (projetos com o lado do dono) para a pasta "Mutirão" da barra lateral. Só lê os arquivos.
+  function lista(ids) {
+    return (Array.isArray(ids) ? ids : []).filter(validId).slice(0, 500).map((id) => {
+      const d = ler(id).dono;
+      if (!d || !d.projeto) return null;
+      const ct = d.contador;
+      return { id, publicado: !!d.publicado, k: ct ? ct.k : 0, n: ct ? ct.n : (d.participantes || []).length, contado: !!ct, fase: faseDe(d) };
+    }).filter(Boolean);
   }
   // soProjeto: só registra o projeto (para abrir o chat antes de definir os participantes)
   function iniciar(id, projeto, participantes, soProjeto) {
@@ -451,6 +479,8 @@ function create(h) {
 
   const api = {
     mutEstado: (id, pasta) => (validId(id) ? estado(id, pasta) : null),
+    mutPapel: (pasta) => (typeof pasta === 'string' && pasta ? papel(pasta) : null), // DEV2-023: quem pode, antes de criar o mutirão
+    mutLista: (ids) => lista(ids), // DEV2-023: pasta "Mutirão" da barra lateral
     mutAutoPrep: (id) => (validId(id) ? autoPrep(id) : { ok: false, motivo: 'Projeto inválido.' }),
     mutAutoJuntar: (id, b) => (validId(id) && validBranch(b) ? autoJuntar(id, b) : { ok: false, motivo: 'Branch inválida.' }),
     mutAutoEntrega: (id, opts) => (validId(id) ? autoEntrega(id, opts) : { ok: false, motivo: 'Projeto inválido.' }),

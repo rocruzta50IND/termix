@@ -230,3 +230,5 @@ small.vt-res{display:block;margin:0 0 12px;color:var(--text3)}
 .vx-tag.vt-concluida{border-color:rgba(74,222,128,.5);color:var(--ok)}
 .vx-tag.vt-andamento{border-color:rgba(91,157,255,.5);color:#5B9DFF}
 @media (max-width:640px){.vt-choice{grid-template-columns:1fr}}
+/* DEV2-023: contador de entregas ao lado do nome do mutirão na pasta "Mutirão" (mesmo estilo da contagem das pastas) */
+#side .ph small.mutk{margin-left:auto;padding-left:6px;color:var(--text3);font:400 10.5px var(--mono)}

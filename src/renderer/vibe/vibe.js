@@ -1687,6 +1687,7 @@
     if (!MP || MP.id !== id) return;
     mutPaint();
     if (d && d.publicado && MP.est.papel && MP.est.papel.dono) mutCount(id); // contador ao abrir a tela
+    mutStatus();
   }
 
   function mutRowsHtml(dis) {
@@ -1749,6 +1750,7 @@
     const p = projOf(id);
     const est = await call('mutEstado', id, p && p.path);
     if (MP && MP.id === id && est) { MP.est = est; mutPaint(); }
+    mutStatus();
     return est;
   }
   // "Implementação automática": junção em código (k/N), entrega sintética e o ciclo do Vibe na branch do dono.
@@ -1813,7 +1815,7 @@
       const tab = d && d.orq ? tabOf(d.orq) : null;
       main = `${pp.motivo ? `<div class="mp-warn">${esc(pp.motivo)}</div>` : ''}
         ${!pp.fluxo ? '<p class="mp-why">Projeto sem o fluxo Rocruzta: o Mutirão exige um remoto git (origin) que todos os sócios acessem.</p>' : ''}
-        <dl class="mp-dl"><dt>Branch do dono</dt><dd>${esc(pp.branchDono || '—')}${pp.criar ? ` <small>(será criada a partir de ${esc(pp.atual || 'atual')} ao publicar)</small>` : ''}</dd><dt>Remoto</dt><dd>${esc(pp.remoto || 'nenhum')}</dd></dl>
+        <dl class="mp-dl">${est.fase ? `<dt>Fase</dt><dd>${esc(est.fase.l)}</dd>` : ''}<dt>Branch do dono</dt><dd>${esc(pp.branchDono || '—')}${pp.criar ? ` <small>(será criada a partir de ${esc(pp.atual || 'atual')} ao publicar)</small>` : ''}</dd><dt>Remoto</dt><dd>${esc(pp.remoto || 'nenhum')}</dd></dl>
         <div class="mp-sec"><b>1. Participantes</b> <small>nome e branch de cada sócio</small>${mutRowsHtml(bloq)}</div>
         <div class="mp-sec"><b>2. Divisão com o orquestrador</b>
           <p class="mp-small">O chat é o terminal da aba "${esc(MUT_NAME)}", ao lado. Converse com ele à vontade; "Gerar divisão" manda um pedido curto para ele gravar <code>mutirao/divisao.json</code> e uma parte por sócio.</p>
@@ -1892,7 +1894,7 @@
     const p = projOf(id);
     const r = await call('mutIniciar', id, { nome: p.name, pasta: p.path }, MP.rows);
     if (!r || !r.ok) { mutMsg('bad', `Confira os participantes:<ul>${((r && r.problemas) || [(r && r.motivo) || 'erro']).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`); return false; }
-    MP.est.dono = r.dono;
+    MP.est.dono = r.dono; mutStatus();
     const c = mcOf(id), g = ++c.gen;
     MP.gerando = true; mutMsg('', 'Abrindo o orquestrador…');
     const tab = await mutTab(id, g);
@@ -1939,7 +1941,9 @@
     if (!MP || MP.id !== id) return ct;
     MP.counting = false;
     if (ct) MP.cont = ct;
-    mutPaint();
+    if (ct && MP.est) MP.est = (await call('mutEstado', id, projOf(id) && projOf(id).path)) || MP.est; // a fase muda com as entregas
+    if (!MP) return ct;
+    mutPaint(); mutStatus();
     return ct;
   }
 
@@ -1964,16 +1968,16 @@
   }
   function mutSwitch(id) { if (!MP) return; mutRowsRead(); Object.assign(MP, { id, est: null, conf: null, cont: null, rows: [], msg: null, gerando: false }); mutPaint(); if (id) mutLoad(id); }
 
-  function openMutirao(pid) {
+  function openMutirao(pid, init) {
     const col = document.getElementById('col');
     if (!col) return;
     let id = pid || '';
     if (!id) { try { id = UI.cur && UI.cur.p && projOf(UI.cur.p) ? UI.cur.p : ''; } catch { /* sem projeto atual */ } }
     if (!id) { const ps = projects(); id = ps.length === 1 ? ps[0].id : ''; }
-    if (MP) { if (id && MP.id !== id) mutSwitch(id); return; }
+    if (MP) { if (id && MP.id !== id) mutSwitch(id); if (init) { Object.assign(MP, init); mutPaint(); } return; }
     const root = document.createElement('aside');
     root.className = 'mutp glass';
-    MP = { id, root, est: null, conf: null, cont: null, rows: [], msg: null, busy: false, gerando: false, counting: false, autoBusy: false };
+    MP = { id, root, est: null, conf: null, cont: null, rows: [], msg: null, busy: false, gerando: false, counting: false, autoBusy: false, ...(init || {}) };
     col.appendChild(root); col.classList.add('mut-open');
     root.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') closeMutirao(); });
     root.addEventListener('input', (e) => { if (e.target.dataset.mrn != null || e.target.dataset.mrb != null) mutRowsRead(); });
@@ -2052,6 +2056,133 @@
     box.appendChild(b);
   }
 
+  /* ---------- Mutirão nativo (DEV2-023) ----------
+     A tela "Novo mutirão" do núcleo (página interna 'Novo workflow') é desenhada aqui: projeto novo (as opções de pasta do
+     núcleo: criar, usar existente, clonar) ou um projeto ativo do Termix, e os participantes. "Criar mutirão" cria ou
+     escolhe o projeto, registra o Mutirão do dono (mutIniciar) e abre o projeto com o painel do Mutirão, que segue o fluxo
+     de sempre (chat com o orquestrador, divisão, conferência, publicação, entregas e implementação automática).
+     A pasta "Mutirão" da barra lateral lê MUT_ST (resumo do mutirao.json de cada projeto, sem git e sem IA) e, no clique,
+     abre o projeto com o painel (monitoramento). Funciona com a chave experimental ligada ou não. */
+  const MUT_ST = {}; // por projeto com o Mutirão do dono: { publicado, k, n, contado, fase }
+  let mutStBusy = false, mutStAgain = false;
+  async function mutStatus() {
+    if (mutStBusy) { mutStAgain = true; return; }
+    mutStBusy = true;
+    try {
+      const ids = projects().filter((p) => p.kind !== 'workflow').map((p) => p.id);
+      const r = await call('mutLista', ids);
+      if (Array.isArray(r)) {
+        const antes = JSON.stringify(MUT_ST);
+        for (const k of Object.keys(MUT_ST)) delete MUT_ST[k];
+        for (const x of r) MUT_ST[x.id] = { publicado: x.publicado, k: x.k, n: x.n, contado: x.contado, fase: x.fase };
+        if (JSON.stringify(MUT_ST) !== antes) { try { renderSide(); } catch { /* barra ainda não desenhada */ } }
+      }
+    } finally { mutStBusy = false; if (mutStAgain) { mutStAgain = false; mutStatus(); } }
+  }
+
+  const MN0 = () => ({ orig: 'novo', pid: '', rows: [{ nome: '', branch: 'dev2' }], pp: null, ppKey: '', busy: false, err: '' });
+  let MN = MN0();
+  const onNovo = () => { try { return UI.cur.p === '_' && UI.cur.page === 'Novo workflow'; } catch { return false; } };
+  const mnRepaint = () => { if (onNovo()) { try { renderPage(); } catch { /* sem página */ } } };
+  // Quem pode (só o dono), conferido pela pasta antes de criar: projeto ativo escolhido ou "Usar pasta existente".
+  function mnPapel(np) {
+    const p = MN.orig === 'ativo' ? projOf(MN.pid) : null;
+    const pasta = p ? p.path : MN.orig === 'novo' && np && np.where === 'dir' ? np.dir : '';
+    const key = pasta ? `${MN.orig}|${pasta}` : '';
+    if (key === MN.ppKey) return;
+    MN.ppKey = key; MN.pp = null;
+    if (!pasta) return;
+    call('mutPapel', pasta).then((r) => { if (MN.ppKey === key) { MN.pp = r; mnRepaint(); } });
+  }
+  function mnPapelHTML(np) {
+    const pp = MN.pp;
+    if (MN.orig === 'novo' && np.where === 'new') return `<p class="meta npwf">${ic('alert', 14)} A pasta nova nasce sem git. O Mutirão exige git e um remoto (origin) que todos os sócios acessem: configure-os antes de publicar a divisão.</p>`;
+    if (MN.orig === 'novo' && np.where === 'git') return '<p class="meta">O repositório clonado já vem com o remoto (origin). Se ele usa o fluxo Rocruzta, só o DEV1 divide o trabalho.</p>';
+    if (!pp) return MN.ppKey ? '<p class="meta">Conferindo o projeto…</p>' : '';
+    if (!pp.dono) return `<p class="meta npwf">${ic('alert', 14)} <span><b>Só o dono do projeto cria o Mutirão.</b> ${esc(pp.motivo || '')} Se você recebeu uma parte, sincronize a sua branch com a do dono e abra o projeto no Termix na sua branch: o aviso "Sua parte do Mutirão" aparece no cabeçalho (com a chave experimental ligada).</span></p>`;
+    if (pp.motivo) return `<p class="meta npwf">${ic('alert', 14)} ${esc(pp.motivo)}</p>`;
+    return `<p class="meta">Você é o dono: branch <b>${esc(pp.branchDono)}</b>${pp.criar ? ` (criada a partir da ${esc(pp.atual || 'atual')} ao publicar)` : ''}, remoto ${esc(pp.remoto)}.</p>`;
+  }
+  function pageHTML(np, folder) {
+    mnPapel(np);
+    const novo = MN.orig === 'novo', ps = projects().filter((p) => p.kind !== 'workflow');
+    const bloq = !!(MN.pp && !MN.pp.dono) || MN.busy || np.busy;
+    const proj = novo
+      ? `<div class="f"><label>Nome do projeto</label><input class="inp" type="text" id="npName" value="${esc(np.name)}" placeholder="Meu SaaS" maxlength="60"></div>
+    <div class="f"><label>Pasta</label><div class="seg"><button type="button" class="${np.where === 'new' ? 'sel' : ''}" data-npwhere="new">Criar pasta nova</button><button type="button" class="${np.where === 'dir' ? 'sel' : ''}" data-npwhere="dir">Usar pasta existente</button><button type="button" class="${np.where === 'git' ? 'sel' : ''}" data-npwhere="git">Clonar do GitHub</button></div>${folder}</div>`
+      : `<div class="f"><label>Projeto do Termix</label><select class="inp" id="mnProj">${ps.length ? `<option value="" ${MN.pid ? '' : 'selected'}>Escolha o projeto…</option>` : '<option value="">Nenhum projeto no Termix</option>'}${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === MN.pid ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select><p class="meta">O mutirão parte do estado atual do projeto; nada muda nele até a divisão ser publicada.</p></div>`;
+    const rows = MN.rows.map((r, i) => `<div class="nprow"><input class="inp" type="text" data-mnn="${i}" value="${esc(r.nome || '')}" placeholder="Nome" maxlength="60"><input class="inp" type="text" data-mnb="${i}" value="${esc(r.branch || '')}" placeholder="branch (ex.: dev2)" maxlength="60"><button type="button" class="btn" data-mnrm="${i}" title="Tirar" ${MN.rows.length < 2 ? 'disabled' : ''}>×</button></div>`).join('');
+    const label = MN.busy || np.busy ? (np.busy ? 'Clonando…' : 'Criando…') : novo && np.where === 'git' ? 'Clonar e criar mutirão' : 'Criar mutirão';
+    return `<div class="npage"><div class="npinner">
+    <div class="nphead"><span class="wfmark sm">${ic('workflow', 26)}</span><div><h2>Novo Mutirão</h2>
+      <p class="meta">Divida um projeto entre sócios: cada um faz uma parte numa branch própria e, com todas as entregas, o Termix junta tudo e conclui em Vibe Coding.</p></div></div>
+    <div class="f"><label>Projeto</label><div class="seg"><button type="button" class="${novo ? 'sel' : ''}" data-mnorig="novo">Projeto novo</button><button type="button" class="${novo ? '' : 'sel'}" data-mnorig="ativo">Projeto ativo do Termix</button></div></div>
+    ${proj}
+    ${mnPapelHTML(np)}
+    <div class="f"><label>Participantes</label><p class="meta">Nome e branch de cada sócio (dev2, dev3…). Não valem main/master nem a branch do dono.</p>${rows}<div class="nprow"><button type="button" class="btn" data-mnadd>Adicionar participante</button></div></div>
+    <p class="meta">Em seguida, o projeto abre com o painel do Mutirão: o chat com o orquestrador do dono, a divisão de 100% do projeto, a conferência de arquivos em comum e a publicação.</p>
+    ${MN.err ? `<p class="meta nperr">${MN.err}</p>` : ''}
+    <div class="row2"><button class="btn pri big" data-mngo ${bloq ? 'disabled' : ''}>${label}</button></div></div></div>`;
+  }
+  function mnRowsRead() {
+    document.querySelectorAll('#page [data-mnn]').forEach((el) => { const r = MN.rows[+el.dataset.mnn]; if (r) r.nome = el.value; });
+    document.querySelectorAll('#page [data-mnb]').forEach((el) => { const r = MN.rows[+el.dataset.mnb]; if (r) r.branch = el.value.trim(); });
+  }
+  function mnProblemas() {
+    const rows = MN.rows.map((r) => ({ nome: String(r.nome || '').trim(), branch: String(r.branch || '').trim() })).filter((r) => r.nome || r.branch);
+    const out = [];
+    if (!rows.length) out.push('Informe pelo menos um participante.');
+    rows.forEach((r, i) => { if (!r.nome) out.push(`Participante ${i + 1}: falta o nome.`); if (!/^[A-Za-z0-9._/-]+$/.test(r.branch) || /^(main|master)$/i.test(r.branch)) out.push(`Participante ${i + 1}: branch "${r.branch}" inválida (ex.: dev2; main/master não vale).`); });
+    const bs = rows.map((r) => r.branch); if (new Set(bs).size !== bs.length) out.push('Duas pessoas com a mesma branch.');
+    if (MN.pp && MN.pp.branchDono && bs.includes(MN.pp.branchDono)) out.push(`A branch ${MN.pp.branchDono} é a do dono.`);
+    return { rows, out };
+  }
+  async function mnCriar() {
+    const np = UI.np;
+    if (MN.busy || !np || np.busy) return null;
+    mnRowsRead();
+    const { rows, out } = mnProblemas();
+    let p = MN.orig === 'ativo' ? projOf(MN.pid) : null;
+    if (MN.orig === 'ativo' && !p) out.unshift('Escolha o projeto.');
+    if (MN.pp && !MN.pp.dono) out.unshift(MN.pp.motivo || 'Só o dono do projeto cria o Mutirão.');
+    if (out.length) { MN.err = out.map(esc).join('<br>'); mnRepaint(); return { ok: false, problemas: out }; }
+    MN.err = ''; MN.busy = true; mnRepaint();
+    let note = '';
+    try {
+      if (!p) {
+        const r = await npResolve(); // as mesmas opções de pasta do "Novo projeto" (criar, usar existente, clonar)
+        if (!r) return { ok: false, motivo: (UI.np && UI.np.err) || 'pasta' };
+        note = r.note;
+        p = addProject({ name: r.name, path: r.path, imported: r.imported, noTab: true }); // projeto comum (fica em "Projetos"); o Mutirão o lista também na pasta "Mutirão"
+      }
+    } finally { MN.busy = false; mnRepaint(); }
+    if (note) addEvent({ who: p.name, msg: note });
+    const res = await call('mutIniciar', p.id, { nome: p.name, pasta: p.path }, rows);
+    UI.np = null; MN = MN0();
+    UI.cur = { p: p.id, page: 'Terminais' }; UI.last = p.id; save(); renderAll();
+    const msg = res && res.ok
+      ? { kind: 'ok', html: '<b>Mutirão criado.</b> Próximo passo: "Abrir o chat" para conversar com o orquestrador do dono, ou "Gerar divisão".' }
+      : { kind: 'bad', html: esc((res && (res.motivo || (res.problemas || []).join(' '))) || 'Não foi possível registrar o Mutirão.') };
+    openMutirao(p.id, { rows: rows.map((r) => ({ ...r })), msg });
+    mutStatus();
+    return { ok: !!(res && res.ok), id: p.id, res };
+  }
+  document.addEventListener('click', (e) => {
+    if (!onNovo()) return;
+    const b = e.target.closest('[data-mnorig],[data-mnadd],[data-mnrm],[data-mngo]');
+    if (!b) return;
+    mnRowsRead();
+    if (b.dataset.mnorig) { MN.orig = b.dataset.mnorig; MN.err = ''; }
+    else if (b.hasAttribute('data-mnadd')) { const used = MN.rows.map((r) => r.branch); let n = 2; while (used.includes(`dev${n}`)) n++; MN.rows.push({ nome: '', branch: `dev${n}` }); }
+    else if (b.dataset.mnrm != null) MN.rows.splice(+b.dataset.mnrm, 1);
+    else { mnCriar(); return; }
+    mnRepaint();
+  });
+  document.addEventListener('input', (e) => { if (onNovo() && (e.target.dataset.mnn != null || e.target.dataset.mnb != null)) mnRowsRead(); });
+  document.addEventListener('change', (e) => { if (onNovo() && e.target.id === 'mnProj') { mnRowsRead(); MN.pid = e.target.value; MN.err = ''; mnRepaint(); } });
+  window.TermixMut = { status: MUT_ST, pageHTML, open: (id) => openMutirao(id), refresh: () => mutStatus() };
+  setTimeout(mutStatus, 300); // a barra lateral recebe a lista assim que o app abre
+
   /* gancho de teste: só existe com o app aberto em modo de teste (TERMIX_VIBE_TEST=1), porque o diálogo nativo de arquivo
      não é automatizável por CDP. Sem esse modo, nada é exposto e a interface não tem atalho escondido. */
   call('status').then((s) => {
@@ -2085,7 +2216,9 @@
         auto: (o) => MP && mutAuto(MP.id, o || {}), autoPush: () => MP && mutAutoPush(MP.id), verVibe: () => MP && mutVerVibe(MP.id),
         gerar: () => MP && mutGerar(MP.id), conferir: () => MP && mutConferir(MP.id), publicar: () => MP && mutPublicar(MP.id), contar: () => MP && mutCount(MP.id), vibe: () => MP && mutVibe(MP.id),
         parte: async () => { for (const k of Object.keys(PART)) delete PART[k]; await checkPart(); const p = UI.cur && projOf(UI.cur.p); return p && PART[p.id] ? PART[p.id].r : null; } },
-      mutEntregar: (id) => mutEntrega(id || (V && V.id), true) };
+      mutEntregar: (id) => mutEntrega(id || (V && V.id), true),
+      // DEV2-023: tela "Novo mutirão" (estado) e o resumo da pasta "Mutirão"
+      novo: { state: () => ({ ...MN, rows: MN.rows.map((r) => ({ ...r })) }), criar: () => mnCriar(), status: () => ({ ...MUT_ST }), refresh: () => mutStatus() } };
   });
 
   /* botões no cabeçalho: o app.js redesenha o #topbar inteiro; reponho os botões a cada redesenho */
@@ -2093,13 +2226,13 @@
     const top = document.getElementById('topbar');
     if (!top) return;
     const cur = top.querySelector('.vibebtns');
-    if (!on()) { if (cur) cur.remove(); closeMutirao(); return; }
+    if (!on()) { if (cur) cur.remove(); return; } // DEV2-023: o painel do Mutirão é nativo e não fecha com a chave
     if (cur) { checkPart(); return; }
     const anchor = top.querySelector('[data-togact]');
     if (!anchor) return;
     const box = document.createElement('div');
     box.className = 'vibebtns';
-    box.innerHTML = '<button class="vibebtn" data-vibe-open="vibe" title="Vibe Coding (experimental)"><i></i>Vibe Coding</button><button class="vibebtn mut" data-vibe-open="mutirao" title="Mutirão (experimental)"><i></i>Mutirão</button>';
+    box.innerHTML = '<button class="vibebtn" data-vibe-open="vibe" title="Vibe Coding (experimental)"><i></i>Vibe Coding</button>'; // DEV2-023: o Mutirão saiu do cabeçalho (fica em "Novo mutirão" e na pasta "Mutirão")
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-vibe-open]'); if (b) { e.stopPropagation(); openScreen(b.dataset.vibeOpen); } });
     const before = top.querySelector('#updchip') || anchor;
     top.insertBefore(box, before);
@@ -2116,7 +2249,7 @@
     box.id = 'vibeConf';
     const draw = () => {
       const v = on();
-      box.innerHTML = `<h5 style="margin:22px 0 8px">Experimental</h5><div class="card" style="padding:6px 18px"><div class="row"><div class="grow">Vibe Coding e Mutirão (experimental)<small>Mostra no cabeçalho os botões Vibe Coding e Mutirão. O Vibe Coding recebe a entrega, cria o orquestrador e o dev, prepara o plano e o executa tarefa a tarefa, com commits só numa branch própria (a main/master nunca é alterada); o Mutirão (só para o dono do projeto) divide o trabalho entre os sócios por branch e conta as entregas.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-vibe-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-vibe-set="0">Não</button></div></div></div>`;
+      box.innerHTML = `<h5 style="margin:22px 0 8px">Experimental</h5><div class="card" style="padding:6px 18px"><div class="row"><div class="grow">Vibe Coding e Mutirão (experimental)<small>Mostra no cabeçalho o botão Vibe Coding. O Vibe Coding recebe a entrega, cria o orquestrador e o dev, prepara o plano e o executa tarefa a tarefa, com commits só numa branch própria (a main/master nunca é alterada); o sócio do Mutirão vê a parte dele no cabeçalho e a faz pelo Vibe Coding. O Mutirão do dono fica em "Novo mutirão" e na pasta "Mutirão", com ou sem esta chave.</small></div><div class="seg"><button class="${v ? 'sel' : ''}" data-vibe-set="1">Sim</button><button class="${v ? '' : 'sel'}" data-vibe-set="0">Não</button></div></div></div>`;
     };
     draw();
     box.addEventListener('click', (e) => {

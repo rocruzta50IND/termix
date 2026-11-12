@@ -889,6 +889,14 @@ function renderSide() {
   const onNew = UI.cur.p === '_' && /^Novo /.test(UI.cur.page);
   const CATS = [['chat', 'Projetos', 'bubble', 'Nenhum projeto ainda.'], ['workflow', 'Mutirão', 'wfnodes', 'Nenhum mutirão ainda.']];
   const byKind = (k) => all.filter((p) => kindOf(p) === k);
+  // DEV2-023: a pasta "Mutirão" lista os mutirões (projetos com o Mutirão do dono, que continuam também em "Projetos"; o resumo vem do módulo) e os Workflows antigos, como antes
+  const MS = (window.TermixMut && window.TermixMut.status) || {}, muts = all.filter((p) => kindOf(p) !== 'workflow' && MS[p.id]);
+  const catLen = (k) => byKind(k).length + (k === 'workflow' ? muts.length : 0);
+  const mutK = (p) => { const s = MS[p.id]; return s && s.publicado && s.contado ? `${s.k}/${s.n}` : ''; };
+  const mutTip = (p) => { const s = MS[p.id]; return `${p.name} · ${s && s.fase ? s.fase.l : 'Mutirão'}`; };
+  const mutAv = (p) => `--c1:${GRADS[(p.g || 0) % GRADS.length][0]};--c2:${GRADS[(p.g || 0) % GRADS.length][1]}`;
+  const mutMini = (p) => `<div class="pg"><button class="av" style="${mutAv(p)}" data-mutgo="${p.id}" data-tip="${esc(mutTip(p))}">${projLetter(p)}</button></div>`;
+  const mutOpen = (p) => `<div class="proj"><div class="prow"><button class="ph" data-mutgo="${p.id}" title="${esc(mutTip(p))}"><span class="pav" style="${mutAv(p)}">${projLetter(p)}</span><span class="pn">${esc(p.name)}</span>${mutK(p) ? `<small class="mutk">${mutK(p)}</small>` : ''}</button></div></div>`;
   const newBtns = col
     ? `<div class="snew mini"><button class="ci add nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat" data-tip="Novo projeto">${ic('newchat', 18)}</button><button class="ci add nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow" data-tip="Novo mutirão">${ic('newwf', 18)}</button></div>`
     : `<div class="snew"><button class="nw ${onNew && UI.cur.page === 'Novo chat' ? 'active' : ''}" data-newk="chat">${ic('newchat', 16)}<span>Novo projeto</span></button><button class="nw ${onNew && UI.cur.page === 'Novo workflow' ? 'active' : ''}" data-newk="workflow">${ic('newwf', 16)}<span>Novo mutirão</span></button></div>`;
@@ -907,7 +915,7 @@ function renderSide() {
   if (col) {
     // barra recolhida: cada categoria é um ícone (como uma pasta); selecionar abre/fecha a lista de projetos dela logo abaixo
     const list = CATS.map(([k, label, icon]) => { const ps = byKind(k), open = catOpen(k);
-      return `<div class="mcat ${open ? 'open' : ''}" data-cat="${k}"><button class="ci ksel ${open ? 'sel' : ''}" data-sidecat="${k}" data-tip="${label} (${ps.length})">${ic(icon, 17)}</button>${open ? ps.map(projMini).join('') : ''}</div>`; }).join('');
+      return `<div class="mcat ${open ? 'open' : ''}" data-cat="${k}"><button class="ci ksel ${open ? 'sel' : ''}" data-sidecat="${k}" data-tip="${label} (${catLen(k)})">${ic(icon, 17)}</button>${open ? (k === 'workflow' ? muts.map(mutMini).join('') : '') + ps.map(projMini).join('') : ''}</div>`; }).join('');
     side.innerHTML = `<div class="shead">${toggle}<span class="rsep"></span></div>
       ${newBtns}
       <span class="rsep"></span>
@@ -917,8 +925,8 @@ function renderSide() {
     // barra aberta: hierarquia de pastas. Chats e Workflows são as pastas; dentro de cada uma ficam os projetos, e dentro deles as funções
     const body = CATS.map(([k, label, icon, none]) => { const ps = byKind(k), open = catOpen(k);
       return `<div class="cat ${open ? 'open' : ''}" data-cat="${k}">
-        <button class="chead" data-sidecat="${k}"><span class="chev">${ic('chevr', 12)}</span>${ic(icon, 16)}<span class="cn">${label}</span><small>${ps.length}</small></button>
-        <div class="subs"><div class="subs-in"><div class="cbody">${ps.length ? ps.map(projOpen).join('') : `<p class="meta sempty">${none}</p>`}</div></div></div></div>`; }).join('');
+        <button class="chead" data-sidecat="${k}"><span class="chev">${ic('chevr', 12)}</span>${ic(icon, 16)}<span class="cn">${label}</span><small>${catLen(k)}</small></button>
+        <div class="subs"><div class="subs-in"><div class="cbody">${catLen(k) ? (k === 'workflow' ? muts.map(mutOpen).join('') : '') + ps.map(projOpen).join('') : `<p class="meta sempty">${none}</p>`}</div></div></div></div>`; }).join('');
     side.innerHTML = `<div class="shead2"><span class="label">Projetos</span>${toggle}</div>
       ${newBtns}
       <div class="sscroll">${body}</div>
@@ -1898,6 +1906,7 @@ function newPageHTML(kind) {
     : np.where === 'dir'
     ? `<div class="nprow"><div class="pjpath" style="user-select:text" title="${esc(np.dir || '')}">${ic('folder', 16)}<span>${np.dir ? esc(np.dir) : 'Nenhuma pasta escolhida'}</span></div><button type="button" class="btn" data-nppick>Escolher pasta…</button></div><p class="meta">O Termix só registra a pasta, sem copiar nem mover nada.</p>`
     : `<p class="meta">O Termix cria e organiza a pasta dentro de <b>${esc(S.settings.projectsRoot || 'a pasta de projetos')}</b>.</p>`;
+  if (wf && window.TermixMut) return window.TermixMut.pageHTML(np, folder); // DEV2-023: "Novo mutirão" cria um Mutirão (o Workflow antigo não é mais criado)
   return `<div class="npage"><div class="npinner">
     <div class="nphead"><span class="wfmark sm">${ic(wf ? 'workflow' : 'sparkles', 26)}</span><div><h2>${wf ? 'Novo Mutirão' : 'Novo Projeto'}</h2>
       <p class="meta">${wf ? 'Dois terminais lado a lado, sempre em Dangerously, para trabalhar o projeto em etapas.' : 'Conversa em bolhas com o Claude Code, sem terminal.'}</p></div></div>
@@ -1914,9 +1923,9 @@ async function npPick() {
   if (!UI.np.name.trim()) UI.np.name = projNameClip(dir.split(/[\\/]/).filter(Boolean).pop()) || '';
   renderPage();
 }
-async function npSubmit() {
-  const np = UI.np; if (!np || np.busy) return;
-  const wf = np.kind === 'workflow';
+// Resolve a pasta do projeto novo (criar, usar existente ou clonar): { name, path, imported, note } ou null. Usada também pelo Mutirão (DEV2-023).
+async function npResolve() {
+  const np = UI.np; if (!np || np.busy) return null;
   let name = projNameClip(np.name), path, imported = false, note = '';
   if (np.where === 'git') {
     if (!np.url.trim()) { np.err = 'Cole o link do repositório.'; renderPage(); return; }
@@ -1940,6 +1949,13 @@ async function npSubmit() {
       note = out.ok ? `Projeto limpo: ${out.plugins} plugin${out.plugins === 1 ? '' : 's'} e ${out.mcps} MCP${out.mcps === 1 ? '' : 's'}/conectores desligados aqui.${out.userSkills ? ` ${out.userSkills} skill(s) de usuário continuam valendo (limite do Claude Code).` : ''}` : `Não consegui deixar o projeto limpo: ${out.message}`;
     }
   }
+  return { name, path, imported, note };
+}
+async function npSubmit() {
+  const np = UI.np; if (!np || np.busy) return;
+  const wf = np.kind === 'workflow';
+  const r = await npResolve(); if (!r) return;
+  const { name, path, imported, note } = r;
   const found = imported && !wf ? (await api.scanSessions(path)).length : 0;
   UI.np = null;
   const p = addProject({ name, path, imported, noTab: found > 0, workflow: wf, first: { kind: 'chat', perm: np.perm === 'd' ? 'd' : 'n' } });
@@ -2191,6 +2207,7 @@ document.addEventListener('click', async (e) => {
   if ((el = q('[data-bg]'))) { S.settings.bg = el.dataset.bg; save(); applyBg(); if (UI.cur.page === 'Configurações') renderPage(); return; }
   if ((el = q('[data-win]'))) { api.winCtl(el.dataset.win); return; }
   if (q('[data-togside]')) { toggleSide(); return; }
+  if ((el = q('[data-mutgo]'))) { const id = el.dataset.mutgo; if (!proj(id)) return; UI.cur = { p: id, page: 'Terminais' }; UI.last = id; UI.res = null; save(); renderAll(); if (window.TermixMut) window.TermixMut.open(id); return; } // DEV2-023: mutirão da pasta "Mutirão" = o projeto com o painel do Mutirão (monitoramento)
   if ((el = q('[data-ph]'))) { if (e.target.closest('.chev')) projToggle(el.dataset.ph); else projClick(el.dataset.ph); return; } // barra aberta: o nome abre o projeto (e mostra as funções dele); a setinha só abre/fecha as funções, sem trocar de tela
   if ((el = q('[data-pt]'))) { projClick(el.dataset.pt); return; }
   if ((el = q('[data-pmenu]'))) { UI.cur = { p: el.dataset.pmenu, page: UI.cur.p === el.dataset.pmenu ? UI.cur.page : 'Terminais' }; renderAll(); projectMenuFlow(); return; }
