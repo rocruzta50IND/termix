@@ -279,7 +279,7 @@ function create(deps = {}) {
       const dir = dirOf(g);
       const pedidos = {};
       lista.forEach((it, i) => {
-        if (it.retomar) return; // aba que retoma uma conversa não recebe pedido
+        if (it.retomar || it.nao) return; // aba que retoma uma conversa (ou pasta que o projeto único não usa) não recebe pedido
         const f = path.join(dir, 'pedidos', `${i + 1}-${slug(it.aba)}.md`);
         writeAtomic(f, pedidoLocalizar({ nome, item: it, todos: lista }));
         pedidos[it.pasta] = f;

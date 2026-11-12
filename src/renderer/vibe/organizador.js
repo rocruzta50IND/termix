@@ -93,18 +93,15 @@
     st.rows = linhas(st.analise);
     return mapa(st);
   }
-  // Linhas do mapa. DEV2-024: a conversa mais recente de orquestrador e a de dev (entre as pastas com esse papel) vêm
-  // marcadas para retomar, como recomendação (rec); o usuário pode trocar ou desmarcar. As outras pastas seguem com a aba nova.
+  // Linhas do mapa. DEV2-026 (5.2-B): várias pastas viram UM projeto, com UM orquestrador e UM dev. O Termix escolhe a pasta
+  // principal: a do papel de dev ou, sem dev, a com o commit mais recente (o usuário troca no mapa). As duas abas trabalham nela;
+  // as outras pastas não são usadas, mas não são movidas nem apagadas.
+  const dataCommit = (a) => { const c = a.git && a.git.commits && a.git.commits[0]; const m = c && /^S+ (d{4}-d{2}-d{2})/.exec(c); return m ? m[1] : ''; };
   function linhas(an) {
-    const rows = an.lista.map((a) => ({ a, abrir: a.existe, papel: a.papel, aba: `${a.papel} · ${a.nome}`, abaManual: false, ret: false, rec: '', sess: (a.sessoes[0] || {}).id || '' }));
-    for (const papel of ['Orquestrador', 'Dev']) {
-      let best = null;
-      for (const r of rows) {
-        if (r.papel !== papel || !r.a.existe) continue;
-        for (const s of r.a.sessoes || []) if (!best || s.mtime > best.s.mtime) best = { r, s };
-      }
-      if (best) { best.r.ret = true; best.r.sess = best.s.id; best.r.rec = best.s.id; }
-    }
+    const rows = an.lista.map((a) => ({ a, papel: a.papel, principal: false }));
+    const ex = rows.filter((r) => r.a.existe), dev = ex.filter((r) => r.papel === 'Dev');
+    const base = (dev.length ? dev : ex).slice().sort((x, y) => (dataCommit(y.a) > dataCommit(x.a) ? 1 : dataCommit(y.a) < dataCommit(x.a) ? -1 : 0));
+    if (base[0]) base[0].principal = true;
     return rows;
   }
   // DEV2-024: entrada pelo "Usar pasta existente" (Novo projeto e Novo mutirão) com mais de uma pasta: análise e mapa direto.
@@ -131,26 +128,15 @@
     for (const k of ['CLAUDE.md', 'CLAUDE.local.md', 'WORKFLOW.md']) if (a.arquivos && a.arquivos[k]) chips.push(`<span class="chip">${k}</span>`);
     for (const t of a.tarefas || []) chips.push(`<span class="chip">${esc(t.arquivo.split('/').pop())}</span>`);
     for (const h of a.handoffs || []) chips.push(`<span class="chip" title="${esc(h.status)}">${esc(h.arquivo.split('/').pop())}</span>`);
-    const ss = a.sessoes || [];
-    const busy = (s) => Date.now() - s.mtime < 3 * 60000;
-    const sel = ss.find((s) => s.id === r.sess);
-    const rec = r.rec && r.ret && r.sess === r.rec;
     const avisos = [...(a.avisos || [])];
-    if (proj) avisos.push(`Já está no Termix como "${proj.name}": a aba nova entra nele.`);
-    if (r.ret && sel && busy(sel)) avisos.push('Essa conversa parece estar em uso agora em outro terminal: abrir a mesma conversa em dois lugares mistura o histórico.');
-    if (r.ret && sel && sel.size > LONGA) avisos.push(`Conversa longa (${kb(sel.size)}): retomá-la recarrega todo o histórico. A aba nova com o pedido de localização sai mais barata.`);
-    return `<div class="orgrow${r.abrir ? '' : ' off'}${a.ambiguo ? ' amb' : ''}" data-i="${i}">
-      <div class="orghd"><label class="orgck"><input type="checkbox" data-o="abrir" ${r.abrir ? 'checked' : ''} ${a.existe ? '' : 'disabled'}><b>${esc(a.nome)}</b></label><span class="meta orgpath">${esc(a.pasta)}</span></div>
+    if (proj) avisos.push(`Já está no Termix como "${proj.name}": as abas novas entram nele.`);
+    return `<div class="orgrow${r.principal ? '' : ' off'}${a.ambiguo ? ' amb' : ''}" data-i="${i}">
+      <div class="orghd"><label class="orgck"><input type="radio" name="orgprin" data-o="principal" ${r.principal ? 'checked' : ''} ${a.existe ? '' : 'disabled'}><b>${esc(a.nome)}</b>${r.principal ? ' <span class="chip orgrec" title="As abas do Orquestrador e do Dev trabalham nesta pasta">pasta principal</span>' : ''}</label><span class="meta orgpath">${esc(a.pasta)}</span></div>
       <div class="orgchips">${chips.join('')}</div>
       <div class="orginfo">${a.andamento && a.andamento.length ? `<div><span class="meta">Em andamento:</span> ${a.andamento.slice(0, 3).map(esc).join(' · ')}</div>` : ''}
         ${a.checkpoint ? `<div><span class="meta">Último checkpoint:</span> ${esc(a.checkpoint)}</div>` : ''}
         ${g.commits && g.commits[0] ? `<div><span class="meta">Último commit:</span> ${esc(g.commits[0])}</div>` : ''}</div>
-      <div class="orggrid">
-        <div class="f"><label>Papel <span class="meta">(sugerido: ${esc(a.papel)} — ${esc(a.motivo || '')})</span></label><select class="inp" data-o="papel">${PAPEIS.map((p) => `<option ${p === r.papel ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
-        <div class="f"><label>Aba que será criada</label><input class="inp" type="text" data-o="aba" maxlength="60" value="${esc(r.aba)}"></div>
-      </div>
-      <div class="orgret"><label class="orgck"><input type="checkbox" data-o="ret" ${r.ret ? 'checked' : ''} ${ss.length ? '' : 'disabled'}>Retomar uma conversa antiga em vez do pedido de localização</label>${rec ? ' <span class="chip orgrec" title="A conversa mais recente encontrada para este papel">recomendada</span>' : ''}
-        ${ss.length ? `<select class="inp" data-o="sess" ${r.ret ? '' : 'disabled'}>${ss.map((s) => `<option value="${s.id}" ${s.id === r.sess ? 'selected' : ''}>${quando(s.mtime)} · ${kb(s.size)} · ${esc((s.titulo || s.primeiro || s.id.slice(0, 8)).slice(0, 70))}${s.id === r.rec ? ' · recomendada' : ''}${busy(s) ? ' · em uso?' : ''}</option>`).join('')}</select>` : '<span class="meta">nenhuma conversa do Claude Code nesta pasta</span>'}</div>
+      <div class="orggrid"><div class="f"><label>Papel <span class="meta">(sugerido: ${esc(a.papel)} — ${esc(a.motivo || '')})</span></label><select class="inp" data-o="papel">${PAPEIS.map((p) => `<option ${p === r.papel ? 'selected' : ''}>${p}</option>`).join('')}</select></div></div>
       ${avisos.length ? `<div class="orgav">${avisos.map((x) => `<div>⚠ ${esc(x)}</div>`).join('')}</div>` : ''}
     </div>`;
   }
@@ -159,14 +145,13 @@
     const an = st.analise;
     const r = await modal({
       title: `Mapa do projeto: ${esc(st.nome)}`,
-      body: `<div class="orgbody"><p class="meta">Confira o papel de cada pasta e a aba que será criada. Cada aba nova recebe um pedido curto para ler só o essencial (tarefas em andamento, handoff, CLAUDE.md e o último checkpoint) e dizer onde paramos. Retomar uma conversa antiga é opcional.${st.rows.some((x) => x.rec) ? ' O Termix deixou marcadas, como <b>recomendação</b>, as conversas mais recentes de orquestrador e de dev: troque ou desmarque à vontade.' : ''}</p>
+      body: `<div class="orgbody"><p class="meta">Estas pastas viram <b>um projeto só</b>, com <b>um orquestrador e um dev</b>, que trabalham na <b>pasta principal</b> (marcada: a do dev ou a com o commit mais recente; troque se precisar). As outras pastas não são usadas, mas não são movidas nem apagadas, e as conversas delas entram na lista de chats do próximo passo. O orquestrador recebe um pedido curto para ler só o essencial e dizer onde paramos; o dev abre e fica esperando.</p>
         ${an.avisos.length || an.ambiguo ? `<div class="orgav top">${an.avisos.map((x) => `<div>⚠ ${esc(x)}</div>`).join('')}${an.ambiguo ? '<div>A análise ficou ambígua em algum ponto: ajuste o papel à mão ou use “Organizar com IA” (opcional).</div>' : ''}</div>` : ''}
         <div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="nome" maxlength="60" value="${esc(st.nome)}"></div>
         <div id="orgRows">${st.rows.map(rowHtml).join('')}</div>
         <div class="f"><label>Permissão das abas novas</label><select class="inp" data-f="perm"><option value="n" ${st.perm === 'd' ? '' : 'selected'}>Normal</option><option value="d" ${st.perm === 'd' ? 'selected' : ''}>Dangerously</option></select></div>
         <div class="orgtips"><b>Economia</b>
-          <div>• Abas novas que leem o checkpoint gastam menos que retomar conversas longas.</div>
-          <div>• Retome só conversas curtas ou quando a pasta não tiver tarefas nem handoff.</div>
+          <div>• Contexto limpo com o estado em arquivo gasta menos que retomar conversas longas.</div>
           <div>• O “Organizar com IA” lê um dossiê de poucos KB montado pelo Termix, não as pastas inteiras.</div>
           <div>• Mantenha TASKS e HANDOFF em dia: é o que faz a aba nova se localizar barato.</div></div></div>`,
       buttons: [['Cancelar', null], ['Voltar', 'back'], ['Organizar com IA', 'ia', an.ambiguo ? 'orgsug' : ''], ['Carregar', 'ok', 'pri']],
@@ -177,15 +162,11 @@
           const el = e.target.closest('[data-o]'), row = e.target.closest('[data-i]');
           if (!el || !row) return;
           const x = st.rows[+row.dataset.i], k = el.dataset.o;
-          if (k === 'abrir') x.abrir = el.checked;
-          else if (k === 'papel') { x.papel = el.value; if (!x.abaManual) x.aba = `${x.papel} · ${x.a.nome}`; }
-          else if (k === 'aba') { x.aba = el.value; x.abaManual = true; return; } // não redesenha enquanto digita
-          else if (k === 'ret') x.ret = el.checked;
-          else if (k === 'sess') x.sess = el.value;
+          if (k === 'principal') { st.rows.forEach((y) => { y.principal = false; }); x.principal = true; box.innerHTML = st.rows.map(rowHtml).join(''); return; }
+          if (k === 'papel') x.papel = el.value;
           row.outerHTML = rowHtml(x, +row.dataset.i);
         };
         box.addEventListener('change', upd);
-        box.addEventListener('input', (e) => { if (e.target.dataset.o === 'aba') upd(e); });
       },
     });
     st.nome = (r.form.nome || '').trim() || st.nome;
@@ -197,37 +178,30 @@
 
   /* ---------- Carregar: abas novas com o pedido (ou a conversa escolhida) ---------- */
   async function carregar(st) {
-    const sel = st.rows.filter((x) => x.abrir && x.a.existe);
-    if (!sel.length) return;
-    const itens = sel.map((x) => ({ pasta: x.a.pasta, papel: x.papel, aba: (x.aba || '').trim() || `${x.papel} · ${x.a.nome}`, retomar: x.ret && x.sess ? x.sess : null, analise: x.a }));
+    const main = st.rows.find((x) => x.principal && x.a.existe) || st.rows.find((x) => x.a.existe);
+    if (!main) return;
+    const itens = st.rows.filter((x) => x.a.existe).map((x) => (x === main
+      ? { pasta: x.a.pasta, papel: 'Orquestrador', aba: 'Orquestrador', analise: x.a }
+      : { pasta: x.a.pasta, papel: x.papel, aba: x.a.nome, nao: true, analise: x.a })); // as outras pastas só constam do grupo e do pedido
     const prep = await call('orgPreparar', { nome: st.nome, itens });
     if (!prep || !prep.ok) { addEvent({ who: 'Importar projeto', msg: 'Não foi possível preparar os pedidos. Veja o erros.log.' }); return; }
-    const conta = {};
-    for (const it of itens) conta[it.papel] = (conta[it.papel] || 0) + 1;
+    let p = projOfPath(main.a.pasta);
+    if (!p) p = addProject({ name: String(st.nome).slice(0, 60), path: main.a.pasta, imported: true, noTab: true });
     const ligacoes = [], pend = [];
-    let primeiro = null;
-    for (const it of itens) {
-      let p = projOfPath(it.pasta);
-      if (!p) {
-        const nm = String(conta[it.papel] > 1 ? `${st.nome} · ${it.pasta.split(/[\\/]/).pop()}` : `${st.nome} · ${it.papel}`).slice(0, 60);
-        p = addProject({ name: nm, path: it.pasta, imported: true, noTab: true });
-      }
-      primeiro = primeiro || p;
-      const cor = COR[it.papel] || COR.Outro;
-      if (it.retomar) {
-        const tab = { id: crypto.randomUUID(), sessionId: it.retomar, agent: 'claude', name: it.aba.slice(0, 40), color: cor, perm: st.perm, started: true, open: true, live: false, archived: false };
-        p.tabs.push(tab); p.activeTab = tab.id; save(); renderAll();
-        pend.push(launch(p, tab, 'resume').catch(() => {}));
-        ligacoes.push({ pasta: it.pasta, projeto: p.id, aba: tab.id, retomar: it.retomar });
-      } else {
-        const out = await abaComPedido(p, st.perm, it.aba.slice(0, 40), cor, prep.pedidos[it.pasta]);
-        if (out.ok) { pend.push(out.go); ligacoes.push({ pasta: it.pasta, projeto: p.id, aba: out.tab.id }); }
-      }
+    const aberta = (nome) => p.tabs.find((t) => t.open && !t.archived && String(t.name).toLowerCase() === nome.toLowerCase());
+    if (!aberta('Orquestrador')) {
+      const out = await abaComPedido(p, st.perm, 'Orquestrador', COR.Orquestrador, prep.pedidos[main.a.pasta]);
+      if (out.ok) { pend.push(out.go); ligacoes.push({ pasta: main.a.pasta, projeto: p.id, aba: out.tab.id, papel: 'Orquestrador' }); }
+    }
+    if (!aberta('Dev')) { // o dev só abre e fica esperando (não gasta token)
+      pend.push(createTab(p, st.perm, { name: 'Dev', color: COR.Dev }));
+      const t = findTab(p.activeTab) && findTab(p.activeTab).tab;
+      if (t) ligacoes.push({ pasta: main.a.pasta, projeto: p.id, aba: t.id, papel: 'Dev' });
     }
     call('orgRegistrar', prep.grupo, ligacoes);
     if (st.fim) try { st.fim(); } catch { /* sem retorno */ } // DEV2-024: a tela "Novo projeto"/"Novo mutirão" que abriu o mapa é encerrada
-    if (primeiro) { UI.cur = { p: primeiro.id, page: 'Terminais' }; renderAll(); }
-    addEvent({ who: `Importar projeto · ${st.nome}`, msg: `${ligacoes.length} aba(s) criada(s). As abas novas recebem o pedido de localização assim que o Claude Code abrir; os pedidos ficam em ${prep.dir}.` });
+    UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
+    addEvent({ who: `Importar projeto · ${st.nome}`, msg: `Projeto único em ${main.a.pasta}: orquestrador e dev criados. O orquestrador recebe o pedido de localização assim que o Claude Code abrir; os pedidos ficam em ${prep.dir}.` });
     return Promise.all(pend);
   }
 
@@ -264,6 +238,8 @@
     pick: async () => { const out = await call('orgPick', window.__npTestPaths); return out && out.ok ? out.pastas || [] : null; },
     mapaDe,
   };
+
+  window.TermixOrg.abaComPedido = abaComPedido; window.TermixOrg.waitHook = waitHook; window.TermixOrg.typeLine = typeLine; // DEV2-026: o módulo "Retomar projeto" reaproveita
 
   // gancho de teste (o caminho das pastas só é aceito pelo processo principal com TERMIX_VIBE_TEST=1)
   window.orgTest = { mapaDe: (ps, nome) => mapaDe(ps, nome), linhas: (an) => linhas(an), abrir: (st) => abrir(st), mapa: (st) => mapa(st), carregar: (st) => carregar(st), organizar: (st) => organizar(st), ver: (g) => verOrganizacao(null, g), analisar: (ps) => call('orgAnalisar', ps) };

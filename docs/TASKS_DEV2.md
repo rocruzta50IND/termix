@@ -25,6 +25,21 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-026 — "Retomar projeto", estrutura legível do projeto e coleta dos chats antigos
+
+- **Status:** EM ANDAMENTO (EXPERIMENTO)
+- **Data:** 2026-11-12
+- **Pedido:** (orquestrador termix-orq-ec, aprovado pelo Ygor; prompt no arquivo de estado do orquestrador, seção "PROMPT DEV2-026"; itens -B valem por cima dos itens 1 e 2) várias pastas = um projeto; coleta dos chats antigos em segundo plano (`claude -p --resume`, só leitura, fork, Sonnet, teto de 5); estrutura CLAUDE.md (só acrescentar) + docs/TASKS.md + docs/ESTADO.md sem commit; pop-up Inicializar/Retomar/Continuar ciclo/Agora não; aviso ao fechar o app; Vibe pré-preenchido; sugestões ao DEV1. Sem /fluxo:init.
+- **Etapas (commit parcial por etapa):** (1) várias pastas viram um projeto; (2) detecção da estrutura e a oferta ao adicionar; (3) coleta em segundo plano; (4) pop-up; (5) aviso ao fechar o app; (6) Vibe pré-preenchido; (7) documentação e Sugestões ao DEV1.
+- **Feito até agora:** etapa 1: `src/vibe/retomar.js` (novo; estrutura, conversas, coleta, pedidos; ligado no `index.js`, canais `vibe:ret*`); o mapa do Organizador escolhe a pasta principal (dev ou commit mais recente; o usuário troca) e "Carregar" cria UM projeto com as abas Orquestrador (pedido de localização) e Dev (sem pedido); sem retomada por pasta no mapa. Flags do `claude` conferidas em `claude --help`: -p, --resume, --fork-session, --model, --tools, --permission-mode, --output-format existem.
+- **Decisões:** coleta com `--tools ""` (nenhuma ferramenta: não grava nem roda comando) + `--permission-mode dontAsk` + `--fork-session` + `--model sonnet` + `--output-format json`; prompt pelo stdin; cópias (fork) registradas e escondidas da lista.
+- **Arquivos tocados:** `src/vibe/retomar.js`, `src/vibe/index.js`, `src/vibe/organizador.js`, `src/renderer/vibe/organizador.js`, `package.json`.
+- **Como validar:** npm run check; org26a (14 itens; adaptado do org24).
+- **Pendências:** run24 (app) precisa ser reescrito para o projeto único; etapas 2 a 7.
+- **Próximo passo:** etapa 2 (detecção da estrutura e a oferta "Criar estrutura do projeto" ao adicionar o projeto: novo módulo de interface `src/renderer/vibe/retomar.js`).
+
+---
+
 ## DEV2-025 — Botão "Delegar tarefa" (contas provisórias, pedido na dev1, entrega por marcador) e rodapé do mapa do Organizador
 
 - **Status:** CONCLUÍDA NA DEV2 (EXPERIMENTO; aguardando o orquestrador)
