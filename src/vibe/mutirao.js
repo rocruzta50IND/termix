@@ -116,7 +116,11 @@ function create(h) {
   }
   function pedidoTexto(d) {
     const lista = d.participantes.map((p) => `${p.nome} (branch ${p.branch})`).join(', ');
-    return `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto. Divida o trabalho que falta entre: ${lista}. Leia só o necessário (CLAUDE.md, README, docs e a estrutura de pastas; sem ler o código inteiro). Grave, sem escrever nada fora da pasta mutirao/ do projeto: 1) mutirao/divisao.json = {"branchDono":"${d.branchDono}","objetivo":"objetivo do projeto inteiro, até 300 caracteres","criterio":"critério de pronto do projeto inteiro","participantes":[{"nome":"...","branch":"..."}],"partes":[{"branch":"...","titulo":"...","objetivo":"até 300 caracteres","criterio":"como saber que a parte acabou","arquivos":["arquivos ou pastas, relativos à raiz"]}]}, uma parte por participante, SEM nenhum arquivo ou pasta em comum entre as partes (uma pasta conta como tudo dentro dela; o Termix confere e recusa); 2) mutirao/partes/<branch>.md de cada um, com as 9 seções preenchidas: Objetivo, Público e usuários, Funcionalidades, Fora do escopo (inclua os arquivos das outras partes), Telas e fluxos, Dados e regras de negócio, Integrações e acessos, Tecnologia, Critério de pronto. Não altere o código nem este PEDIDO.md, não faça commit nem push: quem publica é o Termix. Ao terminar, responda apenas DIVISÃO GRAVADA e um resumo de até 3 linhas.`;
+    const dono = d.participantes.find((p) => p.branch === d.branchDono);
+    const intro = d.modo === 'tarefa'
+      ? `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto, que JÁ ESTÁ EM ANDAMENTO. NÃO divida o projeto inteiro: escreva UMA TAREFA para cada participante (${lista}), com o que fazer e o resultado esperado, conversando com o dono no chat sobre o que cada um vai fazer. As tarefas não podem ter arquivo em comum entre si${dono ? `, inclusive a do próprio dono (${dono.nome}, branch ${d.branchDono}), que segue trabalhando na branch dele` : '; o dono segue trabalhando na branch dele em outra parte, então evite os arquivos que ele indicar'}. Em divisao.json, "objetivo" e "criterio" descrevem o conjunto das tarefas; cada parte é uma tarefa.`
+      : `Você é o ORQUESTRADOR do Mutirão do Termix neste projeto NOVO. Divida o projeto INTEIRO (100%) entre: ${lista}; cada um fica com a sua parte do início ao fim${dono ? ` (o dono, ${dono.nome}, também tem uma parte, na branch ${d.branchDono})` : ''}.${d.entrega && d.entrega.estrutura ? ' A estrutura do projeto enviada pelo dono está em mutirao/estrutura.md: leia-a primeiro e cubra tudo o que ela descreve.' : ''}${d.entrega && d.entrega.objetivo ? ` Objetivo do projeto: ${d.entrega.objetivo}.` : ''}${d.entrega && d.entrega.criterio ? ` Critério de pronto do projeto: ${d.entrega.criterio}.` : ''}`;
+    return `${intro} Leia só o necessário (CLAUDE.md, README, docs e a estrutura de pastas; sem ler o código inteiro). Grave, sem escrever nada fora da pasta mutirao/ do projeto: 1) mutirao/divisao.json = {"branchDono":"${d.branchDono}","objetivo":"objetivo do projeto inteiro, até 300 caracteres","criterio":"critério de pronto do projeto inteiro","participantes":[{"nome":"...","branch":"..."}],"partes":[{"branch":"...","titulo":"...","objetivo":"até 300 caracteres","criterio":"como saber que a parte acabou","arquivos":["arquivos ou pastas, relativos à raiz"]}]}, uma parte por participante, SEM nenhum arquivo ou pasta em comum entre as partes (uma pasta conta como tudo dentro dela; o Termix confere e recusa); 2) mutirao/partes/<branch>.md de cada um, com as 9 seções preenchidas: Objetivo, Público e usuários, Funcionalidades, Fora do escopo (inclua os arquivos das outras partes), Telas e fluxos, Dados e regras de negócio, Integrações e acessos, Tecnologia, Critério de pronto. Não altere o código nem este PEDIDO.md, não faça commit nem push: quem publica é o Termix. Ao terminar, responda apenas DIVISÃO GRAVADA e um resumo de até 3 linhas.`;
   }
 
   // Conferência do Termix (zero token): formato, uma parte por participante, as 9 seções e nenhum arquivo em comum.
@@ -178,7 +182,7 @@ function create(h) {
       if (!sw.ok) return { ok: false, motivo: `O Termix não conseguiu ir para a branch "${br}" sem descartar nada (${(sw.err || '').split('\n')[0].slice(0, 200)}). Guarde as mudanças e tente de novo.` };
     }
     if (headOf(pasta) !== br) return { ok: false, motivo: `O projeto não está na branch "${br}".` };
-    const SPEC = ['mutirao/divisao.json', 'mutirao/partes']; // o PEDIDO.md fica fora do commit
+    const SPEC = ['mutirao/divisao.json', 'mutirao/partes', ...(exists(path.join(pasta, 'mutirao', 'estrutura.md')) ? ['mutirao/estrutura.md'] : [])]; // o PEDIDO.md fica fora do commit; estrutura.md = a do dono (DEV2-023)
     const add = gitRun(pasta, ['add', '--', ...SPEC]);
     if (!add.ok) return { ok: false, motivo: `git add falhou: ${(add.err || '').slice(0, 200)}` };
     const pend = gitRun(pasta, ['diff', '--cached', '--name-only', '--', ...SPEC]);
@@ -280,11 +284,12 @@ function create(h) {
       const d = ler(id).dono;
       if (!d || !d.projeto) return null;
       const ct = d.contador;
-      return { id, publicado: !!d.publicado, k: ct ? ct.k : 0, n: ct ? ct.n : (d.participantes || []).length, contado: !!ct, fase: faseDe(d) };
+      return { id, modo: d.modo || 'projeto', publicado: !!d.publicado, k: ct ? ct.k : 0, n: ct ? ct.n : (d.participantes || []).length, contado: !!ct, ent: ct ? ct.lista.filter((x) => x.entregue).map((x) => x.branch) : [], nomes: Object.fromEntries((d.participantes || []).map((p) => [p.branch, p.nome])), fase: faseDe(d) };
     }).filter(Boolean);
   }
   // soProjeto: só registra o projeto (para abrir o chat antes de definir os participantes)
-  function iniciar(id, projeto, participantes, soProjeto) {
+  // opts (DEV2-023): { modo: 'projeto' (a: projeto novo, 100% dividido) | 'tarefa' (b: uma tarefa por sócio), entrega: { objetivo, criterio, estrutura (.md) } }
+  function iniciar(id, projeto, participantes, soProjeto, opts) {
     if (!validId(id) || !projeto || !projeto.pasta) return { ok: false, motivo: 'Projeto inválido.' };
     const pp = papel(projeto.pasta);
     if (!pp.dono) return { ok: false, motivo: pp.motivo || 'Só o dono do projeto usa o Mutirão.' };
@@ -293,12 +298,25 @@ function create(h) {
     const lista = (Array.isArray(participantes) ? participantes : []).map((p) => ({ nome: String((p && p.nome) || '').trim().slice(0, 60), branch: String((p && p.branch) || '').trim() })).filter((p) => p.nome || p.branch);
     const prob = [];
     if (!lista.length) prob.push('Informe pelo menos um participante.');
-    lista.forEach((p, i) => { if (!p.nome) prob.push(`Participante ${i + 1}: falta o nome.`); if (!validBranch(p.branch)) prob.push(`Participante ${i + 1}: branch "${p.branch}" inválida (ex.: dev2; main/master não vale).`); else if (p.branch === pp.branchDono) prob.push(`Participante ${i + 1}: a branch ${p.branch} é a do dono.`); });
+    lista.forEach((p, i) => { if (!p.nome) prob.push(`Participante ${i + 1}: falta o nome.`); if (!validBranch(p.branch)) prob.push(`Participante ${i + 1}: branch "${p.branch}" inválida (ex.: dev2; main/master não vale).`); /* DEV2-023: o dono pode ser participante, com a branch dele */ });
     const bs = lista.map((p) => p.branch);
     if (new Set(bs).size !== bs.length) prob.push('Duas pessoas com a mesma branch.');
+    const o = opts && typeof opts === 'object' ? opts : {};
+    const modo = o.modo === 'tarefa' || o.modo === 'projeto' ? o.modo : null;
+    let entrega = null;
+    if (o.entrega && typeof o.entrega === 'object') {
+      entrega = { objetivo: String(o.entrega.objetivo || '').trim().slice(0, 300), criterio: String(o.entrega.criterio || '').trim().slice(0, 2000), estrutura: '' };
+      const ef = String(o.entrega.estrutura || '');
+      if (ef) {
+        const tx = readText(ef), est = tx == null ? null : checkStructure(tx);
+        if (!est) prob.push('O .md da estrutura do projeto não foi encontrado.');
+        else if (!est.ok) prob.push(`O .md da estrutura do projeto: ${[est.missing.length && `faltam ${est.missing.join(', ')}`, est.empty.length && `sem conteúdo: ${est.empty.join(', ')}`].filter(Boolean).join('; ')}.`);
+        else { const dst = path.join(projeto.pasta, 'mutirao', 'estrutura.md'); fs.mkdirSync(path.dirname(dst), { recursive: true }); if (path.resolve(ef) !== path.resolve(dst)) fs.copyFileSync(ef, dst); entrega.estrutura = 'mutirao/estrutura.md'; }
+      }
+    }
     if (prob.length) return { ok: false, problemas: prob };
     const cur = ler(id).dono || {};
-    const d = grava(id, 'dono', { ...cur, versao: 1, projeto: { id, nome: String(projeto.nome || '').slice(0, 120), pasta: projeto.pasta }, branchDono: pp.branchDono, participantes: lista, fase: cur.fase === 'publicada' ? 'publicada' : (cur.fase || 'divisao'), iniciado: cur.iniciado || new Date().toISOString() });
+    const d = grava(id, 'dono', { ...cur, versao: 1, projeto: { id, nome: String(projeto.nome || '').slice(0, 120), pasta: projeto.pasta }, branchDono: pp.branchDono, participantes: lista, modo: modo || cur.modo || 'projeto', ...(entrega ? { entrega } : {}), fase: cur.fase === 'publicada' ? 'publicada' : (cur.fase || 'divisao'), iniciado: cur.iniciado || new Date().toISOString() });
     return { ok: true, dono: d };
   }
   function setAba(id, tabId) { const d = ler(id).dono; if (!d || typeof tabId !== 'string') return false; grava(id, 'dono', { ...d, orq: tabId, abas: [...new Set([...(d.abas || []), tabId])].slice(-20) }); return true; }
