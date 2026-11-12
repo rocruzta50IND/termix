@@ -24,6 +24,18 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 
 ---
 
+## DEV2-023 — Mutirão nativo: "Novo mutirão" cria o Mutirão e a pasta "Mutirão" monitora
+
+- **Status:** EM ANDAMENTO (checkpoint)
+- **Data:** 2026-11-12
+- **Pedido:** (orquestrador termix-orq-ec, autorizado pelo Ygor e pelo Rodrigo) a página "Novo mutirão" vira a criação do Mutirão (a: projeto novo; b: projeto ativo), a pasta "Mutirão" lista os mutirões com o status de entrega e abre o painel (monitoramento), sai o botão "Mutirão" do cabeçalho, o Workflow antigo deixa de ser criado e os existentes continuam abrindo. Sem mudar o layout. **Correção do Ygor (mesmo dia):** (a) o dono sobe a estrutura do projeto (como na entrega do Vibe) e o projeto inteiro (100%) é dividido; (b) projeto em andamento: NÃO é dividir 100%, é uma tarefa por sócio (o orquestrador ajuda a escrever com o resultado esperado e confere arquivos em comum); o dono continua na branch dele e as entregas chegam de forma nativa (status na pasta e aviso no sino); o dono pode se incluir como participante (no b é o normal), com a parte separada das outras.
+- **Feito até agora (commit 6be7fe1):**
+  - Processo principal (`src/vibe/mutirao.js`): fase do mutirão (Dividindo, Aguardando entregas k/N, Todas as entregas, Juntando, Conflitos, Planejando, Executando, Concluído) em `mutEstado`; canais novos `mutPapel` (quem pode, pela pasta) e `mutLista` (resumo para a pasta, sem git).
+  - Núcleo (`app.js`): "Novo mutirão" desenha a tela do módulo (`window.TermixMut.pageHTML`); `npSubmit` dividido em `npResolve` (criar, usar existente, clonar) reaproveitado pelo Mutirão; pasta "Mutirão" lista os mutirões (com k/N) e os Workflows antigos; clique abre o projeto com o painel.
+  - Módulo (`vibe.js`): tela de criação (dois caminhos, participantes, regra do dono), painel com a fase, saída do botão do cabeçalho; o painel não fecha com a chave desligada. CSS: uma linha para o k/N da pasta.
+  - Testes: dep16 68/68, rec15 35/36 (falha conhecida), pol14 55/55, trava13 113/113, mod5 31/31, mod6 41/41, mod7 23/23, mod9 16/16, tar17 33/33; novo `t/mut23.js` 50/50; `run22.js` ajustado (cabeçalho só com "Vibe Coding"); `run23.js` (CDP) escrito.
+- **Próximo passo:** aplicar a correção do Ygor: modo do mutirão (`projeto` no a, `tarefa` no b) no registro do dono e no pedido ao orquestrador; no (a) a estrutura .md do projeto na tela de criação; dono como participante (aceitar a branch do dono); aviso no sino quando chega entrega (contagem periódica sem IA); ajustar mut23/mod5/run23; rodar run7/15/16/17/22/23; docs (VIBE_MUTIRAO, DECISOES, DESIGN, CHANGELOG_DEV2, HANDOFF_DEV2); reporte ao termix-orq-ec.
+
 ## DEV2-022 — Sincronizar a dev2 com a dev1 (0.6.4) e conferir o módulo depois da renomeação
 
 - **Status:** CONCLUÍDA NA DEV2 (EXPERIMENTO; aguardando o orquestrador)
