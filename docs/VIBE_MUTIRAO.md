@@ -262,6 +262,41 @@ Abaixo do contador, um quadro "Implementação automática" com as fases **Junta
 
 **Modo de teste:** `vibeTest.mut.auto({ maxTarefas, executar })` (`maxTarefas` vai para o pedido do plano; `executar: false` para em "Plano pronto"), `vibeTest.mut.verVibe()` e `vibeTest.mut.autoPush()`.
 
+## Mutirão nativo (DEV2-023)
+
+Pedido do orquestrador (Ygor e Rodrigo, 2026-11-12), com a correção do Ygor no mesmo dia. **Para que serve:** a empresa recebe um projeto urgente; um sócio fica responsável (o **dono**) e os outros ajudam com partes que não se sobrepõem.
+
+### Onde fica
+
+- **"Novo mutirão"** (barra lateral; página interna `Novo workflow`) é a tela de criação do Mutirão. O **Workflow antigo deixa de ser criado**; os projetos de Workflow que já existem continuam abrindo e funcionando como antes (nada é migrado nem apagado).
+- **Pasta "Mutirão"** da barra lateral: lista os **mutirões** (projetos com o Mutirão do dono, que continuam também em "Projetos") com as entregas **k/N** ao lado do nome, e depois os Workflows antigos, como antes. Clicar num mutirão abre o projeto com o **painel do Mutirão** (o monitoramento). A dica do nome mostra a fase.
+- O botão **"Mutirão" saiu do cabeçalho**. O "Vibe Coding" do cabeçalho continua igual, e o aviso "Sua parte do Mutirão" do sócio também.
+- **Chave experimental desligada:** a tela "Novo mutirão", a pasta e o painel funcionam do mesmo jeito (o Mutirão agora é nativo). Só o lado do sócio (aviso da parte e o Vibe Coding preenchido) depende da chave, porque usa o Vibe Coding, que continua experimental. *Pergunta ao Ygor.*
+
+### Dois caminhos
+
+- **(a) Projeto novo:** nome e pasta com as opções do "Novo projeto" (criar pasta, usar existente, clonar do GitHub), mais a entrega do dono: **objetivo**, **.md da estrutura do projeto** (o mesmo da entrega do Vibe, conferido com as 9 seções; obrigatório) e **critério de pronto**. O Termix copia o .md para `mutirao/estrutura.md` (vai junto na publicação) e pede ao orquestrador que divida o **projeto inteiro (100%)**: cada sócio fica com a sua parte do início ao fim.
+- **(b) Projeto em andamento** (um projeto ativo do Termix): **não é dividir 100%**. O dono define **uma tarefa por participante**; o orquestrador ajuda a escrever cada uma com o resultado esperado, e o Termix confere os arquivos em comum. O dono continua trabalhando na branch dele enquanto espera as entregas.
+- Nos dois, o **dono pode se incluir como participante** com a branch dele (no b é o normal). A parte ou tarefa do dono também não pode ter arquivo em comum com as outras (a conferência de sempre).
+- A tarefa do (b) usa o mesmo formato da parte (`mutirao/partes/<branch>.md`, 9 seções focadas na tarefa), para o lado do sócio continuar igual (aviso, Vibe preenchido, entrega). *Pendência: abrir o Vibe de tarefa (DEV2-017) para o sócio no caminho (b).*
+- Quem pode: só o dono (com o fluxo, o DEV1; sem o fluxo, quem abre, desde que haja remoto). A tela confere pela pasta antes de criar (projeto ativo e "Usar pasta existente") e mostra a explicação a quem não é dono, com o botão desligado. "Criar pasta nova" nasce sem git: a tela avisa que é preciso git e origin antes de publicar.
+- "Criar mutirão" cria (a) ou escolhe (b) o projeto, registra o Mutirão do dono com o **modo** (`projeto` ou `tarefa`) e abre o projeto com o painel, que segue o fluxo de sempre: chat com o orquestrador, "Gerar divisão" (ou "Gerar tarefas"), conferência, publicação, entregas e implementação automática.
+
+### Monitoramento
+
+- **Fase** (no painel e na dica da pasta), lida do `mutirao.json` sem git nem IA: Dividindo → Aguardando entregas (k/N) → Todas as entregas (N/N) → Juntando entregas → Conflitos: X → Planejando → Executando → Concluído.
+- **Status de cada responsável:** nome, branch, entregou ou não e quando (o contador da DEV2-005, `git fetch` + `git show`, zero token).
+- **Entregas chegam de forma nativa:** com o app aberto, o Termix confere a cada 5 minutos (e 20 s depois de abrir) os mutirões publicados que ainda não têm todas as entregas; o que chegou vira **aviso no sino** ("Ana (dev2) entregou a tarefa: 1/2"; na última, "Todas as entregas chegaram: a implementação automática está liberada no painel") e atualiza o k/N da pasta. O "Atualizar" do painel faz o mesmo na hora.
+- Com N/N, o painel mostra **"Implementação automática"** (a junção da DEV2-006, igual). A entrega do próprio dono entra na junção como "já estava integrada".
+
+### Mudanças no núcleo (alto nível)
+
+- `app.js`: a página "Novo mutirão" pede o desenho ao Mutirão; a escolha de pasta do "Novo projeto" virou uma função reaproveitável (`npResolve`); a pasta "Mutirão" da barra lateral lista também os mutirões, com o k/N; o clique num mutirão abre o projeto com o painel. Sem classes novas além de uma linha de CSS para o k/N (mesmo estilo da contagem das pastas).
+
+**Canais novos:** `vibe:mutPapel` (quem pode, pela pasta), `vibe:mutLista` (resumo da pasta). `mutIniciar` aceita `{ modo, entrega }`; `mutEstado` devolve a fase.
+
+**Modo de teste:** `vibeTest.novo.state()`, `criar()`, `estrutura(caminho)`, `vigiar()`, `status()`, `refresh()`.
+
 ## Pedido em arquivo (padrão do Vibe e do Mutirão, DEV2-006)
 
 No teste da DEV2-005, um pedido longo digitado na aba chegou cortado. Desde a DEV2-006, **todo pedido do Termix aos agentes** (planejamento, fechar o plano, Dev, refação e revisão) é gravado em `vibe\<id>\pedidos\<nome>.md` (`plano`, `fechar`, `Tk-dev`, `Tk-refazer`, `Tk-revisao`) e o Termix digita só uma linha: **"Vibe do Termix: leia e siga `<caminho>`"** (menos de 200 caracteres). O Mutirão já fazia assim (`mutirao/PEDIDO.md`). Menos risco de corte e menos texto no terminal. Um ciclo novo arquiva a pasta `pedidos` no histórico com o resto.
