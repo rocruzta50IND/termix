@@ -246,13 +246,12 @@
     const feitos = [];
     const convs = (await call('retConversas', [p.path])) || [];
     const usadas = new Set(p.tabs.map((t) => t.sessionId));
-    let k = 0;
     for (const [chave, nome] of [['orq', 'Orquestrador'], ['dev', 'Dev']]) {
       const ach = p.tabs.filter((t) => !t.archived && t.kind !== 'chat' && RX[chave].test(String(t.name)) && !abaDoCiclo(p, t) && t.sessionId && t.started);
       let t = ach[0];
       if (t && t.open && alive(t.id)) { feitos.push(`${nome}: já aberta`); continue; }
       if (!t) {
-        const c = convs.filter((x) => !usadas.has(x.id))[k++];
+        const c = convs.filter((x) => !usadas.has(x.id))[0];
         if (!c) { feitos.push(`${nome}: sem conversa para retomar`); continue; }
         t = { id: crypto.randomUUID(), sessionId: c.id, agent: 'claude', name: nome, color: COR[chave], perm: 'n', started: true, open: true, live: false, archived: false };
         p.tabs.push(t); usadas.add(c.id);
