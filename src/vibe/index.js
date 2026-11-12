@@ -356,7 +356,7 @@ function create(deps = {}) {
     draftSet(id, d) {
       if (!validId(id) || !d || typeof d !== 'object') return false;
       const old = readJson(path.join(dirOf(id), 'rascunho.json')) || {};
-      writeJson(path.join(dirOf(id), 'rascunho.json'), { ...d, ...(old.mutirao && !d.mutirao ? { mutirao: old.mutirao } : {}), projectId: id, salvo: new Date().toISOString() });
+      writeJson(path.join(dirOf(id), 'rascunho.json'), { ...d, ...(old.mutirao && !d.mutirao ? { mutirao: old.mutirao } : {}), ...(old.retomar && !d.retomar ? { retomar: old.retomar } : {}), projectId: id, salvo: new Date().toISOString() });
       return true;
     },
 
@@ -614,6 +614,7 @@ function create(deps = {}) {
     for (const [k, fn] of Object.entries(RET)) on(k, fn, null); // DEV2-026: canais vibe:ret*
     for (const [k, fn] of Object.entries(DELEG.api)) on(k, fn, null); // DEV2-025: Delegar tarefa (canais vibe:deleg*)
   }
+  api.avisoFechar = () => RET.retLista(); // DEV2-026: ciclos rodando, lidos pelo main.js ao fechar o app
   Object.assign(api, POL.api, REC.api, DEP.api, TAR.api, DELEG.api); // DEV2-014/015: também acessível pelos testes sem ipc
   api.spawnSettings = spawnSettings; // usado pelo main.js (não é canal ipc)
   return api;

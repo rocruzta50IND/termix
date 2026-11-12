@@ -1322,6 +1322,7 @@
     return `<div class="vibe-form">
       <p>Descreva a tarefa. O Termix monta a entrega com um resumo do projeto e cria (ou reaproveita) o orquestrador e o dev, que trabalham sozinhos até o fim da tarefa. <a href="#" class="vx-link" data-vmodo="">Trocar o tipo</a></p>
       <p class="vibe-tip">Cite os arquivos ou telas: o orquestrador lê só o necessário e gasta menos tokens.</p>
+      ${V.ret ? `<div class="vibe-note" data-vret>${esc(V.ret)}</div>` : ''}
       ${V.mut ? `<div class="vibe-note">Tarefa pré-preenchida pela sua <b>tarefa do Mutirão</b> (branch ${esc(V.mut)}). Confira e inicie. Os agentes trabalham só na branch ${esc(V.mut)} e, ao concluir, o Termix envia a entrega.</div>` : ''}
       <div class="vf"><label for="vfProj">1. Projeto <em>obrigatório</em></label>
         <select class="inp" id="vfProj">${ps.length ? '' : '<option value="">Nenhum projeto no Termix. Crie um projeto antes.</option>'}${ps.length ? `<option value="" ${V.id ? '' : 'selected'}>Escolha o projeto…</option>` : ''}${ps.map((p) => `<option value="${esc(p.id)}" ${p.id === V.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
@@ -1528,6 +1529,7 @@
       if (!V.modo && cycleActive(V.id)) V.modo = e && e.modo === 'tarefa' ? 'tarefa' : 'projeto';
       if (e && e.modo === 'tarefa') V.entrega = null; // a entrega sintética da tarefa não pré-preenche o formulário do projeto novo
       V.mut = d && d.mutirao ? String(d.mutirao) : '';
+      V.ret = d && d.retomar ? String(d.retomar) : ''; // DEV2-026: nota do "Retomar projeto"
       const src = d || (V.entrega ? { objetivo: e.objetivo, criterio: e.criterioDePronto, proibido: e.naoPodem, acessos: (e.acessos || []).join('\n'), nadaFornecer: e.nadaAFornecer, fluxo: e.origem && e.origem.fluxo, estrutura: e.origem && e.origem.estrutura } : {});
       const base = EMPTY();
       for (const k of Object.keys(base)) if (src[k] != null) base[k] = typeof base[k] === 'boolean' ? !!src[k] : String(src[k]);

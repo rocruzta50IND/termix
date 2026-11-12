@@ -177,6 +177,18 @@ function createWindow() {
   win.on('closed', () => web.destroy());
 
   win.on('close', (e) => {
+    // DEV2-026: ciclo do Vibe/Mutirão rodando: avisa quais projetos e pergunta se quer fechar e interromper mesmo assim
+    let ciclos = [];
+    if (!quitting) { try { ciclos = (vibe && vibe.avisoFechar && vibe.avisoFechar()) || []; } catch (err) { logError(err); } }
+    if (ciclos.length) {
+      e.preventDefault();
+      dialog.showMessageBox(win, {
+        type: 'warning', buttons: ['Fechar e interromper', 'Cancelar'], defaultId: 1, cancelId: 1, title: 'Termix',
+        message: `Há ${ciclos.length} projeto(s) com ciclo do Vibe Coding ou Mutirão rodando.`,
+        detail: `${ciclos.map((c) => `• ${c.nome}${c.auto ? ' (Mutirão)' : ''}`).join('\n')}\n\nFechar o Termix interrompe esses ciclos. Ao abrir de novo, o pop-up do projeto traz "Continuar ciclo" como botão principal.`,
+      }).then((r) => { if (r.response === 0) { quitting = true; killAll(); win.close(); } else wantRelaunch = false; });
+      return;
+    }
     if (quitting || summary.active === 0) { killAll(); return; }
     e.preventDefault();
     const w = summary.working ? ` (${summary.working} trabalhando agora)` : '';

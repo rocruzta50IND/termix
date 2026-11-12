@@ -62,13 +62,30 @@
     return !!s;
   }
   // Orquestrador com o pedido; dev só abre (ou /clear) e fica esperando.
-  async function orqEDev(p, arq) {
+  const TEXTO_VIBE = 'Com as tarefas estruturadas e o fluxo configurado, o Vibe Coding leva o projeto sozinho até a próxima entrega ou até a conclusão.';
+  // Depois do resumo do orquestrador: o Vibe de tarefa abre com a pendência principal preenchida e esta nota. Sem pop-up por cima (se
+  // houver outro aberto, não abre). Quem decide iniciar é o usuário.
+  async function vibePre(p) {
+    try {
+      if (document.querySelector('#modalRoot .dlg, #modalRoot .modal')) return false;
+      const pend = await call('retPendencia', { pasta: p.path });
+      const old = (await call('draftGet', p.id)) || {};
+      const ot = old.tarefa || {};
+      const oQue = pend && (pend.titulo || pend.proximo) ? `${pend.titulo || 'Seguir o próximo passo do estado'}${pend.proximo ? `\n\nPróximo passo (docs/ESTADO.md ou tarefas): ${pend.proximo}` : ''}` : (ot.oQue || '');
+      await call('draftSet', p.id, { ...old, tarefa: { oQue, criterio: ot.criterio || '', naoPode: ot.naoPode || '', arquivos: ot.arquivos || '' }, retomar: TEXTO_VIBE });
+      if (ponte().openTarefa) await ponte().openTarefa(p.id);
+      return true;
+    } catch (e) { console.error('retomar: vibePre', e); return false; }
+  }
+  async function orqEDev(p, arq, opts = {}) {
     const perm = (p.tabs.find((t) => t.open && t.perm) || {}).perm || 'n';
     const dev = abaPronta(p, 'dev', 'Dev', perm); // em paralelo: o dev não recebe pedido
     const orq = await abaPronta(p, 'orq', 'Orquestrador', perm);
     if (orq) await pedidoNaAba(p, orq.tab, arq);
     await dev;
     UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
+    // o resumo do orquestrador termina com o Stop da aba: aí o Vibe de tarefa abre pré-preenchido (em segundo plano, sem travar quem chamou)
+    if (orq && opts.vibe !== false) ORG().waitHook(orq.tab.id, (d) => d.event === 'Stop', 20 * 60000).then((d) => { if (d) return vibePre(p); return null; });
     return orq;
   }
 
@@ -165,7 +182,110 @@
     } catch (e) { console.error('retomar: aoAdicionar', e); return false; }
   }
 
+  /* ---------- pop-up "Retomar projeto" (1ª abertura de cada projeto depois de iniciar o Termix) ---------- */
+  const modoChat = (p) => { const ab = p.tabs.filter((t) => t.open && !t.archived); return ab.length > 0 && ab.every((t) => t.kind === 'chat'); }; // 5.6: bolhas, sem pop-up
+  const ehInterno = (p) => p.kind === 'workflow' || /[\\/](organizador|vibe|retomar)[\\/]/i.test(String(p.path || ''));
+
+  async function dadosPopup(p) {
+    const d = await call('retPopup', { pasta: p.path });
+    if (!d) return null;
+    const ciclo = ponte().cicloDe ? await ponte().cicloDe(p.id) : null;
+    d.ciclo = ciclo && !ciclo.concluido ? ciclo : null; // ciclo parado (ao reabrir o app, vira "Pausado"): "Continuar ciclo"
+    d.abas = p.tabs.filter((t) => !t.archived).map((t) => t.name).slice(0, 6);
+    return d;
+  }
+  const vazioPopup = (d) => !d.sessao && !d.andamento.length && !d.commit && !d.abas.length && !d.ciclo; // projeto novo, nada a retomar
+
+  function popupHtml(p, d, convs, sel, teto) {
+    const l = [];
+    l.push(['Última sessão', d.sessao ? `${quando(d.sessao.mtime)} · ${esc((d.sessao.titulo || '').slice(0, 80))}${d.abas.length ? ` · abas: ${d.abas.map(esc).join(', ')}` : ''}` : (d.abas.length ? `abas: ${d.abas.map(esc).join(', ')}` : 'sem conversas anteriores')]);
+    const tarefa = d.andamento[0] || d.checkpoint || d.commit;
+    l.push(['Última tarefa', tarefa ? `${esc(String(tarefa).slice(0, 140))}${d.proximo ? `<br><span class="meta">Próximo passo:</span> ${esc(d.proximo.slice(0, 160))}` : ''}` : '—']);
+    if (d.branch) l.push(['Branch', esc(d.branch)]);
+    if (d.ciclo) l.push(['Ciclo do Vibe', `parado na fase "${esc(d.ciclo.fase)}"${d.ciclo.auto ? ' (Mutirão)' : ''}`]);
+    const sem = !d.estrutura.completa;
+    return `<div class="retpop orgbody"><dl>${l.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+      ${sem ? `<div class="orgav top"><div>⚠ Este projeto ainda não tem estrutura legível (falta ${esc(d.estrutura.falta.join(', '))}). Sem ela, o orquestrador não retoma barato: o caminho é “Inicializar e criar estrutura”.</div></div><div id="retLista">${listaHtml(convs, sel, teto)}</div>` : ''}
+      <p class="retaviso">“Retomar últimas conversas” reprocessa o histórico inteiro e gasta bem mais tokens. O padrão é contexto limpo com o estado em arquivo (orquestrador + dev; o dev aberto sem tarefa não gasta token).</p>
+      ${d.ciclo ? '<p class="meta">“Continuar ciclo” segue o ciclo do Vibe/Mutirão de onde parou; o /clear nunca toca nas abas do ciclo.</p>' : ''}</div>`;
+  }
+
+  async function abrirPopup(p, forcar) {
+    vistos.add(p.id);
+    const d = await dadosPopup(p);
+    if (!d || (!forcar && vazioPopup(d))) return null;
+    const sem = !d.estrutura.completa;
+    const convs = sem ? ((await call('retConversas', [p.path])) || []) : [];
+    const teto = (await call('retTeto')) || 5;
+    const sel = new Set(convs.slice(0, 1).map((c) => c.id));
+    const ini = [sem ? 'Inicializar e criar estrutura' : 'Inicializar orquestrador e dev', 'ini'];
+    const botoes = d.ciclo
+      ? [['Agora não', null], ['Retomar últimas conversas', 'ret'], [ini[0], ini[1]], ['Continuar ciclo', 'cont', 'pri']]
+      : [['Agora não', null], ['Retomar últimas conversas', 'ret'], [ini[0], ini[1], 'pri']];
+    const r = await modal({
+      title: `Retomar projeto: ${esc(p.name)}`,
+      body: popupHtml(p, d, convs, sel, teto),
+      buttons: botoes,
+      onOpen: (root) => { root.querySelector('.dlg').classList.add('orgdlg'); ligaLista(root, convs, sel, teto); },
+    });
+    if (r.value === 'cont') { try { UI.cur = { p: p.id, page: 'Terminais' }; renderAll(); await ponte().continuar(p.id); } catch (e) { console.error('retomar: continuar', e); } return 'cont'; }
+    if (r.value === 'ini') { await inicializar(p, d, convs.filter((c) => sel.has(c.id)).map((c) => ({ id: c.id, pasta: c.pasta }))); return 'ini'; }
+    if (r.value === 'ret') { await retomarUltimas(p); return 'ret'; }
+    return 'nao';
+  }
+
+  // (a) reaproveita as abas com /clear e cria as que faltam; o orquestrador recebe o pedido, o dev só fica esperando.
+  async function inicializar(p, d, convs) {
+    if (!d.estrutura.completa) return criarEstrutura(p, { pastas: [p.path], convs });
+    const ped = await call('retPedidoRetomar', { id: p.id, nome: p.name, pasta: p.path });
+    await orqEDev(p, ped.arquivo);
+    return true;
+  }
+  // (b) reabre a última conversa do orquestrador e a do dev (as abas do Termix com esse nome; sem elas, as duas conversas mais recentes da pasta).
+  async function retomarUltimas(p) {
+    const feitos = [];
+    const convs = (await call('retConversas', [p.path])) || [];
+    const usadas = new Set(p.tabs.map((t) => t.sessionId));
+    let k = 0;
+    for (const [chave, nome] of [['orq', 'Orquestrador'], ['dev', 'Dev']]) {
+      const ach = p.tabs.filter((t) => !t.archived && t.kind !== 'chat' && RX[chave].test(String(t.name)) && !abaDoCiclo(p, t) && t.sessionId && t.started);
+      let t = ach[0];
+      if (t && t.open && alive(t.id)) { feitos.push(`${nome}: já aberta`); continue; }
+      if (!t) {
+        const c = convs.filter((x) => !usadas.has(x.id))[k++];
+        if (!c) { feitos.push(`${nome}: sem conversa para retomar`); continue; }
+        t = { id: crypto.randomUUID(), sessionId: c.id, agent: 'claude', name: nome, color: COR[chave], perm: 'n', started: true, open: true, live: false, archived: false };
+        p.tabs.push(t); usadas.add(c.id);
+      } else { t.open = true; t.archived = false; }
+      p.activeTab = t.id; save(); renderAll();
+      await launch(p, t, 'resume');
+      feitos.push(`${nome}: conversa retomada`);
+    }
+    UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
+    addEvent({ who: `Retomar · ${p.name}`, msg: `${feitos.join(' · ')}. Retomar reprocessa o histórico inteiro e gasta mais tokens.` });
+    return feitos;
+  }
+
+  // 1ª abertura de cada projeto depois de iniciar o Termix: observa o projeto aberto (sem mexer no núcleo). Trocar de projeto e voltar não abre de novo.
+  let ocupado = false;
+  async function vigia() {
+    if (ocupado || window.__retSemVigia) return;
+    try {
+      const id = UI.cur && UI.cur.p;
+      if (!id || vistos.has(id)) return;
+      const p = S.projects.find((x) => x.id === id);
+      if (!p || p.archived) return;
+      if (document.querySelector('#modalRoot .dlg, #modalRoot .modal')) return; // há outro pop-up aberto: tenta no próximo ciclo
+      if (ehInterno(p) || modoChat(p)) { vistos.add(id); return; }
+      ocupado = true;
+      await abrirPopup(p, false);
+    } catch (e) { console.error('retomar: vigia', e); } finally { ocupado = false; }
+  }
+  setInterval(vigia, 1500);
+  // Informa ao processo principal quais ciclos do Vibe/Mutirão estão rodando (aviso ao fechar o app).
+  setInterval(() => { try { call('retAtivos', ponte().cicloAtivos ? ponte().cicloAtivos() : []); } catch { /* sem ponte */ } }, 3000);
+
   const vistos = new Set(); // projetos já oferecidos nesta execução do Termix
 
-  window.TermixRet = { aoAdicionar, criarEstrutura, coletar, orqEDev, abaPronta, listaHtml, ligaLista, vistos };
+  window.TermixRet = { vibePre, TEXTO_VIBE, aoAdicionar, criarEstrutura, coletar, orqEDev, abaPronta, listaHtml, ligaLista, vistos, abrirPopup, retomarUltimas, inicializar, dadosPopup };
 })();

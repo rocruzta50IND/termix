@@ -140,6 +140,7 @@ function create(deps = {}) {
   const writeAtomic = (f, txt) => { fs.mkdirSync(path.dirname(f), { recursive: true }); const tmp = `${f}.tmp`; fs.writeFileSync(tmp, txt); fs.renameSync(tmp, f); };
   const readJson = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } };
   const ativo = new Map(); // projeto -> { filho, cancelar }
+  let ciclos = [];
 
   // cópias (fork) criadas pela coleta: ficam fora das listas futuras
   const forksF = () => path.join(root(), 'forks.json');
@@ -204,6 +205,22 @@ function create(deps = {}) {
       };
     },
 
+    // A pendência principal para o Vibe de tarefa: a tarefa em andamento; sem ela, o primeiro item de "Pendentes". Sem IA.
+    retPendencia({ pasta } = {}) {
+      if (typeof pasta !== 'string' || !isDir(pasta)) return null;
+      const st = estruturaDe(pasta);
+      const proximo = proximoPasso(pasta, st);
+      for (const f of [st.tarefas].filter(Boolean)) {
+        const t = readTxt(path.join(pasta, f), 400 * 1024);
+        const and = ORG.andamentoDe(t);
+        if (and.length) return { titulo: and[0], proximo, origem: 'andamento', arquivo: f };
+        const m = /^#{1,3}\s*pendentes[^\n]*\n([\s\S]*?)(?=^#{1,3}\s|\s*$(?![\s\S]))/im.exec(t);
+        const it = m && /^\s*(?:[-*]\s+(?:\[[ x]\]\s*)?|#{2,4}\s+)(.+)$/m.exec(m[1]);
+        if (it) return { titulo: it[1].trim().slice(0, 200), proximo, origem: 'pendentes', arquivo: f };
+      }
+      return proximo ? { titulo: '', proximo, origem: 'estado' } : null;
+    },
+
     // Pedido do orquestrador (a): /retomar ou leitura guiada.
     retPedidoRetomar({ id, nome, pasta, avisoPendente } = {}) {
       const pid = validP(id) ? id : slug(nome);
@@ -265,6 +282,9 @@ function create(deps = {}) {
       return true;
     },
     retColetaAtivas() { return [...ativo.keys()]; },
+    // Ciclos do Vibe/Mutirão rodando, informados pela interface a cada poucos segundos (o main.js lê no fechamento do app, sem IPC).
+    retAtivos(lista) { ciclos = (Array.isArray(lista) ? lista : []).filter((x) => x && typeof x.nome === 'string').slice(0, 20).map((x) => ({ id: String(x.id || ''), nome: x.nome.slice(0, 60), auto: !!x.auto, fase: String(x.fase || '') })); return true; },
+    retLista() { return ciclos; },
   };
   return api;
 }
