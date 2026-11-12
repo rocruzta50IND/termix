@@ -208,6 +208,9 @@ function create(deps = {}) {
   // DEV2-017: Vibe de tarefa (modo rápido para projeto em andamento): entrega sintética com o resumo do projeto lido sem IA
   // e o histórico das tarefas (vibe<id>	arefas.json). src/vibe/tarefa.js
   const TAR = require('./tarefa').create({ dirOf, readJson, writeJson, validId, gitRun, headOf, branchDe: (pasta) => branchOf(pasta).nome, papelDe: POL_.papelDe, gravarEntrega });
+  // DEV2-025: Delegar tarefa (src/vibe/delegar.js). As contas (contas.js) são um MOCK até o login do Hub.
+  const CONTAS = require('./contas').create({ dir: () => root() });
+  const DELEG = require('./delegar').create({ dirOf, readJson, writeJson, gitRun, shaOf, headOf, validId, pedido: (...a) => pedido(...a), contas: CONTAS, TEST, logError });
   // Branch dos agentes deste projeto: a do dono, na implementação automática do Mutirão (DEV2-006); a da parte do Mutirão,
   // se o sócio abriu o Vibe por ela; senão, a regra de branchOf.
   const branchFor = (id, pasta) => {
@@ -607,8 +610,9 @@ function create(deps = {}) {
     for (const [k, fn] of Object.entries(TAR.api)) on(k, fn, null); // DEV2-017: Vibe de tarefa (tarefaResumo, tarefaNova, tarefaFim, tarefaHist)
     for (const [k, fn] of Object.entries(POL.api)) on(k, fn, null); // DEV2-014: política de autonomia (canais vibe:politica*)
     for (const [k, fn] of Object.entries(ORG)) on(k, fn, null); // Organizador (DEV2-010): canais vibe:org*
+    for (const [k, fn] of Object.entries(DELEG.api)) on(k, fn, null); // DEV2-025: Delegar tarefa (canais vibe:deleg*)
   }
-  Object.assign(api, POL.api, REC.api, DEP.api, TAR.api); // DEV2-014/015: também acessível pelos testes sem ipc
+  Object.assign(api, POL.api, REC.api, DEP.api, TAR.api, DELEG.api); // DEV2-014/015: também acessível pelos testes sem ipc
   api.spawnSettings = spawnSettings; // usado pelo main.js (não é canal ipc)
   return api;
 }
