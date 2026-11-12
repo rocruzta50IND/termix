@@ -6,6 +6,15 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ## 2026-11-12
 
+**DEV2-026 — "Retomar projeto", estrutura legível do projeto e coleta dos chats antigos** (DEV2, EXPERIMENTO)
+
+- Várias pastas viram **um projeto só**, com pasta principal (a de papel dev ou a com o commit mais recente; o usuário troca no mapa), um orquestrador e um dev. As outras pastas não são movidas nem apagadas.
+- Estrutura legível sem IA (guia, tarefas, estado). Ao adicionar um projeto sem estrutura, oferta "Criar estrutura do projeto": lista os chats antigos das pastas (teto 5, o mais recente marcado, custo estimado, "Copiar prompt") e coleta em segundo plano, um por vez, em somente leitura e em cópia (`claude -p --resume ... --fork-session --model sonnet --tools ""`). Um orquestrador novo consolida e grava `CLAUDE.md` (só acrescenta), `docs/TASKS.md` e `docs/ESTADO.md`, sem commit. Sem `/fluxo:init`.
+- Pop-up "Retomar projeto" uma vez por projeto a cada abertura do app: Inicializar orquestrador e dev (/clear nas abas existentes, cria as que faltam; o dev não recebe nada), Retomar últimas conversas (com o aviso de custo), Continuar ciclo, Agora não. Sem pop-up em modo chat.
+- Aviso ao fechar o app com ciclo do Vibe ou Mutirão rodando; o /clear nunca toca nas abas do ciclo. O Vibe de tarefa abre pré-preenchido depois do resumo.
+- Correção achada no teste: "Retomar últimas conversas" pulava a 2ª conversa.
+- Testes: run26 44/44 (novo), run24 reescrito 26/26, ret26 38/38, org26a 14/14 e os antigos sem regressão (rec15 35/36 conhecida). Detalhes no TASKS_DEV2. Documentação: ORGANIZADOR, DECISOES, DESIGN, HANDOFF_DEV2 (com as 3 Sugestões ao DEV1).
+
 **DEV2-025 — Botão "Delegar tarefa" e rodapé do mapa do Organizador** (DEV2)
 
 - Novo botão "Delegar tarefa" no cabeçalho, ao lado do "Vibe Coding": o responsável (DEV1, projeto com o fluxo) passa uma tarefa a uma pessoa. Quem pode: só o responsável; sem o fluxo ou sem ser o responsável o clique só explica. Contas **provisórias** (mock de 5 nomes em `src/vibe/contas.js`, escolhida em Configurações, sem PIN; o login do Hub e o PIN ficam com o Rodrigo).
