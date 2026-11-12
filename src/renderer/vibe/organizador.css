@@ -29,3 +29,8 @@ pre.orgmd{white-space:pre-wrap;font-size:12.5px;line-height:1.5;max-height:60vh;
 @media (max-width:640px){.orggrid{grid-template-columns:1fr}}
 /* DEV2-011: botão ao lado de "Criar chat" na tela Novo chat (layout da TASK-119) */
 .npage .row2.org-row2{display:flex;gap:10px;flex-wrap:wrap}
+/* DEV2-025: no mapa, só o conteúdo rola; os botões do rodapé (Cancelar, Voltar, Organizar com IA, Carregar) ficam fora dele e não cobrem o último cartão (mesmo recurso da DEV2-018). Só neste modal. */
+.dlg.orgdlg:has(.orgbody){display:flex;flex-direction:column;overflow:hidden}
+.dlg.orgdlg:has(.orgbody)>.dh{flex:none}
+.dlg.orgdlg:has(.orgbody)>.orgbody{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;margin:0 -24px;padding:0 24px 8px;scroll-padding:12px}
+.dlg.orgdlg:has(.orgbody)>.foot2{flex:none;position:static;margin:8px -24px -24px;padding:14px 24px 24px;border-top:1px solid var(--border);background:none}

@@ -1974,6 +1974,7 @@
   function openMutirao(pid, init) {
     const col = document.getElementById('col');
     if (!col) return;
+    try { window.TermixDelegar && window.TermixDelegar.close(); } catch { /* sem painel de Delegar tarefa */ } // DEV2-025: os dois painéis usam o mesmo lugar
     let id = pid || '';
     if (!id) { try { id = UI.cur && UI.cur.p && projOf(UI.cur.p) ? UI.cur.p : ''; } catch { /* sem projeto atual */ } }
     if (!id) { const ps = projects(); id = ps.length === 1 ? ps[0].id : ''; }
@@ -2296,9 +2297,16 @@
     } catch (e) { console.error('vibe: início', e); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  // DEV2-025: ponte para o painel "Delegar tarefa" (src/renderer/vibe/delegar.js): abrir o Vibe de tarefa já preenchido e fechar o painel do Mutirão
+  window.TermixVibeBridge = {
+    openTarefa: (id) => { try { S.settings.vibe = { ...(S.settings.vibe || {}), last: id }; save(); } catch { /* sem preferência */ } return openVibe('tarefa'); },
+    closeMut: () => { if (MP) closeMutirao(); },
+  };
   // DEV2-010: o Organizador (importar projeto com várias pastas) vem em arquivos próprios, carregados daqui (o index.html não muda)
   try {
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'vibe/organizador.css'; document.head.appendChild(l);
     const s = document.createElement('script'); s.src = 'vibe/organizador.js'; document.body.appendChild(s);
+    const l2 = document.createElement('link'); l2.rel = 'stylesheet'; l2.href = 'vibe/delegar.css'; document.head.appendChild(l2); // DEV2-025
+    const s2 = document.createElement('script'); s2.src = 'vibe/delegar.js'; document.body.appendChild(s2);
   } catch (e) { console.error('vibe: organizador', e); }
 })();

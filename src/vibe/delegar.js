@@ -308,7 +308,7 @@ function create(h) {
     const r = { conta, mock: true, pedidos: [] };
     if (!conta || !pasta || !fs.existsSync(pasta)) return r;
     const pp = lerPapel(pasta);
-    if (!pp.git || !pp.remoto) return r;
+    if (!pp.git || !pp.remoto || !pp.fluxo) return r; // só projetos com o fluxo (evita buscar o remoto de todo projeto)
     gitRun(pasta, ['fetch', '--quiet', 'origin', 'dev1'], 60000);
     const j = parseJson(showRef(pasta, 'refs/remotes/origin/dev1', IDX_REL) || '');
     for (const p of j && Array.isArray(j.pedidos) ? j.pedidos : []) {

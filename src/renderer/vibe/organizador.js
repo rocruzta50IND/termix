@@ -159,7 +159,7 @@
     const an = st.analise;
     const r = await modal({
       title: `Mapa do projeto: ${esc(st.nome)}`,
-      body: `<p class="meta">Confira o papel de cada pasta e a aba que será criada. Cada aba nova recebe um pedido curto para ler só o essencial (tarefas em andamento, handoff, CLAUDE.md e o último checkpoint) e dizer onde paramos. Retomar uma conversa antiga é opcional.${st.rows.some((x) => x.rec) ? ' O Termix deixou marcadas, como <b>recomendação</b>, as conversas mais recentes de orquestrador e de dev: troque ou desmarque à vontade.' : ''}</p>
+      body: `<div class="orgbody"><p class="meta">Confira o papel de cada pasta e a aba que será criada. Cada aba nova recebe um pedido curto para ler só o essencial (tarefas em andamento, handoff, CLAUDE.md e o último checkpoint) e dizer onde paramos. Retomar uma conversa antiga é opcional.${st.rows.some((x) => x.rec) ? ' O Termix deixou marcadas, como <b>recomendação</b>, as conversas mais recentes de orquestrador e de dev: troque ou desmarque à vontade.' : ''}</p>
         ${an.avisos.length || an.ambiguo ? `<div class="orgav top">${an.avisos.map((x) => `<div>⚠ ${esc(x)}</div>`).join('')}${an.ambiguo ? '<div>A análise ficou ambígua em algum ponto: ajuste o papel à mão ou use “Organizar com IA” (opcional).</div>' : ''}</div>` : ''}
         <div class="f"><label>Nome do projeto</label><input class="inp" type="text" data-f="nome" maxlength="60" value="${esc(st.nome)}"></div>
         <div id="orgRows">${st.rows.map(rowHtml).join('')}</div>
@@ -168,7 +168,7 @@
           <div>• Abas novas que leem o checkpoint gastam menos que retomar conversas longas.</div>
           <div>• Retome só conversas curtas ou quando a pasta não tiver tarefas nem handoff.</div>
           <div>• O “Organizar com IA” lê um dossiê de poucos KB montado pelo Termix, não as pastas inteiras.</div>
-          <div>• Mantenha TASKS e HANDOFF em dia: é o que faz a aba nova se localizar barato.</div></div>`,
+          <div>• Mantenha TASKS e HANDOFF em dia: é o que faz a aba nova se localizar barato.</div></div></div>`,
       buttons: [['Cancelar', null], ['Voltar', 'back'], ['Organizar com IA', 'ia', an.ambiguo ? 'orgsug' : ''], ['Carregar', 'ok', 'pri']],
       onOpen: (root) => {
         root.querySelector('.dlg').classList.add('orgdlg');
