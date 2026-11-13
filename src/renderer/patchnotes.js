@@ -15,6 +15,9 @@ const PATCH_NOTES = [
     melhorado: [
       'Ao fechar o Termix com um ciclo do Vibe Coding ou do Mutirão rodando, ele avisa e pergunta antes de interromper.',
     ],
+    corrigido: [
+      'Aberto pelo Rocruzta Hub, "Escolher pasta" e os outros seletores de arquivo agora abrem presos à janela do Hub, em vez de janelas soltas.',
+    ],
   },
   {
     v: '0.7.0',

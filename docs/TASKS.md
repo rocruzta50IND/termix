@@ -14,6 +14,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 - **Status:** EM ANDAMENTO (2026-11-12) — pedido do usuário logo depois da promoção da TASK-135: "a versão 0.7.1 tem que vir".
 - **Entra nesta versão:** TASK-135 (integração da dev2: Vibe Coding, Mutirão, Organizador, Retomar projeto, política de autonomia; botões no rail inferior). O "Delegar tarefa" segue fora da interface.
 - **Passos:** versão 0.7.1 (`package.json`, lock e `patchnotes.js`); `npm run check`; promoção dev1 → main (fast-forward); `npm run dist`; conferir o `latest.yml` (versão, tamanho, sha512) e o módulo dentro do pacote; `gh release create v0.7.1` com instalador, blockmap e `latest.yml`.
+- **Atualização (2026-11-13):** a TASK-139 (diálogos de arquivo presos ao Hub) entra nesta versão, com uma linha em "Corrigido" nas novidades.
 - **Próximo passo:** gerar o instalador e publicar o Release.
 
 ### TASK-102 — Tela "Código": explorador de arquivos, leitor e mudanças do git (estilo VS Code)
