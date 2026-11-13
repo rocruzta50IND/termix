@@ -48,6 +48,9 @@ html.embed .c-row.me .c-bub { background: var(--glass2); border-color: var(--bor
 body.sidehidden #sidereopen { display: grid; position: absolute; left: 8px; top: 6px; z-index: 6; width: 28px; height: 28px; place-items: center; border-radius: 7px; color: var(--text2); }
 body.sidehidden #sidereopen:hover { background: var(--hover); color: var(--text); }
 body.sidehidden #edge { display: none; }
+/* telas sem abas (Consumo, Conectores, Código...): sem a barra lateral não há barra de abas para abrigar o botão; uma faixa de 40px com a mesma linha das abas o deixa no canto e o conteúdo desce abaixo */
+body.sidehidden.flatpage #col::before { content: ""; flex: 0 0 40px; border-bottom: 1px solid var(--border); }
+body.sidehidden.flatpage #sidereopen { top: 5px; }
 body.sidehidden #tabsRow { padding-left: 44px; }
 /* tema claro: o campo de entrada usa --field, que o Hub define em termix.css */
 html.embed[data-hub-theme="light"] .c-in { background: var(--field); }

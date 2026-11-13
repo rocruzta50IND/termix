@@ -8,6 +8,13 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-13
 
+**TASK-140 — Embutido no Hub: faixa com o botão de reabrir a barra lateral nas telas sem abas** (DEV1)
+
+- Relato do usuário (com capturas): no Hub, com a barra lateral escondida, o botão de reabrir aparecia solto sobre o título de Consumo e afins, "feio". Pedido: ter a linha como nas telas com abas, o botão certinho no canto e o conteúdo abaixo.
+- `src/renderer/embed.css`: `body.sidehidden.flatpage #col::before` cria a faixa de 40px com borda inferior; o botão sobe para `top: 5px`. Só CSS, só no modo embutido.
+
+---
+
 **TASK-139 — Diálogos de arquivo no modo embutido ficam presos à janela do Hub** (DEV1)
 
 - Relato do usuário: "Escolher pasta" dentro do Termix pelo Hub abria janelas soltas do Windows. Causa: sem janela no `--embed`, o diálogo nascia sem dono.
