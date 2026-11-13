@@ -8,6 +8,12 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-12
 
+**Promoção dev1 → main (TASK-135)** (DEV1)
+
+- A pedido do usuário, depois de testar o app da dev1: `dev1` promovida à `main` em fast-forward, com a TASK-135 (integração da dev2: módulo Vibe Coding e Mutirão, botões no rail inferior). `npm run check` ok. **Sem versão nova:** o `package.json` segue em 0.7.0 e não houve instalador nem Release; o time só recebe o módulo na próxima versão publicada.
+
+---
+
 **TASK-135 — Integração da dev2: módulo Vibe Coding e Mutirão, com os botões no rail inferior** (DEV1; módulo desenvolvido pelo DEV2)
 
 - Entrega da dev2 aprovada pelo usuário pelo `docs/HANDOFF_DEV2.md` e integrada por merge `--no-ff` de `origin/dev2` (54 commits, DEV2-001 a 018 e 021 a 027), sem conflito. Entra o módulo isolado em `src/vibe/` e `src/renderer/vibe/` (Vibe Coding, trava em código, deploy pelo Termix, recuperação de erro, Mutirão, Organizador, "Retomar projeto", política de autonomia), com os documentos do módulo e os testes em `tools/vibe-testes/`. O histórico detalhado do módulo está em `docs/CHANGELOG_DEV2.md`.
