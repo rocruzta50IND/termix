@@ -2042,13 +2042,13 @@
     if (agora !== p) return;
     if (r && r.tem && !r.entregue && !PART_SEEN.has(`${p.id}|${r.branch}`)) {
       PART_SEEN.add(`${p.id}|${r.branch}`);
-      try { const ev = { c: '#b98cff', who: `Mutirão · ${p.name}`, msg: `Você tem uma parte do Mutirão na branch ${r.branch}${r.titulo ? `: ${r.titulo}` : ''}. Abra pelo botão no cabeçalho.`, kind: 'perm' }; addEvent(ev); showToast(ev); } catch { /* sem aviso */ }
+      try { const ev = { c: '#b98cff', who: `Mutirão · ${p.name}`, msg: `Você tem uma parte do Mutirão na branch ${r.branch}${r.titulo ? `: ${r.titulo}` : ''}. Abra pelo botão no rail de baixo.`, kind: 'perm' }; addEvent(ev); showToast(ev); } catch { /* sem aviso */ }
     }
   }
   // troca de projeto por clique: confere a parte logo depois (o cabeçalho nem sempre é redesenhado)
   document.addEventListener('click', () => { if (on()) setTimeout(() => { try { checkPart(); } catch { /* sem aviso */ } }, 80); }, true);
   function paintPart(p) {
-    const top = document.getElementById('topbar'), box = top && top.querySelector('.vibebtns');
+    const box = document.querySelector('#fpill .vibebtns');
     if (!box) return;
     const r = p && PART[p.id] && PART[p.id].r;
     const cur = box.querySelector('[data-vibe-part]');
@@ -2111,7 +2111,7 @@
     if (MN.orig === 'novo' && np.where === 'new') return `<p class="meta npwf">${ic('alert', 14)} A pasta nova nasce sem git. O Mutirão exige git e um remoto (origin) que todos os sócios acessem: configure-os antes de publicar a divisão.</p>`;
     if (MN.orig === 'novo' && np.where === 'git') return '<p class="meta">O repositório clonado já vem com o remoto (origin). Se ele usa o fluxo Rocruzta, só o DEV1 divide o trabalho.</p>';
     if (!pp) return MN.ppKey ? '<p class="meta">Conferindo o projeto…</p>' : '';
-    if (!pp.dono) return `<p class="meta npwf">${ic('alert', 14)} <span><b>Só o dono do projeto cria o Mutirão.</b> ${esc(pp.motivo || '')} Se você recebeu uma parte, sincronize a sua branch com a do dono e abra o projeto no Termix na sua branch: o aviso "Sua parte do Mutirão" aparece no cabeçalho.</span></p>`;
+    if (!pp.dono) return `<p class="meta npwf">${ic('alert', 14)} <span><b>Só o dono do projeto cria o Mutirão.</b> ${esc(pp.motivo || '')} Se você recebeu uma parte, sincronize a sua branch com a do dono e abra o projeto no Termix na sua branch: o aviso "Sua parte do Mutirão" aparece no rail de baixo.</span></p>`;
     if (pp.motivo) return `<p class="meta npwf">${ic('alert', 14)} ${esc(pp.motivo)}</p>`;
     return `<p class="meta">Você é o dono: branch <b>${esc(pp.branchDono)}</b>${pp.criar ? ` (criada a partir da ${esc(pp.atual || 'atual')} ao publicar)` : ''}, remoto ${esc(pp.remoto)}.</p>`;
   }
@@ -2271,20 +2271,17 @@
       novo: { state: () => ({ ...MN, rows: MN.rows.map((r) => ({ ...r })) }), criar: () => mnCriar(), estrutura: (p) => mnEstrutura(p), vigiar: () => mutVigia(), status: () => ({ ...MUT_ST }), refresh: () => mutStatus() } };
   });
 
-  /* botões no cabeçalho: o app.js redesenha o #topbar inteiro; reponho os botões a cada redesenho */
+  /* TASK-135: botões no rail inferior (grupo da direita, antes dos ajustes), que existe também no modo --embed. O web.js reescreve
+     o #fpill inteiro quando o rail muda; reponho os botões a cada redesenho. Sem projeto aberto o rail some, e os botões com ele. */
   function mountTop() {
-    const top = document.getElementById('topbar');
-    if (!top) return;
-    const cur = top.querySelector('.vibebtns');
-        if (cur) { checkPart(); return; }
-    const anchor = top.querySelector('[data-togact]');
-    if (!anchor) return;
+    const pill = document.getElementById('fpill'), fr = pill && pill.querySelector('.fr');
+    if (!fr) return;
+    if (fr.querySelector('.vibebtns')) { checkPart(); return; }
     const box = document.createElement('div');
     box.className = 'vibebtns';
     box.innerHTML = '<button class="vibebtn" data-vibe-open="vibe" title="Vibe Coding"><i></i>Vibe Coding</button>'; // DEV2-023: o Mutirão saiu do cabeçalho (fica em "Novo mutirão" e na pasta "Mutirão")
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-vibe-open]'); if (b) { e.stopPropagation(); openScreen(b.dataset.vibeOpen); } });
-    const before = top.querySelector('#updchip') || anchor;
-    top.insertBefore(box, before);
+    fr.insertBefore(box, fr.firstChild);
     checkPart();
   }
 
@@ -2293,8 +2290,8 @@
 
   function boot() {
     try {
-      const top = document.getElementById('topbar');
-      if (top) new MutationObserver(mountTop).observe(top, { childList: true });
+      const pill = document.getElementById('fpill');
+      if (pill) new MutationObserver(mountTop).observe(pill, { childList: true });
       mountTop();
     } catch (e) { console.error('vibe: início', e); }
   }

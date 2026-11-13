@@ -81,9 +81,9 @@ async function inst(nome, port, pj, outros, fresh = true) {
 
   await A.ev(`(UI.cur={p:${JSON.stringify(ID)},page:'Terminais'},UI.last=${JSON.stringify(ID)},renderAll(),1)`);
   await A.until('botão no cabeçalho', async () => A.ev('!!document.querySelector("[data-deleg-open]")'));
-  const ordem = await A.js('[...document.querySelectorAll("#topbar .vibebtns button")].map(b=>b.textContent.trim())');
+  const ordem = await A.js('[...document.querySelectorAll("#fpill .vibebtns button")].map(b=>b.textContent.trim())');
   check('A botão "Delegar tarefa" no cabeçalho, ao lado do "Vibe Coding"', ordem[0] === 'Vibe Coding' && ordem[1] === 'Delegar tarefa', JSON.stringify(ordem));
-  await A.shot('n25-2-cabecalho', '#topbar');
+  await A.shot('n25-2-cabecalho', '#appfoot');
   await A.click('[data-deleg-open]');
   const s0 = await A.until('painel carregado', async () => { const s = await A.st(); return s && s.info ? s : null; });
   check('A painel abre ao lado do terminal (mesmo lugar do Mutirão)', await A.ev('!!document.querySelector("#col.mut-open > aside.mutp.delp")'));
@@ -138,7 +138,7 @@ async function inst(nome, port, pj, outros, fresh = true) {
   await B.ev(`(UI.cur={p:${JSON.stringify(ID)},page:'Terminais'},UI.last=${JSON.stringify(ID)},renderAll(),1)`);
   await B.until('aviso no projeto', async () => B.ev('!!document.querySelector("[data-deleg-part]")'), 15000);
   check('B aviso no projeto: botão "Tarefa delegada a você (1)"', /Tarefa delegada a você \(1\)/.test(await B.txt('[data-deleg-part]')), await B.txt('[data-deleg-part]'));
-  await B.shot('n25-7-aviso-no-cabecalho', '#topbar');
+  await B.shot('n25-7-aviso-no-cabecalho', '#appfoot');
   await B.click('[data-deleg-part]');
   const sB = await B.until('painel do Ygor', async () => { const s = await B.st(); return s && s.info && s.caixa && s.caixa.pedidos.length ? s : null; });
   check('B painel: não é o responsável (DEV2), explica e não oferece o pedido', !!sB && sB.info.pode === false && /DEV2/.test(await B.txt('.delp .mp-warn')) && !(await B.ev('!!document.querySelector("[data-dl=pedir]")')));

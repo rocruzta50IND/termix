@@ -1,9 +1,8 @@
 /* Módulo Vibe Coding e Mutirão (DEV2-001). Só aparece com a chave ligada em Configurações. */
-#topbar .vibebtns{-webkit-app-region:no-drag;display:inline-flex;align-items:center;gap:6px;margin-right:8px}
-#topbar .vibebtn{height:30px;padding:0 12px;border-radius:99px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text2);font-size:12.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;transition:background .14s,color .14s}
-#topbar .vibebtn:hover{background:rgba(255,255,255,.1);color:var(--text)}
-#topbar .vibebtn i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
-#topbar .vibebtn.mut i{background:#b98cff}
+/* TASK-135: os botões do módulo ficam no rail inferior (#appfoot), no grupo da direita, antes dos ajustes; o desenho do botão é o do próprio rail (#appfoot button). O rail existe também no modo --embed, em que o cabeçalho é escondido. */
+#appfoot .vibebtns{display:flex;align-items:center;gap:2px;min-width:0}
+#appfoot .vibebtn i{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+#appfoot .vibebtn.mut i{background:#b98cff}
 .vibe-wip{display:inline-block;margin-top:4px;padding:4px 10px;border-radius:99px;border:1px dashed var(--border);color:var(--text3);font-size:12px}
 
 /* Tela de entrega do Vibe Coding (DEV2-002): modal largo no padrão das janelas (.dlg), campos .inp do app */
@@ -121,8 +120,8 @@
 @media (max-width:520px){.vx dl{grid-template-columns:1fr}}
 
 /* Mutirão (DEV2-005): painel ao lado do terminal (o chat com o orquestrador é a aba ao lado), aviso da parte do sócio */
-#topbar .vibebtn.part{border-color:rgba(185,140,255,.55);background:rgba(185,140,255,.14);color:var(--text)}
-#topbar .vibebtn.part i{background:#b98cff;box-shadow:0 0 0 3px rgba(185,140,255,.25)}
+#appfoot .vibebtn.part{box-shadow:inset 0 0 0 1px rgba(185,140,255,.55);background:rgba(185,140,255,.14);color:var(--text)}
+#appfoot .vibebtn.part i{background:#b98cff;box-shadow:0 0 0 3px rgba(185,140,255,.25)}
 #col.mut-open>.stage{margin-right:384px}
 .mutp{position:absolute;top:0;right:0;bottom:0;width:380px;display:flex;flex-direction:column;border-left:1px solid var(--border);background:rgba(14,19,30,.94);z-index:3;font-size:13px;color:var(--text2);line-height:1.5;user-select:text}
 .mutp .mp-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border)}

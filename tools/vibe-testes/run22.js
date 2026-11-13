@@ -78,7 +78,7 @@ const flog = () => R(FLOG);
 
   /* 3c: botão Vibe Coding — escolha inicial e formulário da tarefa */
   await go({ p: ID, page: 'Terminais' });
-  const bt = await ev('JSON.stringify([...document.querySelectorAll("#topbar [data-vibe-open]")].map(b=>b.textContent.trim()))');
+  const bt = await ev('JSON.stringify([...document.querySelectorAll("#fpill [data-vibe-open]")].map(b=>b.textContent.trim()))');
   check('3c só o botão Vibe Coding no cabeçalho (o Mutirão saiu na DEV2-023)', bt === JSON.stringify(['Vibe Coding']), bt);
   await ev('(document.querySelector("[data-vibe-open=vibe]").click(),1)'); await wait(1200);
   let tx = await modalTxt();

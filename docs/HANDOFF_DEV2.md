@@ -188,4 +188,12 @@ Ver as seções 2.3 e 3. Todos os testes são sem custo de IA, com repositórios
 
 ## Decisão do DEV1 / usuário
 
-(Preenchido depois.)
+**APROVADA em 2026-11-12** e integrada na dev1 (TASK-135, merge de `origin/dev2` em `83b0f14`). Decisões do Rodrigo:
+
+1. **Integração:** feita por merge, pelo fluxo. Ainda não promovida para a `main`.
+2. **Lugar dos botões:** por enquanto no **rail inferior** (grupo da direita, antes dos ajustes), que existe também no `--embed`. O DEV1 já fez a mudança no módulo (`src/renderer/vibe/vibe.js`, `vibe.css`, `delegar.js`, `delegar.css`) e nos testes. O lugar definitivo será avaliado depois (TASK-137).
+3. **Login do Hub com PIN e conexões:** pós-MVP, pelo Hub. O "Delegar tarefa" segue estacionado.
+4. **As 3 sugestões da DEV2-026:** aprovadas como escopo pós-MVP, para avaliação posterior (TASK-136). Nada muda no núcleo agora.
+5. **Nome "Mutirão":** mantido nos dois lugares.
+
+Para a dev2: rodar `/fluxo:sincronizar` antes da próxima tarefa (a dev1 mudou arquivos do módulo e dos testes). O `del25` foi corrigido (identidade git no repositório "semfluxo"). Em máquina com espaço no caminho da pasta temporária, os testes com o agente falso precisam de `TEMP` sem espaço (anotado no README dos testes).

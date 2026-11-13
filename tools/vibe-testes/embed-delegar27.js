@@ -28,7 +28,7 @@ const kill = (p) => { try { execFileSync('taskkill', ['/F', '/PID', String(p.pid
   const ud = path.join(S, 'udA'); state(ud);
   const el = spawn(EL, [ROOT, `--user-data-dir=${ud}`, '--remote-debugging-port=9411'], { env: { ...process.env, TERMIX_VIBE_NO_OPEN: '1' }, stdio: 'ignore' });
   const c = await cdp(9411, (x) => x.url.includes("index.html")); await wait(14000);
-  const top = await c.ev(`(() => { const b = document.querySelector('#topbar .vibebtns'); return JSON.stringify({ vibe: !!document.querySelector('[data-vibe-open]'), deleg: !!document.querySelector('[data-deleg-open],[data-deleg-part]'), btns: b ? b.innerText : null }); })()`);
+  const top = await c.ev(`(() => { const b = document.querySelector('#fpill .vibebtns'); return JSON.stringify({ vibe: !!document.querySelector('[data-vibe-open]'), deleg: !!document.querySelector('[data-deleg-open],[data-deleg-part]'), btns: b ? b.innerText : null }); })()`);
   console.log('topbar', top); const T = JSON.parse(top);
   check('A: Vibe Coding aparece no cabeçalho', T.vibe); check('A: botão Delegar NÃO aparece', !T.deleg);
   await c.ev(`(() => { const b = [...document.querySelectorAll('button,a,div')].find((e) => /^Configura/.test((e.textContent || '').trim()) && e.children.length < 3); b && b.click(); })()`); await wait(1500);
@@ -57,6 +57,9 @@ const kill = (p) => { try { execFileSync('taskkill', ['/F', '/PID', String(p.pid
   await d.ev(`document.querySelectorAll('button').forEach((b) => /Agora não/.test(b.textContent) && b.click())`);
   const mp = await d.ev(`(async () => { window.TermixMut.open('p1'); await new Promise((r) => setTimeout(r, 1500)); return document.querySelector('.mutp') ? document.querySelector('.mutp').innerText.slice(0, 80) : 'sem painel'; })()`); console.log('mutirao', mp);
   check('B: painel do Mutirão abre', /Mutir/.test(String(mp)), String(mp).replace(/\n/g, ' '));
+  // TASK-135: os botões do módulo ficam no rail inferior, que o --embed mantém; com o projeto aberto o "Vibe Coding" fica visível e clicável
+  const rv = await d.ev(`(async () => { UI.cur = { p: 'p1', page: 'Terminais' }; UI.last = 'p1'; renderAll(); await new Promise((r) => setTimeout(r, 1500)); const b = document.querySelector('#fpill [data-vibe-open]'); return JSON.stringify({ existe: !!b, visivel: !!b && b.offsetParent !== null && b.getBoundingClientRect().width > 0 }); })()`); console.log('rail', rv);
+  check('B: botão Vibe Coding visível no rail inferior (embed)', /"visivel":true/.test(String(rv)), String(rv));
   const vb = await d.ev(`(async () => { const b = document.querySelector('[data-vibe-open]'); if (b) { b.click(); await new Promise((r) => setTimeout(r, 1200)); } return JSON.stringify({ clicou: !!b, modal: /Projeto novo|Tarefa num projeto/.test(document.body.innerText) }); })()`); console.log('vibe', vb);
   d.close(); kill(edge); kill(eb);
   console.log(`${ok} OK, ${bad} FALHOU`); process.exit(0);

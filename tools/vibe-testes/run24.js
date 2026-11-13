@@ -87,9 +87,9 @@ const C = { devVelha: conv(PD, 10, 'dev antiga'), devMeio: conv(PD, 2, 'dev meio
 
   /* 2: cabeçalho com o Vibe Coding (chave salva desligada) */
   await go({ p: ID, page: 'Terminais' });
-  const bt = await ev('JSON.stringify([...document.querySelectorAll("#topbar [data-vibe-open]")].map(b=>b.textContent.trim()))');
-  check('2 "Vibe Coding" no cabeçalho, no mesmo lugar, com a chave salva desligada', bt === '["Vibe Coding"]' && (await ev('(()=>{const b=document.querySelector("#topbar .vibebtns");return !!b && b.nextElementSibling && (b.nextElementSibling.id==="updchip"||b.nextElementSibling.matches("[data-togact]"))})()')), bt);
-  await shot('n24-2-cabecalho', '#topbar');
+  const bt = await ev('JSON.stringify([...document.querySelectorAll("#fpill [data-vibe-open]")].map(b=>b.textContent.trim()))');
+  check('2 "Vibe Coding" no cabeçalho, no mesmo lugar, com a chave salva desligada', bt === '["Vibe Coding"]' && (await ev('(()=>{const b=document.querySelector("#fpill .vibebtns");return !!b && b.nextElementSibling && (b.nextElementSibling.matches("[data-railmenu]"))})()')), bt);
+  await shot('n24-2-cabecalho', '#appfoot');
 
   /* 3: Novo projeto — sem o botão separado; uma pasta funciona como antes */
   await ev('(document.querySelector("[data-newk=chat]").click(),1)'); await wait(1000);

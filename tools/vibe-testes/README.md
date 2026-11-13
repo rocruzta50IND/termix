@@ -8,6 +8,9 @@ Scripts de teste do módulo (`src/vibe/` e `src/renderer/vibe/`). **Não fazem p
 - Windows: os testes com Electron usam `electron.exe` e `claude.cmd`.
 - Os agentes falsos são copiados para a pasta temporária a cada uso (com espaço no caminho do repositório, como em `DEV 2 Central`, o Termix não acha o `claude.cmd` falso no PATH).
 
+- **Pasta temporária com espaço no caminho** (ex.: usuário do Windows `C:\Users\Nome Sobrenome`): os testes com Electron que usam o agente falso estouram o tempo, porque o `claude.cmd` falso não roda de um caminho com espaço. Rode com `TEMP` e `TMP` apontando para uma pasta sem espaço (ex.: `D:\termix-vibe-tmp`).
+- **Botões do módulo (TASK-135):** ficam no rail inferior (`#fpill`), não mais no cabeçalho; os testes procuram ali.
+
 **Pré-requisito:** `npm install` na raiz do repositório (a dev1 0.7.0 trouxe a dependência `ws`; os testes com Electron precisam do Electron instalado).
 
 Os comandos abaixo valem a partir da raiz do repositório. A raiz é descoberta pelo próprio script; o argumento da raiz é opcional.

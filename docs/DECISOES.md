@@ -270,3 +270,14 @@ Pedido do Rodrigo, autorizado pelo Ygor (12/11/2026). Detalhes em `docs/ORGANIZA
 - **Chats antigos:** coleta em segundo plano, um por vez, só leitura (`--tools ""`, `dontAsk`), em cópia (`--fork-session`), Sonnet, teto de 5 (os mais recentes). Cada chat é reprocessado uma vez, com custo estimado na tela. Só para projetos que já existem; projetos novos nascem estruturados.
 - **Pop-up** uma vez por projeto por abertura do app; sem pop-up em modo chat. **Fechar o app** com ciclo do Vibe ou Mutirão pede confirmação; o `/clear` nunca toca nas abas do ciclo.
 - **Testes** só com claude falso e `CLAUDE_CONFIG_DIR` de teste; nada de IA real.
+
+## Integração do módulo Vibe Coding e Mutirão na dev1 (TASK-135)
+
+Decisões do usuário em 2026-11-12, ao aprovar a entrega da dev2. Onde uma seção acima (escrita pela dev2) disser outra coisa, vale esta.
+
+- **O módulo entrou na dev1** por merge, pelo fluxo. A frase "a dev2 não vai para a main; o Rodrigo implementa de forma nativa depois" (DEV2-024) deixa de valer: o módulo segue como está, isolado em `src/vibe/` e `src/renderer/vibe/`, e vai para a `main` quando a dev1 for promovida com uma versão consolidada.
+- **Botões do módulo no rail inferior, por enquanto:** "Vibe Coding" e os avisos ("Sua parte do Mutirão"; com o Delegar religado, "Delegar tarefa" e "Tarefa delegada a você") ficam no grupo da direita do rail, não mais no cabeçalho. Motivo: o rail existe também no modo `--embed`, em que o cabeçalho é escondido. O lugar definitivo será avaliado depois (TASK-137).
+- **Login do Hub com PIN e controle de conexões: pós-MVP.** Chegam depois, pelo Rocruzta Hub. Até lá o "Delegar tarefa" continua estacionado (`DELEGAR_ATIVO = false`), com as contas de teste fora da interface.
+- **As 3 sugestões da DEV2-026** (contexto limpo em vez de retomada por ID, padrão orquestrador + dev, chat simples e temporário) ficam como escopo **pós-MVP**, para avaliação posterior (TASK-136). Nada muda no núcleo agora.
+- **O nome "Mutirão" se mantém** nos dois lugares: a pasta da barra lateral (antigo Workflow, TASK-132) e a função do módulo (dividir o projeto entre sócios).
+- **Integração de branches continua manual**, pelo fluxo; o Termix não junta a dev2 nem as branches do Delegar.

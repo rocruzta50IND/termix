@@ -349,7 +349,7 @@
 
   /* ---------- botões no cabeçalho ---------- */
   function paintTop() {
-    const top = document.getElementById('topbar'), box = top && top.querySelector('.vibebtns');
+    const box = document.querySelector('#fpill .vibebtns'); // TASK-135: os botões do módulo ficam no rail inferior
     if (!box) return;
     if (!ON()) { box.querySelectorAll('[data-deleg-open],[data-deleg-part]').forEach((e) => e.remove()); return; }
     if (!box.querySelector('[data-deleg-open]')) {
@@ -447,7 +447,7 @@
 
   function boot() {
     try {
-      const top = document.getElementById('topbar'), page = document.getElementById('page');
+      const top = document.getElementById('fpill'), page = document.getElementById('page');
       if (top) new MutationObserver(paintTop).observe(top, { childList: true });
       if (page) new MutationObserver(mountConf).observe(page, { childList: true });
       document.addEventListener('click', () => setTimeout(paintTop, 80), true);

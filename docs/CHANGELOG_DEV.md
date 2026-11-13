@@ -8,6 +8,16 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ## 2026-11-12
 
+**TASK-135 — Integração da dev2: módulo Vibe Coding e Mutirão, com os botões no rail inferior** (DEV1; módulo desenvolvido pelo DEV2)
+
+- Entrega da dev2 aprovada pelo usuário pelo `docs/HANDOFF_DEV2.md` e integrada por merge `--no-ff` de `origin/dev2` (54 commits, DEV2-001 a 018 e 021 a 027), sem conflito. Entra o módulo isolado em `src/vibe/` e `src/renderer/vibe/` (Vibe Coding, trava em código, deploy pelo Termix, recuperação de erro, Mutirão, Organizador, "Retomar projeto", política de autonomia), com os documentos do módulo e os testes em `tools/vibe-testes/`. O histórico detalhado do módulo está em `docs/CHANGELOG_DEV2.md`.
+- **Botões no rail inferior (decisão do usuário):** "Vibe Coding" e os avisos do módulo saíram do cabeçalho e ficam no grupo da direita do rail, antes dos ajustes. Com isso aparecem também no modo `--embed`. O lugar definitivo fica para a TASK-137.
+- **Decisões registradas:** login do Hub com PIN e controle de conexões são pós-MVP (o "Delegar tarefa" segue estacionado); as 3 sugestões da DEV2-026 viram a TASK-136 (pós-MVP); o nome "Mutirão" se mantém.
+- **Testes:** `del25` corrigido (identidade git num repositório de brinquedo); testes com Electron ajustados para o novo lugar dos botões, e o `embed-delegar27` ganhou a checagem do botão visível no rail no `--embed`.
+- Validado: `npm run check`; `npm run test:vibe` 13 de 13 como esperado; com Electron, os resultados estão na TASK-135. Nesta máquina os testes com agente falso precisam de `TEMP` sem espaço no caminho. Não promovida para a `main`.
+
+---
+
 **TASK-134 — Modo embutível (`--embed`) e versão 0.7.0** (DEV1)
 
 - O Termix passa a rodar dentro da janela do Rocruzta Hub: com `--embed` não abre janela, serve a interface em `127.0.0.1` (token, `Host` e `Origin` conferidos) e liga o `window.termix` ao processo principal por WebSocket (`src/embed.js`, `src/renderer/embed.css`, dependência `ws`). Dentro do Hub: sem barra de título nem moldura, só os anéis de consumo, notificações e tema controlados pelo Hub. Sem a flag, nada muda.

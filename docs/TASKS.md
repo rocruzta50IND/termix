@@ -30,9 +30,38 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Validadas em DEV1
 
+### TASK-135 — Integrar a dev2 na dev1: módulo Vibe Coding e Mutirão (DEV2-001 a 018 e 021 a 027) e botões no rail inferior
+
+- **Responsável:** DEV1 (integração); desenvolvimento do módulo: DEV2
+- **Status:** VALIDADA EM DEV1 (2026-11-12) — entrega aprovada pelo usuário pelo `docs/HANDOFF_DEV2.md`; merge feito e validado. Falta o usuário conferir no app o lugar dos botões no rail. Não promovida para a `main`.
+- **Tarefas da dev2 integradas (numeração própria, em `docs/TASKS_DEV2.md`):** DEV2-001 a DEV2-018 e DEV2-021 a DEV2-027 (019 e 020 não foram usadas). Sem colisão com os `TASK-XXX`.
+- **O que entrou:** módulo isolado em `src/vibe/` e `src/renderer/vibe/` (Vibe Coding com orquestrador e dev, trava em código, deploy pelo Termix, recuperação de erro, Mutirão, Organizador, "Retomar projeto", política de autonomia), documentos do módulo (`docs/VIBE_MUTIRAO.md`, `ORGANIZADOR.md`, `PROPOSTA_DELEGAR_TAREFA.md`, `VALIDACAO_MVP_VIBE.md`, `TASKS_DEV2.md`, `CHANGELOG_DEV2.md`) e os testes em `tools/vibe-testes/`. No núcleo: ligações em `src/main.js`, `src/preload.js`, `src/renderer/index.html`, `src/renderer/app.js` e `package.json` (`check` e `test:vibe`).
+- **Decisões do usuário (2026-11-12):** (1) entrega **aprovada**; (2) os botões do módulo ficam **no rail inferior** por enquanto, e o lugar definitivo é avaliado depois (TASK-137); (3) o **login do Hub com PIN** é pós-MVP e já está anotado; todo o controle de conexões chega depois, pelo Hub, e o "Delegar tarefa" segue estacionado até lá; (4) as **3 sugestões** da DEV2-026 ficam como escopo pós-MVP para avaliação posterior (TASK-136); (5) o nome **"Mutirão" se mantém** nos dois lugares.
+- **Feito pelo DEV1 na integração:** merge `--no-ff` de `origin/dev2` sem conflito; botões do módulo ("Vibe Coding", "Sua parte do Mutirão" e, quando religado, "Delegar tarefa" e "Tarefa delegada a você") movidos do cabeçalho para o grupo da direita do rail inferior, antes dos ajustes, com o desenho dos botões do rail; assim aparecem também no modo `--embed`, que esconde o cabeçalho. Testes do módulo ajustados para o novo lugar; `del25` corrigido (faltava a identidade git num repositório de brinquedo, e o teste parava em máquina sem identidade git global).
+- **Arquivos tocados pelo DEV1:** `src/renderer/vibe/vibe.js`, `vibe.css`, `delegar.js`, `delegar.css`; `tools/vibe-testes/` (`del25.js`, `run22.js`, `run23.js`, `run24.js`, `run25.js`, `embed-delegar27.js`, `README.md`); `docs/TASKS.md`, `CHANGELOG_DEV.md`, `DECISOES.md`, `DESIGN.md`, `HANDOFF_DEV2.md` (só a seção da decisão).
+- **Como validar:** `npm install`, `npm run check` e `npm run test:vibe` (13 de 13 como esperado). Com Electron, um por vez: `node tools/vibe-testes/rodar-electron.js <teste>`. **Nesta máquina a pasta temporária tem espaço no caminho** (`C:\Users\Glayon Rocha\...`) e os testes que usam o agente falso estouram o tempo; rodar com `TEMP` e `TMP` apontando para uma pasta sem espaço (ex.: `D:\termix-vibe-tmp`). No app: abrir um projeto em Terminais e ver "Vibe Coding" à direita no rail de baixo; roteiro de 5 minutos na seção 3 do `docs/HANDOFF_DEV2.md`.
+- **Pendências:** com o rail, os botões só aparecem com um projeto aberto em Terminais ou Web (sem projeto não há rail); as pendências da dev2 seguem com ela (Telegram, Delegar depois do login, validações com Claude Code real, clique no diálogo nativo do aviso ao fechar); o deploy do módulo escreve na `main` e só foi testado com repositórios locais.
+- **Próximo passo:** o usuário testa no app; todas as devs rodam `/fluxo:sincronizar`; a promoção para a `main` é um passo separado (`/fluxo:promover`), só com versão consolidada.
+
 ## Prontas
 
 ## Backlog
+
+### TASK-137 — Lugar definitivo dos botões do módulo Vibe Coding e Mutirão (pós-integração)
+
+- **Responsável:** DEV1 + usuário
+- **Status:** BACKLOG — surgiu na TASK-135 (2026-11-12): o usuário colocou os botões no rail inferior "por enquanto" e pediu para avaliar melhor depois.
+- **Situação:** "Vibe Coding" (e os avisos "Sua parte do Mutirão" e, com o Delegar religado, "Delegar tarefa" e "Tarefa delegada a você") ficam no grupo da direita do rail inferior. O rail só existe com um projeto aberto em Terminais ou Web; o grupo da direita pode ficar apertado em janela estreita quando os avisos aparecem.
+- **A avaliar:** barra lateral, menu do projeto, rail ou um botão do Hub que chame o módulo; o lugar precisa existir no app solto e no `--embed`. Pontos de entrada do módulo: seção 4.2 do `docs/HANDOFF_DEV2.md`.
+
+### TASK-136 — Avaliar as 3 sugestões da dev2 para o núcleo (pós-MVP)
+
+- **Responsável:** DEV1 + usuário
+- **Status:** BACKLOG — **pós-MVP**; aprovadas pelo usuário em 2026-11-12 como escopo para avaliação posterior, sem implementação agora. Vêm da DEV2-026 (`docs/HANDOFF_DEV2.md`, seção 6).
+- **Sugestão 1 — retomada por ID como gargalo de tokens:** depois de horas o cache do prompt expira e a primeira mensagem de uma conversa retomada reprocessa o histórico inteiro, sem aviso. Proposta: abrir com contexto limpo e o estado em arquivos como padrão; retomada por ID como opção explícita, com aviso de custo. O módulo já faz isso no pop-up "Retomar projeto". Ligada à TASK-103 (métrica de tokens) e à TASK-125.
+- **Sugestão 2 — padrão orquestrador + dev:** todo projeto de desenvolvimento nasce com orquestrador (decide e mantém a estrutura) e dev (executa), com a estrutura mínima em arquivo. Ligada à TASK-101.
+- **Sugestão 3 — chat simples e temporário:** para perguntas rápidas, sem retomada automática e com arquivamento fácil, para não virar ruído na lista e na retomada.
+- **Próximo passo (quando entrar):** avaliar cada uma com o usuário e abrir as tarefas de construção das que forem aceitas.
 
 ### TASK-131 — Tela Telemetria: o time e as tarefas do projeto vindos do git (pós-MVP)
 

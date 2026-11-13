@@ -53,7 +53,7 @@ const MD = (t, extra = '') => `# ${t}\n\n## Objetivo\nFazer ${t}.\n\n## Contexto
   YGO.delegContaSet('Ygor');
   const iy = YGO.delegInfo(YDIR);
   check('não responsável (DEV2): não pode, explica', !iy.pode && !iy.dono && /DEV2/.test(iy.motivo) && /DEV1/.test(iy.motivo), iy.motivo);
-  const SF = path.join(S, 'semfluxo'); orig('git', ['clone', '-q', REM, SF], { stdio: 'ignore' }); g(SF, 'checkout', '-q', 'master'); g(SF, 'rm', '-q', '-r', '.claude'); g(SF, 'commit', '-qm', 'sem fluxo'); local(SF, 'DEV1', 'dev1');
+  const SF = path.join(S, 'semfluxo'); orig('git', ['clone', '-q', REM, SF], { stdio: 'ignore' }); cfgU(SF, 'semfluxo'); g(SF, 'checkout', '-q', 'master'); g(SF, 'rm', '-q', '-r', '.claude'); g(SF, 'commit', '-qm', 'sem fluxo'); local(SF, 'DEV1', 'dev1');
   const isf = ROD.delegInfo(SF);
   check('projeto sem fluxo: explica que precisa do fluxo e não faz nada', !isf.pode && !isf.fluxo && /precisa do fluxo/.test(isf.motivo) && !(await ROD.delegPedido(PID, SF, { para: 'Ygor', branch: 'dev2', resumo: 'x' })).ok);
   // DEV1 fora da branch dele
