@@ -1,0 +1,234 @@
+/* Módulo Vibe Coding e Mutirão (DEV2-001). Só aparece com a chave ligada em Configurações. */
+#topbar .vibebtns{-webkit-app-region:no-drag;display:inline-flex;align-items:center;gap:6px;margin-right:8px}
+#topbar .vibebtn{height:30px;padding:0 12px;border-radius:99px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text2);font-size:12.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:7px;transition:background .14s,color .14s}
+#topbar .vibebtn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+#topbar .vibebtn i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+#topbar .vibebtn.mut i{background:#b98cff}
+.vibe-wip{display:inline-block;margin-top:4px;padding:4px 10px;border-radius:99px;border:1px dashed var(--border);color:var(--text3);font-size:12px}
+
+/* Tela de entrega do Vibe Coding (DEV2-002): modal largo no padrão das janelas (.dlg), campos .inp do app */
+.dlg:has(.vibe-form){width:min(760px,94vw)}
+/* DEV2-018: só o formulário rola; os botões do rodapé ficam fora do conteúdo (antes, o rodapé fixo do modal cobria o fim
+   da tela "Antes de iniciar" e cortava "Quando chamar você"). Mexe só neste modal, sem tocar no modal() do núcleo. */
+.dlg:has(.vibe-form){display:flex;flex-direction:column;overflow:hidden}
+.dlg:has(.vibe-form)>.dh{flex:none}
+.dlg:has(.vibe-form)>.vibe-form{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;margin:0 -24px;padding:0 24px 8px;scroll-padding:12px}
+.dlg:has(.vibe-form)>.foot2{flex:none;position:static;margin:8px -24px -24px;padding:14px 24px 24px;border-top:1px solid var(--border);background:none}
+.dlg:has(.vibe-form) .foot2 [data-vtpl]{margin-right:auto}
+.dlg:has(.vibe-form) .foot2 .btn:disabled{opacity:.45;cursor:default;filter:none;box-shadow:none}
+.vibe-form>p{margin-bottom:14px}
+.vibe-form .vf{margin:0 0 16px}
+.vibe-form .vf>label:not(.vf-chk){display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:7px}
+.vibe-form .vf>label:not(.vf-chk) em{font-style:normal;font-weight:500;font-size:11.5px;color:var(--accent);margin-left:6px}
+.vibe-form .vf>label em.opt{color:var(--text3)}
+.vibe-form .vf>small{display:block;margin-top:6px;font-size:12px;color:var(--text3);line-height:1.45}
+.vibe-form .vf-cnt{text-align:right}
+.vibe-form .vf-pick{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.vibe-form .vf-pick .btn{flex:none}
+.vibe-form .vf-st{flex:1;min-width:200px;padding-top:6px;font-size:13px;overflow-wrap:anywhere}
+.vibe-form .vf-file.none{color:var(--text3)}
+.vibe-form .vf-file.wait{color:var(--text2)}
+.vibe-form .vf-file.ok{color:var(--ok)}
+.vibe-form .vf-file.bad{color:var(--bad)}
+.vibe-form .vf-prob{margin-top:4px;color:#fecaca;font-size:12.5px}
+.vibe-form .vf-secs{margin:6px 0 0;padding-left:1.35em;color:#fecaca;font-size:12.5px;line-height:1.5}
+.vibe-form .vf-secs b{color:var(--text)}
+.vibe-form .vf-chk{display:flex;align-items:center;gap:9px;margin-top:9px;font-size:13px;font-weight:400;color:var(--text2);cursor:pointer}
+.vibe-note{margin:0 0 16px;padding:10px 14px;border-radius:12px;border:1px solid rgba(91,157,255,.35);background:rgba(91,157,255,.08);color:var(--text2);font-size:13px;line-height:1.45}
+.vibe-miss{margin-top:6px;padding:12px 14px;border-radius:12px;border:1px solid rgba(251,191,36,.38);background:rgba(251,191,36,.07);font-size:13px;color:var(--text2);line-height:1.5}
+.vibe-miss b{color:var(--warn)}
+.vibe-miss ul{margin:6px 0 0;padding-left:1.35em}
+.vibe-miss.done{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.07)}
+.vibe-miss.done b{color:var(--ok)}
+.vibe-msg:empty{display:none}
+.vibe-msg{margin-top:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);font-size:13px;color:var(--text2);line-height:1.5;overflow-wrap:anywhere}
+.vibe-msg.ok{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.07)}
+.vibe-msg.ok b{color:var(--ok)}
+.vibe-msg.warn{border-color:rgba(251,191,36,.38);background:rgba(251,191,36,.07)}
+.vibe-msg.bad{border-color:rgba(248,113,113,.45);background:rgba(248,113,113,.07)}
+.vibe-msg ul{margin:6px 0 0;padding-left:1.35em}
+.vibe-msg small{color:var(--text3)}
+.vibe-confirm{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+
+/* Ciclo do Vibe Coding (DEV2-003): dica de economia, entrega recolhível e painel de andamento */
+.vibe-form>p.vibe-tip,.vibe-tip{margin:-6px 0 14px;font-size:12px;color:var(--text3);line-height:1.45}
+.vibe-tip::before{content:"Dica: ";color:var(--accent);font-weight:600}
+.vibe-form .vf-det{margin:0 0 6px}
+.vibe-form .vf-det>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);margin:0 0 12px;list-style-position:inside}
+.vibe-form .vf-det[open]>summary{color:var(--text)}
+#vcPanel:empty{display:none}
+.vc{margin:0 0 16px;padding:12px 14px;border-radius:12px;border:1px solid rgba(167,139,250,.38);background:rgba(167,139,250,.07);font-size:13px;color:var(--text2);line-height:1.5}
+.vc.pronto{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.06)}
+.vc.erro,.vc.paused,.vc.parado{border-color:rgba(251,191,36,.38);background:rgba(251,191,36,.06)}
+.vc-hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.vc-hd>b{color:var(--text)}
+.vc-steps{display:flex;gap:6px;flex-wrap:wrap;list-style:none;padding:0}
+.vc-steps li{padding:3px 10px;border-radius:99px;border:1px solid var(--border);color:var(--text3);font-size:12px}
+.vc-steps li.cur{border-color:var(--accent);color:var(--text)}
+.vc-steps li.done{border-color:rgba(74,222,128,.45);color:var(--ok)}
+.vc-line b{color:var(--text)}
+.vc.pronto .vc-line b{color:var(--ok)}
+.vc-aviso{margin-top:8px;color:var(--warn);font-size:12.5px}
+.vc-qs{margin-top:10px}
+.vc-q{margin:0 0 12px}
+.vc-q>b{display:block;color:var(--text);font-weight:600}
+.vc-q>small{display:block;margin:2px 0 6px;font-size:12px;color:var(--text3)}
+.vc-q .inp{margin-top:6px}
+.vc-ops .vf-chk{margin-top:6px}
+.vc .vibe-tip{margin:10px 0 0}
+.vc-plan{margin-top:10px}
+.vc-plan>summary{cursor:pointer;color:var(--text);font-weight:600}
+.vc-md{margin-top:8px;max-height:300px;overflow:auto;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.18);font-size:12.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.vc-md .vh{color:var(--text);font-weight:600;margin-top:6px}
+.vc-md .vh.h1{font-size:14px}
+
+/* Execução do plano (DEV2-004): andamento tarefa a tarefa */
+.vc.execucao{border-color:rgba(91,157,255,.4);background:rgba(91,157,255,.06)}
+.vc.pausado{border-color:rgba(251,191,36,.38);background:rgba(251,191,36,.06)}
+.vc.concluido{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.06)}
+.vc.concluido .vc-line b{color:var(--ok)}
+.vx{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.14)}
+.vx dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin:0}
+.vx dt{color:var(--text3);font-size:12px}
+.vx dd{margin:0;color:var(--text);font-size:12.5px;overflow-wrap:anywhere}
+.vx dd small{color:var(--text3);font-size:11.5px}
+.vx-list{margin:10px 0 0;padding:0;list-style:none;font-size:12.5px;color:var(--text3)}
+.vx-list li{margin:2px 0}
+.vx-list li.done{color:var(--ok)}
+.vx-list li.cur{color:var(--text);font-weight:600}
+.vx-list li small{color:var(--text3);font-weight:400}
+/* DEV2-015: recuperação de erro (pendências e tarefas divididas) */
+.vx-list li.pend{color:var(--warn)}
+.vx-pend{border-color:rgba(248,113,113,.55);color:#F87171}
+.vx-pends{margin:10px 0 0;padding:8px 10px;border:1px solid rgba(251,191,36,.35);border-radius:10px;font-size:12.5px}
+.vx-pends ul{margin:6px 0 0;padding-left:18px}
+.vx-pends li{margin:3px 0}
+.vx-pends small,.vx-div{display:block;color:var(--text3);font-size:11.5px;overflow-wrap:anywhere}
+.vx-div{margin-top:6px}
+.vx dd small.vx-sub{display:block;margin-top:2px}
+/* DEV2-016: deploy pelo Termix (autorização, lista de versões, confirmação de voltar versão) */
+.vx-aut,.vx-deps{margin:10px 0 0;padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:12.5px}
+.vx-aut{border-color:rgba(167,139,250,.45)}
+.vx-aut ul,.vx-deps ul{margin:6px 0 0;padding-left:18px}
+.vx-aut li,.vx-deps li{margin:4px 0;overflow-wrap:anywhere}
+.vx-aut small,.vx-deps small{display:block;color:var(--text3);font-size:11.5px;overflow-wrap:anywhere}
+.vx-deps li.rev{opacity:.65}
+.vx-dacts{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:8px}
+.vx-conf{margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.35)}
+.vx-conf .vx-dacts{display:flex;margin:6px 0 0}
+.vx-link{color:var(--accent,#A78BFA);text-decoration:underline;cursor:pointer}
+.vx-tag{font-style:normal;font-size:10.5px;padding:0 6px;border-radius:99px;border:1px solid rgba(251,191,36,.5);color:var(--warn);margin-left:4px}
+@media (max-width:520px){.vx dl{grid-template-columns:1fr}}
+
+/* Mutirão (DEV2-005): painel ao lado do terminal (o chat com o orquestrador é a aba ao lado), aviso da parte do sócio */
+#topbar .vibebtn.part{border-color:rgba(185,140,255,.55);background:rgba(185,140,255,.14);color:var(--text)}
+#topbar .vibebtn.part i{background:#b98cff;box-shadow:0 0 0 3px rgba(185,140,255,.25)}
+#col.mut-open>.stage{margin-right:384px}
+.mutp{position:absolute;top:0;right:0;bottom:0;width:380px;display:flex;flex-direction:column;border-left:1px solid var(--border);background:rgba(14,19,30,.94);z-index:3;font-size:13px;color:var(--text2);line-height:1.5;user-select:text}
+.mutp .mp-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border)}
+.mutp .mp-hd b{color:var(--text);font-size:15px}
+.mutp .mp-hd .mclose{font-size:18px;line-height:1;width:28px;height:28px;border-radius:8px;color:var(--text2)}
+.mutp .mp-hd .mclose:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.mutp .mp-body{flex:1;overflow-y:auto;padding:12px 16px 16px}
+.mutp .vf{margin:0 0 12px}
+.mutp p{margin:0 0 10px}
+.mutp code{font-size:12px;color:var(--text)}
+.mutp .mp-small{font-size:12.5px;color:var(--text3)}
+.mutp .mp-why{font-size:12.5px;color:var(--text3)}
+.mutp .mp-ok{color:var(--ok)}
+.mutp .mp-bad,.vc .mp-bad{color:#fecaca}
+.mutp .mp-warn{margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(251,191,36,.38);background:rgba(251,191,36,.07);color:var(--warn);font-size:12.5px}
+.mutp .mp-dl{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:0 0 12px}
+.mutp .mp-dl dt{color:var(--text3);font-size:12px}
+.mutp .mp-dl dd{margin:0;color:var(--text);font-size:12.5px;overflow-wrap:anywhere}
+.mutp .mp-dl dd small{color:var(--text3)}
+.mutp .mp-sec{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03)}
+.mutp .mp-sec>b{color:var(--text)}
+.mutp .mp-sec>small{color:var(--text3);font-size:11.5px;margin-left:4px}
+.mutp .mp-sec>p{margin:6px 0 0}
+.mutp .mp-rows{margin-top:8px}
+.mutp .mp-row{display:grid;grid-template-columns:1fr 112px auto;gap:6px;margin-bottom:6px}
+.mutp .mp-row .inp{min-width:0;width:100%}
+.mutp .mp-left{justify-content:flex-start;flex-wrap:wrap}
+.mutp .mp-conf{margin-top:10px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.14)}
+.mutp .mp-conf.ok{border-color:rgba(74,222,128,.38)}
+.mutp .mp-conf.bad{border-color:rgba(251,191,36,.38)}
+.mutp .mp-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mutp .mp-h small{color:var(--text3);font-size:11.5px}
+.mutp .mp-h b{color:var(--text)}
+.mutp .mp-h b.mp-ok{color:var(--ok)}
+.mutp .mp-partes{margin:8px 0 0;padding-left:1.35em}
+.mutp .mp-partes li{margin:0 0 6px}
+.mutp .mp-partes b{color:var(--text)}
+.mutp .mp-partes details summary{cursor:pointer;font-size:12px;color:var(--text3)}
+.mutp .mp-partes details small{display:block;font-size:12px;color:var(--text2);overflow-wrap:anywhere}
+.mutp .mp-br{border-color:rgba(185,140,255,.55);color:#cdb4ff}
+.mutp .mp-probs{margin-top:8px;color:#fecaca;font-size:12.5px}
+.mutp .mp-probs b{color:#fecaca}
+.mutp .mp-probs ul{margin:4px 0 4px;padding-left:1.35em}
+.mutp .mp-probs small{color:var(--text3)}
+.mutp .mp-count{margin-top:8px}
+.mutp .mp-ent{margin:8px 0 0;padding:0;list-style:none;font-size:12.5px;color:var(--text3)}
+.mutp .mp-ent li{margin:3px 0}
+.mutp .mp-ent li.done{color:var(--ok)}
+/* implementação automática (DEV2-006) */
+.mutp .mp-auto{margin-top:12px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.14)}
+.mutp .mp-auto .vc-steps{margin:8px 0 6px}
+.mutp .mp-auto .mp-small{margin:4px 0}
+.mutp .mp-part{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(185,140,255,.5);background:rgba(185,140,255,.09)}
+.mutp .mp-part>b{color:var(--text);display:block}
+.mutp .mp-part small{display:block;color:var(--text3);font-size:12px;margin-top:2px}
+.mutp .mp-part .vibe-tip{margin:8px 0 0}
+.mutp .mp-part.done{border-color:rgba(74,222,128,.38);background:rgba(74,222,128,.06)}
+.mutp .mp-expl p{font-size:13px}
+.mutp .mp-expl b{color:var(--text)}
+.mutp .vibe-tip{margin:4px 0 0}
+/* DEV2-011: no layout novo o #col é a folha arredondada do palco; o painel encosta nela (sem borda nem canto próprios), separado só pela linha fina */
+#col>.mutp.glass{border:0;border-left:1px solid var(--border);border-radius:0 var(--r) var(--r) 0;box-shadow:none}
+@media (max-width:900px){#col.mut-open>.stage{margin-right:0}.mutp{width:100%}#col>.mutp.glass{border-left:0;border-radius:var(--r)}}
+
+/* Política de autonomia (DEV2-014): linha no painel e tela "Antes de iniciar" */
+.vp-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-size:12.5px}
+.vp-bar b{color:var(--text)}
+.vp-bar small{display:block;margin-top:2px;color:var(--text3)}
+.vp-bar.pausado{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.08)}
+.vp-btns{display:flex;gap:6px;flex-wrap:wrap}
+.vp-stop{border-color:rgba(248,113,113,.45)!important;color:var(--bad)!important}
+.vp-form{margin:0 0 16px;padding:12px 14px;border-radius:12px;border:1px solid rgba(91,157,255,.4);background:rgba(91,157,255,.06);font-size:13px;color:var(--text2);line-height:1.5}
+.vp-hd{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.vp-hd>b{color:var(--text);font-size:14px}
+.vp-sub{margin:0 0 12px;font-size:12px;color:var(--text3)}
+.vp-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.vp-opt{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-weight:400!important;margin:0!important}
+.vp-opt.sel{border-color:var(--accent);background:rgba(91,157,255,.1)}
+.vp-opt input{margin-top:3px}
+.vp-opt b{display:block;color:var(--text);font-size:12.5px}
+.vp-opt small{display:block;color:var(--text3);font-size:11.5px;line-height:1.4}
+.vp-row{display:flex;gap:12px;flex-wrap:wrap}
+.vp-row>label{display:flex!important;align-items:center;gap:6px;font-weight:400!important;font-size:12.5px!important;color:var(--text2)!important;margin:0!important}
+.vp-row .inp{width:auto;min-width:80px}
+.vp-row input[type=number]{width:104px}
+.vp-gap{margin-top:8px}
+.vibe-form small.vp-obg.bad{color:var(--bad)}
+
+/* DEV2-017: Vibe de tarefa — escolha inicial, resumo do projeto e histórico de tarefas */
+.vt-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 8px}
+.vt-opt{all:unset;box-sizing:border-box;cursor:pointer;padding:14px 16px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.12));background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:6px;color:var(--text);transition:border-color .15s,background .15s}
+.vt-opt:hover,.vt-opt:focus-visible{border-color:var(--accent);background:rgba(167,139,250,.08)}
+.vt-opt b{font-size:14px}
+.vt-opt small{font-size:12.5px;color:var(--text3);line-height:1.45}
+.vibe-form .vt-res{margin:0 0 12px}
+.vt-res-box{font-size:12.5px;color:var(--text2);line-height:1.5;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.03)}
+.vt-res-box pre{margin:6px 0 0;white-space:pre-wrap;font-size:11.5px;color:var(--text3);max-height:140px;overflow:auto}
+small.vt-res{display:block;margin:0 0 12px;color:var(--text3)}
+.vt-atual small{display:block;color:var(--text3);margin-top:4px}
+.vt-hist{margin:0 0 14px;padding:8px 12px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:10px;font-size:12.5px}
+.vt-hist ul{margin:6px 0 0;padding-left:18px}
+.vt-hist li{margin:4px 0}
+.vt-hist small{display:block;color:var(--text3);font-size:11.5px;overflow-wrap:anywhere}
+.vt-hist small.vt-pend{color:var(--warn)}
+.vx-tag.vt-concluida{border-color:rgba(74,222,128,.5);color:var(--ok)}
+.vx-tag.vt-andamento{border-color:rgba(91,157,255,.5);color:#5B9DFF}
+@media (max-width:640px){.vt-choice{grid-template-columns:1fr}}
+/* DEV2-023: contador de entregas ao lado do nome do mutirão na pasta "Mutirão" (mesmo estilo da contagem das pastas) */
+#side .ph small.mutk{margin-left:auto;padding-left:6px;color:var(--text3);font:400 10.5px var(--mono)}

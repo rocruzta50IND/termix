@@ -1,0 +1,18 @@
+/* Delegar tarefa (DEV2-025): reaproveita o painel do Mutirão (.mutp, vibe.css). Só o que é próprio dele. */
+.mutp.delp .mp-hd>span{display:flex;align-items:center;gap:8px}
+.mutp.delp .mp-hd .btn.sm{height:26px;padding:0 10px;font-size:12px}
+.mutp.delp select.inp,.mutp.delp textarea.inp{width:100%;box-sizing:border-box}
+.mutp.delp textarea.dl-txt{resize:vertical;min-height:64px;font:inherit;line-height:1.45}
+.mutp.delp .vf label{display:block;margin:0 0 4px}
+.mutp.delp .dl-item{margin:10px 0 0;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,.14)}
+.mutp.delp .dl-item small{display:block;color:var(--text3);font-size:11.5px;margin-top:3px;overflow-wrap:anywhere}
+.mutp.delp .dl-item .dl-res{color:var(--text2)}
+.mutp.delp .dl-item .vibe-confirm{margin-top:8px}
+.mutp.delp .dl-md{max-height:260px}
+.mutp.delp .vx-tag.dl-st{font-style:normal}
+.mutp.delp .vx-tag.dl-enviado{color:var(--text2)}
+.mutp.delp .vx-tag.dl-em_andamento{color:var(--warn);border-color:rgba(251,191,36,.45)}
+.mutp.delp .vx-tag.dl-entregue{color:#cdb4ff;border-color:rgba(185,140,255,.55)}
+.mutp.delp .vx-tag.dl-aprovado{color:var(--ok);border-color:rgba(74,222,128,.45)}
+.mutp.delp .vx-tag.dl-reprovado{color:#fecaca;border-color:rgba(248,113,113,.45)}
+#topbar .vibebtn.deleg i{background:#b98cff}

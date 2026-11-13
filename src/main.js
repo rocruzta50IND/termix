@@ -178,6 +178,18 @@ function createWindow() {
   win.on('closed', () => web.destroy());
 
   win.on('close', (e) => {
+    // DEV2-026: ciclo do Vibe/Mutirão rodando: avisa quais projetos e pergunta se quer fechar e interromper mesmo assim
+    let ciclos = [];
+    if (!quitting) { try { ciclos = (vibe && vibe.avisoFechar && vibe.avisoFechar()) || []; } catch (err) { logError(err); } }
+    if (ciclos.length) {
+      e.preventDefault();
+      dialog.showMessageBox(win, {
+        type: 'warning', buttons: ['Fechar e interromper', 'Cancelar'], defaultId: 1, cancelId: 1, title: 'Termix',
+        message: `Há ${ciclos.length} projeto(s) com ciclo do Vibe Coding ou Mutirão rodando.`,
+        detail: `${ciclos.map((c) => `• ${c.nome}${c.auto ? ' (Mutirão)' : ''}`).join('\n')}\n\nFechar o Termix interrompe esses ciclos. Ao abrir de novo, o pop-up do projeto traz "Continuar ciclo" como botão principal.`,
+      }).then((r) => { if (r.response === 0) { quitting = true; killAll(); win.close(); } else wantRelaunch = false; });
+      return;
+    }
     if (quitting || summary.active === 0) { killAll(); return; }
     e.preventDefault();
     const w = summary.working ? ` (${summary.working} trabalhando agora)` : '';
@@ -305,7 +317,9 @@ ipcMain.handle('pty:spawn', (e, { tabId, cwd, args, cols, rows }) => {
     const hook = { hooks: [{ type: 'command', command: `${runner} "${HOOK()}"` }] };
     const hooks = {};
     for (const ev of ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Notification', 'Stop']) hooks[ev] = [hook];
-    extra.push('--settings', JSON.stringify({ statusLine: { type: 'command', command: cmd }, hooks }));
+    const sets = { statusLine: { type: 'command', command: cmd }, hooks };
+    let vibeSets = null; try { vibeSets = vibe && vibe.spawnSettings({ tabId, cwd, args, settings: sets, runner }); } catch (err) { logError(err); } // abas do Vibe: os mesmos settings + a trava (src/vibe)
+    extra.push('--settings', vibeSets || JSON.stringify(sets));
     // só nesta sessão: pede ao Claude Code que abra páginas locais pela aba Web (texto simples: passa por cmd.exe sem aspas nem símbolos)
     extra.push('--append-system-prompt', OPEN_HINT);
     const finalArgs = [...args, ...extra];
@@ -539,6 +553,8 @@ ipcMain.handle('metrics:all', () => {
 // tela Consumo: tokens e custo equivalente lidos das conversas do Claude Code (leitura incremental, ver consumo.js)
 const consumo = RUN_MODE ? null : require('./consumo').create({ userData: app.getPath('userData') });
 ipcMain.handle('consumo:get', () => (consumo ? consumo.snapshot() : { updated: Date.now(), sessions: [] }));
+// módulo Vibe Coding e Mutirão (DEV2-001/002, experimental): isolado em src/vibe, registra os próprios canais 'vibe:*' com try/catch; um erro nele nunca derruba o app
+let vibe = null; try { vibe = require('./vibe').create({ ipcMain, dialog, app, getWin: () => win, logError }); } catch (e) { logError(e); }
 
 if (!RUN_MODE) require('./code').setup(ipcMain); // tela Código (TASK-102)
 if (!RUN_MODE) require('./clone').setup(ipcMain, { resolveRoot, slug }); // clonar repositório público do GitHub (TASK-133)

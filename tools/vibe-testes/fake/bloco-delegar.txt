@@ -1,0 +1,21 @@
+  // DEV2-025: pedidos do "Delegar tarefa" (tarefa do responsável, começar, entregar, analisar)
+  const dm = /@?(\S*pedido-(?:delegar|analisar)[^\s)]*\.md)/.exec(texto) || /em (.+pedido-(?:delegar|analisar)[^\s)]*\.md)\s*$/.exec(texto);
+  if (dm) {
+    const ped = dm[1].replace(/^@/, ''), base = path.basename(ped, '.md'), conteudo = fs.readFileSync(ped, 'utf8');
+    const dem = cfg().demora || 1500;
+    log('pedido delegar ' + base);
+    job = { to: setTimeout(() => {
+      try {
+        if (/^pedido-delegar-d-/.test(base)) { // tarefa do responsável: escreve o .md completo
+          const mt = /Escreva a tarefa completa em (.+?) \(Markdown/.exec(conteudo);
+          const resumo = (/^> (.+)$/m.exec(conteudo) || [])[1] || 'tarefa';
+          fs.writeFileSync(mt[1], `# ${resumo}\n\n## Objetivo\nFazer: ${resumo}.\n\n## Contexto\nProjeto de brinquedo (teste).\n\n## O que ler\napp.js\n\n## Critério de pronto\nO app roda e o teste passa.\n\n## O que não fazer\nNão mexer na main nem na dev1.\n\n## Resultado esperado\nHandoff com o que mudou e como validar.\n`);
+        } else if (/^pedido-delegar-entregar-/.test(base)) {
+          const mh = /Reescreva (.+?\.md) em alto/.exec(conteudo);
+          fs.mkdirSync(path.dirname(mh[1]), { recursive: true }); fs.writeFileSync(mh[1], '# HANDOFF\n\nTroquei o texto e validei; o teste passa. Risco baixo.\n');
+        }
+      } catch (e) { log('ERRO ' + e.message); }
+      job = null; out('\r\nFEITA\r\n> '); hook('Stop');
+    }, dem) };
+    return;
+  }
