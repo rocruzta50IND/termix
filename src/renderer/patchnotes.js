@@ -3,6 +3,20 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.7.1',
+    date: '12/11/2026',
+    resumo: 'Chegou o Vibe Coding e o novo Mutirão.',
+    novo: [
+      'Vibe Coding: o botão fica à direita na barra de baixo, com um projeto aberto. O Termix cria um orquestrador e um dev, monta o plano e executa tarefa por tarefa, sem deixar a IA mexer na main, forçar envio ou apagar em massa.',
+      'Mutirão: em "Novo mutirão" o dono divide um projeto entre os sócios pelo git, cada um com a sua parte, e acompanha as entregas na pasta "Mutirão" da barra lateral.',
+      'Retomar projeto: ao abrir um projeto, o Termix oferece começar com orquestrador e dev ou retomar as últimas conversas.',
+      'Em "Usar pasta existente" dá para escolher várias pastas de uma vez (Ctrl ou Shift) e montar um projeto só com elas.',
+    ],
+    melhorado: [
+      'Ao fechar o Termix com um ciclo do Vibe Coding ou do Mutirão rodando, ele avisa e pergunta antes de interromper.',
+    ],
+  },
+  {
     v: '0.7.0',
     date: '12/11/2026',
     resumo: 'O Termix agora também roda dentro do Rocruzta Hub.',
