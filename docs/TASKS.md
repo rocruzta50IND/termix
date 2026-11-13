@@ -40,7 +40,7 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 ### TASK-140 — Embutido no Hub: faixa com o botão de reabrir a barra lateral nas telas sem abas
 
 - **Responsável:** DEV1
-- **Status:** FEITA, aguardando o usuário conferir no Hub (2026-11-13)
+- **Status:** CONCLUÍDA (2026-11-13) — validada pelo usuário no Hub e publicada na versão 0.7.2
 - **Problema:** com a barra lateral escondida, em telas sem barra de abas (Consumo, Conectores, Código...) o botão de reabrir ficava solto por cima do título, sem linha, e o conteúdo começava colado nele.
 - **Feito:** `src/renderer/embed.css`: com `body.sidehidden.flatpage`, uma faixa de 40px com a mesma linha das abas no topo da folha; o botão fica centrado no canto e o conteúdo desce abaixo. Nas telas com abas nada muda (a barra de abas já tinha a linha).
 - **Como validar:** no Hub, recolher a barra lateral e abrir Consumo, Conectores e Código; ver a linha e o botão no canto. Conferir também Terminais e Chat (sem faixa dupla) e o tema claro. `npm run check` ok.
