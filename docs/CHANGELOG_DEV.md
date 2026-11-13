@@ -12,6 +12,7 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 - Relato do usuário (com capturas): no Hub, com a barra lateral escondida, o botão de reabrir aparecia solto sobre o título de Consumo e afins, "feio". Pedido: ter a linha como nas telas com abas, o botão certinho no canto e o conteúdo abaixo.
 - `src/renderer/embed.css`: `body.sidehidden.flatpage #col::before` cria a faixa de 40px com borda inferior; o botão sobe para `top: 5px`. Só CSS, só no modo embutido.
+- **Publicação:** versão 0.7.2 (`package.json`, lock e `patchnotes.js`); `dev1` promovida à `main` (fast-forward, f079b61); Release **v0.7.2** com instalador, blockmap e `latest.yml` (sha512 e tamanho conferidos; o feed público já mostra 0.7.2). Validada pelo usuário no Hub. Instalador não testado em Windows limpo; sem `build-cache/Termix-shell.exe` (aviso do Smart App Control).
 
 ---
 
