@@ -6,7 +6,7 @@ const { spawnSync } = require('child_process');
 const { ROOT } = require('./lib');
 const TESTES = [
   ['dep16', 68, 0], ['rec15', 36, 0], ['pol14', 55, 0], ['trava13', 113, 0], ['mod5', 31, 0], ['mod6', 41, 0], ['mod7', 23, 0],
-  ['mod9', 16, 0], ['tar17', 33, 0], ['mut23', 97, 0], ['org26a', 14, 0], ['del25', 77, 0], ['ret26', 38, 0],
+  ['mod9', 16, 0], ['tar17', 33, 0], ['mut23', 97, 0], ['org26a', 14, 0], ['del25', 77, 0], ['ret26', 46, 0],
 ]; // [nome, certos esperados, falhas esperadas] (rec15: com caminho temporário curto passa 36/0; com caminho longo uma checagem de tamanho do pedido falha e dá 35/1, o que também é aceito)
 let ruim = 0;
 for (const [nome, okEsp, malEsp] of TESTES) {

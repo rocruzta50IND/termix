@@ -4,6 +4,27 @@ Histórico da dev2 (tarefas DEV2-xxx, frentes Vibe Coding e Mutirão). Mais rece
 
 ---
 
+## 2026-11-13
+
+**DEV2-028 — Corrigir os 3 QUEBRADOS da auditoria no módulo Vibe** (DEV2)
+
+- Pop-up "Retomar projeto":
+  - espera as Novidades da versão (e qualquer outro pop-up) fecharem;
+  - se outro pop-up passar por cima, volta depois e a vigia não trava mais;
+  - abre na 1ª abertura do dia de cada projeto (dia guardado pelo módulo) e também em modo chat.
+- Encaixe de 1 linha no `app.js`: a promessa das Novidades fica em `window.__termixNovidades`.
+- "Organizar com IA" com várias pastas:
+  - sem o projeto extra "Organizador · <nome>"; segue o caminho do "Carregar" e o projeto real fica com Orquestrador + Dev;
+  - o orquestrador recebe a retomada com o dossiê dentro do pedido e apresenta o resumo e as tarefas;
+  - os pedidos de retomar e de criar a estrutura terminam com essa apresentação.
+- Regex da data do commit corrigida em `src/vibe/retomar.js` e em `src/renderer/vibe/organizador.js`: a pasta principal volta a ser escolhida pela data.
+- Testes:
+  - run26 67/67 e ret26 46/46, com os casos novos;
+  - run15 29/29, com a espera da T5 em 240 s;
+  - run24 26/26, run23 52/52, embed-delegar27 16/16;
+  - sem Electron: os 13 como esperado.
+- README dos testes atualizado. Achados do núcleo listados no HANDOFF para o DEV1.
+
 ## 2026-11-12
 
 **DEV2-027 — Sincronização com a dev1 0.7.0, Delegar estacionado e handoff como manual de integração** (DEV2)

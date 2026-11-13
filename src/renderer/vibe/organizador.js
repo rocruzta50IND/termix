@@ -96,7 +96,7 @@
   // Linhas do mapa. DEV2-026 (5.2-B): várias pastas viram UM projeto, com UM orquestrador e UM dev. O Termix escolhe a pasta
   // principal: a do papel de dev ou, sem dev, a com o commit mais recente (o usuário troca no mapa). As duas abas trabalham nela;
   // as outras pastas não são usadas, mas não são movidas nem apagadas.
-  const dataCommit = (a) => { const c = a.git && a.git.commits && a.git.commits[0]; const m = c && /^S+ (d{4}-d{2}-d{2})/.exec(c); return m ? m[1] : ''; };
+  const dataCommit = (a) => { const c = a.git && a.git.commits && a.git.commits[0]; const m = c && /^\S+ (\d{4}-\d{2}-\d{2})/.exec(c); return m ? m[1] : ''; };
   function linhas(an) {
     const rows = an.lista.map((a) => ({ a, papel: a.papel, principal: false }));
     const ex = rows.filter((r) => r.a.existe), dev = ex.filter((r) => r.papel === 'Dev');
@@ -177,7 +177,9 @@
   }
 
   /* ---------- Carregar: abas novas com o pedido (ou a conversa escolhida) ---------- */
-  async function carregar(st) {
+  // extra.dossie (DEV2-028, "Organizar com IA"): o dossiê das pastas entra no pedido do orquestrador do projeto real.
+  async function carregar(st, extra = {}) {
+    const dossie = extra.dossie || null;
     const main = st.rows.find((x) => x.principal && x.a.existe) || st.rows.find((x) => x.a.existe);
     if (!main) return;
     const itens = st.rows.filter((x) => x.a.existe).map((x) => (x === main
@@ -194,12 +196,14 @@
     if (window.TermixRet && !p.tabs.some((t) => t.open && !t.archived)) {
       if (st.fim) try { st.fim(); } catch { /* sem retorno */ }
       UI.cur = { p: p.id, page: 'Terminais' }; renderAll();
-      tratado = await window.TermixRet.aoAdicionar(p, { pastas: itens.map((x) => x.pasta) });
+      tratado = await window.TermixRet.aoAdicionar(p, { pastas: itens.map((x) => x.pasta), dossie });
     }
     if (tratado) { call('orgRegistrar', prep.grupo, p.tabs.filter((t) => t.open).map((t) => ({ pasta: main.a.pasta, projeto: p.id, aba: t.id, papel: t.name }))); return; }
     const aberta = (nome) => p.tabs.find((t) => t.open && !t.archived && String(t.name).toLowerCase() === nome.toLowerCase());
     if (!aberta('Orquestrador')) {
-      const out = await abaComPedido(p, st.perm, 'Orquestrador', COR.Orquestrador, prep.pedidos[main.a.pasta]);
+      // com o dossiê, o orquestrador recebe o pedido curto de retomada (com o dossiê dentro) no lugar do pedido de localização
+      const pr = dossie ? await call('retPedidoRetomar', { id: p.id, nome: p.name, pasta: p.path, dossie }) : null;
+      const out = await abaComPedido(p, st.perm, 'Orquestrador', COR.Orquestrador, (pr && pr.ok && pr.arquivo) || prep.pedidos[main.a.pasta]);
       if (out.ok) { pend.push(out.go); ligacoes.push({ pasta: main.a.pasta, projeto: p.id, aba: out.tab.id, papel: 'Orquestrador' }); }
     }
     if (!aberta('Dev')) { // o dev só abre e fica esperando (não gasta token)
@@ -214,20 +218,16 @@
     return Promise.all(pend);
   }
 
-  /* ---------- Organizar com IA (opcional) ---------- */
+  /* ---------- Organizar com IA (opcional) ----------
+     DEV2-028 (Ygor): sem o projeto extra "Organizador · <nome>" e sem aba de trabalho própria. O Termix monta o dossiê (sem IA)
+     e segue o MESMO caminho do "Carregar": o projeto real fica com Orquestrador + Dev, e o orquestrador recebe o pedido curto de
+     retomada (ou o de criar a estrutura) com o dossiê dentro, para apresentar o resumo do projeto e as tarefas identificadas. */
   async function organizar(st) {
     const itens = st.rows.filter((x) => x.a.existe).map((x) => ({ pasta: x.a.pasta, papel: x.papel, analise: x.a }));
     const o = await call('orgOrganizar', { nome: st.nome, itens });
     if (!o || !o.ok) { addEvent({ who: 'Organizar com IA', msg: 'Não foi possível montar o dossiê. Veja o erros.log.' }); return mapa(st); }
-    // a aba organizadora roda na pasta de dados do módulo: lê o dossiê e grava organizacao.md ali, sem tocar nas pastas do projeto
-    let p = projOfPath(o.dir);
-    if (!p) p = addProject({ name: `Organizador · ${st.nome}`.slice(0, 60), path: o.dir, imported: true, noTab: true });
-    const out = await abaComPedido(p, 'n', 'Organizador', '#A78BFA', o.pedido);
-    if (!out.ok) return mapa(st);
-    addEvent({ who: `Organizar com IA · ${st.nome}`, tabId: out.tab.id, msg: 'A aba "Organizador" está lendo o dossiê. Quando terminar, o mapa volta com a organização.' });
-    if (!(await out.go)) return;
-    await waitHook(out.tab.id, (d) => d.event === 'Stop', 20 * 60000);
-    return verOrganizacao(st, o.grupo);
+    addEvent({ who: `Organizar com IA · ${st.nome}`, msg: `Dossiê das pastas montado (${o.dossie}). O orquestrador do projeto lê o dossiê junto com a retomada e apresenta o resumo e as tarefas.` });
+    return carregar(st, { dossie: o.dossie });
   }
   async function verOrganizacao(st, g) {
     const r0 = await call('orgLerOrganizacao', g);
@@ -251,5 +251,5 @@
   window.TermixOrg.abaComPedido = abaComPedido; window.TermixOrg.waitHook = waitHook; window.TermixOrg.typeLine = typeLine; // DEV2-026: o módulo "Retomar projeto" reaproveita
 
   // gancho de teste (o caminho das pastas só é aceito pelo processo principal com TERMIX_VIBE_TEST=1)
-  window.orgTest = { mapaDe: (ps, nome) => mapaDe(ps, nome), linhas: (an) => linhas(an), abrir: (st) => abrir(st), mapa: (st) => mapa(st), carregar: (st) => carregar(st), organizar: (st) => organizar(st), ver: (g) => verOrganizacao(null, g), analisar: (ps) => call('orgAnalisar', ps) };
+  window.orgTest = { mapaDe: (ps, nome) => mapaDe(ps, nome), linhas: (an) => linhas(an), abrir: (st) => abrir(st), mapa: (st) => mapa(st), carregar: (st, x) => carregar(st, x), organizar: (st) => organizar(st), ver: (g) => verOrganizacao(null, g), analisar: (ps) => call('orgAnalisar', ps) };
 })();

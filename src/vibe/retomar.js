@@ -61,7 +61,7 @@ function pastaPrincipal(lista) {
   if (!ex.length) return null;
   const dev = ex.filter((a) => a.papel === 'Dev');
   const base = dev.length ? dev : ex;
-  const t = (a) => { const c = a.git && a.git.commits && a.git.commits[0]; const m = c && /^S+ (d{4}-d{2}-d{2})/.exec(c); return m ? m[1] : ''; }; // data do último commit (AAAA-MM-DD)
+  const t = (a) => { const c = a.git && a.git.commits && a.git.commits[0]; const m = c && /^\S+ (\d{4}-\d{2}-\d{2})/.exec(c); return m ? m[1] : ''; }; // data do último commit (AAAA-MM-DD)
   return base.slice().sort((a, b) => (t(b) > t(a) ? 1 : t(b) < t(a) ? -1 : 0))[0].pasta;
 }
 
@@ -103,7 +103,11 @@ const REGRAS_ARQ = `Arquivos da estrutura (só estes três; NÃO use o /fluxo:in
 Se algum já existir com conteúdo, complete só o que falta, sem apagar o que existe. Grave na branch atual, SEM commit e sem push. Ao terminar, mostre ao usuário o que criou ou alterou (arquivo por arquivo, em 1 linha cada).
 A partir de agora, a cada tarefa concluída mantenha \`docs/TASKS.md\` e \`docs/ESTADO.md\` atualizados.`;
 
-function pedidoEstrutura({ nome, pasta, pastas, respostas }) {
+// DEV2-028: o dossiê do "Organizar com IA" (montado sem IA, poucos KB) vai DENTRO do pedido: o orquestrador não precisa ler fora da pasta.
+const blocoDossie = (texto) => (texto ? `\n## Dossiê das pastas (montado pelo Termix, sem IA)\nUse-o para dizer também o que é cada pasta (papel), as ambiguidades e sugestões, estas só como proposta: não mova, renomeie, apague nem edite nada nas pastas por causa dele.\n\n${texto}\n` : '');
+const APRESENTAR = 'Por fim, apresente ao usuário, em até 12 linhas: um **resumo do projeto** (o que é, em 1 a 2 linhas), **as tarefas identificadas** (em andamento e pendentes) e o **próximo passo**. Então aguarde as instruções.';
+
+function pedidoEstrutura({ nome, pasta, pastas, respostas, dossie }) {
   const outras = (pastas || []).filter((x) => x !== pasta);
   const comResp = respostas && respostas.length;
   return `# Pedido do Termix: criar a estrutura do projeto "${nome}"
@@ -117,10 +121,12 @@ ${comResp ? `1. Leia as respostas das conversas antigas (cada uma foi pedida ao 
 ${REGRAS_ARQ}
 
 Seja curto e fiel: só o que foi levantado, com "não sei" onde faltar. Não rode o projeto, não instale nada, não mude código.
-`;
+
+${APRESENTAR}
+${blocoDossie(dossie)}`;
 }
 
-function pedidoRetomar({ nome, pasta, temRetomar, avisoPendente }) {
+function pedidoRetomar({ nome, pasta, temRetomar, avisoPendente, dossie }) {
   const passos = temRetomar
     ? 'Rode `/retomar` (este projeto tem `.claude/commands/retomar.md`) e siga o que ele mandar.'
     : `Leia só: o guia (\`CLAUDE.md\`, o começo e as seções de regras), a tarefa em andamento (\`docs/TASKS.md\`, seção "Em andamento"), o estado (\`docs/ESTADO.md\`) ou o handoff, a última entrada do changelog (se houver) e \`git log --oneline -10\`. Não leia código nem históricos inteiros.`;
@@ -129,8 +135,8 @@ function pedidoRetomar({ nome, pasta, temRetomar, avisoPendente }) {
 Você é o orquestrador do projeto "${nome}" (pasta ${pasta}), com contexto limpo.
 ${passos}
 
-Depois responda ao usuário, em até 10 linhas: **onde paramos**, **as tarefas pendentes** e **o que precisa para seguir**. Só leitura: não grave nada, não faça commit nem push. Então aguarde as instruções.
-${avisoPendente ? `\n${avisoPendente}\n` : ''}`;
+Depois apresente ao usuário, em até 12 linhas: um **resumo do projeto** (o que é, em 1 a 2 linhas), **onde paramos**, **as tarefas pendentes** (as identificadas, em andamento e pendentes) e **o que precisa para seguir**. Só leitura: não grave nada, não faça commit nem push. Então aguarde as instruções.
+${avisoPendente ? `\n${avisoPendente}\n` : ''}${blocoDossie(dossie)}`;
 }
 
 function create(deps = {}) {
@@ -139,6 +145,16 @@ function create(deps = {}) {
   const dirOf = (id) => path.join(root(), id);
   const writeAtomic = (f, txt) => { fs.mkdirSync(path.dirname(f), { recursive: true }); const tmp = `${f}.tmp`; fs.writeFileSync(tmp, txt); fs.renameSync(tmp, f); };
   const readJson = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } };
+  // DEV2-028: só aceita dossiê da pasta de dados do Organizador (<userData>\organizador\...), e só os primeiros 24 KB.
+  const lerDossie = (f) => {
+    if (typeof f !== 'string' || !f) return '';
+    const base = path.resolve(app.getPath('userData'), 'organizador') + path.sep;
+    const r = path.resolve(f);
+    return r.toLowerCase().startsWith(base.toLowerCase()) && isFile(r) ? readTxt(r, 24 * 1024).trim() : '';
+  };
+  // DEV2-028: o pop-up "Retomar projeto" abre na 1ª abertura DO DIA de cada projeto. Dia (AAAA-MM-DD, data local, vindo da
+  // interface) por projeto em <userData>\retomar\popup-dias.json; o state.json do núcleo não é tocado.
+  const diasF = () => path.join(root(), 'popup-dias.json');
   const ativo = new Map(); // projeto -> { filho, cancelar }
   let ciclos = [];
 
@@ -222,21 +238,30 @@ function create(deps = {}) {
     },
 
     // Pedido do orquestrador (a): /retomar ou leitura guiada.
-    retPedidoRetomar({ id, nome, pasta, avisoPendente } = {}) {
+    retPedidoRetomar({ id, nome, pasta, avisoPendente, dossie } = {}) {
       const pid = validP(id) ? id : slug(nome);
       const f = path.join(dirOf(pid), 'pedido-retomar.md');
-      writeAtomic(f, pedidoRetomar({ nome: String(nome || 'Projeto'), pasta, temRetomar: isFile(path.join(pasta, '.claude', 'commands', 'retomar.md')), avisoPendente }));
+      writeAtomic(f, pedidoRetomar({ nome: String(nome || 'Projeto'), pasta, temRetomar: isFile(path.join(pasta, '.claude', 'commands', 'retomar.md')), avisoPendente, dossie: lerDossie(dossie) }));
       return { ok: true, arquivo: f };
     },
     // Pedido de criação da estrutura (sem conversas: README, manifestos, árvore e git log; com conversas: as respostas coletadas).
-    retPedidoEstrutura({ id, nome, pasta, pastas } = {}) {
+    retPedidoEstrutura({ id, nome, pasta, pastas, dossie } = {}) {
       const pid = validP(id) ? id : slug(nome);
       const dir = dirOf(pid);
       const rd = path.join(dir, 'respostas');
       const respostas = lsDir(rd).filter((f) => f.endsWith('.txt')).sort().map((f) => path.join(rd, f));
       const f = path.join(dir, 'pedido-estrutura.md');
-      writeAtomic(f, pedidoEstrutura({ nome: String(nome || 'Projeto'), pasta, pastas: Array.isArray(pastas) ? pastas : [pasta], respostas }));
+      writeAtomic(f, pedidoEstrutura({ nome: String(nome || 'Projeto'), pasta, pastas: Array.isArray(pastas) ? pastas : [pasta], respostas, dossie: lerDossie(dossie) }));
       return { ok: true, arquivo: f, respostas: respostas.length };
+    },
+    // DEV2-028: dia em que o pop-up já foi mostrado para o projeto (null se nunca) e a marcação do dia.
+    retPopupDia(id) { const d = readJson(diasF()) || {}; return typeof id === 'string' && typeof d[id] === 'string' ? d[id] : null; },
+    retPopupMarcar(id, dia) {
+      if (typeof id !== 'string' || !id || id.length > 80 || !/^\d{4}-\d{2}-\d{2}$/.test(String(dia))) return false;
+      const d = readJson(diasF()) || {};
+      d[id] = dia;
+      writeAtomic(diasF(), JSON.stringify(d, null, 2));
+      return true;
     },
     // Texto do "Copiar prompt" (para conversas fora do Termix; alternativa manual).
     retCopiar() { return PROMPT_FIXO; },

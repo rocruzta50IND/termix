@@ -2520,7 +2520,7 @@ let BOOTED = false;
   const sp = $('#splash');
   sp.classList.add('out');
   setTimeout(() => sp.remove(), 500);
-  setTimeout(() => maybeShowPatchNotes(hadState), 900);
+  setTimeout(() => { window.__termixNovidades = maybeShowPatchNotes(hadState); }, 900); // DEV2-028: o pop-up "Retomar projeto" espera esta promessa
 })();
 
 // Reabertura sob demanda (TASK-125): ao abrir o app só o projeto que aparece é retomado; os outros têm as abas na lista (do estado salvo) e só retomam as conversas quando você abre o projeto.

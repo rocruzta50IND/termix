@@ -12,9 +12,9 @@ let ok = 0, bad = 0; const check = (n, c, extra = '') => { if (c) ok++; else bad
 const g = (dir, ...a) => { try { return execFileSync('git', ['-C', dir, ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim(); } catch (e) { return `ERRO ${String(e.stderr || e.message).split('\n')[0]}`; } };
 const W = (f, t) => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, t); };
 const R = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '');
-async function inst(nome, port, projects, fresh = true, extraEnv = {}) {
+async function inst(nome, port, projects, fresh = true, extraEnv = {}, extraState = {}) {
   const UD = path.join(S, nome, 'ud'), CFGD = process.env.CFGD_FIXO || path.join(S, nome, 'claude-cfg'), FCFG = path.join(S, nome, 'fake-cfg.json'), FLOG = FCFG + '.log';
-  if (fresh) W(path.join(UD, 'state.json'), JSON.stringify({ projects, lastSeenVersion: require(path.join(ROOT, 'package.json')).version, settings: {} }, null, 2));
+  if (fresh) W(path.join(UD, 'state.json'), JSON.stringify({ projects, lastSeenVersion: require(path.join(ROOT, 'package.json')).version, settings: {}, ...extraState }, null, 2));
   if (fresh) W(path.join(CFGD, '.claude.json'), JSON.stringify({ projects: {} }));
   W(FCFG, JSON.stringify({ demora: 1500 }));
   const env = { ...process.env, PATH: `${FAKE};${process.env.PATH}`, FAKE_CFG: FCFG, TERMIX_VIBE_TEST: '1', TERMIX_VIBE_NO_OPEN: '1', CLAUDE_CONFIG_DIR: CFGD, TERMIX_VIBE_CLAUDE_JSON: path.join(CFGD, '.claude.json'), ...extraEnv };
@@ -45,17 +45,23 @@ async function inst(nome, port, projects, fresh = true, extraEnv = {}) {
 
 fs.rmSync(S, { recursive: true, force: true });
 const CFGD = path.join(S, 'cfg'); process.env.CFGD_FIXO = CFGD;
-const mkProj = (nome, estrutura) => {
+const mkProj = (nome, estrutura, dataCommit) => {
   const d = path.join(S, 'pj', nome); fs.mkdirSync(d, { recursive: true }); execFileSync('git', ['init', '-q', '-b', 'dev2', d]);
   g(d, 'config', 'user.name', 'T'); g(d, 'config', 'user.email', 't@t');
   W(path.join(d, 'README.md'), `# ${nome}\n`); W(path.join(d, 'package.json'), JSON.stringify({ name: nome, scripts: { test: 'node t.js' } }));
   if (estrutura) { W(path.join(d, 'CLAUDE.md'), `# ${nome}\n\nGuia do projeto ${nome}, com as regras e o jeito de rodar.\n`); W(path.join(d, 'docs/TASKS.md'), '# Tarefas\n\n## Em andamento\n\n### TASK-7 — Fechar o carrinho\n\n## Pendentes\n\n- Pagamento\n\n## Concluídas\n\n- Login\n'); W(path.join(d, 'docs/ESTADO.md'), '# Estado\n\n## Onde paramos\nCarrinho pela metade.\n\n## Próximo passo\nLigar o carrinho ao pagamento.\n'); }
-  g(d, 'add', '-A'); g(d, 'commit', '-qm', `inicio ${nome}`); return d;
+  g(d, 'add', '-A');
+  if (dataCommit) execFileSync('git', ['-C', d, 'commit', '-qm', `inicio ${nome}`], { env: { ...process.env, GIT_COMMITTER_DATE: dataCommit, GIT_AUTHOR_DATE: dataCommit } }); // DEV2-028: commit antigo
+  else g(d, 'commit', '-qm', `inicio ${nome}`);
+  return d;
 };
+const hojeLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const H = 3600e3, now = Date.now();
 const conv = (pasta, horas, titulo, kb = 4) => { const id = crypto.randomUUID(); const f = path.join(CFGD, 'projects', pasta.replace(/[^a-zA-Z0-9]/g, '-'), `${id}.jsonl`); W(f, `${JSON.stringify({ type: 'custom-title', customTitle: titulo })}\n${'x'.repeat(kb * 1024)}\n`); const t = new Date(now - horas * H); fs.utimesSync(f, t, t); return id; };
 const pj = (id, name, p, extra = {}) => ({ id, name, path: p, imported: true, archived: false, tabs: [], activeTab: null, g: 0, open: true, ...extra });
 const PSEM = mkProj('sem'), PCOM = mkProj('com', true), PCIC = mkProj('ciclo', true), PCHAT = mkProj('chat', true), PNOVA = mkProj('nova'), PNOVA2 = mkProj('nova-dev'), PJA = mkProj('ja', true);
+// DEV2-028: Organizador com 2 pastas (a 1ª da lista tem o commit mais ANTIGO: a principal tem de ser a 2ª, pela data) e Novidades
+const PORG1 = mkProj('org28-velha', false, '2020-01-05T10:00:00'), PORG2 = mkProj('org28-nova', true), PNOV = mkProj('novidades', true);
 conv(PSEM, 1, 'Loja: carrinho'); conv(PSEM, 5, 'Loja: pagamento'); conv(PNOVA, 2, 'Nova: api'); conv(PNOVA2, 3, 'Nova: tela'); conv(PNOVA2, 9, 'Nova: antigo');
 const tabChat = { id: 'tc1', name: 'Conversa', kind: 'chat', open: true, archived: false, agent: 'claude', sessionId: 's-c1', started: true, color: '#888', perm: 'n' };
 const PROJS = [pj('p26sem', 'Sem estrutura', PSEM), pj('p26com', 'Com estrutura', PCOM), pj('p26cic', 'Com ciclo', PCIC), pj('p26chat', 'Modo chat', PCHAT, { tabs: [tabChat], activeTab: 'tc1' })];
@@ -145,9 +151,32 @@ const vc = async (X, ...a) => JSON.parse((await X.ev(`window.termix.vibe(${a.map
   await X.shot('n26-5-popup-ciclo', '#modalRoot .dlg');
   await clickBtn(X, '/^Agora não$/'); await wait(800);
 
-  /* ===== 4. modo chat: sem pop-up ===== */
-  await cur(X, 'p26chat'); await wait(4500);
-  check('4 projeto em modo chat (bolhas): sem pop-up', !(await modalAberto(X)));
+  /* ===== 4. modo chat: o pop-up abre também (DEV2-028), com os mesmos botões ===== */
+  await cur(X, 'p26chat');
+  check('4 projeto em modo chat (bolhas): o pop-up abre', !!(await X.until('modal chat', async () => /Modo chat/.test(await X.txt('#modalRoot .dlg h2')), 15000)));
+  const b4 = await txtBtns(X);
+  check('4 modo chat: mesmos botões (Agora não / Retomar últimas conversas / Inicializar orquestrador e dev)', JSON.stringify(b4) === JSON.stringify(['Agora não', 'Retomar últimas conversas', 'Inicializar orquestrador e dev']), JSON.stringify(b4));
+  /* 4b. outro pop-up passa por cima: a promessa resolve, a vigia não trava e o pop-up volta quando o outro fecha */
+  await X.ev("(window.__outro = modal({ title: 'Outro pop-up', body: '<p>teste</p>', buttons: [['Fechar', null]] }), 1)");
+  await wait(2000);
+  check('4b outro pop-up trocou o "Retomar projeto" (sobrescrito)', /Outro pop-up/.test(await X.txt('#modalRoot .dlg h2')));
+  check('4b o dia NÃO foi marcado (o pop-up não foi respondido)', (await vc(X, 'retPopupDia', 'p26chat')) === null);
+  await clickBtn(X, '/^Fechar$/');
+  check('4b vigia não travou: o "Retomar projeto" volta depois que o outro fecha', !!(await X.until('modal chat de novo', async () => /Modo chat/.test(await X.txt('#modalRoot .dlg h2')), 15000)));
+  await clickBtn(X, '/^Agora não$/'); await wait(800);
+  check('4b respondido ("Agora não"): o dia de hoje fica gravado para o projeto', (await vc(X, 'retPopupDia', 'p26chat')) === hojeLocal());
+
+  /* ===== 4c. 1ª abertura do dia x 2ª no mesmo dia ===== */
+  await X.ev('(TermixRet.vistos.clear(), 1)'); // como reabrir o app no mesmo dia (a memória da sessão some; o dia gravado fica)
+  await cur(X, 'p26sem'); await wait(4500);
+  check('4c mesmo dia (memória da sessão limpa): o pop-up NÃO abre de novo', !(await modalAberto(X)));
+  await X.ev("(window.__retHoje = '2099-01-02', 1)"); // virou o dia
+  check('4c outro dia: o pop-up abre de novo na 1ª abertura', !!(await X.until('modal dia novo', async () => /Sem estrutura/.test(await X.txt('#modalRoot .dlg h2')), 15000)));
+  await clickBtn(X, '/^Agora não$/'); await wait(800);
+  check('4c o dia novo fica gravado', (await vc(X, 'retPopupDia', 'p26sem')) === '2099-01-02');
+  await vc(X, 'retPopupMarcar', 'p26sem', hojeLocal()); // volta ao dia real sem reabrir o pop-up deste projeto
+  await X.ev('(delete window.__retHoje, 1)'); await wait(3000);
+  check('4c de volta ao dia real (já marcado): sem pop-up', !(await modalAberto(X)));
 
   /* ===== 5. Retomar últimas conversas (aviso de custo) ===== */
   await X.ev('(TermixRet.abrirPopup(S.projects.find(p=>p.id==="p26sem"),true),1)');
@@ -193,9 +222,31 @@ const vc = async (X, ...a) => JSON.parse((await X.ev(`window.termix.vibe(${a.map
   await X.ev('(window.__rj = TermixRet.aoAdicionar(S.projects.find(p=>p.id==="p26ja"),{}).then(v=>{window.__rjv=String(v)}),1)');
   await X.until('abas ja', async () => { const a = await abas(X, 'p26ja'); return a.includes('Orquestrador') && a.includes('Dev'); }, 60000);
   log('rjv=', await X.ev('window.__rjv'), 'est=', JSON.stringify(await vc(X, 'retEstrutura', PJA)));
-  check('6b já estruturado: sem oferta, entra direto com orquestrador e dev', !/Criar estrutura do projeto/.test(await X.txt('#modalRoot .dlg h2')) && (await abas(X, 'p26ja')).length === 2, JSON.stringify(await abas(X, 'p26ja')) + ' modal=' + (await X.txt('#modalRoot .dlg')).replace(/s+/g, ' ').slice(0, 300) + ' ' + JSON.stringify(await X.js('S.projects.map(p=>p.id+":"+p.tabs.length)')));
+  check('6b já estruturado: sem oferta, entra direto com orquestrador e dev', !/Criar estrutura do projeto/.test(await X.txt('#modalRoot .dlg h2')) && (await abas(X, 'p26ja')).length === 2, JSON.stringify(await abas(X, 'p26ja')) + ' modal=' + (await X.txt('#modalRoot .dlg')).replace(/\s+/g, ' ').slice(0, 300) + ' ' + JSON.stringify(await X.js('S.projects.map(p=>p.id+":"+p.tabs.length)')));
   check('6b sem coleta em segundo plano', colunas().length === colAntes);
   await wait(2500);
+
+  /* ===== 8. Organizador com 2 pastas + "Organizar com IA" (DEV2-028): sem projeto extra, termina com Orquestrador + Dev ===== */
+  await fechaModal(); await wait(500);
+  const pr8 = JSON.parse((await X.ev(`orgTest.analisar(${JSON.stringify([PORG1, PORG2])}).then((an) => JSON.stringify(orgTest.linhas(an).map((r) => r.principal)))`)) || 'null');
+  check('8 pasta principal pela data do commit: a 2ª pasta (commit mais novo), não a 1ª da lista', JSON.stringify(pr8) === '[false,true]', JSON.stringify(pr8));
+  const nProj8 = await X.js('S.projects.length');
+  const nRet8 = (fl().match(/\[Orquestrador\] pedido retomar/g) || []).length;
+  await X.ev(`(window.__org8 = orgTest.mapaDe(${JSON.stringify([PORG1, PORG2])}, 'Org28'), 1)`);
+  check('8 mapa do projeto com 2 pastas abre', !!(await X.until('mapa 8', async () => /Mapa do projeto: Org28/.test(await X.txt('#modalRoot .dlg h2')), 20000)));
+  await X.shot('n26-8-mapa-2-pastas', '#modalRoot .dlg');
+  await clickBtn(X, '/^Organizar com IA$/');
+  const pid8 = await X.until('projeto real 8', async () => X.ev(`(S.projects.find((p) => String(p.path).toLowerCase() === ${JSON.stringify(PORG2.toLowerCase())}) || {}).id || ''`), 30000);
+  await X.until('abas 8', async () => { const a = pid8 ? await abas(X, pid8) : []; return a.includes('Orquestrador') && a.includes('Dev'); }, 60000);
+  check('8 o projeto real (pasta principal) termina com Orquestrador + Dev', !!pid8 && JSON.stringify((await abas(X, pid8)).sort()) === JSON.stringify(['Dev', 'Orquestrador']), pid8 ? JSON.stringify(await abas(X, pid8)) : 'sem projeto');
+  check('8 sem projeto extra "Organizador · Org28" e sem aba "Organizador" (só 1 projeto novo)', !(await X.js('S.projects.map((p) => p.name)')).some((n) => /^Organizador ·/.test(n)) && !(await X.js('S.projects.some((p) => p.tabs.some((t) => /^Organizador$/.test(t.name)))')) && (await X.js('S.projects.length')) === nProj8 + 1, JSON.stringify(await X.js('S.projects.map((p) => p.name)')));
+  await X.until('pedido 8', async () => (fl().match(/\[Orquestrador\] pedido retomar/g) || []).length > nRet8, 60000);
+  check('8 o orquestrador recebeu o pedido curto de retomada; o dev, nada', (fl().match(/\[Orquestrador\] pedido retomar/g) || []).length === nRet8 + 1 && !/\[Dev\] pedido/.test(fl()));
+  const ped8 = pid8 ? R(path.join(X.UD, 'retomar', pid8, 'pedido-retomar.md')) : '';
+  check('8 o pedido traz o dossiê das 2 pastas e pede o resumo do projeto e as tarefas', /Dossiê das pastas/.test(ped8) && /org28-velha/.test(ped8) && /org28-nova/.test(ped8) && /resumo do projeto/.test(ped8) && /tarefas pendentes/.test(ped8), ped8.slice(0, 200));
+  check('8 a pasta não principal ficou intacta (nada criado nem alterado)', g(PORG1, 'status', '--porcelain') === '' && !fs.existsSync(path.join(PORG1, 'docs')));
+  await wait(1500); await X.shot('n26-9-organizador-fim');
+  await wait(2500); await fechaModal();
 
   /* ===== 7. aviso ao fechar o app com ciclo rodando ===== */
   await X.ev('(TermixVibeBridge.cicloAtivos = () => [{ id: "p26cic", nome: "Com ciclo", auto: false, fase: "executando" }], 1)');
@@ -209,7 +260,30 @@ const vc = async (X, ...a) => JSON.parse((await X.ev(`window.termix.vibe(${a.map
   try { bws.close(); } catch {}
   log('ERROS DO APP:', JSON.stringify(X.errs).slice(0, 1500)); log('FAKELOG:', fl().split(String.fromCharCode(10)).slice(-12).join(' | ').slice(0, 900));
   check('0 sem exceções no console do app', X.errs.length === 0, X.errs.slice(0, 2).join(' | ').slice(0, 300));
-  X.kill(); await wait(1500);
+  X.kill(); await wait(2500);
+
+  /* ===== 9. Novidades abertas antes do pop-up + reabrir no mesmo dia (instância própria; DEV2-028) ===== */
+  const PN = [pj('p26nov', 'Com novidades', PNOV)];
+  let Y = await inst('r26n', 9427, PN, true, {}, { lastSeenVersion: '0.0.1' }); // como a 1ª abertura depois de atualizar
+  await Y.until('TermixRet Y', async () => (await Y.ev('typeof TermixRet')) === 'object', 30000);
+  await cur(Y, 'p26nov');
+  check('9 as Novidades abrem na 1ª abertura depois de atualizar', !!(await Y.until('novidades', async () => /Novidades/.test(await Y.txt('#modalRoot .dlg h2')), 30000)));
+  await wait(5000);
+  check('9 com as Novidades abertas, o pop-up espera (as Novidades continuam na tela)', /Novidades/.test(await Y.txt('#modalRoot .dlg h2')));
+  await Y.shot('n26-10-novidades', '#modalRoot .dlg');
+  await clickBtn(Y, '/^Entendi$/');
+  check('9 fechadas as Novidades, o pop-up "Retomar projeto" abre', !!(await Y.until('pop-up depois das novidades', async () => /Retomar projeto: Com novidades/.test(await Y.txt('#modalRoot .dlg h2')), 15000)));
+  await Y.shot('n26-11-popup-depois-das-novidades', '#modalRoot .dlg');
+  await clickBtn(Y, '/^Agora não$/'); await wait(1000);
+  check('9 respondido: dia de hoje gravado', (await vc(Y, 'retPopupDia', 'p26nov')) === hojeLocal());
+  check('9 sem exceções no console (1ª abertura)', Y.errs.length === 0, Y.errs.slice(0, 2).join(' | ').slice(0, 300));
+  Y.kill(); await wait(2500);
+  Y = await inst('r26n', 9427, PN, false); // reabrir o app no mesmo dia
+  await Y.until('TermixRet Y2', async () => (await Y.ev('typeof TermixRet')) === 'object', 30000);
+  await cur(Y, 'p26nov'); await wait(7000);
+  check('9 reabrir o app no mesmo dia: sem Novidades e sem pop-up', !(await modalAberto(Y)), await Y.txt('#modalRoot .dlg h2'));
+  check('9 sem exceções no console (reabertura)', Y.errs.length === 0, Y.errs.slice(0, 2).join(' | ').slice(0, 300));
+  Y.kill(); await wait(1500);
   log(`\n${ok} OK, ${bad} FALHOU`);
   process.exit(bad ? 1 : 0);
 })().catch((e) => { log('ERRO FATAL', e.stack); process.exit(2); });

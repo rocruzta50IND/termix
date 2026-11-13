@@ -19,6 +19,7 @@ Tarefas da **dev2**, separadas das do DEV1. Decisão do Ygor (2026-11-06):
 - **DEV2-021** — Dois ajustes do deploy da DEV2-016: portão obrigatório no deploy automático e junção da main na dev1 depois de "Voltar versão". *(feita, abaixo)*
 - **DEV2-025** — Botão "Delegar tarefa" (contas provisórias, pedido na dev1, entrega por marcador) e rodapé do mapa do Organizador. *(feita, abaixo)*
 - **DEV2-027** — Sincronização com a dev1 0.7.0 e preparação para a integração: Delegar estacionado, pendências adiadas e handoff como manual. *(feita, abaixo)*
+- **DEV2-028** — Correção dos 3 QUEBRADOS da auditoria de 2026-11-13 (pop-up Retomar, Organizador com várias pastas, regex). *(feita, abaixo; aguardando validação do DEV1)*
 - **DEV2-019, Mutirão com IA real e validações reais:** adiados, ver "Pendências da dev2 (adiadas)" logo abaixo.
 - **Backlog antigo (agora em "Adiado"):** (da DEV2-015) validar o F5 da aba e a decisão do orquestrador com um Claude Code real. (O PID do F5 do projeto e o `run7.js` foram feitos na DEV2-016.)
 - **Backlog (da DEV2-016):** validar com um Claude Code real o Dev consertando o portão pedido pela recuperação e o handoff do fim do ciclo escrito pelo orquestrador.
@@ -35,6 +36,47 @@ Decisão do Ygor (2026-11-12): fica fora desta entrega; a dev2 assume depois. Ca
 - **Validações com Claude Code real.** *Motivo:* mesmo. *Backlog 015:* o F5 da aba e a decisão do orquestrador. *Backlog 016:* o Dev consertando o portão pedido pela recuperação e o handoff do fim do ciclo escrito pelo orquestrador. *Backlog 025:* o orquestrador escrevendo a tarefa completa e o handoff do Delegar. *Backlog 026:* a coleta dos chats antigos e o "Continuar ciclo" do pop-up.
 - **Clique no diálogo nativo do aviso ao fechar o app (DEV2-026).** *Motivo:* diálogo nativo, o teste automático não o aciona. *Pronto:* o app não fecha com ciclo rodando e o processo principal recebe a lista. *Falta:* conferir à mão "Fechar e interromper" e "Cancelar".
 - **Botões do módulo no `--embed` (decisão do Rodrigo).** *Pronto:* o módulo funciona no embed. *Falta:* um lugar para o "Vibe Coding" que exista sem o cabeçalho (ver DEV2-027).
+
+---
+
+## DEV2-028 — Corrigir os 3 QUEBRADOS da auditoria no módulo Vibe (pop-up "Retomar projeto", Organizador com várias pastas, regex da data do commit)
+
+- **Status:** AGUARDANDO VALIDAÇÃO DEV1
+- **Data:** 2026-11-13
+- **Pedido:** orquestrador termix-orq-16, autorizado pelo Ygor. Fonte: `_relatorios/termix-auditoria-2026-11-13.md` ("Quebrados e riscos"). Escopo: só o módulo; o `app.js` só no mínimo para o encaixe; sem mudança visual; sem corrigir os achados do núcleo (listados no handoff).
+- **Antes de começar:** `git fetch`; `dev2..origin/dev1` vazio (base `bfa7e96`, 0.7.2). Sem sincronização.
+- **Feito:**
+  1. **Pop-up "Retomar projeto"** (`src/renderer/vibe/retomar.js`):
+     - espera a promessa das Novidades (`window.__termixNovidades`, guardada pelo `app.js`) e qualquer outro modal fechar;
+     - abre com `modalVigiado`: se outro modal trocar o conteúdo de `#modalRoot`, a promessa resolve como "sobrescrito", o projeto sai dos vistos e o pop-up volta depois. Se outro modal abrir enquanto os dados carregam, devolve "adiado";
+     - sem o sinal das Novidades em 30 s, segue;
+     - 1ª abertura do dia: `retPopupDia`/`retPopupMarcar` em `<userData>\retomar\popup-dias.json`, com o dia local vindo da interface (`window.__retHoje` troca o dia nos testes); virar o dia com o app aberto limpa os vistos;
+     - modo chat também; pula só projeto interno e sem pasta;
+     - o `aoAdicionar` marca o dia.
+  2. **Organizador** (`src/renderer/vibe/organizador.js`): o "Organizar com IA" monta o dossiê e chama `carregar(st, { dossie })`, sem projeto extra e sem aba "Organizador". O `aoAdicionar`, o `criarEstrutura` e o caminho antigo do "Carregar" passam o dossiê ao pedido. No processo principal (`src/vibe/retomar.js`), `retPedidoRetomar` e `retPedidoEstrutura` aceitam `dossie` (só de `<userData>\organizador\`, até 24 KB, dentro do pedido). Os dois pedidos terminam pedindo ao orquestrador para apresentar o resumo do projeto e as tarefas identificadas.
+  3. **Regex:** `/^\S+ (\d{4}-\d{2}-\d{2})/` em `src/vibe/retomar.js` (`pastaPrincipal`) e em `src/renderer/vibe/organizador.js` (`dataCommit`, mesma falha). Um grep no módulo e nos testes achou só mais uma em diagnóstico do `run26` (`/\s+/`), também corrigida.
+  4. **Testes:**
+     - `run26` 44 para 67: modo chat, sobrescrito, mesmo dia x dia novo, Organizador com 2 pastas, Novidades numa 2ª instância com reabertura;
+     - `ret26` 38 para 46: data do commit, dia do pop-up, dossiê dentro do pedido e recusado fora da pasta;
+     - `run15` T5: espera de 120 para 240 s, com o motivo no código e um log de onde parou se estourar;
+     - README dos testes com run26 67, ret26 46 e embed-delegar27 16.
+  5. **Docs:** `docs/ORGANIZADOR.md` (item 6, pop-up, Inicializar), o trecho DEV2-026 de `docs/DECISOES.md` e HANDOFF_DEV2 reescrito.
+- **Decisões:**
+  - O "Organizar com IA" não precisa de aba de trabalho: o dossiê entra no pedido do orquestrador. Assim ele não lê nada fora da pasta e não sobra aba para fechar ou arquivar.
+  - O dia fica no módulo, não no `state.json`.
+  - "Sobrescrito" não conta como visto.
+  - Encaixe no `app.js` = 1 linha (guardar a promessa das Novidades).
+- **Achado:** um script de edição pelo shell engoliu as barras invertidas nesta tarefa (mesma assinatura do bug da regex); a checagem de sintaxe pegou e as edições foram refeitas pela ferramenta de edição.
+- **Arquivos tocados:** `src/renderer/app.js` (1 linha), `src/vibe/retomar.js`, `src/renderer/vibe/retomar.js`, `src/renderer/vibe/organizador.js`, `tools/vibe-testes/run26.js`, `ret26.js`, `run15.js`, `rodar-sem-electron.js`, `README.md`, `docs/ORGANIZADOR.md`, `docs/DECISOES.md`, docs da dev2.
+- **Como validar:**
+  - `npm run check` ok;
+  - `npm run test:vibe` com os 13 "como esperado" (ret26 46/46);
+  - Electron com agente falso, `TEMP=C:\termix-dev2-tmp`: run26 67/67, run15 29/29 (pausa da T5 em ~44 s), run24 26/26, run23 52/52, embed-delegar27 16/16;
+  - visual por CDP nas instâncias isoladas do `run26` (portas 9426/9427, `--user-data-dir` próprio), capturando só o conteúdo do app: Novidades, pop-up depois das Novidades, mapa com 2 pastas e o fim do Organizador (projeto Org28 com Dev + Orquestrador, sem projeto extra).
+- **Pendências:**
+  - a resposta de um orquestrador real ao pedido com o dossiê (sem IA real nesta entrega);
+  - os achados do núcleo ficam para o DEV1 (handoff, seção 4).
+- **Próximo passo:** aguardar a validação do DEV1.
 
 ---
 

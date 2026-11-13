@@ -128,7 +128,12 @@ const F5CMD = 'node -e "console.log(\'F5 do projeto: servidor de teste reiniciad
 
   /* ---- T5: orquestrador mudo na revisão -> F5 da aba dele -> mudo de novo -> pausa ---- */
   const orqStarts0 = cnt(/\[Vibe · Orquestrador\] hook SessionStart startup/g);
-  x = await until('pausa da T5', async () => { const e = await ex(); return e && e.pausa ? e : null; }, 120000);
+  // DEV2-028: teto de 120 s -> 240 s. A T5 soma duas esperas de silêncio (12 s + relógio de 5 s cada), o F5 da aba do orquestrador
+  // (fecha, reabre com --resume e espera o SessionStart do agente falso) e a revisão pedida de novo: numa máquina livre leva ~45 s,
+  // mas com a máquina carregada (outros Electron/testes) a reabertura da aba já passou de 120 s (falha intermitente da auditoria
+  // de 2026-11-13, que passou ao repetir). Estourando, o log mostra onde parou.
+  x = await until('pausa da T5', async () => { const e = await ex(); return e && e.pausa ? e : null; }, 240000);
+  if (!x) log('T5 sem pausa: exec =', JSON.stringify(await ex()).slice(0, 400), '| fake:', flog().split('\n').slice(-8).join(' | ').slice(0, 600));
   check('T5: orquestrador mudo -> F5 da aba dele (uma vez) -> revisão pedida de novo', cnt(/\[Vibe · Orquestrador\] hook SessionStart startup/g) === orqStarts0 + 1 && cnt(/pedido pedido-T5-revisao ->/g) === 2);
   check('T5: mudo de novo -> pausa com aviso', x && x.tarefas[x.k].id === 'T5' && x.pausa.tipo === 'erro' && /já reabriu a aba do orquestrador \(F5\)/.test(x.pausa.motivo) && (await avisos()).some((m) => /^T5: .*travou de novo/.test(m)), x && x.pausa && x.pausa.motivo);
   await painel('r3-pausa-orquestrador-mudo');

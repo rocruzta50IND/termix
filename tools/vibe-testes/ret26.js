@@ -102,6 +102,24 @@ const CV = [conv(P.conv, 1, 'c1'), conv(P.conv, 2, 'c2'), conv(P.conv2, 3, 'c3')
   check('cancelar: status "cancelada", o que já veio fica e as outras não rodam', ok1 && est.status === 'cancelada' && est.feitas >= 1 && est.feitas < 4, JSON.stringify({ f: est.feitas, s: est.status }));
   check('sem conversa marcada, a coleta é recusada', (await call('retColetaIniciar', { id: 'proj-x', nome: 'Loja', convs: [] })).ok === false);
 
+  /* ===== DEV2-028 ===== */
+  const RETM = require(path.join(ROOT, 'src/vibe/retomar.js'));
+  const linhaReal = g(P.conv, 'log', '-1', '--format=%h %cs %s'); // mesmo formato do Organizador (organizador.js: git log --format=%h %cs %s)
+  const pp = RETM.pastaPrincipal([{ existe: true, pasta: 'A', papel: 'Outro', git: { commits: ['abc1234 2020-01-05 velho'] } }, { existe: true, pasta: 'B', papel: 'Outro', git: { commits: [linhaReal] } }, { existe: true, pasta: 'C', papel: 'Outro', git: { commits: ['def5678 2021-03-01 meio'] } }]);
+  check('028 pastaPrincipal escolhe pela data do commit (a mais recente, não a 1ª da lista)', pp === 'B', `${pp} (${linhaReal})`);
+  check('028 pastaPrincipal: com papel Dev, a do dev ganha mesmo com commit mais velho', RETM.pastaPrincipal([{ existe: true, pasta: 'A', papel: 'Dev', git: { commits: ['abc1234 2020-01-05 x'] } }, { existe: true, pasta: 'B', papel: 'Outro', git: { commits: [linhaReal] } }]) === 'A');
+  check('028 dia do pop-up: nada gravado no começo', (await call('retPopupDia', 'p-dia')) === null);
+  const marc = await call('retPopupMarcar', 'p-dia', '2026-11-13');
+  check('028 dia do pop-up: grava e lê a data (por projeto, em retomar/popup-dias.json)', marc === true && (await call('retPopupDia', 'p-dia')) === '2026-11-13' && (await call('retPopupDia', 'outro')) === null && fs.existsSync(path.join(S, 'ud', 'retomar', 'popup-dias.json')));
+  check('028 dia do pop-up: data inválida é recusada', (await call('retPopupMarcar', 'p-dia', '13/11/2026')) === false && (await call('retPopupDia', 'p-dia')) === '2026-11-13');
+  const DOS = path.join(S, 'ud', 'organizador', 'org-loja', 'dossie.md'); W(DOS, '# Dossiê\nMARCA-DOSSIE-028\n');
+  const prd = R((await call('retPedidoRetomar', { id: 'proj-d', nome: 'Loja', pasta: P.cheio, dossie: DOS })).arquivo);
+  check('028 pedido de retomar com o dossiê DENTRO (sem ler fora da pasta) e pedindo o resumo do projeto e as tarefas', /Dossiê das pastas/.test(prd) && /MARCA-DOSSIE-028/.test(prd) && /resumo do projeto/.test(prd) && /tarefas pendentes/.test(prd), prd.slice(-300));
+  const prf = R((await call('retPedidoRetomar', { id: 'proj-e', nome: 'Loja', pasta: P.cheio, dossie: path.join(P.conv, 'README.md') })).arquivo);
+  check('028 dossiê fora da pasta de dados do Organizador é ignorado', !/Dossiê das pastas/.test(prf));
+  const pre = R((await call('retPedidoEstrutura', { id: 'proj-f', nome: 'Loja', pasta: P.conv, pastas: [P.conv], dossie: DOS })).arquivo);
+  check('028 pedido de estrutura: dossiê dentro e, no fim, apresentar resumo, tarefas identificadas e próximo passo', /MARCA-DOSSIE-028/.test(pre) && /resumo do projeto/.test(pre) && /tarefas identificadas/.test(pre));
+
   check('as pastas do usuário não mudaram (nada criado, movido ou apagado)', JSON.stringify(snap()) === JSON.stringify(antes));
   console.log(`\n${ok} OK, ${bad} FALHOU`);
   process.exit(bad ? 1 : 0);

@@ -33,7 +33,7 @@ Todos de uma vez: **`npm run test:vibe`** (ou `node tools/vibe-testes/rodar-sem-
 | `mut23` | Mutirão nativo (modos, publicado, rascunho da tarefa) | 97 OK |
 | `org26a` | Organizador (várias pastas, projeto único, recomendadas) | 14 OK |
 | `del25` | Delegar tarefa (módulo, remoto bare e duas "máquinas") | 77 OK |
-| `ret26` | Retomar projeto (estrutura, chats antigos, coleta em cópia) | 38 OK |
+| `ret26` | Retomar projeto (estrutura, chats antigos, coleta em cópia; DEV2-028: data do commit na pasta principal, dia do pop-up, dossiê dentro do pedido) | 46 OK |
 
 ## Com Electron e agente falso (instância isolada, uma por vez; minutos cada)
 
@@ -42,15 +42,15 @@ Rode **um de cada vez**, sem outro Termix de teste aberto: `node tools/vibe-test
 | Comando | O que cobre | Esperado |
 |---|---|---|
 | `... run7` | ciclo do Vibe de ponta a ponta com o agente falso | 23 OK |
-| `... run15` | recuperação de erro e F5 no app | 29 OK |
+| `... run15` | recuperação de erro e F5 no app (a espera da T5 subiu para 240 s na DEV2-028: com a máquina carregada, o F5 do orquestrador já passou de 120 s) | 29 OK |
 | `... run16 a` e `... run16 b` | deploy e fim de ciclo dos devs auxiliares no app | 28 OK e 9 OK |
 | `... run17` | Vibe de tarefa (escolha inicial, formulário, histórico) | 26 OK |
 | `... run22` | módulo sobre o layout da dev1 | 10 OK |
 | `... run23` | Mutirão nativo no app | 52 OK |
 | `... run24` | Organizador (projeto único, mapa, oferta com os chats) | 26 OK |
 | `... run25` | Delegar tarefa no app (duas instâncias; liga o Delegar só pelo modo de teste) | 35 OK |
-| `... run26` | pop-up Retomar projeto, coleta, estrutura, aviso ao fechar | 44 OK |
-| `... embed-delegar27` | Delegar estacionado no app normal e modo `--embed` (usa Edge ou Chrome sem janela) | 15 OK |
+| `... run26` | pop-up Retomar projeto, coleta, estrutura, aviso ao fechar; DEV2-028: modo chat, pop-up trocado por outro, 1ª abertura do dia x mesmo dia, Organizador com 2 pastas e "Organizar com IA", Novidades antes do pop-up (2ª instância, com reabertura) | 67 OK |
+| `... embed-delegar27` | Delegar estacionado no app normal e modo `--embed` (usa Edge ou Chrome sem janela) | 16 OK |
 
 Observações:
 - Se uma rodada anterior deixou processos do Electron abertos, feche-os antes: com eles sobrando, um teste pode estourar o tempo (o `run25` já falhou assim e passou ao ser repetido sozinho).

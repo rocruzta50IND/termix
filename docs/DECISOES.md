@@ -268,7 +268,7 @@ Pedido do Rodrigo, autorizado pelo Ygor (12/11/2026). Detalhes em `docs/ORGANIZA
 - **Estrutura mínima** = guia (`CLAUDE.md`, só acrescenta), `docs/TASKS.md`, `docs/ESTADO.md`. Gravada na branch de trabalho **sem commit automático**. Sem `/fluxo:init` (o fluxo será separado depois, entre Termix e Hub).
 - **Várias pastas = um projeto**, com pasta principal; as outras não são movidas nem apagadas.
 - **Chats antigos:** coleta em segundo plano, um por vez, só leitura (`--tools ""`, `dontAsk`), em cópia (`--fork-session`), Sonnet, teto de 5 (os mais recentes). Cada chat é reprocessado uma vez, com custo estimado na tela. Só para projetos que já existem; projetos novos nascem estruturados.
-- **Pop-up** uma vez por projeto por abertura do app; sem pop-up em modo chat. **Fechar o app** com ciclo do Vibe ou Mutirão pede confirmação; o `/clear` nunca toca nas abas do ciclo.
+- **Pop-up** na 1ª abertura **do dia** de cada projeto (data local, guardada pelo módulo), também em modo chat, com os mesmos botões; pula só projeto interno e projeto sem pasta. Espera as Novidades da versão (ou outro pop-up) fecharem antes de abrir (DEV2-028, decisão do Ygor; antes era uma vez por abertura do app e sem pop-up em modo chat). **Fechar o app** com ciclo do Vibe ou Mutirão pede confirmação; o `/clear` nunca toca nas abas do ciclo.
 - **Testes** só com claude falso e `CLAUDE_CONFIG_DIR` de teste; nada de IA real.
 
 ## Integração do módulo Vibe Coding e Mutirão na dev1 (TASK-135)

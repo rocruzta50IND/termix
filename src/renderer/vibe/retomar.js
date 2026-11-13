@@ -138,14 +138,14 @@
   const TEST = !!(window.__retTest);
 
   /* ---------- criar a estrutura: coleta (se houver chats marcados) + orquestrador novo ---------- */
-  async function criarEstrutura(p, { pastas, convs }) {
+  async function criarEstrutura(p, { pastas, convs, dossie }) {
     let col = null;
     if (convs && convs.length) {
       col = await coletar(p, convs);
       if (col.status === 'cancelada') { addEvent({ who: `Estrutura · ${p.name}`, msg: 'Coleta cancelada: nada foi criado.' }); return false; }
       if (!col.ok) addEvent({ who: `Estrutura · ${p.name}`, msg: 'Nenhum chat respondeu: o orquestrador vai levantar a estrutura pelo README, pelos manifestos e pelo git log.' });
     }
-    const ped = await call('retPedidoEstrutura', { id: p.id, nome: p.name, pasta: p.path, pastas: pastas && pastas.length ? pastas : [p.path] });
+    const ped = await call('retPedidoEstrutura', { id: p.id, nome: p.name, pasta: p.path, pastas: pastas && pastas.length ? pastas : [p.path], dossie });
     if (!ped || !ped.ok) { addEvent({ who: `Estrutura · ${p.name}`, msg: 'Não foi possível montar o pedido. Veja o erros.log.' }); return false; }
     addEvent({ who: `Estrutura · ${p.name}`, msg: `Orquestrador novo (contexto limpo) criando o guia (CLAUDE.md, só acrescenta), docs/TASKS.md e docs/ESTADO.md, sem commit. Pedido: ${ped.arquivo}` });
     await orqEDev(p, ped.arquivo);
@@ -154,14 +154,15 @@
 
   /* ---------- ao adicionar o projeto (Usar pasta existente, uma ou várias pastas) ---------- */
   // Devolve true quando tratou o projeto (abas criadas); false para o núcleo seguir com o fluxo antigo.
-  async function aoAdicionar(p, { pastas } = {}) {
+  // dossie (DEV2-028): o dossiê do "Organizar com IA", que vai dentro do pedido do orquestrador.
+  async function aoAdicionar(p, { pastas, dossie } = {}) {
     try {
       if (!p || !p.path) return false;
-      vistos.add(p.id);
+      vistos.add(p.id); call('retPopupMarcar', p.id, hoje()); // acabou de entrar: o pop-up do dia não abre por cima
       const ps = pastas && pastas.length ? pastas : [p.path];
       const est = await call('retEstrutura', p.path);
       if (est && est.completa) { // exceção: já tem guia, tarefas e estado: pula a coleta e entra direto
-        const ped = await call('retPedidoRetomar', { id: p.id, nome: p.name, pasta: p.path });
+        const ped = await call('retPedidoRetomar', { id: p.id, nome: p.name, pasta: p.path, dossie });
         await orqEDev(p, ped.arquivo);
         addEvent({ who: p.name, msg: 'Projeto já estruturado (guia, tarefas e estado): entrou direto com orquestrador e dev.' });
         return true;
@@ -178,12 +179,12 @@
         onOpen: (root) => { root.querySelector('.dlg').classList.add('orgdlg'); ligaLista(root, convs, sel, teto); },
       });
       if (r.value !== 'ok') return false;
-      return await criarEstrutura(p, { pastas: ps, convs: convs.filter((c) => sel.has(c.id)).map((c) => ({ id: c.id, pasta: c.pasta })) });
+      return await criarEstrutura(p, { pastas: ps, convs: convs.filter((c) => sel.has(c.id)).map((c) => ({ id: c.id, pasta: c.pasta })), dossie });
     } catch (e) { console.error('retomar: aoAdicionar', e); return false; }
   }
 
-  /* ---------- pop-up "Retomar projeto" (1ª abertura de cada projeto depois de iniciar o Termix) ---------- */
-  const modoChat = (p) => { const ab = p.tabs.filter((t) => t.open && !t.archived); return ab.length > 0 && ab.every((t) => t.kind === 'chat'); }; // 5.6: bolhas, sem pop-up
+  /* ---------- pop-up "Retomar projeto" (DEV2-028: 1ª abertura DO DIA de cada projeto, também em modo chat) ---------- */
+  // Pula só projeto interno (Mutirão/workflow e as pastas de dados do módulo) e projeto sem pasta.
   const ehInterno = (p) => p.kind === 'workflow' || /[\\/](organizador|vibe|retomar)[\\/]/i.test(String(p.path || ''));
 
   async function dadosPopup(p) {
@@ -213,7 +214,8 @@
   async function abrirPopup(p, forcar) {
     vistos.add(p.id);
     const d = await dadosPopup(p);
-    if (!d || (!forcar && vazioPopup(d))) return null;
+    if (!d) return null;
+    if (!forcar && vazioPopup(d)) { call('retPopupMarcar', p.id, hoje()); return null; } // projeto novo, nada a retomar
     const sem = !d.estrutura.completa;
     const convs = sem ? ((await call('retConversas', [p.path])) || []) : [];
     const teto = (await call('retTeto')) || 5;
@@ -222,12 +224,15 @@
     const botoes = d.ciclo
       ? [['Agora não', null], ['Retomar últimas conversas', 'ret'], [ini[0], ini[1]], ['Continuar ciclo', 'cont', 'pri']]
       : [['Agora não', null], ['Retomar últimas conversas', 'ret'], [ini[0], ini[1], 'pri']];
-    const r = await modal({
+    if (!forcar && modalAberto()) return 'adiado'; // outro pop-up abriu enquanto os dados carregavam: não passa por cima dele
+    const r = await modalVigiado({
       title: `Retomar projeto: ${esc(p.name)}`,
       body: popupHtml(p, d, convs, sel, teto),
       buttons: botoes,
       onOpen: (root) => { root.querySelector('.dlg').classList.add('orgdlg'); ligaLista(root, convs, sel, teto); },
     });
+    if (r.sobrescrito) return 'sobrescrito';
+    if (!forcar) call('retPopupMarcar', p.id, hoje()); // respondido (qualquer botão, Esc ou X): não abre de novo hoje
     if (r.value === 'cont') { try { UI.cur = { p: p.id, page: 'Terminais' }; renderAll(); await ponte().continuar(p.id); } catch (e) { console.error('retomar: continuar', e); } return 'cont'; }
     if (r.value === 'ini') { await inicializar(p, d, convs.filter((c) => sel.has(c.id)).map((c) => ({ id: c.id, pasta: c.pasta }))); return 'ini'; }
     if (r.value === 'ret') { await retomarUltimas(p); return 'ret'; }
@@ -265,26 +270,57 @@
     return feitos;
   }
 
-  // 1ª abertura de cada projeto depois de iniciar o Termix: observa o projeto aberto (sem mexer no núcleo). Trocar de projeto e voltar não abre de novo.
-  let ocupado = false;
+  /* DEV2-028: o modal do núcleo é um só (#modalRoot): quem abre outro por cima (ex.: as Novidades da versão) troca o conteúdo e a
+     promessa do anterior nunca resolveria. Aqui a promessa resolve com { sobrescrito: true } se o pop-up sumir sem resposta. */
+  const modalAberto = () => { const m = document.getElementById('modalRoot'); return !!(m && m.firstElementChild); };
+  function modalVigiado(opts) {
+    return new Promise((resolve) => {
+      let fim = false, dlg = null, t = null;
+      const acaba = (r) => { if (fim) return; fim = true; clearInterval(t); resolve(r); };
+      modal({ ...opts, onOpen: (root) => { dlg = root.querySelector('.dlg'); if (opts.onOpen) opts.onOpen(root); } }).then(acaba);
+      // o fechamento normal resolve antes (microtarefa); este tique só pega o pop-up trocado por outro
+      t = setInterval(() => { if (dlg && !dlg.isConnected) acaba({ value: null, sobrescrito: true }); }, 400);
+    });
+  }
+  // Novidades da versão: o núcleo guarda a promessa delas em window.__termixNovidades (app.js, encaixe da DEV2-028). O pop-up
+  // espera ela terminar. Sem o sinal em 30 s (abertura com erro), segue: a vigia nunca trava pela sessão.
+  const T_INI = Date.now();
+  let novOk = false, novLigada = false;
+  function novidadesProntas() {
+    if (novOk) return true;
+    const n = window.__termixNovidades;
+    if (n && typeof n.then === 'function') { if (!novLigada) { novLigada = true; n.then(() => { novOk = true; }, () => { novOk = true; }); } return false; }
+    if (Date.now() - T_INI > 30000) { novOk = true; return true; }
+    return false;
+  }
+  // Dia local (AAAA-MM-DD). window.__retHoje troca o dia nos testes.
+  const hoje = () => { if (typeof window.__retHoje === 'string') return window.__retHoje; const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+  // 1ª abertura DO DIA de cada projeto: observa o projeto aberto (sem mexer no núcleo). O dia mostrado fica no módulo
+  // (<userData>\retomar\popup-dias.json): no mesmo dia, reabrir o app ou trocar de projeto e voltar não abre de novo.
+  let ocupado = false, diaVistos = '';
   async function vigia() {
     if (ocupado || window.__retSemVigia) return;
+    ocupado = true;
     try {
+      const dia = hoje();
+      if (dia !== diaVistos) { vistos.clear(); diaVistos = dia; } // virou o dia com o app aberto: vale de novo
       const id = UI.cur && UI.cur.p;
       if (!id || vistos.has(id)) return;
       const p = S.projects.find((x) => x.id === id);
       if (!p || p.archived) return;
-      if (document.querySelector('#modalRoot .dlg, #modalRoot .modal')) return; // há outro pop-up aberto: tenta no próximo ciclo
-      if (ehInterno(p) || modoChat(p)) { vistos.add(id); return; }
-      ocupado = true;
-      await abrirPopup(p, false);
+      if (ehInterno(p) || !p.path) { vistos.add(id); return; }
+      if (!novidadesProntas() || modalAberto()) return; // Novidades ou outro pop-up aberto: tenta no próximo ciclo
+      if ((await call('retPopupDia', id)) === dia) { vistos.add(id); return; } // já abriu hoje
+      const r = await abrirPopup(p, false);
+      if (r === 'sobrescrito' || r === 'adiado') vistos.delete(id); // outro pop-up passou por cima: oferece de novo quando ele fechar
     } catch (e) { console.error('retomar: vigia', e); } finally { ocupado = false; }
   }
   setInterval(vigia, 1500);
   // Informa ao processo principal quais ciclos do Vibe/Mutirão estão rodando (aviso ao fechar o app).
   setInterval(() => { try { call('retAtivos', ponte().cicloAtivos ? ponte().cicloAtivos() : []); } catch { /* sem ponte */ } }, 3000);
 
-  const vistos = new Set(); // projetos já oferecidos nesta execução do Termix
+  const vistos = new Set(); // projetos já conferidos hoje nesta execução do Termix (o dia gravado fica no processo principal)
 
-  window.TermixRet = { vibePre, TEXTO_VIBE, aoAdicionar, criarEstrutura, coletar, orqEDev, abaPronta, listaHtml, ligaLista, vistos, abrirPopup, retomarUltimas, inicializar, dadosPopup };
+  window.TermixRet = { hoje, vigia, vibePre, TEXTO_VIBE, aoAdicionar, criarEstrutura, coletar, orqEDev, abaPronta, listaHtml, ligaLista, vistos, abrirPopup, retomarUltimas, inicializar, dadosPopup };
 })();
