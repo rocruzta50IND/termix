@@ -3,6 +3,13 @@
 // Campos: v (versão), date, resumo (opcional), novo[], melhorado[], corrigido[].
 const PATCH_NOTES = [
   {
+    v: '0.7.2',
+    date: '13/11/2026',
+    corrigido: [
+      'Aberto pelo Rocruzta Hub, com a barra lateral recolhida, as telas sem abas (Consumo, Conectores, Código) ganham uma linha no topo com o botão de reabrir no canto, e o conteúdo começa abaixo dela.',
+    ],
+  },
+  {
     v: '0.7.1',
     date: '12/11/2026',
     resumo: 'Chegou o Vibe Coding e o novo Mutirão.',
