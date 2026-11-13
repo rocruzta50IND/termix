@@ -6,6 +6,14 @@ Histórico legível do que foi desenvolvido, alterado ou corrigido. Uma entrada 
 
 ---
 
+## 2026-11-13
+
+**TASK-139 — Diálogos de arquivo no modo embutido ficam presos à janela do Hub** (DEV1)
+
+- Relato do usuário: "Escolher pasta" dentro do Termix pelo Hub abria janelas soltas do Windows. Causa: sem janela no `--embed`, o diálogo nascia sem dono.
+- `src/embed.js`: com o Hub como pai, os diálogos de abrir e salvar viram pedido ao Hub (`HUB_EVENT` com `evento: "dialogo"`) e a resposta volta por `/__cmd` (`dialogo:resultado`, corpo até 64 KB). Os 7 pontos do `main.js` e do Vibe não mudaram. Sem `--embed` o Termix é o mesmo.
+- Validado no Hub real (8/8). Ainda sem release: entra na próxima versão publicada.
+
 ## 2026-11-12
 
 **Promoção dev1 → main (TASK-135)** (DEV1)

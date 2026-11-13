@@ -5,7 +5,7 @@
 //
 // Segurança: só 127.0.0.1, token obrigatório (cookie `hubt`, entregue pelo link `/?t=<token>`), `Host` e `Origin` conferidos,
 // e só os diretórios da interface são servidos (nada de ler arquivo arbitrário).
-const { app, ipcMain } = require('electron');
+const { app, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
@@ -26,6 +26,35 @@ if (enabled) {
   const origOn = ipcMain.on.bind(ipcMain);
   ipcMain.handle = (channel, fn) => { handlers.set(channel, fn); return origHandle(channel, fn); };
   ipcMain.on = (channel, fn) => { if (!handlers.has(channel)) handlers.set(channel, fn); return origOn(channel, fn); };
+  if (process.env.HUB_PARENT_PID) {
+    const opcoesDe = (a, b) => (b && typeof b === 'object' ? b : (a && typeof a === 'object' && !a.webContents ? a : {})); // (janela, opções) ou (opções)
+    dialog.showOpenDialog = (a, b) => dialogoPeloHub('abrir', opcoesDe(a, b));
+    dialog.showSaveDialog = (a, b) => dialogoPeloHub('salvar', opcoesDe(a, b));
+  }
+}
+
+// TASK-139: no modo embutido o Termix não tem janela, e um diálogo de arquivo aberto por ele nasce SEM DONO (janela solta na
+// barra de tarefas). Quando quem abriu o Termix foi o Hub (HUB_PARENT_PID), o diálogo é pedido ao Hub por uma linha HUB_EVENT
+// { evento: 'dialogo' }; o Hub o abre preso à janela dele e responde pelo comando autenticado 'dialogo:resultado'.
+// Os pontos que chamam dialog.showOpenDialog / showSaveDialog no main.js e no módulo Vibe continuam iguais.
+const dialogosPendentes = new Map(); // id -> { metodo, resolve }
+let seqDialogo = 0;
+const dialogoVazio = (metodo) => (metodo === 'salvar' ? { canceled: true, filePath: undefined } : { canceled: true, filePaths: [] });
+function dialogoPeloHub(metodo, opcoes) {
+  return new Promise((resolve) => {
+    const id = ++seqDialogo;
+    const t = setTimeout(() => { dialogosPendentes.delete(id); resolve(dialogoVazio(metodo)); }, 10 * 60 * 1000);
+    dialogosPendentes.set(id, { metodo, resolve: (r) => { clearTimeout(t); resolve(r); } });
+    emitirHub({ evento: 'dialogo', id, metodo, opcoes });
+  });
+}
+function resolverDialogo(m) {
+  const p = dialogosPendentes.get(m.id);
+  if (!p) return;
+  dialogosPendentes.delete(m.id);
+  if (m.canceled) return p.resolve(dialogoVazio(p.metodo));
+  if (p.metodo === 'salvar') return p.resolve({ canceled: false, filePath: typeof m.filePath === 'string' ? m.filePath : undefined });
+  p.resolve({ canceled: false, filePaths: Array.isArray(m.filePaths) ? m.filePaths.filter((x) => typeof x === 'string') : [] });
 }
 
 const broadcast = (channel, payload) => {
@@ -98,8 +127,8 @@ function handleHttp(req, res) {
   if (url.pathname === '/health') return deny(200, 'ok');
   if (url.pathname === '/__cmd' && req.method === 'POST') { // Hub -> app; só o canal permitido
     let corpo = '';
-    req.on('data', (d) => { corpo += d; if (corpo.length > 4096) req.destroy(); });
-    req.on('end', () => { try { const m = JSON.parse(corpo); if (m.canal === 'notify:click' && typeof m.tabId === 'string') { broadcast('notify:click', { tabId: m.tabId }); return deny(200, 'ok'); } } catch { /* corpo inválido */ } deny(400, 'comando inválido'); });
+    req.on('data', (d) => { corpo += d; if (corpo.length > 65536) req.destroy(); });
+    req.on('end', () => { try { const m = JSON.parse(corpo); if (m.canal === 'dialogo:resultado' && Number.isInteger(m.id)) { resolverDialogo(m); return deny(200, 'ok'); } if (m.canal === 'notify:click' && typeof m.tabId === 'string') { broadcast('notify:click', { tabId: m.tabId }); return deny(200, 'ok'); } } catch { /* corpo inválido */ } deny(400, 'comando inválido'); });
     return;
   }
   if (url.pathname === '/__embed.js') { res.writeHead(200, { 'Content-Type': TYPES['.js'], 'Cache-Control': 'no-store' }); return res.end(shimSource()); }

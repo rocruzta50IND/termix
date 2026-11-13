@@ -36,6 +36,14 @@ Formato do ID: `TASK-XXX` — numeração sequencial, sem reuso, livre em todas 
 
 ## Aguardando validação DEV1
 
+### TASK-139 — Diálogos de arquivo no modo embutido ficam presos à janela do Hub
+
+- **Responsável:** DEV1
+- **Status:** VALIDADA EM DEV1 (2026-11-13; falta entrar numa release do Termix, junto da 0.7.1 ou depois)
+- **Problema:** no `--embed` o Termix não tem janela; "Escolher pasta" e os outros 6 diálogos de arquivo nasciam sem dono (janelas soltas na barra de tarefas).
+- **Feito:** `src/embed.js`: com `--embed` aberto pelo Hub (`HUB_PARENT_PID`), `dialog.showOpenDialog`/`showSaveDialog` viram um pedido `HUB_EVENT { evento: "dialogo" }`; o Hub abre o diálogo preso à janela dele e responde por `/__cmd` (`dialogo:resultado`). Sem `--embed` nada muda; os 7 pontos de chamada continuam iguais. Tempo limite de 10 min devolve "cancelado".
+- **Verificado:** no Hub real (`tools/verificar-dialogo.js` do repositório do Hub, 8/8): diálogo com a janela do Hub como dono, fechar devolve null, pasta digitada chega ao Termix. `npm run check` ok.
+
 ## Validadas em DEV1
 
 ## Prontas
